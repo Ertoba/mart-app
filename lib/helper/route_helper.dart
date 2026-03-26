@@ -224,7 +224,7 @@ class RouteHelper {
   }
 
   static String getOrderDetailsRoute(int? orderID, {bool? fromNotification, bool? fromOffline, String? contactNumber}) {
-    return '$orderDetails?id=$orderID&from=${fromNotification.toString()}&from_offline=$fromOffline&contact=$contactNumber';
+    return '$orderDetails?id=$orderID&from=${fromNotification.toString()}&from_offline=$fromOffline${contactNumber != null ? '&contact=$contactNumber' : ''}';
   }
   static String getProfileRoute() => profile;
   static String getUpdateProfileRoute() => updateProfile;
@@ -244,8 +244,8 @@ class RouteHelper {
       {required String guestId, String? contactNumber, String? addFundUrl, String? subscriptionUrl, int? storeId, bool? createAccount, int? createUserId}) =>
       '$payment?id=$id&user=$user&type=$type&amount=$amount&cod-delivery=$codDelivery&add-fund-url=$addFundUrl&payment-method=$paymentMethod&guest-id=$guestId&number=$contactNumber&subscription-url=$subscriptionUrl&store_id=$storeId&create_account=$createAccount&create_user_id=$createUserId';
 
-  static String getCheckoutRoute(String page, {int? storeId}) => '$checkout?page=$page&store-id=$storeId&module=${ModuleHelper.getModule()?.slug ?? ModuleHelper.getModule()?.id??ModuleHelper.getCacheModule()?.slug}';
-  static String getOrderTrackingRoute(int? id, String? contactNumber) => '$orderTracking?id=$id&number=$contactNumber';
+  static String getCheckoutRoute(String page, {int? storeId}) => '$checkout?page=$page${storeId != null ? '&store-id=$storeId' : ''}&module=${ModuleHelper.getModule()?.slug ?? ModuleHelper.getModule()?.id??ModuleHelper.getCacheModule()?.slug}';
+  static String getOrderTrackingRoute(int? id, String? contactNumber) => '$orderTracking?id=$id${contactNumber != null ? '&number=$contactNumber' : ''}';
   static String getBasicCampaignRoute(BasicCampaignModel basicCampaignModel) {
     String data = base64Encode(utf8.encode(jsonEncode(basicCampaignModel.toJson())));
     return '$basicCampaign?module=${ModuleHelper.getModule()?.slug ?? ModuleHelper.getModule()?.id}&data=$data';
@@ -564,12 +564,12 @@ class RouteHelper {
           checkoutScreen ?? (CheckoutScreen(
             cartList: null,
             fromCart: Get.parameters['page'] == 'cart',
-            storeId: Get.parameters['store-id'] != 'null' ? int.parse(Get.parameters['store-id']!) : null,
+            storeId: (Get.parameters['store-id'] != null && Get.parameters['store-id'] != 'null') ? int.parse(Get.parameters['store-id']!) : null,
           )),
         ),
       );
     }),
-    GetPage(name: orderTracking, page: () => getRoute(OrderTrackingScreen(orderID: Get.parameters['id'], contactNumber: Get.parameters['number'],))),
+    GetPage(name: orderTracking, page: () => getRoute(OrderTrackingScreen(orderID: Get.parameters['id'], contactNumber: Get.parameters['number'] == 'null' ? null : Get.parameters['number'],))),
     GetPage(name: basicCampaign, page: () {
       BasicCampaignModel data = BasicCampaignModel.fromJson(jsonDecode(utf8.decode(base64Decode(Get.parameters['data']!.replaceAll(' ', '+')))));
       return getRoute(

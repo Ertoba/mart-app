@@ -332,7 +332,7 @@ class _PickMapScreenState extends State<PickMapScreen> {
   }
 
   void _onPickAddressButtonPressed(LocationController locationController) {
-    if(locationController.pickPosition.latitude != 0 && locationController.pickAddress!.isNotEmpty) {
+    if(locationController.pickPosition.latitude != 0 && (locationController.pickAddress?.isNotEmpty ?? false)) {
       if(widget.onPicked != null) {
         AddressModel address = AddressModel(
           latitude: locationController.pickPosition.latitude.toString(),

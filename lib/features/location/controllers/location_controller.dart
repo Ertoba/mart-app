@@ -580,7 +580,7 @@ class LocationController extends GetxController implements GetxService {
   }
 
   void _onPickAddressButtonPressed(LocationController locationController, String page) {
-    if(locationController.pickPosition.latitude != 0 && locationController.pickAddress!.isNotEmpty) {
+    if(locationController.pickPosition.latitude != 0 && (locationController.pickAddress?.isNotEmpty ?? false)) {
       AddressModel address = AddressModel(
         latitude: locationController.pickPosition.latitude.toString(),
         longitude: locationController.pickPosition.longitude.toString(),

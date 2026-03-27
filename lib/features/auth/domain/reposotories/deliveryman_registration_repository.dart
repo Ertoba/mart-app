@@ -19,7 +19,7 @@ class DeliverymanRegistrationRepository implements DeliverymanRegistrationReposi
   @override
   Future<dynamic> getList({int? offset, bool isZone = true, bool isVehicle = false, int? zoneId}) async {
     if (isVehicle) {
-      final response = await apiClient.getData(AppConstants.vehicleListUri);
+      final response = await apiClient.getData(AppConstants.vehiclesUri);
       if (response.statusCode == 200) {
         return (response.body as List).map((data) => DeliveryManVehicleModel.fromJson(data)).toList();
       }

@@ -85,8 +85,9 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen> with WidgetsBi
         if(Get.currentRoute.contains(RouteHelper.orderDetails) || Get.currentRoute.contains(RouteHelper.orderTracking)){
           Get.find<OrderController>().timerTrackOrder(widget.orderID.toString(), contactNumber: widget.contactNumber);
 
+          if(Get.find<OrderController>().trackModel == null) return;
           updateMarker(
-            Get.find<OrderController>().trackModel?.store, Get.find<OrderController>().trackModel!.deliveryMan,
+            Get.find<OrderController>().trackModel?.store, Get.find<OrderController>().trackModel?.deliveryMan,
             Get.find<OrderController>().trackModel?.orderType == 'take_away' ? Get.find<LocationController>().position.latitude == 0 ? Get.find<OrderController>().trackModel?.deliveryAddress : AddressModel(
               latitude: Get.find<LocationController>().position.latitude.toString(),
               longitude: Get.find<LocationController>().position.longitude.toString(),

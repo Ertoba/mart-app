@@ -600,7 +600,7 @@
   "maximum_delivery_time_can_not_be_smaller_then_minimum_delivery_time": "მაქსიმალური მიწოდების დრო არ შეიძლება იყოს მინიმალურზე ნაკლები",
   "not_available_module": "მიუწვდომელი მოდული",
   "delivery_time_type": "მიწოდების დროის ტიპი",
-  "your_order_is": "თქვენი შეკვეთა არის",
+  "your_order_is": "თქვენი შეკვეთა",
   "you_do_not_have_enough_point_to_exchange": "გაცვლისთვის საკმარისი ქულა არ გაქვთ",
   "minute": "წუთი",
   "hours": "საათი",

@@ -41,7 +41,7 @@ class NotificationHelper {
     androidPlugin.requestNotificationsPermission();
     await androidPlugin.createNotificationChannel(
       const AndroidNotificationChannel(
-        '6ammart',
+        'portal_notifications',
         'პორტალი შეტყობინებები',
         importance: Importance.max,
         playSound: true,
@@ -466,7 +466,7 @@ class NotificationHelper {
   ) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-          '6ammart',
+          'portal_notifications',
           AppConstants.appName,
           playSound: true,
           importance: Importance.max,
@@ -502,7 +502,7 @@ class NotificationHelper {
     );
     AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-          '6ammart',
+          'portal_notifications',
           AppConstants.appName,
           importance: Importance.max,
           styleInformation: bigTextStyleInformation,
@@ -548,7 +548,7 @@ class NotificationHelper {
         );
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-          '6ammart',
+          'portal_notifications',
           AppConstants.appName,
           largeIcon: FilePathAndroidBitmap(largeIconPath),
           priority: Priority.max,

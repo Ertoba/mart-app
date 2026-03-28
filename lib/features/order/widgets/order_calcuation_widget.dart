@@ -256,10 +256,13 @@ class OrderCalculationWidget extends StatelessWidget {
                   const SizedBox(height: 10),
 
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Text(
+                    Expanded(child: Text(
                       '${order.payments?[1].paymentStatus == 'paid' ? 'paid_by'.tr : 'due_amount'.tr} (${order.payments?[1].paymentMethod?.tr})',
                       style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall),
-                    ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                    )),
+                    const SizedBox(width: Dimensions.paddingSizeSmall),
                     Text(
                       PriceConverter.convertPrice(order.payments?[1].amount ?? 0),
                       style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall),

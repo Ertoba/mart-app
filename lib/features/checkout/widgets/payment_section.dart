@@ -100,30 +100,34 @@ class PaymentSection extends StatelessWidget {
 
             Expanded(
               child: Row(children: [
-                Builder(
-                  builder: (context) {
-                    //print('=======pay: ${checkoutController.paymentMethodIndex}==== ${checkoutController.isPartialPay}');
-                    return Text(
-                      checkoutController.paymentMethodIndex == 0 ? '${'cash_on_delivery'.tr} ${checkoutController.isPartialPay ? '(${'partial'.tr})' : ''}'
-                          : checkoutController.paymentMethodIndex == 1 && !checkoutController.isPartialPay ? 'wallet_payment'.tr
-                          : checkoutController.paymentMethodIndex == 2 ? '${'digital_payment'.tr} (${checkoutController.digitalPaymentName?.replaceAll('_', ' ').toTitleCase() ?? ''}${checkoutController.isPartialPay ? ' - ${'partial'.tr}' : ''})'
-                          : checkoutController.paymentMethodIndex == 3 ? '${'offline_payment'.tr}(${checkoutController.offlineMethodList![checkoutController.selectedOfflineBankIndex].methodName}${checkoutController.isPartialPay ? ' - ${'partial'.tr}' : ''})'
-                          : !ResponsiveHelper.isDesktop(context) ? 'select_payment_method'.tr : 'add_payment_method'.tr,
-                      style: robotoMedium.copyWith(
-                        fontSize: Dimensions.fontSizeSmall,
-                        color: !ResponsiveHelper.isDesktop(context) ? Theme.of(context).disabledColor
-                            : checkoutController.paymentMethodIndex == -1 ? Theme.of(context).primaryColor
-                            : Theme.of(context).disabledColor,
-                      ),
-                    );
-                  }
+                Flexible(
+                  child: Builder(
+                    builder: (context) {
+                      //print('=======pay: ${checkoutController.paymentMethodIndex}==== ${checkoutController.isPartialPay}');
+                      return Text(
+                        checkoutController.paymentMethodIndex == 0 ? '${'cash_on_delivery'.tr} ${checkoutController.isPartialPay ? '(${'partial'.tr})' : ''}'
+                            : checkoutController.paymentMethodIndex == 1 && !checkoutController.isPartialPay ? 'wallet_payment'.tr
+                            : checkoutController.paymentMethodIndex == 2 ? '${'digital_payment'.tr} (${checkoutController.digitalPaymentName?.replaceAll('_', ' ').toTitleCase() ?? ''}${checkoutController.isPartialPay ? ' - ${'partial'.tr}' : ''})'
+                            : checkoutController.paymentMethodIndex == 3 ? '${'offline_payment'.tr}(${checkoutController.offlineMethodList![checkoutController.selectedOfflineBankIndex].methodName}${checkoutController.isPartialPay ? ' - ${'partial'.tr}' : ''})'
+                            : !ResponsiveHelper.isDesktop(context) ? 'select_payment_method'.tr : 'add_payment_method'.tr,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: robotoMedium.copyWith(
+                          fontSize: Dimensions.fontSizeSmall,
+                          color: !ResponsiveHelper.isDesktop(context) ? Theme.of(context).disabledColor
+                              : checkoutController.paymentMethodIndex == -1 ? Theme.of(context).primaryColor
+                              : Theme.of(context).disabledColor,
+                        ),
+                      );
+                    }
+                  ),
                 ),
 
                 checkoutController.paymentMethodIndex == -1 && !ResponsiveHelper.isDesktop(context) ? Padding(
                   padding: const EdgeInsets.only(left: Dimensions.paddingSizeExtraSmall),
                   child: Icon(Icons.warning_rounded, size: 16, color: Theme.of(context).colorScheme.error),
                 ) : const SizedBox(),
-              ])
+              ],)
             ),
             checkoutController.paymentMethodIndex != -1 ? PriceConverter.convertAnimationPrice(
               checkoutController.viewTotalPrice,

@@ -97,27 +97,34 @@ class BottomSection extends StatelessWidget {
             const SizedBox(height: Dimensions.paddingSizeDefault),
 
             ResponsiveHelper.isDesktop(context) ? Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text( 'total_amount'.tr, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).primaryColor)),
-                      storeId == null ? const SizedBox() : Text(
-                        'Once_your_order_is_confirmed_you_will_receive'.tr,
-                        style: robotoRegular.copyWith(
-                            fontSize: Dimensions.fontSizeOverSmall, color: Theme.of(context).disabledColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  storeId == null ? const SizedBox() : Text(
-                    'a_notification_with_your_bill_total'.tr,
-                    style: robotoRegular.copyWith(
-                      fontSize: Dimensions.fontSizeOverSmall, color: Theme.of(context).disabledColor,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text( 'total_amount'.tr, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).primaryColor)),
+                        const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                        storeId == null ? const SizedBox() : Flexible(child: Text(
+                          'Once_your_order_is_confirmed_you_will_receive'.tr,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: robotoRegular.copyWith(
+                              fontSize: Dimensions.fontSizeOverSmall, color: Theme.of(context).disabledColor,
+                          ),
+                        )),
+                      ],
                     ),
-                  ),
-                ],
+                    storeId == null ? const SizedBox() : Text(
+                      'a_notification_with_your_bill_total'.tr,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: robotoRegular.copyWith(
+                        fontSize: Dimensions.fontSizeOverSmall, color: Theme.of(context).disabledColor,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               PriceConverter.convertAnimationPrice(
                 checkoutController.viewTotalPrice,

@@ -297,7 +297,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                     const SizedBox(height: Dimensions.paddingSizeSmall),
 
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text('total_amount'.tr, style:robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).primaryColor)),
+                      Expanded(child: Text('total_amount'.tr, style:robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).primaryColor), overflow: TextOverflow.ellipsis, maxLines: 1)),
 
                       Text(
                         PriceConverter.convertPrice(itemController.cartIndex != -1

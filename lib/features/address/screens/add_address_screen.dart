@@ -695,6 +695,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
                   CustomTextField(
                     labelText: '${'street_number'.tr} (${'optional'.tr})',
+                    labelTextSize: Dimensions.fontSizeSmall,
                     titleText: 'write_street_number'.tr,
                     inputType: TextInputType.streetAddress,
                     focusNode: _streetNode,
@@ -707,6 +708,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                     Expanded(
                       child: CustomTextField(
                         labelText: '${'house'.tr} (${'optional'.tr})',
+                        labelTextSize: Dimensions.fontSizeSmall,
                         titleText: 'write_house_number'.tr,
                         inputType: TextInputType.text,
                         focusNode: _houseNode,
@@ -719,6 +721,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                     Expanded(
                       child: CustomTextField(
                         labelText: "${'floor'.tr} (${'optional'.tr})",
+                        labelTextSize: Dimensions.fontSizeSmall,
                         titleText: 'write_floor_number'.tr,
                         inputType: TextInputType.text,
                         focusNode: _floorNode,

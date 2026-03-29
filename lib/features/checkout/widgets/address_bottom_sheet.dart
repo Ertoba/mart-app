@@ -10,6 +10,7 @@ import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/features/checkout/controllers/checkout_controller.dart';
 import 'package:sixam_mart/features/location/controllers/location_controller.dart';
 import 'package:sixam_mart/features/location/widgets/permission_dialog_widget.dart';
+import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
@@ -127,7 +128,7 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                                 const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                                 Text(
-                                  address.addressType!.tr,
+                                  AddressHelper.getAddressTypeLabel(address.addressType),
                                   style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault),
                                 ),
                               ]),

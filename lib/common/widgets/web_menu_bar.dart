@@ -56,7 +56,7 @@ class WebMenuBar extends StatelessWidget implements PreferredSizeWidget {
                               const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                               Text(
-                                '${AuthHelper.isLoggedIn() ? AddressHelper.getUserAddressFromSharedPref()!.addressType!.tr : 'your_location'.tr}: ',
+                                '${AuthHelper.isLoggedIn() ? AddressHelper.getAddressTypeLabel(AddressHelper.getUserAddressFromSharedPref()!.addressType) : 'your_location'.tr}: ',
                                 style: robotoMedium.copyWith(
                                   color: Theme.of(context).primaryColor, fontSize: Dimensions.fontSizeExtraSmall,
                                 ),
@@ -431,6 +431,5 @@ class MenuIconButton extends StatelessWidget {
     });
   }
 }
-
 
 

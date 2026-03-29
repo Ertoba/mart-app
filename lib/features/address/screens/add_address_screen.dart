@@ -12,6 +12,7 @@ import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
 import 'package:sixam_mart/features/location/widgets/permission_dialog_widget.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
+import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/custom_validator.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
@@ -777,17 +778,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   }
 
   String _addressTypeLabel(int index) {
-    if((Get.locale?.languageCode ?? '') == 'ka') {
-      switch(index) {
-        case 0:
-          return 'სახლის მისამართი';
-        case 1:
-          return 'სამუშაოს მისამართი';
-        default:
-          return 'სხვა მისამართი';
-      }
-    }
-    return index == 0 ? 'home'.tr : index == 1 ? 'office'.tr : 'others'.tr;
+    return AddressHelper.getAddressTypeLabel(index == 0 ? 'home' : index == 1 ? 'office' : 'others');
   }
 
   void _onSaveOrUpdateButtonPressed(LocationController locationController) async {

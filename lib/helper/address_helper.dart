@@ -42,4 +42,27 @@ class AddressHelper {
     return true;
   }
 
+  static String getAddressTypeLabel(String? addressType) {
+    if(addressType == null || addressType.isEmpty) {
+      return '';
+    }
+
+    if((Get.locale?.languageCode ?? '') == 'ka') {
+      switch(addressType) {
+        case 'home':
+          return 'სახლის მისამართი';
+        case 'office':
+          return 'სამსახურის მისამართი';
+        case 'others':
+          return 'სხვა მისამართი';
+      }
+    }
+
+    if(addressType == 'home' || addressType == 'office' || addressType == 'others') {
+      return addressType.tr;
+    }
+
+    return addressType;
+  }
+
 }

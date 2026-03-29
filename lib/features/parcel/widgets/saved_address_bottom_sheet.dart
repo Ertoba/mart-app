@@ -147,7 +147,7 @@ class _SavedAddressBottomSheetState extends State<SavedAddressBottomSheet> {
                               const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                               Text(
-                                address.addressType!.tr,
+                                AddressHelper.getAddressTypeLabel(address.addressType),
                                 style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault),
                               ),
                             ]),

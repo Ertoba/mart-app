@@ -1,5 +1,6 @@
 import 'package:sixam_mart/common/widgets/custom_ink_well.dart';
 import 'package:sixam_mart/features/address/domain/models/address_model.dart';
+import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
@@ -50,7 +51,7 @@ class AddressWidget extends StatelessWidget {
                       const SizedBox(width: Dimensions.paddingSizeSmall),
 
                       Text(
-                        address!.addressType!.tr,
+                        AddressHelper.getAddressTypeLabel(address!.addressType),
                         style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault),
                       ),
                     ]),

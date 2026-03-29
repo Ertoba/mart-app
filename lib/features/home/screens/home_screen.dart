@@ -301,7 +301,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: GetBuilder<LocationController>(builder: (locationController) {
                                   return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                     Text(
-                                      AuthHelper.isLoggedIn() ? AddressHelper.getUserAddressFromSharedPref()?.addressType?.tr??'' : 'your_location'.tr,
+                                      AuthHelper.isLoggedIn() ? AddressHelper.getAddressTypeLabel(AddressHelper.getUserAddressFromSharedPref()?.addressType) : 'your_location'.tr,
                                       style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color, fontSize: Dimensions.fontSizeDefault),
                                       maxLines: 1, overflow: TextOverflow.ellipsis,
                                     ),

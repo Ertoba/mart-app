@@ -13,6 +13,7 @@ import 'package:sixam_mart/features/language/controllers/language_controller.dar
 import 'package:sixam_mart/features/location/controllers/location_controller.dart';
 import 'package:sixam_mart/features/location/domain/models/prediction_model.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
+import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
@@ -159,7 +160,7 @@ class _DeliverySectionState extends State<DeliverySection> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(widget.address[index].addressType!.tr, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall)),
+                                    Text(AddressHelper.getAddressTypeLabel(widget.address[index].addressType), style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall)),
                                     const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
                                     Text(

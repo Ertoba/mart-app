@@ -306,7 +306,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                                 ),
                                                 const SizedBox(width: Dimensions.paddingSizeSmall),
 
-                                                Text(index == 0 ? 'home'.tr : index == 1 ? 'office'.tr : 'others'.tr,
+                                                Text(_addressTypeLabel(index),
                                                   style: robotoRegular.copyWith(color: locationController.addressTypeIndex == index ? Theme.of(context).cardColor : Theme.of(context).disabledColor),
                                                 )
                                               ],
@@ -774,6 +774,20 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         );
       }
     );
+  }
+
+  String _addressTypeLabel(int index) {
+    if((Get.locale?.languageCode ?? '') == 'ka') {
+      switch(index) {
+        case 0:
+          return 'სახლის მისამართი';
+        case 1:
+          return 'სამუშაოს მისამართი';
+        default:
+          return 'სხვა მისამართი';
+      }
+    }
+    return index == 0 ? 'home'.tr : index == 1 ? 'office'.tr : 'others'.tr;
   }
 
   void _onSaveOrUpdateButtonPressed(LocationController locationController) async {

@@ -37,7 +37,13 @@ class _DeliveryInstructionViewState extends State<DeliveryInstructionView> {
                   Get.dialog(const Dialog(child: DeliveryInstractionBottomSheetWidget()));
                 } else {
                   showModalBottomSheet(
-                    context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Theme.of(context).cardColor,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(Dimensions.radiusExtraLarge)),
+                    ),
+                    clipBehavior: Clip.antiAlias,
                     builder: (con) => const DeliveryInstractionBottomSheetWidget(),
                   );
                 }

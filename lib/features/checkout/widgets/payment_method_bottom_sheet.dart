@@ -95,6 +95,8 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
       width: 550,
       child: GetBuilder<CheckoutController>(builder: (checkoutController) {
         bool disablePayments = checkoutController.paymentMethodIndex == 1 && !checkoutController.isPartialPay;
+        bool showDigitalMethods = widget.isDigitalPaymentActive && notHideDigital && Get.find<SplashController>().configModel!.activePaymentMethodList!.isNotEmpty;
+        bool showOfflineMethods = widget.isOfflinePaymentActive && showOfflinePay && !Get.find<CheckoutController>().isPartialPay;
 
         return Container(
           constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
@@ -142,24 +144,7 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
 
                     walletView(checkoutController),
 
-                    widget.isCashOnDeliveryActive && notHideCod ? paymentButtonView(
-                      padding: EdgeInsets.only(bottom: Dimensions.paddingSizeDefault),
-                      title: 'cash_on_delivery'.tr,
-                      isSelected: checkoutController.paymentMethodIndex == 0,
-                      disablePayments: disablePayments,
-                      onTap: disablePayments ? null : (){
-                        checkoutController.setPaymentMethod(0);
-                        if(!showChangeAmount) {
-                          setState(() {
-                            showChangeAmount = true;
-                          });
-                        }
-                      },
-                    ) : const SizedBox(),
-
-                    widget.isCashOnDeliveryActive && notHideCod && widget.paymentModel == null ? changeAmountView(checkoutController) : const SizedBox(),
-
-                    widget.isDigitalPaymentActive && notHideDigital && Get.find<SplashController>().configModel!.activePaymentMethodList!.isNotEmpty ? Container(
+                    showDigitalMethods ? Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
                         border: Border.all(color: Theme.of(context).disabledColor, width: 0.2),
@@ -203,7 +188,7 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
                     ) : const SizedBox(),
                     const SizedBox(height: Dimensions.paddingSizeDefault),
 
-                    widget.isOfflinePaymentActive && showOfflinePay && !Get.find<CheckoutController>().isPartialPay ? OfflinePaymentButton(
+                    showOfflineMethods ? OfflinePaymentButton(
                       isSelected: checkoutController.paymentMethodIndex == 3,
                       offlineMethodList: checkoutController.offlineMethodList,
                       isOfflinePaymentActive: widget.isOfflinePaymentActive,
@@ -218,6 +203,23 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
                       checkoutController: checkoutController, tooltipController: tooltipController,
                       disablePayment: disablePayments, forParcel: widget.paymentModel?.orderType == 'parcel',
                     ) : const SizedBox(),
+
+                    widget.isCashOnDeliveryActive && notHideCod ? paymentButtonView(
+                      padding: EdgeInsets.only(top: showDigitalMethods || showOfflineMethods ? Dimensions.paddingSizeDefault : 0, bottom: Dimensions.paddingSizeDefault),
+                      title: 'cash_on_delivery'.tr,
+                      isSelected: checkoutController.paymentMethodIndex == 0,
+                      disablePayments: disablePayments,
+                      onTap: disablePayments ? null : (){
+                        checkoutController.setPaymentMethod(0);
+                        if(!showChangeAmount) {
+                          setState(() {
+                            showChangeAmount = true;
+                          });
+                        }
+                      },
+                    ) : const SizedBox(),
+
+                    widget.isCashOnDeliveryActive && notHideCod && widget.paymentModel == null ? changeAmountView(checkoutController) : const SizedBox(),
                   ],
                 ),
               ),

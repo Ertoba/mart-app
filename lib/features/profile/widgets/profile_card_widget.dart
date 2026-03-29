@@ -7,32 +7,61 @@ class ProfileCardWidget extends StatelessWidget {
   final String image;
   final String title;
   final String data;
-  const ProfileCardWidget({super.key, required this.data, required this.title, required this.image});
+  const ProfileCardWidget({
+    super.key,
+    required this.data,
+    required this.title,
+    required this.image,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final Color brandColor = Theme.of(context).primaryColor;
+
     return Container(
-      height: ResponsiveHelper.isDesktop(context) ? 130 :112,
+      height: ResponsiveHelper.isDesktop(context) ? 130 : 112,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
         color: Theme.of(context).cardColor,
         border: Border.all(color: Theme.of(context).primaryColor, width: 0.1),
-        boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withValues(alpha: 0.1), blurRadius: 5, spreadRadius: 1)],
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+            blurRadius: 5,
+            spreadRadius: 1,
+          ),
+        ],
       ),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Image.asset(image, height: 30, width: 30, color: Theme.of(context).primaryColor, colorBlendMode: BlendMode.srcIn),
-        const SizedBox(height: Dimensions.paddingSizeSmall),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            height: 48,
+            width: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: brandColor.withValues(alpha: 0.14),
+            ),
+            alignment: Alignment.center,
+            child: ColorFiltered(
+              colorFilter: ColorFilter.mode(brandColor, BlendMode.srcIn),
+              child: Image.asset(image, height: 26, width: 26),
+            ),
+          ),
+          const SizedBox(height: Dimensions.paddingSizeSmall),
 
-        Text(
-          data, textDirection: TextDirection.ltr,
-          style: robotoBold,
-        ),
-        const SizedBox(height: Dimensions.paddingSizeSmall),
+          Text(data, textDirection: TextDirection.ltr, style: robotoBold),
+          const SizedBox(height: Dimensions.paddingSizeSmall),
 
-        Text(title, style: robotoRegular.copyWith(
-          fontSize: Dimensions.fontSizeExtraSmall, color: Theme.of(context).disabledColor,
-        )),
-      ]),
+          Text(
+            title,
+            style: robotoRegular.copyWith(
+              fontSize: Dimensions.fontSizeExtraSmall,
+              color: Theme.of(context).disabledColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

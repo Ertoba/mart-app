@@ -40,9 +40,13 @@ class _VisitAgainViewState extends State<VisitAgainView> {
                 Text(widget.fromFood! ? "wanna_try_again".tr : "visit_again".tr, style: robotoBold.copyWith(color: Theme.of(context).cardColor)),
                 const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                Text(
-                  'get_your_recent_purchase_from_the_shop_you_recently_ordered'.tr,
-                  style: robotoRegular.copyWith(color: Theme.of(context).cardColor, fontSize: Dimensions.fontSizeSmall),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge),
+                  child: Text(
+                    'get_your_recent_purchase_from_the_shop_you_recently_ordered'.tr,
+                    textAlign: TextAlign.center,
+                    style: robotoRegular.copyWith(color: Theme.of(context).cardColor, fontSize: Dimensions.fontSizeSmall),
+                  ),
                 ),
                 const SizedBox(height: Dimensions.paddingSizeSmall),
 

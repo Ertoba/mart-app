@@ -386,6 +386,10 @@ class NotificationHelper {
         'notification_new_order_placed_title',
         'ახალი შეკვეთა',
       ),
+      'Fund added': _translatedLabel(
+        'notification_fund_added',
+        'თანხა დაემატა',
+      ),
     };
 
     if (exactMatches.containsKey(rawText)) {
@@ -398,6 +402,20 @@ class NotificationHelper {
         (_) => _translatedLabel(
           'notification_new_order_alert_confirm_to_proceed',
           'ახალი შეკვეთის შეტყობინება, გასაგრძელებლად დაადასტურეთ',
+        ),
+      ),
+      _NotificationTextPattern(
+        RegExp(r'^Fund added to your wallet\.?$', caseSensitive: false),
+        (_) => _translatedLabel(
+          'notification_fund_added_to_wallet',
+          'თანხა დაემატა თქვენს საფულეში',
+        ),
+      ),
+      _NotificationTextPattern(
+        RegExp(r'^Order is processing\.?$', caseSensitive: false),
+        (_) => _translatedLabel(
+          'notification_is_processing',
+          'შეკვეთა მუშავდება',
         ),
       ),
       _NotificationTextPattern(

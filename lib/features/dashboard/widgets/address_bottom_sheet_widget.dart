@@ -69,7 +69,11 @@ class AddressBottomSheetWidget extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: fromDialog ? 50 : Dimensions.paddingSizeLarge, vertical: Dimensions.paddingSizeSmall),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
 
-                  Text('${'hey_welcome_back'.tr}\n${'which_location_do_you_want_to_select'.tr}', style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault)),
+                  Text(
+                    '${'hey_welcome_back'.tr}\n${'which_location_do_you_want_to_select'.tr}',
+                    textAlign: TextAlign.center,
+                    style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault),
+                  ),
                   const SizedBox(height: Dimensions.paddingSizeLarge),
 
                   Center(

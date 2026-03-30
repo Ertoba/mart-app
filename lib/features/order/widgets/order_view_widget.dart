@@ -141,14 +141,18 @@ class OrderViewWidget extends StatelessWidget {
 
                                 Expanded(
                                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                    Row(children: [
-                                      Text(
-                                        '${isParcel ? 'delivery_id'.tr : 'order_id'.tr}:',
-                                        style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
-                                      ),
-                                      const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                                      Text('#${paginatedOrderModel.orders![index].id}', style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall)),
-                                    ]),
+                                    Wrap(
+                                      spacing: Dimensions.paddingSizeExtraSmall,
+                                      runSpacing: 2,
+                                      crossAxisAlignment: WrapCrossAlignment.center,
+                                      children: [
+                                        Text(
+                                          '${isParcel ? 'delivery_id'.tr : 'order_id'.tr}:',
+                                          style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
+                                        ),
+                                        Text('#${paginatedOrderModel.orders![index].id}', style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall)),
+                                      ],
+                                    ),
                                     const SizedBox(height: Dimensions.paddingSizeSmall),
 
                                     ResponsiveHelper.isDesktop(context) ? Padding(

@@ -143,17 +143,24 @@ class OrderViewWidget extends StatelessWidget {
                                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                     SizedBox(
                                       width: double.infinity,
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        alignment: Alignment.centerLeft,
-                                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                          Text(
-                                            '${isParcel ? 'delivery_id'.tr : 'order_id'.tr}:',
-                                            style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
+                                      child: Text.rich(
+                                        TextSpan(children: [
+                                          TextSpan(
+                                            text: '${isParcel ? 'delivery_id'.tr : 'order_id'.tr}: ',
+                                            style: robotoRegular.copyWith(
+                                              fontSize: ResponsiveHelper.isDesktop(context) ? Dimensions.fontSizeSmall : 11,
+                                            ),
                                           ),
-                                          const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                                          Text('#${paginatedOrderModel.orders![index].id}', style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall)),
+                                          TextSpan(
+                                            text: '#${paginatedOrderModel.orders![index].id}',
+                                            style: robotoMedium.copyWith(
+                                              fontSize: ResponsiveHelper.isDesktop(context) ? Dimensions.fontSizeSmall : 11,
+                                            ),
+                                          ),
                                         ]),
+                                        maxLines: 1,
+                                        softWrap: false,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                     const SizedBox(height: Dimensions.paddingSizeSmall),

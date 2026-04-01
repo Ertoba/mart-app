@@ -8,6 +8,7 @@ import 'package:sixam_mart/features/auth/widgets/social_login_widget.dart';
 import 'package:sixam_mart/features/language/controllers/language_controller.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/validate_check.dart';
+import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
 
@@ -19,81 +20,144 @@ class OtpLoginWidget extends StatelessWidget {
   final Function() onClickLoginButton;
   final bool socialEnable;
   final bool backFromThis;
-  const OtpLoginWidget({super.key, required this.phoneController, required this.phoneFocus, required this.onCountryChanged, required this.countryDialCode,
-    required this.onClickLoginButton, this.socialEnable = false, required this.backFromThis});
+  const OtpLoginWidget({
+    super.key,
+    required this.phoneController,
+    required this.phoneFocus,
+    required this.onCountryChanged,
+    required this.countryDialCode,
+    required this.onClickLoginButton,
+    this.socialEnable = false,
+    required this.backFromThis,
+  });
 
   @override
   Widget build(BuildContext context) {
     bool isDesktop = ResponsiveHelper.isDesktop(context);
-    return GetBuilder<AuthController>(builder: (authController) {
-      return Padding(
-        padding: EdgeInsets.symmetric(horizontal: isDesktop ? Dimensions.paddingSizeLarge : 0),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('hey_there_welcome_back'.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeExtraLarge)),
-          const SizedBox(height: Dimensions.paddingSizeExtraOverLarge),
-
-          CustomTextField(
-            titleText: 'xxx-xxx-xxxxx'.tr,
-            controller: phoneController,
-            focusNode: phoneFocus,
-            inputAction: TextInputAction.done,
-            inputType: TextInputType.phone,
-            isPhone: true,
-            onCountryChanged: onCountryChanged,
-            countryDialCode: countryDialCode ?? Get.find<LocalizationController>().locale.countryCode,
-            labelText: 'phone'.tr,
-            required: true,
-            validator: (value) => ValidateCheck.validateEmptyText(value, "please_enter_phone_number".tr),
+    return GetBuilder<AuthController>(
+      builder: (authController) {
+        return Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: isDesktop ? Dimensions.paddingSizeLarge : 0,
           ),
-          const SizedBox(height: Dimensions.paddingSizeExtraLarge),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _OtpLoginHeader(),
+              const SizedBox(height: Dimensions.paddingSizeExtraOverLarge),
 
-          Align(
-            alignment: Alignment.centerLeft,
-            child: InkWell(
-              onTap: () => authController.toggleRememberMe(),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    height: 24, width: 24,
-                    child: Checkbox(
-                      side: BorderSide(color: Theme.of(context).hintColor),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      activeColor: Theme.of(context).primaryColor,
-                      value: authController.isActiveRememberMe,
-                      onChanged: (bool? isChecked) => authController.toggleRememberMe(),
-                    ),
-                  ),
-                  const SizedBox(width: Dimensions.paddingSizeSmall),
-
-                  Text('remember_me'.tr, style: robotoRegular),
-                ],
+              CustomTextField(
+                titleText: 'xxx-xxx-xxxxx'.tr,
+                controller: phoneController,
+                focusNode: phoneFocus,
+                inputAction: TextInputAction.done,
+                inputType: TextInputType.phone,
+                isPhone: true,
+                onCountryChanged: onCountryChanged,
+                countryDialCode:
+                    countryDialCode ??
+                    Get.find<LocalizationController>().locale.countryCode,
+                labelText: 'phone'.tr,
+                required: true,
+                validator: (value) => ValidateCheck.validateEmptyText(
+                  value,
+                  "please_enter_phone_number".tr,
+                ),
               ),
-            ),
+              const SizedBox(height: Dimensions.paddingSizeExtraLarge),
+
+              Align(
+                alignment: Alignment.centerLeft,
+                child: InkWell(
+                  onTap: () => authController.toggleRememberMe(),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: Checkbox(
+                          side: BorderSide(color: Theme.of(context).hintColor),
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          activeColor: Theme.of(context).primaryColor,
+                          value: authController.isActiveRememberMe,
+                          onChanged: (bool? isChecked) =>
+                              authController.toggleRememberMe(),
+                        ),
+                      ),
+                      const SizedBox(width: Dimensions.paddingSizeSmall),
+
+                      Text('remember_me'.tr, style: robotoRegular),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: Dimensions.paddingSizeLarge),
+
+              // const ConditionCheckBoxWidget(forSignUp: true),
+              // const SizedBox(height: Dimensions.paddingSizeLarge),
+              CustomButton(
+                buttonText: 'login'.tr,
+                radius: Dimensions.radiusDefault,
+                isBold: isDesktop ? false : true,
+                isLoading: authController.isLoading,
+                onPressed: onClickLoginButton,
+                fontSize: isDesktop
+                    ? Dimensions.fontSizeSmall
+                    : Dimensions.fontSizeDefault,
+              ),
+              const SizedBox(height: Dimensions.paddingSizeLarge),
+
+              socialEnable
+                  ? SocialLoginWidget(
+                      onlySocialLogin: false,
+                      backFromThis: backFromThis,
+                    )
+                  : const SizedBox(),
+
+              socialEnable && isDesktop
+                  ? const SizedBox(height: Dimensions.paddingSizeLarge)
+                  : const SizedBox(),
+
+              !socialEnable ? const SizedBox(height: 100) : const SizedBox(),
+            ],
           ),
-          const SizedBox(height: Dimensions.paddingSizeLarge),
+        );
+      },
+    );
+  }
+}
 
-          // const ConditionCheckBoxWidget(forSignUp: true),
-          // const SizedBox(height: Dimensions.paddingSizeLarge),
+class _OtpLoginHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final bool isGeorgian = Get.locale?.languageCode == 'ka';
+    final String title = isGeorgian ? 'გამარჯობა!' : 'Hello!';
+    final String subtitle = isGeorgian
+        ? 'მზად ხარ გახსნა ${AppConstants.appName}?'
+        : 'Ready to open Portal?';
 
-          CustomButton(
-            buttonText: 'login'.tr,
-            radius: Dimensions.radiusDefault,
-            isBold: isDesktop ? false : true,
-            isLoading: authController.isLoading,
-            onPressed: onClickLoginButton,
-            fontSize: isDesktop ? Dimensions.fontSizeSmall : Dimensions.fontSizeDefault,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: robotoBold.copyWith(fontSize: Dimensions.fontSizeExtraLarge),
+        ),
+        const SizedBox(height: Dimensions.paddingSizeSmall),
+        Text(
+          subtitle,
+          textAlign: TextAlign.center,
+          style: robotoRegular.copyWith(
+            fontSize: Dimensions.fontSizeDefault,
+            color: Theme.of(
+              context,
+            ).textTheme.bodyLarge!.color!.withValues(alpha: 0.7),
           ),
-          const SizedBox(height: Dimensions.paddingSizeLarge),
-
-          socialEnable ? SocialLoginWidget(onlySocialLogin: false, backFromThis: backFromThis) : const SizedBox(),
-
-          socialEnable && isDesktop ? const SizedBox(height: Dimensions.paddingSizeLarge) : const SizedBox(),
-
-          !socialEnable ? const SizedBox(height: 100) : const SizedBox(),
-
-        ]),
-      );
-    });
+        ),
+      ],
+    );
   }
 }

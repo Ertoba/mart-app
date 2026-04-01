@@ -74,9 +74,7 @@ class VerificationRepository implements VerificationRepositoryInterface {
       'password': password,
       'confirm_password': confirmPassword,
     };
-    requestBody.removeWhere(
-      (key, value) => value == null || value.toString().isEmpty,
-    );
+    requestBody.removeWhere((key, value) => !_hasValue(value?.toString()));
     final response = await apiClient.putData(
       AppConstants.resetPasswordUri,
       requestBody,
@@ -149,12 +147,20 @@ class VerificationRepository implements VerificationRepositoryInterface {
   Future update(Map<String, dynamic> body, int? id) async {}
 
   String _getVerificationMethod({String? phone, String? email}) {
-    if (phone != null && phone.trim().isNotEmpty) {
+    if (_hasValue(phone)) {
       return 'phone';
     }
-    if (email != null && email.trim().isNotEmpty) {
+    if (_hasValue(email)) {
       return 'email';
     }
     return '';
+  }
+
+  bool _hasValue(String? value) {
+    if (value == null) {
+      return false;
+    }
+    final String normalizedValue = value.trim().toLowerCase();
+    return normalizedValue.isNotEmpty && normalizedValue != 'null';
   }
 }

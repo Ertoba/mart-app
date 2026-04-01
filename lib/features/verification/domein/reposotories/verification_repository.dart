@@ -17,22 +17,41 @@ class VerificationRepository implements VerificationRepositoryInterface {
 
   @override
   Future<ResponseModel> forgetPassword({String? phone, String? email}) async {
-    final response = await apiClient.postData(
-      AppConstants.forgetPasswordUri,
-      {'phone': phone, 'email': email},
-      handleError: false,
+    final String verificationMethod = _getVerificationMethod(
+      phone: phone,
+      email: email,
     );
-    return ResponseModel(response.statusCode == 200, response.body?['message'] ?? response.statusText);
+    final response = await apiClient.postData(AppConstants.forgetPasswordUri, {
+      'phone': phone,
+      'email': email,
+      'verification_method': verificationMethod,
+    }, handleError: false);
+    return ResponseModel(
+      response.statusCode == 200,
+      response.body?['message'] ?? response.statusText,
+    );
   }
 
   @override
-  Future<ResponseModel> verifyToken({String? phone, String? email, required String token}) async {
-    final response = await apiClient.postData(
-      AppConstants.verifyTokenUri,
-      {'phone': phone, 'email': email, 'reset_token': token},
-      handleError: false,
+  Future<ResponseModel> verifyToken({
+    String? phone,
+    String? email,
+    required String token,
+  }) async {
+    final String verificationMethod = _getVerificationMethod(
+      phone: phone,
+      email: email,
     );
-    return ResponseModel(response.statusCode == 200, response.body?['message'] ?? response.statusText);
+    final response = await apiClient.postData(AppConstants.verifyTokenUri, {
+      'phone': phone,
+      'email': email,
+      'reset_token': token,
+      'verification_method': verificationMethod,
+    }, handleError: false);
+    return ResponseModel(
+      response.statusCode == 200,
+      response.body?['message'] ?? response.statusText,
+    );
   }
 
   @override
@@ -43,23 +62,31 @@ class VerificationRepository implements VerificationRepositoryInterface {
     required String password,
     required String confirmPassword,
   }) async {
-    final response = await apiClient.postData(
-      AppConstants.resetPasswordUri,
-      {
-        'reset_token': resetToken,
-        'phone': phone,
-        'email': email,
-        'password': password,
-        'confirm_password': confirmPassword,
-      },
-      handleError: false,
+    final String verificationMethod = _getVerificationMethod(
+      phone: phone,
+      email: email,
     );
-    return ResponseModel(response.statusCode == 200, response.body?['message'] ?? response.statusText);
+    final response = await apiClient.postData(AppConstants.resetPasswordUri, {
+      'reset_token': resetToken,
+      'phone': phone,
+      'email': email,
+      'verification_method': verificationMethod,
+      'password': password,
+      'confirm_password': confirmPassword,
+    }, handleError: false);
+    return ResponseModel(
+      response.statusCode == 200,
+      response.body?['message'] ?? response.statusText,
+    );
   }
 
   @override
   Future<Response> verifyPhone(VerificationDataModel data) async {
-    return apiClient.postData(AppConstants.verifyPhoneUri, data.toJson(), handleError: false);
+    return apiClient.postData(
+      AppConstants.verifyPhoneUri,
+      data.toJson(),
+      handleError: false,
+    );
   }
 
   @override
@@ -69,17 +96,16 @@ class VerificationRepository implements VerificationRepositoryInterface {
     required String otp,
     required String loginType,
   }) async {
-    final response = await apiClient.postData(
-      AppConstants.firebaseAuthVerify,
-      {
-        'phone': phoneNumber,
-        'session': session,
-        'otp': otp,
-        'login_type': loginType,
-      },
-      handleError: false,
+    final response = await apiClient.postData(AppConstants.firebaseAuthVerify, {
+      'phone': phoneNumber,
+      'session': session,
+      'otp': otp,
+      'login_type': loginType,
+    }, handleError: false);
+    return ResponseModel(
+      response.statusCode == 200,
+      response.body?['message'] ?? response.statusText,
     );
-    return ResponseModel(response.statusCode == 200, response.body?['message'] ?? response.statusText);
   }
 
   @override
@@ -90,14 +116,13 @@ class VerificationRepository implements VerificationRepositoryInterface {
   }) async {
     final response = await apiClient.postData(
       AppConstants.firebaseResetPassword,
-      {
-        'phone': phoneNumber,
-        'session': session,
-        'otp': otp,
-      },
+      {'phone': phoneNumber, 'session': session, 'otp': otp},
       handleError: false,
     );
-    return ResponseModel(response.statusCode == 200, response.body?['message'] ?? response.statusText);
+    return ResponseModel(
+      response.statusCode == 200,
+      response.body?['message'] ?? response.statusText,
+    );
   }
 
   @override
@@ -114,4 +139,14 @@ class VerificationRepository implements VerificationRepositoryInterface {
 
   @override
   Future update(Map<String, dynamic> body, int? id) async {}
+
+  String _getVerificationMethod({String? phone, String? email}) {
+    if (phone != null && phone.trim().isNotEmpty) {
+      return 'phone';
+    }
+    if (email != null && email.trim().isNotEmpty) {
+      return 'email';
+    }
+    return '';
+  }
 }

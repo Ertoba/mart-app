@@ -66,14 +66,22 @@ class VerificationRepository implements VerificationRepositoryInterface {
       phone: phone,
       email: email,
     );
-    final response = await apiClient.postData(AppConstants.resetPasswordUri, {
+    final Map<String, dynamic> requestBody = {
       'reset_token': resetToken,
       'phone': phone,
       'email': email,
       'verification_method': verificationMethod,
       'password': password,
       'confirm_password': confirmPassword,
-    }, handleError: false);
+    };
+    requestBody.removeWhere(
+      (key, value) => value == null || value.toString().isEmpty,
+    );
+    final response = await apiClient.putData(
+      AppConstants.resetPasswordUri,
+      requestBody,
+      handleError: false,
+    );
     return ResponseModel(
       response.statusCode == 200,
       response.body?['message'] ?? response.statusText,

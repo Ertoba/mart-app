@@ -15,6 +15,7 @@ import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
@@ -230,8 +231,15 @@ class NotificationHelper {
         }
       }
 
-      final String localizedPopupTitle = localizedTitle(message.data['title']);
-      final String localizedPopupBody = localizedBody(message.data['body']);
+      final bool useGeorgianText = await shouldUseGeorgianNotificationText();
+      final String localizedPopupTitle = await localizedTitleAsync(
+        message.data['title'],
+        forceGeorgian: useGeorgianText,
+      );
+      final String localizedPopupBody = await localizedBodyAsync(
+        message.data['body'],
+        forceGeorgian: useGeorgianText,
+      );
 
       Map<String, String> payloadData = {
         'title': localizedPopupTitle,
@@ -316,15 +324,19 @@ class NotificationHelper {
     String? body;
     String? orderID;
     String? image;
-    NotificationBodyModel notificationBody = convertNotification(
-      message.data,
-    );
+    NotificationBodyModel notificationBody = convertNotification(message.data);
 
-    title = localizedTitle(message.data['title']);
-    body = localizedBody(message.data['body']);
+    final bool useGeorgianText = await shouldUseGeorgianNotificationText();
+    title = await localizedTitleAsync(
+      message.data['title'],
+      forceGeorgian: useGeorgianText,
+    );
+    body = await localizedBodyAsync(
+      message.data['body'],
+      forceGeorgian: useGeorgianText,
+    );
     orderID = message.data['order_id'];
-    image =
-        (message.data['image'] != null && message.data['image'].isNotEmpty)
+    image = (message.data['image'] != null && message.data['image'].isNotEmpty)
         ? message.data['image'].startsWith('http')
               ? message.data['image']
               : '${AppConstants.baseUrl}/storage/app/public/notification/${message.data['image']}'
@@ -368,12 +380,50 @@ class NotificationHelper {
     return _localizedNotificationText(body);
   }
 
+  static Future<String> localizedTitleAsync(
+    String? title, {
+    bool forceGeorgian = false,
+  }) async {
+    return _localizedNotificationText(
+      title,
+      isTitle: true,
+      useGeorgian: forceGeorgian,
+    );
+  }
+
+  static Future<String> localizedBodyAsync(
+    String? body, {
+    bool forceGeorgian = false,
+  }) async {
+    return _localizedNotificationText(body, useGeorgian: forceGeorgian);
+  }
+
+  static Future<bool> shouldUseGeorgianNotificationText() async {
+    if (Get.locale?.languageCode == 'ka') {
+      return true;
+    }
+
+    try {
+      final SharedPreferences preferences =
+          await SharedPreferences.getInstance();
+      final List<String?> languageCodes = [
+        preferences.getString(AppConstants.languageCode),
+        preferences.getString(AppConstants.cacheLanguageCode),
+      ];
+
+      return languageCodes.any((code) => code?.toLowerCase() == 'ka');
+    } catch (_) {
+      return false;
+    }
+  }
+
   static String _localizedNotificationText(
     String? text, {
     bool isTitle = false,
+    bool useGeorgian = false,
   }) {
     final String rawText = text?.trim() ?? '';
-    if (rawText.isEmpty || Get.locale?.languageCode != 'ka') {
+    if (rawText.isEmpty || !(useGeorgian || Get.locale?.languageCode == 'ka')) {
       return rawText;
     }
 
@@ -413,10 +463,8 @@ class NotificationHelper {
       ),
       _NotificationTextPattern(
         RegExp(r'^Order is processing\.?$', caseSensitive: false),
-        (_) => _translatedLabel(
-          'notification_is_processing',
-          'შეკვეთა მუშავდება',
-        ),
+        (_) =>
+            _translatedLabel('notification_is_processing', 'შეკვეთა მუშავდება'),
       ),
       _NotificationTextPattern(
         RegExp(r'^Your order\s+#?(\d+)\s+is confirmed$', caseSensitive: false),

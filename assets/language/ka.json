@@ -1739,5 +1739,17 @@
   "xxx-xxx-xxxxx": "XXX-XXX-XXXXX",
   "Destination": "დანიშნულება",
   "go": "გადასვლა",
-  "minimun": "მინიმუმი"
+  "minimun": "მინიმუმი",
+  "phone_number_not_found": "ტელეფონის ნომერი ვერ მოიძებნა!",
+  "email_not_found": "ელფოსტა ვერ მოიძებნა!",
+  "failed_to_send_email": "ელფოსტის გაგზავნა ვერ მოხერხდა.",
+  "failed_to_send_sms_popup": "SMS-ის გაგზავნა ვერ მოხერხდა.",
+  "otp_successfully_sent_to_your_phone": "ერთჯერადი კოდი წარმატებით გაიგზავნა თქვენს ნომერზე.",
+  "otp_successfully_sent_to_your_mail": "ერთჯერადი კოდი წარმატებით გაიგზავნა თქვენს ელფოსტაზე.",
+  "otp_successfully_sent_to_your_phone_and_mail": "ერთჯერადი კოდი წარმატებით გაიგზავნა თქვენს ნომერზეც და ელფოსტაზეც.",
+  "otp_found_you_can_proceed": "კოდი დადასტურდა, შეგიძლიათ გაგრძელება.",
+  "invalid_token_popup": "კოდი არასწორია.",
+  "selected_email_is_invalid": "შეყვანილი ელფოსტა არასწორია.",
+  "selected_phone_is_invalid": "შეყვანილი ტელეფონის ნომერი არასწორია.",
+  "request_failed": "მოთხოვნა ვერ შესრულდა."
 }

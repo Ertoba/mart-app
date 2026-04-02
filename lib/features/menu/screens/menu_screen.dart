@@ -124,8 +124,11 @@ class _MenuScreenState extends State<MenuScreen> {
                       TextButton(
                         style:  TextButton.styleFrom(
                           backgroundColor: Theme.of(context).cardColor.withValues(alpha: 0.8),
-                          minimumSize: Size(130, 30),
-                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(150, 36),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Dimensions.paddingSizeDefault,
+                            vertical: Dimensions.paddingSizeExtraSmall,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
                             side: BorderSide.none,
@@ -141,7 +144,17 @@ class _MenuScreenState extends State<MenuScreen> {
                             Get.dialog(const Center(child: AuthDialogWidget(exitFromApp: true, backFromThis: true)));
                           }
                           },
-                        child: Text('login_signup'.tr, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).textTheme.bodyLarge!.color),),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'login_signup'.tr,
+                            maxLines: 1,
+                            style: robotoMedium.copyWith(
+                              fontSize: Dimensions.fontSizeExtraSmall,
+                              color: Theme.of(context).textTheme.bodyLarge!.color,
+                            ),
+                          ),
+                        ),
                       ),
 
                     ]),

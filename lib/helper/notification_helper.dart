@@ -426,6 +426,9 @@ class NotificationHelper {
     if (rawText.isEmpty || !(useGeorgian || Get.locale?.languageCode == 'ka')) {
       return rawText;
     }
+    final String normalizedText = rawText
+        .replaceFirst(RegExp(r'^messages\.'), '')
+        .trim();
 
     final Map<String, String> exactMatches = {
       'Order Notification': _translatedLabel(
@@ -440,10 +443,14 @@ class NotificationHelper {
         'notification_fund_added',
         'თანხა დაემატა',
       ),
+      'Loyalty Point Transaction': _translatedLabel(
+        'notification_loyalty_point_transaction',
+        'ქულების ტრანზაქცია',
+      ),
     };
 
-    if (exactMatches.containsKey(rawText)) {
-      return exactMatches[rawText]!;
+    if (exactMatches.containsKey(normalizedText)) {
+      return exactMatches[normalizedText]!;
     }
 
     final List<_NotificationTextPattern> patterns = [
@@ -508,16 +515,32 @@ class NotificationHelper {
         (match) =>
             '${_translatedLabel('notification_order_prefix', 'შეკვეთა')} #${match.group(1)} ${_translatedLabel('notification_picked_up', 'აღებულია')}',
       ),
+      _NotificationTextPattern(
+        RegExp(
+          r'^You have earned\s+([\d.,]+)\s+Loyalty points?$',
+          caseSensitive: false,
+        ),
+        (match) =>
+            '${_translatedLabel('notification_loyalty_points_earned_prefix', 'თქვენ დაგერიცხათ')} ${match.group(1)} ${_translatedLabel('notification_loyalty_points_unit', 'ქულა')}',
+      ),
+      _NotificationTextPattern(
+        RegExp(
+          r'^You have converted\s+([\d.,]+)\s+Loyalty points?$',
+          caseSensitive: false,
+        ),
+        (match) =>
+            '${_translatedLabel('notification_loyalty_points_converted_prefix', 'თქვენ გადაცვალეთ')} ${match.group(1)} ${_translatedLabel('notification_loyalty_points_unit', 'ქულა')}',
+      ),
     ];
 
     for (final pattern in patterns) {
-      final RegExpMatch? match = pattern.regex.firstMatch(rawText);
+      final RegExpMatch? match = pattern.regex.firstMatch(normalizedText);
       if (match != null) {
         return pattern.builder(match);
       }
     }
 
-    return rawText;
+    return normalizedText;
   }
 
   static String _translatedLabel(String key, String fallback) {

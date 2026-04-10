@@ -69,6 +69,9 @@ class BannerController extends GetxController implements GetxService {
           _featuredBannerDataList!.add(null);
         }
       }
+
+      _bannerImageList = List<String?>.from(_featuredBannerList!);
+      _bannerDataList = List<dynamic>.from(_featuredBannerDataList!);
     }
     update();
   }

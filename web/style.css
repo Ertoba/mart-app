@@ -10,7 +10,7 @@ body {
 }
 
 body.theme-dark {
-    background-color: #111;
+    background-color: #FFFFFF;
 }
 
 
@@ -19,14 +19,14 @@ body.theme-dark {
   position: fixed;
   inline-size: 100%;
   block-size: 100%;
-  background-color: #000;
+  background-color: #FFFFFF;
   display: grid;
   place-items: center;
 }
 
 .theme-dark .preloader {
-  background-color: #000;
-  color: #FFF;
+  background-color: #FFFFFF;
+  color: #111;
 }
 
 @media (max-width: 1199px) {.header {display: none}}
@@ -45,12 +45,12 @@ body.theme-dark {
   height: 0.25rem;
   display: inline-block;
   position: relative;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.12);
   overflow: hidden;
   border-radius: 50rem;
 }
 .theme-dark .preloader .loader {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.12);
 }
 .preloader .loader::after {
   content: "";
@@ -81,14 +81,14 @@ body.theme-dark {
   max-inline-size: 1200px;
   margin-inline: auto;
   padding: 1.28rem 1.6rem;
-  background-color: #000;
-  box-shadow: 0px 10px 24px -8px rgba(245, 124, 0, 0.28);
+  background-color: #FFFFFF;
+  box-shadow: 0px 10px 24px -8px rgba(245, 124, 0, 0.16);
   border-radius: 0 0 0.625rem 0.625rem;
 }
 
 .theme-dark .header-container {
-  background-color: #000;
-  color: #FFF;
+  background-color: #FFFFFF;
+  color: #111;
 }
 .header .logo {
   max-height: 30px;
@@ -96,11 +96,11 @@ body.theme-dark {
 .placeholder {
   block-size: 0.825rem;
   inline-size: 3rem;
-  background-color: rgba(255, 255, 255, 0.16);
+  background-color: rgba(0, 0, 0, 0.08);
   border-radius: 0.3rem;
 }
 .theme-dark .placeholder {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(0, 0, 0, 0.08);
 }
 .placeholder-wide {
   inline-size: 12rem;

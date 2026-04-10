@@ -7,6 +7,7 @@ import 'package:sixam_mart/common/controllers/theme_controller.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
+import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
@@ -30,6 +31,7 @@ class WebNewOnMartViewWidget extends StatefulWidget {
 }
 
 class _WebNewOnMartViewWidgetState extends State<WebNewOnMartViewWidget> {
+  static const double _desktopWebTextScale = 0.8;
   ScrollController scrollController = ScrollController();
   bool showBackButton = false;
   bool showForwardButton = false;
@@ -62,6 +64,20 @@ class _WebNewOnMartViewWidgetState extends State<WebNewOnMartViewWidget> {
         showForwardButton = true;
       }
     });
+  }
+
+  bool _isDesktopWeb(BuildContext context) =>
+      GetPlatform.isWeb && ResponsiveHelper.isDesktop(context);
+
+  String _availabilityText(bool isOpen) {
+    if (Get.locale?.languageCode == 'ka') {
+      return isOpen ? 'ღიაა' : 'დაკეტილია';
+    }
+
+    final String translatedText = (isOpen ? 'open_now' : 'closed_now').tr;
+    return translatedText
+        .replaceFirst(RegExp(r'^(currently|now)\s+', caseSensitive: false), '')
+        .trim();
   }
 
   @override
@@ -106,6 +122,8 @@ class _WebNewOnMartViewWidgetState extends State<WebNewOnMartViewWidget> {
                                 scrollDirection: Axis.horizontal,
                                 itemCount: storeList.length,
                                 itemBuilder: (context, index) {
+                                  final bool isStoreOpen = storeController
+                                      .isOpenNow(storeList[index]);
                                   double distance = Get.find<StoreController>()
                                       .getRestaurantDistance(
                                         LatLng(
@@ -282,16 +300,12 @@ class _WebNewOnMartViewWidgetState extends State<WebNewOnMartViewWidget> {
                                                                       ),
 
                                                                       Text(
-                                                                        storeController.isOpenNow(
-                                                                              storeList[index],
-                                                                            )
-                                                                            ? 'open_now'.tr
-                                                                            : 'closed_now'.tr,
+                                                                        _availabilityText(
+                                                                          isStoreOpen,
+                                                                        ),
                                                                         style: robotoRegular.copyWith(
                                                                           color:
-                                                                              storeController.isOpenNow(
-                                                                                storeList[index],
-                                                                              )
+                                                                              isStoreOpen
                                                                               ? const Color(
                                                                                   0xffECA507,
                                                                                 )
@@ -299,7 +313,12 @@ class _WebNewOnMartViewWidgetState extends State<WebNewOnMartViewWidget> {
                                                                                   context,
                                                                                 ).colorScheme.error,
                                                                           fontSize:
-                                                                              Dimensions.fontSizeSmall,
+                                                                              _isDesktopWeb(
+                                                                                context,
+                                                                              )
+                                                                              ? Dimensions.fontSizeSmall *
+                                                                                    _desktopWebTextScale
+                                                                              : Dimensions.fontSizeSmall,
                                                                         ),
                                                                       ),
                                                                     ],
@@ -394,6 +413,13 @@ class _WebNewOnMartViewWidgetState extends State<WebNewOnMartViewWidget> {
                                                                   Text(
                                                                     '${distance > 100 ? '100+' : distance.toStringAsFixed(2)} ${'km'.tr}',
                                                                     style: robotoBold.copyWith(
+                                                                      fontSize:
+                                                                          _isDesktopWeb(
+                                                                            context,
+                                                                          )
+                                                                          ? Dimensions.fontSizeSmall *
+                                                                                _desktopWebTextScale
+                                                                          : null,
                                                                       color: Theme.of(
                                                                         context,
                                                                       ).primaryColor,
@@ -411,6 +437,13 @@ class _WebNewOnMartViewWidgetState extends State<WebNewOnMartViewWidget> {
                                                                       color: Theme.of(
                                                                         context,
                                                                       ).primaryColor,
+                                                                      fontSize:
+                                                                          _isDesktopWeb(
+                                                                            context,
+                                                                          )
+                                                                          ? Dimensions.fontSizeSmall *
+                                                                                _desktopWebTextScale
+                                                                          : null,
                                                                     ),
                                                                   ),
                                                                 ],

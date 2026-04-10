@@ -18,6 +18,7 @@ class OtpLoginWidget extends StatelessWidget {
   final String? countryDialCode;
   final Function(CountryCode countryCode)? onCountryChanged;
   final Function() onClickLoginButton;
+  final Function()? onManualViewClick;
   final bool socialEnable;
   final bool backFromThis;
   const OtpLoginWidget({
@@ -27,6 +28,7 @@ class OtpLoginWidget extends StatelessWidget {
     required this.onCountryChanged,
     required this.countryDialCode,
     required this.onClickLoginButton,
+    this.onManualViewClick,
     this.socialEnable = false,
     required this.backFromThis,
   });
@@ -108,6 +110,49 @@ class OtpLoginWidget extends StatelessWidget {
                     : Dimensions.fontSizeDefault,
               ),
               const SizedBox(height: Dimensions.paddingSizeLarge),
+
+              onManualViewClick != null
+                  ? Column(
+                      children: [
+                        Text(
+                          'or'.tr,
+                          style: robotoRegular.copyWith(
+                            color: Theme.of(context).disabledColor,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: Dimensions.paddingSizeExtraSmall,
+                        ),
+
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'sign_in_with'.tr,
+                              style: robotoRegular.copyWith(
+                                color: Theme.of(context).disabledColor,
+                              ),
+                            ),
+                            const SizedBox(
+                              width: Dimensions.paddingSizeExtraSmall,
+                            ),
+
+                            InkWell(
+                              onTap: onManualViewClick,
+                              child: Text(
+                                'password'.tr,
+                                style: robotoRegular.copyWith(
+                                  color: Theme.of(context).primaryColor,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: Dimensions.paddingSizeLarge),
+                      ],
+                    )
+                  : const SizedBox(),
 
               socialEnable
                   ? SocialLoginWidget(

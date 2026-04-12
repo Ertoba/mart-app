@@ -54,6 +54,7 @@ import 'package:sixam_mart/features/chat/screens/chat_screen.dart';
 import 'package:sixam_mart/features/chat/screens/conversation_screen.dart';
 import 'package:sixam_mart/features/checkout/screens/checkout_screen.dart';
 import 'package:sixam_mart/features/payment/screens/offline_payment_screen.dart';
+import 'package:sixam_mart/features/payment/screens/flitt_mobile_payment_screen.dart';
 import 'package:sixam_mart/features/checkout/screens/order_successful_screen.dart';
 import 'package:sixam_mart/features/payment/screens/payment_screen.dart';
 import 'package:sixam_mart/features/payment/screens/payment_webview_screen.dart';
@@ -895,8 +896,25 @@ class RouteHelper {
                 Get.parameters['create_user_id'] != 'null'
             ? int.parse(Get.parameters['create_user_id']!)
             : null;
+        final bool useFlittMobileSdk =
+            !GetPlatform.isWeb &&
+            paymentMethod == 'flitt' &&
+            (GetPlatform.isAndroid || GetPlatform.isIOS);
         return getRoute(
-          AppConstants.payInWevView
+          useFlittMobileSdk
+              ? FlittMobilePaymentScreen(
+                  orderModel: order,
+                  isCashOnDelivery: isCodActive,
+                  addFundUrl: addFundUrl,
+                  paymentMethod: paymentMethod,
+                  guestId: guestId,
+                  contactNumber: number,
+                  subscriptionUrl: subscriptionUrl,
+                  storeId: storeId,
+                  createAccount: createAccount,
+                  createUserId: createUserId,
+                )
+              : AppConstants.payInWevView
               ? PaymentWebViewScreen(
                   orderModel: order,
                   isCashOnDelivery: isCodActive,

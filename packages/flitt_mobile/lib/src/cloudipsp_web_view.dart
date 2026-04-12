@@ -44,6 +44,7 @@ class _CloudipspWebViewImplState extends State<CloudipspWebViewImpl> {
   })();''';
 
   late final WebViewController _controller;
+  bool _completionHandled = false;
 
   @override
   void initState() {
@@ -54,6 +55,8 @@ class _CloudipspWebViewImplState extends State<CloudipspWebViewImpl> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onNavigationRequest: _navigationDelegate,
+          onPageStarted: _handlePageEvent,
+          onPageFinished: _handlePageEvent,
         ),
       )
       ..loadHtmlString(
@@ -75,37 +78,54 @@ class _CloudipspWebViewImplState extends State<CloudipspWebViewImpl> {
     _controller.runJavaScript(ADD_VIEWPORT_METADATA);
   }
 
+  void _handlePageEvent(String url) {
+    _completeIfNeeded(url);
+  }
+
   NavigationDecision _navigationDelegate(NavigationRequest request) {
-    final url = request.url;
-    final detectsStartPattern = url.startsWith(URL_START_PATTERN);
-    var detectsCallbackUrl = false;
-    var detectsApiToken = false;
+    if (_completeIfNeeded(request.url)) {
+      return NavigationDecision.prevent;
+    }
+    return NavigationDecision.navigate;
+  }
+
+  bool _completeIfNeeded(String url) {
+    if (_completionHandled || widget._confirmation.completer.isCompleted) {
+      return false;
+    }
+
+    final bool detectsStartPattern = url.startsWith(URL_START_PATTERN);
+    bool detectsCallbackUrl = false;
+    bool detectsApiToken = false;
 
     if (!detectsStartPattern) {
       detectsCallbackUrl = url.startsWith(widget._confirmation.callbackUrl);
       if (!detectsCallbackUrl) {
         detectsApiToken = url.startsWith(
-            '${widget._confirmation.apiHost}/api/checkout?token=');
+          '${widget._confirmation.apiHost}/api/checkout?token=',
+        );
       }
     }
 
-    if (detectsStartPattern || detectsCallbackUrl || detectsApiToken) {
-      Receipt? receipt;
-      if (detectsStartPattern) {
-        final jsonOfConfirmation = url.split(URL_START_PATTERN)[1];
-        dynamic response;
-        try {
-          response = jsonDecode(jsonOfConfirmation);
-        } catch (e) {
-          response = jsonDecode(Uri.decodeComponent(jsonOfConfirmation));
-        }
-        receipt =
-            Receipt.fromJson(response['params'], response['url']);
-      }
-      widget._confirmation.completer.complete(receipt);
-      return NavigationDecision.prevent;
+    if (!(detectsStartPattern || detectsCallbackUrl || detectsApiToken)) {
+      return false;
     }
-    return NavigationDecision.navigate;
+
+    Receipt? receipt;
+    if (detectsStartPattern) {
+      final jsonOfConfirmation = url.split(URL_START_PATTERN)[1];
+      dynamic response;
+      try {
+        response = jsonDecode(jsonOfConfirmation);
+      } catch (e) {
+        response = jsonDecode(Uri.decodeComponent(jsonOfConfirmation));
+      }
+      receipt = Receipt.fromJson(response['params'], response['url']);
+    }
+
+    _completionHandled = true;
+    widget._confirmation.completer.complete(receipt);
+    return true;
   }
 
   @override

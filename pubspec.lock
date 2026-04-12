@@ -540,10 +540,9 @@ packages:
   flitt_mobile:
     dependency: "direct main"
     description:
-      name: flitt_mobile
-      sha256: "888feb43aa54888e9e576f7f0c29b976bb5c5dc94a0e7c4700b790ced4fa802a"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/flitt_mobile"
+      relative: true
+    source: path
     version: "2.0.0"
   flutter:
     dependency: "direct main"

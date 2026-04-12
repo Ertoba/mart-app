@@ -1,0 +1,15 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 31
+    namespace 'com.flitt.mobile'
+
+    defaultConfig {
+        minSdkVersion 21
+    }
+}
+
+dependencies {
+    compileOnly 'com.google.android.gms:play-services-base:17.6.0'
+    compileOnly 'com.google.android.gms:play-services-wallet:19.4.0'
+}

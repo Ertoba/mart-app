@@ -36,6 +36,9 @@ class OtpLoginWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     bool isDesktop = ResponsiveHelper.isDesktop(context);
+    final String passwordSwitchText = Get.locale?.languageCode == 'ka'
+        ? 'პაროლით'
+        : 'password'.tr;
     return GetBuilder<AuthController>(
       builder: (authController) {
         return Padding(
@@ -140,7 +143,7 @@ class OtpLoginWidget extends StatelessWidget {
                             InkWell(
                               onTap: onManualViewClick,
                               child: Text(
-                                'password'.tr,
+                                passwordSwitchText,
                                 style: robotoRegular.copyWith(
                                   color: Theme.of(context).primaryColor,
                                   decoration: TextDecoration.underline,

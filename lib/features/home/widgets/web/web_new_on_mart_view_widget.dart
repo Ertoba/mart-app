@@ -397,6 +397,8 @@ class _WebNewOnMartViewWidgetState extends State<WebNewOnMartViewWidget> {
                                                                       color: Theme.of(
                                                                         context,
                                                                       ).primaryColor,
+                                                                      fontSize:
+                                                                          10.5,
                                                                     ),
                                                                   ),
                                                                   const SizedBox(
@@ -411,6 +413,8 @@ class _WebNewOnMartViewWidgetState extends State<WebNewOnMartViewWidget> {
                                                                       color: Theme.of(
                                                                         context,
                                                                       ).primaryColor,
+                                                                      fontSize:
+                                                                          10.5,
                                                                     ),
                                                                   ),
                                                                 ],

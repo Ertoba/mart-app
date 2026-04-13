@@ -42,6 +42,9 @@ class ManualLoginWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     bool isDesktop = ResponsiveHelper.isDesktop(context);
+    final String otpSwitchText = Get.locale?.languageCode == 'ka'
+        ? 'ერთჯერადი კოდით'
+        : 'otp'.tr;
     return GetBuilder<AuthController>(
       builder: (authController) {
         if (isDesktop) {
@@ -229,7 +232,7 @@ class ManualLoginWidget extends StatelessWidget {
                           InkWell(
                             onTap: onOtpViewClick,
                             child: Text(
-                              'otp'.tr,
+                              otpSwitchText,
                               style: robotoRegular.copyWith(
                                 color: Theme.of(context).primaryColor,
                                 decoration: TextDecoration.underline,

@@ -813,7 +813,7 @@ class _FlittMobilePaymentScreenState extends State<FlittMobilePaymentScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'გადაიხადე უსაფრთხოდ Google Pay-ის, Apple Pay-ის და საბანკო ბარათით',
+                'გადაიხადე უსაფრთხოდ Google pay-ის, Apple pay-ის და ბარათის საშუალებით',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.white.withValues(alpha: 0.9),
@@ -842,7 +842,7 @@ class _FlittMobilePaymentScreenState extends State<FlittMobilePaymentScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Text(
-                        'გადაიხადე ბარათით',
+                        'ან გადაიხადე ბარათით',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           letterSpacing: 0.6,
                           fontWeight: FontWeight.w600,
@@ -887,7 +887,14 @@ class _FlittMobilePaymentScreenState extends State<FlittMobilePaymentScreen> {
                       color: Colors.white.withValues(alpha: 0.25),
                     ),
                   ),
-                  child: const Text('გადახდა'),
+                  child: Text(
+                    'გადახდა',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
               if (_awaitingConfirmation) ...<Widget>[

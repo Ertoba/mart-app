@@ -110,21 +110,24 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
         contactNumber: widget.contactNumber,
       );
       _timer?.cancel();
-      _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _timer = Timer.periodic(const Duration(seconds: 10), (timer) async {
         if (Get.currentRoute.contains(RouteHelper.orderDetails) ||
             Get.currentRoute.contains(RouteHelper.orderTracking)) {
-          Get.find<OrderController>().timerTrackOrder(
+          await Get.find<OrderController>().timerTrackOrder(
             widget.orderID.toString(),
             contactNumber: widget.contactNumber,
           );
 
-          if (Get.find<OrderController>().trackModel == null) return;
+          if (!mounted) return;
+          final OrderModel? trackModel = Get.find<OrderController>().trackModel;
+          if (trackModel == null) return;
+          if (trackModel.id?.toString() != widget.orderID) return;
           updateMarker(
-            Get.find<OrderController>().trackModel?.store,
-            Get.find<OrderController>().trackModel?.deliveryMan,
-            Get.find<OrderController>().trackModel?.orderType == 'take_away'
+            trackModel.store,
+            trackModel.deliveryMan,
+            trackModel.orderType == 'take_away'
                 ? Get.find<LocationController>().position.latitude == 0
-                      ? Get.find<OrderController>().trackModel?.deliveryAddress
+                      ? trackModel.deliveryAddress
                       : AddressModel(
                           latitude: Get.find<LocationController>()
                               .position
@@ -136,10 +139,10 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
                               .toString(),
                           address: Get.find<LocationController>().address,
                         )
-                : Get.find<OrderController>().trackModel?.deliveryAddress,
-            Get.find<OrderController>().trackModel?.orderType == 'take_away',
-            Get.find<OrderController>().trackModel?.orderType == 'parcel',
-            Get.find<OrderController>().trackModel?.moduleType == 'food',
+                : trackModel.deliveryAddress,
+            trackModel.orderType == 'take_away',
+            trackModel.orderType == 'parcel',
+            trackModel.moduleType == 'food',
           );
         } else {
           _timer?.cancel();

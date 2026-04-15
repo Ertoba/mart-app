@@ -89,6 +89,8 @@ class ConfigModel {
   ParcelReturnTimeFee? parcelReturnTimeFee;
   bool? websocketEnabled;
   String? websocketUrl;
+  int? websocketPort;
+  String? websocketKey;
 
   ConfigModel({
     this.businessName,
@@ -178,6 +180,8 @@ class ConfigModel {
     this.parcelReturnTimeFee,
     this.websocketEnabled,
     this.websocketUrl,
+    this.websocketPort,
+    this.websocketKey,
   });
 
   ConfigModel.fromJson(Map<String, dynamic> json) {
@@ -294,6 +298,8 @@ class ConfigModel {
     parcelReturnTimeFee = json['parcel_return_time_fee'] != null ? ParcelReturnTimeFee.fromJson(json['parcel_return_time_fee']) : null;
     websocketEnabled = json['websocket_status'] == 1;
     websocketUrl = json['websocket_url'];
+    websocketPort = json['websocket_port'];
+    websocketKey = json['websocket_key'];
   }
 
   Map<String, dynamic> toJson() {

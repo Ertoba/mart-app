@@ -9,11 +9,17 @@ class PusherHelper{
   static PusherChannelsClient?  pusherClient;
 
   static Future<void> initializePusher() async{
+    final config = Get.find<SplashController>().configModel;
+    final rawUrl = config?.websocketUrl ?? '';
+    final host = rawUrl.isNotEmpty ? Uri.parse(rawUrl).host : '';
+    final port = config?.websocketPort ?? 443;
+    final key = config?.websocketKey ?? '6ammart';
+
     PusherChannelsOptions testOptions = PusherChannelsOptions.fromHost(
-      host: Get.find<SplashController>().configModel?.websocketUrl ?? '192.168.1.62',
-      scheme: 'ws',
-      key: '6ammart',
-      port: 6001,
+      host: host,
+      scheme: 'wss',
+      key: key,
+      port: port,
     );
 
     pusherClient = PusherChannelsClient.websocket(

@@ -238,7 +238,6 @@ class OrderController extends GetxController implements GetxService {
 
   Future<ResponseModel?> timerTrackOrder(String orderID, {String? contactNumber}) async {
     _showCancelled = false;
-
     Response response = await orderServiceInterface.trackOrder(
       orderID, AuthHelper.isLoggedIn() ? null : AuthHelper.getGuestId(),
       contactNumber: contactNumber,

@@ -54,6 +54,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
   bool showChatPermission = true;
   bool isHovered = false;
   String? _routeKey;
+  OrderModel? _localTrackModel;
 
   void _loadData() async {
     await Get.find<LocationController>().getCurrentLocation(
@@ -121,7 +122,9 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
           if (!mounted) return;
           final OrderModel? trackModel = Get.find<OrderController>().trackModel;
           if (trackModel == null) return;
-          if (trackModel.id?.toString() != widget.orderID) return;
+          if (trackModel.id?.toString() != widget.orderID) {
+            return;
+          }
           updateMarker(
             trackModel.store,
             trackModel.deliveryMan,
@@ -201,15 +204,16 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
       body: GetBuilder<OrderController>(
         builder: (orderController) {
           OrderModel? track;
-          if (orderController.trackModel != null) {
-            track = orderController.trackModel;
+          if (orderController.trackModel != null &&
+              orderController.trackModel!.id?.toString() == widget.orderID) {
+            _localTrackModel = orderController.trackModel;
 
-            if (track!.orderType != 'parcel') {
-              if (track.store!.storeBusinessModel == 'commission') {
+            if (_localTrackModel!.orderType != 'parcel') {
+              if (_localTrackModel!.store!.storeBusinessModel == 'commission') {
                 showChatPermission = true;
-              } else if (track.store!.storeSubscription != null &&
-                  track.store!.storeBusinessModel == 'subscription') {
-                showChatPermission = track.store!.storeSubscription!.chat == 1;
+              } else if (_localTrackModel!.store!.storeSubscription != null &&
+                  _localTrackModel!.store!.storeBusinessModel == 'subscription') {
+                showChatPermission = _localTrackModel!.store!.storeSubscription!.chat == 1;
               } else {
                 showChatPermission = false;
               }
@@ -217,6 +221,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
               showChatPermission = AuthHelper.isLoggedIn();
             }
           }
+          track = _localTrackModel;
 
           return track != null
               ? SingleChildScrollView(
@@ -591,6 +596,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
             icon: destinationImageData,
           ),
         );
+        if (!mounted) return;
         setState(() {});
       }
 
@@ -664,6 +670,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
         parcel: parcel,
       );
     } catch (_) {}
+    if (!mounted) return;
     setState(() {});
   }
 
@@ -694,6 +701,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
         ),
       );
 
+      if (!mounted) return;
       setState(() {});
     }
   }
@@ -731,7 +739,6 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
           );
 
       LatLngBounds? bounds;
-      debugPrint(bounds.toString());
       double rotation = 0;
       if (_controller != null) {
         if (double.parse(addressModel!.latitude!) <
@@ -782,6 +789,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
             icon: destinationImageData,
           ),
         );
+        if (!mounted) return;
         setState(() {});
       }
 
@@ -855,6 +863,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
         parcel: parcel,
       );
     } catch (_) {}
+    if (!mounted) return;
     setState(() {});
   }
 

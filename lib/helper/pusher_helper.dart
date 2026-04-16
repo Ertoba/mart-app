@@ -70,10 +70,11 @@ class PusherHelper{
 
     publicChannel?.bind(channel).listen((event) {
       debugPrint('[PUSHER] event received on $channel: ${event.data}');
+      final data = jsonDecode(event.data);
       onLocationReceived(RecordLocationBodyModel(
-        latitude: jsonDecode(event.data)['latitude'],
-        longitude: jsonDecode(event.data)['longitude'],
-        location: jsonDecode(event.data)['location'],
+        latitude: data['latitude']?.toString(),
+        longitude: data['longitude']?.toString(),
+        location: data['location'],
       ));
     });
 

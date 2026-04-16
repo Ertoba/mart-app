@@ -29,7 +29,7 @@ class AddressHelper {
       Get.find<SplashController>().module?.id?.toString(),
       address.latitude,
       address.longitude,
-      isInRideModule ? address.rideZoneId : (address.serviceZoneId ?? address.zoneId),
+      address.zoneId,
       fromModule: isInRideModule || isInServiceModule,
     );
     return await sharedPreferences.setString(AppConstants.userAddress, userAddress);
@@ -52,6 +52,12 @@ class AddressHelper {
     SharedPreferences sharedPreferences = Get.find<SharedPreferences>();
     sharedPreferences.remove(AppConstants.userAddress);
     return true;
+  }
+
+  static String getAddressTypeLabel(String? addressType) {
+    if (addressType == 'home') return 'Home';
+    if (addressType == 'office') return 'Office';
+    return 'Others';
   }
 
   //getIndexByAddressId

@@ -27,7 +27,7 @@ class LanguageRepository implements LanguageRepositoryInterface {
     apiClient.updateHeader(
       sharedPreferences.getString(AppConstants.token), addressModel?.zoneIds,
       addressModel?.areaIds, locale.languageCode, moduleId?.toString(),
-      addressModel?.latitude, addressModel?.longitude,
+      addressModel?.latitude, addressModel?.longitude, null,
     );
   }
 

@@ -201,13 +201,13 @@ class StoreRepository implements StoreRepositoryInterface {
       header = apiClient.updateHeader(
         sharedPreferences.getString(AppConstants.token), addressModel?.zoneIds, addressModel?.areaIds,
         languageCode, module == null ? cacheModuleId?.toString() : moduleId?.toString(),
-        addressModel?.latitude, addressModel?.longitude, setHeader: false,
+        addressModel?.latitude, addressModel?.longitude, null, setHeader: false,
       );
     }
     if(slug.isNotEmpty){
       header = apiClient.updateHeader(
         sharedPreferences.getString(AppConstants.token), [], [],
-        languageCode, '0', '', '', setHeader: false,
+        languageCode, '0', '', '', null, setHeader: false,
       );
     }
     Response response = await apiClient.getData('${AppConstants.storeDetailsUri}${slug.isNotEmpty ? slug : storeID}', headers: header);
@@ -256,7 +256,7 @@ class StoreRepository implements StoreRepositoryInterface {
     Map<String, String> header = apiClient.updateHeader(
       sharedPreferences.getString(AppConstants.token), addressModel?.zoneIds, addressModel?.areaIds,
       languageCode, module == null ? cacheModuleId?.toString() : moduleId?.toString(),
-      addressModel?.latitude, addressModel?.longitude, setHeader: false,
+      addressModel?.latitude, addressModel?.longitude, null, setHeader: false,
     );
     Response response = await apiClient.getData('${AppConstants.cartStoreSuggestedItemsUri}?recommended=1&store_id=$storeId&offset=1&limit=50', headers: header);
     if(response.statusCode == 200){

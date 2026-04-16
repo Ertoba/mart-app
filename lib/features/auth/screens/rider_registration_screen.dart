@@ -1254,7 +1254,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
             identityType: deliverymanRegiController.identityTypeList[deliverymanRegiController.identityTypeIndex],
             earning: '1',
             zoneId: deliverymanRegiController.zoneList![deliverymanRegiController.selectedZoneIndex!].id.toString(),
-            referCode: _referTextController.text, type: "is_ride"
+            referCode: _referTextController.text
           ));
         }
       }
@@ -1304,7 +1304,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
         deliverymanRegiController.registerDeliveryMan(DeliveryManBody(
           fName: fName, lName: lName, password: password, phone: numberWithCountryCode, email: email,
           identityNumber: identityNumber, identityType: deliverymanRegiController.identityTypeList[deliverymanRegiController.identityTypeIndex],
-          earning: "1" , zoneId: deliverymanRegiController.zoneList![deliverymanRegiController.selectedZoneIndex!].id.toString(), type: "is_ride"
+          earning: "1" , zoneId: deliverymanRegiController.zoneList![deliverymanRegiController.selectedZoneIndex!].id.toString()
         ));
       }
     }

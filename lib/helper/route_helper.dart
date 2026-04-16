@@ -406,6 +406,8 @@ class RouteHelper {
     return '$storeReview/$slug?storeID=$storeID&storeName=$storeName&store=$data&module=${moduleId ?? ModuleHelper.getModule()?.slug ?? ModuleHelper.getModule()?.id}';
   }
 
+  static String getAllStoreScreenRoute() => allStores;
+
   static String getAllStoreRoute(
     String page, {
     bool isNearbyStore = false,
@@ -1802,7 +1804,7 @@ class RouteHelper {
                   sharedPreferences.getString(AppConstants.languageCode),
                   moduleSlug,
                   addressModel.latitude,
-                  addressModel.longitude,
+                  addressModel.longitude, null,
                 );
                 Get.find<SplashController>().clearDataNull(foundModule);
 
@@ -1816,7 +1818,7 @@ class RouteHelper {
                   sharedPreferences.getString(AppConstants.languageCode),
                   null,
                   addressModel.latitude,
-                  addressModel.longitude,
+                  addressModel.longitude, null,
                 );
                 showCustomSnackBar('no_module_found'.tr);
                 Get.offAllNamed(getInitialRoute());
@@ -1831,7 +1833,7 @@ class RouteHelper {
             sharedPreferences.getString(AppConstants.languageCode),
             moduleSlug,
             addressModel.latitude,
-            addressModel.longitude,
+            addressModel.longitude, null,
           );
 
           await Get.find<SplashController>().getModules(
@@ -1884,7 +1886,7 @@ class RouteHelper {
                 sharedPreferences.getString(AppConstants.languageCode),
                 moduleSlug,
                 '0',
-                '0',
+                '0', null,
               );
             } else {
               apiClient.updateHeader(
@@ -1894,7 +1896,7 @@ class RouteHelper {
                 sharedPreferences.getString(AppConstants.languageCode),
                 null,
                 '0',
-                '0',
+                '0', null,
               );
               Get.dialog(
                 ZoneWarningDialog(

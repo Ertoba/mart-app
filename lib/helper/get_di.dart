@@ -220,7 +220,7 @@ Future<Map<String, Map<String, String>>> init() async {
   AuthRepositoryInterface authRepositoryInterface = AuthRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => authRepositoryInterface);
 
-  LocationRepositoryInterface locationRepositoryInterface = LocationRepository(apiClient: Get.find(), sharedPreferences: Get.find());
+  LocationRepositoryInterface locationRepositoryInterface = LocationRepository(apiClient: Get.find());
   Get.lazyPut(() => locationRepositoryInterface);
 
   DeliverymanRegistrationRepositoryInterface deliverymanRegistrationRepositoryInterface = DeliverymanRegistrationRepository(apiClient: Get.find(), sharedPreferences: Get.find());

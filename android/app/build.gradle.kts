@@ -6,7 +6,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
-    id("com.google.firebase.crashlytics")
+    //id("com.google.firebase.crashlytics")
 }
 
 val keystoreProperties = Properties()
@@ -53,6 +53,7 @@ android {
             signingConfig = signingConfigs.getByName("debug") // or "release" if you have real keystore
         }
     }
+
 
 }
 

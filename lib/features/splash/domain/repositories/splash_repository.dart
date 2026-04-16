@@ -142,7 +142,7 @@ class SplashRepository implements SplashRepositoryInterface {
     apiClient.updateHeader(
       sharedPreferences.getString(AppConstants.token), addressModel?.zoneIds,
       addressModel?.areaIds, sharedPreferences.getString(AppConstants.languageCode),
-      storeCategoryID.toString(), addressModel?.latitude, addressModel?.longitude,
+      storeCategoryID.toString(), addressModel?.latitude, addressModel?.longitude, null,
     );
   }
 
@@ -182,7 +182,8 @@ class SplashRepository implements SplashRepositoryInterface {
     apiClient.updateHeader(
       sharedPreferences.getString(AppConstants.token), addressModel?.zoneIds, addressModel?.areaIds,
       sharedPreferences.getString(AppConstants.languageCode), module?.id?.toString(),
-      addressModel?.latitude, addressModel?.longitude,
+      addressModel?.latitude, addressModel?.longitude, null,
+      fromModule: true,
     );
     if(module != null) {
       await sharedPreferences.setString(AppConstants.moduleId, jsonEncode(module.toJson()));

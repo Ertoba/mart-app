@@ -12,8 +12,8 @@ class PusherHelper{
     final config = Get.find<SplashController>().configModel;
     final rawUrl = config?.websocketUrl ?? '';
     final host = rawUrl.isNotEmpty ? Uri.parse(rawUrl).host : '';
-    final port = config?.websocketPort ?? 443;
-    final key = config?.websocketKey ?? '6ammart';
+    final port = config?.webSocketPort ?? 443;
+    final key = config?.webSocketKey ?? '6ammart';
 
     PusherChannelsOptions testOptions = PusherChannelsOptions.fromHost(
       host: host,

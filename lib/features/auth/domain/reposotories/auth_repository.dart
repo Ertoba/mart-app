@@ -111,10 +111,10 @@ class AuthRepository implements AuthRepositoryInterface{
       AddressModel? addressModel = AddressModel.fromJson(jsonDecode(sharedPreferences.getString(AppConstants.userAddress)!));
       apiClient.updateHeader(
         token, addressModel.zoneIds, addressModel.areaIds, sharedPreferences.getString(AppConstants.languageCode),
-        ModuleHelper.getModule()?.id?.toString(), addressModel.latitude, addressModel.longitude,
+        ModuleHelper.getModule()?.id?.toString(), addressModel.latitude, addressModel.longitude, null,
       );
     }else{
-      apiClient.updateHeader(token, null, null, sharedPreferences.getString(AppConstants.languageCode), ModuleHelper.getModule()?.id?.toString(), null, null);
+      apiClient.updateHeader(token, null, null, sharedPreferences.getString(AppConstants.languageCode), ModuleHelper.getModule()?.id?.toString(), null, null, null);
     }
     return await sharedPreferences.setString(AppConstants.token, token);
   }
@@ -208,7 +208,7 @@ class AuthRepository implements AuthRepositoryInterface{
       AddressModel? addressModel = AddressModel.fromJson(jsonDecode(sharedPreferences.getString(AppConstants.userAddress)!));
       apiClient.updateHeader(
         null, addressModel.zoneIds, null, sharedPreferences.getString(AppConstants.languageCode), null,
-        addressModel.latitude, addressModel.longitude,
+        addressModel.latitude, addressModel.longitude, null,
       );
     }
     return true;

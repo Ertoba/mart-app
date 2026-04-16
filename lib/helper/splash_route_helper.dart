@@ -51,20 +51,6 @@ import 'package:sixam_mart/util/app_constants.dart';
       NotificationType.cashback: () => Get.toNamed(RouteHelper.getWalletRoute(fromNotification: true)),
       NotificationType.loyalty_point: () => Get.toNamed(RouteHelper.getLoyaltyRoute(fromNotification: true)),
       NotificationType.general: () => Get.toNamed(RouteHelper.getNotificationRoute(fromNotification: true)),
-      NotificationType.ride_request: () async {
-        if(notificationBody != null) {
-          // Convert NotificationBodyModel to Map for notificationRouteCheck
-          Map<String, dynamic> notificationData = {
-            'type': 'ride_request',
-            'action': notificationBody.action,
-            'ride_request_id': notificationBody.rideRequestId,
-            'next_level': notificationBody.nextLevel,
-            'reward_amount': notificationBody.rewardAmount,
-            'reward_type': notificationBody.rewardType,
-          };
-          await NotificationHelper.rideNotificationRouteCheck(notificationData, formSplash: true);
-        }
-      },
     };
 
     notificationActions[notificationType]?.call();

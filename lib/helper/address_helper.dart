@@ -9,9 +9,19 @@ import 'package:sixam_mart/util/app_constants.dart';
 
 class AddressHelper {
 
-  static Future<bool> saveUserAddressInSharedPref(AddressModel address) async {
+  static Future<bool> saveUserAddressInSharedPref(AddressModel address, {bool isInRideModule = false, bool isInServiceModule = false}) async {
     SharedPreferences sharedPreferences = Get.find<SharedPreferences>();
     String userAddress = jsonEncode(address.toJson());
+    bool isRide = false;
+    bool isService = false;
+    try{
+      isRide = Get.find<SplashController>().module != null && (Get.find<SplashController>().module!.moduleType.toString() == AppConstants.ride);
+      isService = Get.find<SplashController>().module != null && (Get.find<SplashController>().module!.moduleType.toString() == AppConstants.service);
+      isInRideModule = isRide;
+      isInServiceModule = isService;
+    }catch(_) {}
+    print('======== address.zoneId: ${address.zoneId} // ride selected: $isInRideModule // is ride = $isInServiceModule');
+
     Get.find<ApiClient>().updateHeader(
       sharedPreferences.getString(AppConstants.token),
       address.zoneIds,[],
@@ -19,6 +29,8 @@ class AddressHelper {
       Get.find<SplashController>().module?.id?.toString(),
       address.latitude,
       address.longitude,
+      isInRideModule ? address.rideZoneId : (address.serviceZoneId ?? address.zoneId),
+      fromModule: isInRideModule || isInServiceModule,
     );
     return await sharedPreferences.setString(AppConstants.userAddress, userAddress);
   }
@@ -42,27 +54,16 @@ class AddressHelper {
     return true;
   }
 
-  static String getAddressTypeLabel(String? addressType) {
-    if(addressType == null || addressType.isEmpty) {
-      return '';
-    }
-
-    if((Get.locale?.languageCode ?? '') == 'ka') {
-      switch(addressType) {
-        case 'home':
-          return 'სახლის მისამართი';
-        case 'office':
-          return 'სამსახურის მისამართი';
-        case 'others':
-          return 'სხვა მისამართი';
+  //getIndexByAddressId
+  static int getIndexByAddressId(List<AddressModel> addressList, String addressId) {
+    int index = -1;
+    for(int i=0; i<addressList.length; i++) {
+      if(addressList[i].id.toString() == addressId) {
+        index = i;
+        break;
       }
     }
-
-    if(addressType == 'home' || addressType == 'office' || addressType == 'others') {
-      return addressType.tr;
-    }
-
-    return addressType;
+    return index;
   }
 
 }

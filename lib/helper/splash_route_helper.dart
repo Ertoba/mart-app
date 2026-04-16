@@ -6,6 +6,7 @@ import 'package:sixam_mart/features/notification/domain/models/notification_body
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
+import 'package:sixam_mart/helper/notification_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 
@@ -50,6 +51,20 @@ import 'package:sixam_mart/util/app_constants.dart';
       NotificationType.cashback: () => Get.toNamed(RouteHelper.getWalletRoute(fromNotification: true)),
       NotificationType.loyalty_point: () => Get.toNamed(RouteHelper.getLoyaltyRoute(fromNotification: true)),
       NotificationType.general: () => Get.toNamed(RouteHelper.getNotificationRoute(fromNotification: true)),
+      NotificationType.ride_request: () async {
+        if(notificationBody != null) {
+          // Convert NotificationBodyModel to Map for notificationRouteCheck
+          Map<String, dynamic> notificationData = {
+            'type': 'ride_request',
+            'action': notificationBody.action,
+            'ride_request_id': notificationBody.rideRequestId,
+            'next_level': notificationBody.nextLevel,
+            'reward_amount': notificationBody.rewardAmount,
+            'reward_type': notificationBody.rewardType,
+          };
+          await NotificationHelper.rideNotificationRouteCheck(notificationData, formSplash: true);
+        }
+      },
     };
 
     notificationActions[notificationType]?.call();
@@ -58,7 +73,7 @@ import 'package:sixam_mart/util/app_constants.dart';
   Future<void> _forLoggedInUserRouteProcess() async {
     Get.find<AuthController>().updateToken();
     if (AddressHelper.getUserAddressFromSharedPref() != null) {
-      if(Get.find<SplashController>().module != null) {
+      if(Get.find<SplashController>().module != null && Get.find<SplashController>().module!.moduleType.toString() != AppConstants.ride) {
         await Get.find<FavouriteController>().getFavouriteList();
       }
       Get.offNamed(RouteHelper.getInitialRoute(fromSplash: true));

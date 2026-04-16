@@ -30,6 +30,7 @@ class ConfigModel {
   List<Language>? language;
   bool? toggleVegNonVeg;
   bool? toggleDmRegistration;
+  bool? toggleRiderRegistration;
   bool? toggleStoreRegistration;
   int? scheduleOrderSlotDuration;
   int? digitAfterDecimalPoint;
@@ -89,8 +90,39 @@ class ConfigModel {
   ParcelReturnTimeFee? parcelReturnTimeFee;
   bool? websocketEnabled;
   String? websocketUrl;
-  int? websocketPort;
-  String? websocketKey;
+
+  bool? safetyFeatureStatus;
+  int? safetyFeatureMinimumTripDelayTime;
+  String? safetyFeatureMinimumTripDelayTimeType;
+  bool? afterTripCompleteSafetyFeatureActiveStatus;
+  int? afterTripCompleteSafetyFeatureSetTime;
+  String? afterTripCompleteSafetyFeatureSetTimeFormat;
+  String? safetyFeatureEmergencyGovtNumber;
+  bool? reviewStatus;
+  int? popularTips;
+  double? searchRadius;
+  bool? otpConfirmationForTrip;
+  double? minBookingAmount;
+  double? maxBookingAmount;
+  int? scheduleBooking;
+  int? directProviderBooking;
+  int? serviceAtProviderLocation;
+  int? repeatBooking;
+  int? instantBooking;
+  // int? scheduleBookingTimeRestriction;
+  AdvanceBooking? advanceBooking;
+  bool? confirmationOtpStatus;
+  int? bidingStatus;
+  int? referralEarningStatus;
+  double? completionRadius;
+  bool? webSocketStatus;
+  String? webSocketUri;
+  int? webSocketPort;
+  String? webSocketKey;
+  String? webSocketScheme;
+  ReferralData? dmReferralData;
+  ReferralData? riderReferralData;
+  int? customerRoutePreference;
 
   ConfigModel({
     this.businessName,
@@ -122,6 +154,7 @@ class ConfigModel {
     this.language,
     this.toggleVegNonVeg,
     this.toggleDmRegistration,
+    this.toggleRiderRegistration,
     this.toggleStoreRegistration,
     this.scheduleOrderSlotDuration,
     this.digitAfterDecimalPoint,
@@ -180,8 +213,38 @@ class ConfigModel {
     this.parcelReturnTimeFee,
     this.websocketEnabled,
     this.websocketUrl,
-    this.websocketPort,
-    this.websocketKey,
+    this.afterTripCompleteSafetyFeatureActiveStatus,
+    this.afterTripCompleteSafetyFeatureSetTime,
+    this.afterTripCompleteSafetyFeatureSetTimeFormat,
+    this.safetyFeatureEmergencyGovtNumber,
+    this.safetyFeatureMinimumTripDelayTime,
+    this.safetyFeatureMinimumTripDelayTimeType,
+    this.safetyFeatureStatus,
+    this.reviewStatus,
+    this.popularTips,
+    this.searchRadius,
+    this.otpConfirmationForTrip,
+    this.minBookingAmount,
+    this.maxBookingAmount,
+    this.scheduleBooking,
+    this.directProviderBooking,
+    this.serviceAtProviderLocation,
+    this.repeatBooking,
+    this.instantBooking,
+    // this.scheduleBookingTimeRestriction,
+    this.advanceBooking,
+    this.confirmationOtpStatus,
+    this.bidingStatus,
+    this.referralEarningStatus,
+    this.completionRadius,
+    this.webSocketUri,
+    this.webSocketPort,
+    this.webSocketKey,
+    this.webSocketStatus,
+    this.webSocketScheme,
+    this.dmReferralData,
+    this.riderReferralData,
+    this.customerRoutePreference,
   });
 
   ConfigModel.fromJson(Map<String, dynamic> json) {
@@ -219,6 +282,7 @@ class ConfigModel {
     }
     toggleVegNonVeg = json['toggle_veg_non_veg'];
     toggleDmRegistration = json['toggle_dm_registration'];
+    toggleRiderRegistration = json['toggle_rider_registration'];
     toggleStoreRegistration = json['toggle_store_registration'];
     scheduleOrderSlotDuration = json['schedule_order_slot_duration'] == 0 ? 30 : json['schedule_order_slot_duration'];
     digitAfterDecimalPoint = json['digit_after_decimal_point'];
@@ -298,8 +362,49 @@ class ConfigModel {
     parcelReturnTimeFee = json['parcel_return_time_fee'] != null ? ParcelReturnTimeFee.fromJson(json['parcel_return_time_fee']) : null;
     websocketEnabled = json['websocket_status'] == 1;
     websocketUrl = json['websocket_url'];
-    websocketPort = json['websocket_port'];
-    websocketKey = json['websocket_key'];
+
+    safetyFeatureStatus = json['safety_feature_status'] == 1;
+    safetyFeatureMinimumTripDelayTime = json['ride_safety_delay_time'];
+    safetyFeatureMinimumTripDelayTimeType = json['ride_safety_delay_time_format'];
+    afterTripCompleteSafetyFeatureActiveStatus = json['safety_feature_after_ride_complete_status'] == 1;
+    afterTripCompleteSafetyFeatureSetTime = int.tryParse(json['safety_feature_after_ride_complete_time'].toString());
+    afterTripCompleteSafetyFeatureSetTimeFormat = json['safety_feature_after_ride_complete_time_format'];
+    safetyFeatureEmergencyGovtNumber = json['emergency_govt_number'];
+
+    reviewStatus = json['review_status'];
+    popularTips = json['popular_tips'];
+    if(json['ride_search_radius'] != null){
+      try{
+        searchRadius = json['ride_search_radius'].toDouble();
+      }catch(e){
+        searchRadius = double.parse(json['ride_search_radius'].toString());
+      }
+    }
+    otpConfirmationForTrip = json['ride_otp_confirmation'] == 1;
+    minBookingAmount = double.tryParse('${json['min_booking_amount']}');
+    maxBookingAmount = double.tryParse('${json['max_booking_amount']}');
+    scheduleBooking = int.tryParse('${json['schedule_booking']}');
+    directProviderBooking = int.tryParse('${json['direct_provider_booking']}');
+    serviceAtProviderLocation = int.tryParse(json['service_at_provider_place'].toString());
+    repeatBooking = int.tryParse(json['repeat_booking'].toString());
+    instantBooking = int.tryParse(json['instant_booking'].toString());
+    // scheduleBookingTimeRestriction = int.tryParse(json['schedule_booking_time_restriction'].toString());
+    advanceBooking= json['advanced_booking'] != null ? AdvanceBooking.fromJson(json['advanced_booking']) : null;
+    if (json['confirm_otp_for_complete_service'] != null) {
+      confirmationOtpStatus= json['confirm_otp_for_complete_service'] == 1 ? true : false;
+    }
+    bidingStatus = int.tryParse('${json['bidding_status']}');
+    referralEarningStatus = int.tryParse(json['rider_referral_earning_status'].toString());
+    if(json['rider_completion_radius'] != null){
+      try{
+        completionRadius = json['rider_completion_radius'].toDouble();
+      }catch(e){
+        completionRadius = double.parse(json['rider_completion_radius'].toString());
+      }
+    }
+    dmReferralData = json['dm_referral_data'] != null ? ReferralData.fromJson(json['dm_referral_data']) : null;
+    riderReferralData = json['rider_referral_data'] != null ? ReferralData.fromJson(json['rider_referral_data']) : null;
+    customerRoutePreference = json['customer_route_preference'];
   }
 
   Map<String, dynamic> toJson() {
@@ -416,6 +521,7 @@ class ConfigModel {
     if (parcelReturnTimeFee != null) {
       data['parcel_return_time_fee'] = parcelReturnTimeFee!.toJson();
     }
+    data['customer_route_preference'] = customerRoutePreference;
     return data;
   }
 }
@@ -591,6 +697,7 @@ class Module {
   bool? showRestaurantText;
   bool? isParcel;
   bool? isTaxi;
+  bool? isRide;
   bool? newVariation;
   String? description;
 
@@ -604,6 +711,7 @@ class Module {
     this.showRestaurantText,
     this.isParcel,
     this.isTaxi,
+    this.isRide,
     this.newVariation,
     this.description,
   });
@@ -618,6 +726,7 @@ class Module {
     showRestaurantText = json['show_restaurant_text'];
     isParcel = json['is_parcel'];
     isTaxi = json['is_taxi']?? false;
+    isRide = json['is_ride']?? false;
     newVariation = json['new_variation'];
     description = json['description'];
   }
@@ -933,6 +1042,56 @@ class ParcelReturnTimeFee {
     data['parcel_return_time'] = parcelReturnTime;
     data['return_time_type'] = returnTimeType;
     data['return_fee_for_dm'] = returnFeeForDm;
+    return data;
+  }
+}
+
+class AdvanceBooking {
+  int? advancedBookingRestrictionValue;
+  int? advancedBookingRestrictionValueStatus;
+  String? advancedBookingRestrictionType;
+
+  AdvanceBooking({
+    this.advancedBookingRestrictionValue,
+    this.advancedBookingRestrictionType,
+    this.advancedBookingRestrictionValueStatus,
+  });
+
+  AdvanceBooking.fromJson(Map<String, dynamic> json) {
+    advancedBookingRestrictionValue = json['advanced_booking_restriction_value'];
+    advancedBookingRestrictionValueStatus =
+        int.tryParse('${json['advanced_booking_restriction_value_status']}');
+    advancedBookingRestrictionType = json['advanced_booking_restriction_type'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['advanced_booking_restriction_value'] =
+        advancedBookingRestrictionValue;
+    data['advanced_booking_restriction_value_status'] =
+        advancedBookingRestrictionValueStatus;
+    data['advanced_booking_restriction_type'] =
+        advancedBookingRestrictionType;
+    return data;
+  }
+}
+
+class ReferralData {
+  bool? referalStatus;
+  double? referalAmount;
+
+
+  ReferralData({this.referalStatus, this.referalAmount});
+
+  ReferralData.fromJson(Map<String, dynamic> json) {
+    referalStatus = json['referal_status'];
+    referalAmount = json['referal_amount']?.toDouble();
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['referal_status'] = referalStatus;
+    data['referal_amount'] = referalAmount;
     return data;
   }
 }

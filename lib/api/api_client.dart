@@ -44,11 +44,11 @@ class ApiClient extends GetxService {
     updateHeader(
       token, addressModel?.zoneIds, addressModel?.areaIds,
       sharedPreferences.getString(AppConstants.languageCode), moduleID?.toString(), addressModel?.latitude,
-        addressModel?.longitude
+      addressModel?.longitude, null,
     );
   }
 
-  Map<String, String> updateHeader(String? token, List<int>? zoneIDs, List<int>? operationIds, String? languageCode, String? moduleID, String? latitude, String? longitude, {bool setHeader = true}) {
+  Map<String, String> updateHeader(String? token, List<int>? zoneIDs, List<int>? operationIds, String? languageCode, String? moduleID, String? latitude, String? longitude, int? zoneId, {bool setHeader = true, fromModule = false}) {
     Map<String, String> header = {};
 
     if(moduleID != null || sharedPreferences.getString(AppConstants.cacheModuleId) != null) {
@@ -56,12 +56,12 @@ class ApiClient extends GetxService {
     }
     header.addAll({
       'Content-Type': 'application/json; charset=UTF-8',
-      AppConstants.zoneId: zoneIDs != null ? jsonEncode(zoneIDs) : '',
+      AppConstants.zoneId: (zoneId != null && fromModule) ? '$zoneId' : zoneIDs != null ? jsonEncode(zoneIDs) : '',
       ///this will add in ride module
       // AppConstants.operationAreaId: operationIds != null ? jsonEncode(operationIds) : '',
       AppConstants.localizationKey: languageCode ?? AppConstants.languages[0].languageCode!,
-      AppConstants.latitude: latitude != null ? jsonEncode(latitude) : '0',
-      AppConstants.longitude: longitude != null ? jsonEncode(longitude) : '0',
+      AppConstants.latitude: latitude != null ? jsonEncode(latitude) : '',
+      AppConstants.longitude: longitude != null ? jsonEncode(longitude) : '',
       'Authorization': 'Bearer $token'
     });
     if(setHeader) {
@@ -220,6 +220,8 @@ class ApiClient extends GetxService {
       if(response0.body.toString().startsWith('{errors: [{code:')) {
         ErrorResponse errorResponse = ErrorResponse.fromJson(response0.body);
         response0 = Response(statusCode: response0.statusCode, body: response0.body, statusText: errorResponse.errors![0].message);
+      } else if(response0.body.toString().startsWith('{response_code: zone_404, message:')) {
+        response0 = Response(statusCode: response0.statusCode, body: response0.body, statusText: response0.body['message']);
       }else if(response0.body.toString().startsWith('{message')) {
         response0 = Response(statusCode: response0.statusCode, body: response0.body, statusText: response0.body['message']);
       }

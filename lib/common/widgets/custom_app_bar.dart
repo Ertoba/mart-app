@@ -17,7 +17,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? type;
   final String? leadingIcon;
   final Widget? menuWidget;
-  const CustomAppBar({super.key, required this.title, this.backButton = true, this.onBackPressed, this.showCart = false, this.leadingIcon, this.onVegFilterTap, this.type, this.menuWidget});
+  final String? subtitle;
+  const CustomAppBar({super.key, required this.title, this.backButton = true, this.onBackPressed, this.showCart = false, this.leadingIcon, this.onVegFilterTap, this.type, this.menuWidget, this.subtitle,});
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +30,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         color: Theme.of(context).textTheme.bodyLarge!.color,
         onPressed: () => onBackPressed != null ? onBackPressed!() : Navigator.pop(context),
       ) : const SizedBox(),
+      bottom: subtitle != null ? PreferredSize(
+        preferredSize: const Size.fromHeight(50.0),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 5.0),
+          child: Text(subtitle!, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault),),
+        ),
+      ) : null,
       backgroundColor: Theme.of(context).cardColor,
       surfaceTintColor: Theme.of(context).cardColor,
       shadowColor: Theme.of(context).disabledColor.withValues(alpha: 0.5),
@@ -50,5 +58,5 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => Size(Get.width, GetPlatform.isDesktop ? 100 : 50);
+  Size get preferredSize => Size(Get.width, GetPlatform.isDesktop ? 100 : subtitle != null ? 60 : 50);
 }

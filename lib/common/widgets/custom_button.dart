@@ -19,8 +19,9 @@ class CustomButton extends StatelessWidget {
   final bool isBold;
   final bool isBorder;
   final Color? iconColor;
+  final TextStyle? textStyle;
   const CustomButton({super.key, this.onPressed, required this.buttonText, this.transparent = false, this.margin, this.width, this.height,
-    this.fontSize, this.radius = 10, this.icon, this.color, this.textColor, this.isLoading = false, this.isBold = true, this.isBorder = false, this.iconColor});
+    this.fontSize, this.radius = 10, this.icon, this.color, this.textColor, this.isLoading = false, this.isBold = true, this.isBorder = false, this.iconColor, this.textStyle});
 
   @override
   Widget build(BuildContext context) {
@@ -56,9 +57,9 @@ class CustomButton extends StatelessWidget {
         ) : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           icon != null ? Padding(
             padding: const EdgeInsets.only(right: Dimensions.paddingSizeExtraSmall),
-            child: Icon(icon, color: iconColor ?? (transparent ? Theme.of(context).primaryColor : Theme.of(context).cardColor)),
+            child: Icon(icon, color: transparent ? Theme.of(context).primaryColor : Theme.of(context).cardColor),
           ) : const SizedBox(),
-          Text(buttonText, textAlign: TextAlign.center, style: isBold ? robotoBold.copyWith(
+          Text(buttonText, textAlign: TextAlign.center, style: (textStyle != null) ? textStyle : isBold ? robotoBold.copyWith(
             color: textColor ?? (transparent ? Theme.of(context).primaryColor : Colors.white),
             fontSize: fontSize ?? Dimensions.fontSizeLarge,
           ) : robotoRegular.copyWith(

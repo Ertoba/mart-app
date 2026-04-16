@@ -113,7 +113,7 @@ class WebItemWidget extends StatelessWidget {
                           child: CustomImage(
                             isHovered: hovered,
                             image: '${isStore ? store != null ? store!.logoFullUrl : '' : item!.imageFullUrl}',
-                            height: desktop ? 140 : length == null ? 100 : 65, width: desktop ? isStore ? 275 : 300 : 80, fit: BoxFit.cover,
+                            height: desktop ? 140 : length == null ? 100 : 65, width: desktop ? isStore ? 275 : double.infinity : 80, fit: BoxFit.cover,
                           ),
                         ),
 
@@ -140,7 +140,7 @@ class WebItemWidget extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
                           child: SizedBox(
-                            width: desktop ? isStore ? 275 : 219 : 80,
+                            // width: desktop ? isStore ? 275 : 219 : 80,
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.max ,mainAxisAlignment: MainAxisAlignment.center, children: [
 
                               Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [

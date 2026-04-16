@@ -22,7 +22,7 @@ dependencies:
   path_provider: ^2.1.5
   pin_code_fields: ^8.0.1
   geolocator: ^14.0.2
-  google_maps_flutter: ^2.14.0
+  google_maps_flutter: ^2.14.2
   google_maps_flutter_web: ^0.5.14+3
   flutter_typeahead: ^5.2.0
   carousel_slider: ^5.1.1
@@ -77,6 +77,12 @@ dependencies:
   permission_handler: ^12.0.1
   app_links: ^7.0.0
   loading_animation_widget: ^1.3.0
+  google_map_custom_windows: ^1.1.0
+  skeletonizer: ^2.1.0+1
+  flutter_xlider: ^3.5.0
+  scroll_to_index: any
+  rect_getter: ^1.1.0
+  pdf: ^3.11.3
   flitt_mobile: ^2.0.0
 
 dev_dependencies:
@@ -95,8 +101,11 @@ flutter:
 
   assets:
     - assets/image/
+    - assets/image/rider/
+    - assets/image/service/
     - assets/language/
     - assets/language/ka.json
+    - assets/language/ru.json
     - assets/language/en.json
     - assets/language/ar.json
     - assets/language/bn.json

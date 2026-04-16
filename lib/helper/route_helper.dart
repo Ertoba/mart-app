@@ -31,6 +31,7 @@ import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/features/address/screens/add_address_screen.dart';
 import 'package:sixam_mart/features/address/screens/address_screen.dart';
 import 'package:sixam_mart/features/auth/screens/delivery_man_registration_screen.dart';
+import 'package:sixam_mart/features/auth/screens/rider_registration_screen.dart';
 import 'package:sixam_mart/features/auth/screens/sign_in_screen.dart';
 import 'package:sixam_mart/features/auth/screens/sign_up_screen.dart';
 import 'package:sixam_mart/features/auth/screens/store_registration_screen.dart';
@@ -166,6 +167,7 @@ class RouteHelper {
   static const String conversation = '/conversation';
   static const String restaurantRegistration = '/store-registration';
   static const String deliveryManRegistration = '/delivery-man-registration';
+  static const String riderRegistration = '/rider-registration';
   static const String refund = '/refund';
 
   static const String offlinePaymentScreen = '/offline-payment-screen';
@@ -504,6 +506,7 @@ class RouteHelper {
   static String getConversationRoute() => conversation;
   static String getRestaurantRegistrationRoute() => restaurantRegistration;
   static String getDeliverymanRegistrationRoute() => deliveryManRegistration;
+  static String getRiderRegistrationRoute() => riderRegistration;
   static String getRefundRequestRoute(String orderID) => '$refund?id=$orderID';
 
   static String getOfflinePaymentScreen({
@@ -1546,6 +1549,7 @@ class RouteHelper {
       name: deliveryManRegistration,
       page: () => const DeliveryManRegistrationScreen(),
     ),
+    GetPage(name: riderRegistration, page: () => const RiderRegistrationScreen()),
     GetPage(
       name: refund,
       page: () => RefundRequestScreen(orderId: Get.parameters['id']),

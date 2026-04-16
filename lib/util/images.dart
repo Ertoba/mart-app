@@ -296,4 +296,71 @@ class Images {
 
   static const String mapIconExtended = 'assets/json/map-picker-1.json';
   static const String mapIconMinimised = 'assets/json/map-picker-2.json';
+
+  /// Ride share module
+  static const String searchRider = 'assets/image/rider/search_rider.png';
+  static const String riderCar = 'assets/image/rider/rider_car.png';
+  static const String offerSelect = 'assets/image/rider/offer_select.png';
+  static const String offerUnSelect = 'assets/image/rider/offer_unselect.png';
+  static const String riderReferImage = 'assets/image/rider/refer_image.png';
+  static const String carTop = 'assets/image/rider/car_top.png';
+  static const String bikeTop = 'assets/image/rider/bike_top.png';
+  static const String mapLocationIcon = 'assets/image/rider/map_location_icon.png';
+  static const String bike = 'assets/image/rider/bike.png';
+  static const String offerMapIcon = 'assets/image/rider/offer_map_icon.png';
+  static const String endTrip = 'assets/image/rider/end_trip.png';
+  static const String searchImageIcon = 'assets/image/rider/search_image_icon.png';
+  static const String car = 'assets/image/rider/car.png';
+  static const String rideShareIcon = 'assets/image/rider/ride_share_icon.png';
+  static const String biddingIcon = 'assets/image/rider/bidding_icon.png';
+  static const String crossIcon = 'assets/image/rider/cross_icon.png';
+  static const String safetyAlarmIcon = 'assets/image/rider/safety_alarm_icon.png';
+  static const String shieldCheckIcon = 'assets/image/rider/shield_check_icon.png';
+  static const String rideSuccessGif = 'assets/image/rider/ride_success.gif';
+  static const String riderDestination = 'assets/image/rider/ride_destination.png';
+  static const String riderPickup = 'assets/image/rider/rider_pickup.png';
+  static const String curvedArrow = 'assets/image/rider/curved_arrow.png';
+  static const String ongoingCar = 'assets/image/rider/car_animate.gif';
+
+  ///services
+  static const String exploreBg = 'assets/image/service/explore_bg.png';
+  static const String serviceLocation = 'assets/image/service/service_location.png';
+  static const String postBg = 'assets/image/service/post_bg.png';
+  static const String postCharacter = 'assets/image/service/post_carecter.png';
+  static const String postGirl = 'assets/image/service/post_gir.png';
+  static const String serviceNote = 'assets/image/service/note.png';
+  static const String personMessage = 'assets/image/service/person_message.png';
+  static const String serviceLogo = 'assets/image/service/service_logo.png';
+  static const String postIcon = 'assets/image/service/post_icon.png';
+  static const String suggestIcon = 'assets/image/service/suggest_icon.png';
+  static const String serviceSort = 'assets/image/service/sort_icon.png';
+  static const String replaceCoupon = 'assets/image/service/replace_coupon.png';
+  static const String couponWarning = 'assets/image/service/coupon_warning.png';
+  static const String copyCouponIcon = 'assets/image/service/copy_coupon_icon.png';
+  static const String emptyAddress = 'assets/image/service/empty_address.png';
+  static const String emptyBooking = 'assets/image/service/empty_booking.png';
+  static const String emptyService = 'assets/image/service/empty_service.png';
+  static const String emptyProvider = 'assets/image/service/empty_provider.png';
+  static const String chatImage = 'assets/image/service/chat_image.png';
+  static const String emptyOffer = 'assets/image/service/empty_offer.png';
+  static const String calendar1 = 'assets/image/service/calendar_1.png';
+  static const String calendar2 = 'assets/image/service/calendar_2.png';
+  static const String calendar3 = 'assets/image/service/calendar_3.png';
+  static const String iconLocation = 'assets/image/service/icon_location.png';
+  static const String servicePrice = 'assets/image/service/service_price.png';
+  static const String favoriteService = 'assets/image/service/favorite_service.png';
+  static const String favorite = 'assets/image/service/favorite.png';
+  static const String unFavorite = 'assets/image/service/unfavorite.png';
+  static const String deleteProfile = 'assets/image/service/deleteAccount.png';
+  static const String userPlaceHolder = 'assets/image/service/user_placeholder.png';
+  static const String reviewReply = 'assets/image/service/review_reply.png';
+  static const String emptyReview = 'assets/image/service/empty_review.png';
+  static const String starIcon = 'assets/image/service/star_icon.png';
+  static const String accepted = 'assets/image/service/accepted.png';
+  static const String edit = 'assets/image/service/edit.png';
+  static const String starBorder = 'assets/image/service/star_border.png';
+  static const String personIcon = 'assets/image/service/person_icon.png';
+  static const String ignore = 'assets/image/service/ignore.png';
+  static const String messageIcon = 'assets/image/service/message_icon.png';
+  static const String voucherImage = 'assets/image/service/voucher_image.png';
 }

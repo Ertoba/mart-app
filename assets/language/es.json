@@ -165,7 +165,7 @@
   "if_you_change_location": "Tienes algunos artículos en tu carrito. Si cambia su ubicación, su carrito y otros datos relacionados con su ubicación de entrega actual se restablecerán.",
   "if_you_change_category": "Tienes algunos artículos en tu carrito. Si cambia su módulo, su carrito y otros datos relacionados con su módulo actual se restablecerán.",
   "if_you_continue": "Tienes un artículo de otro restaurante en el carrito. Si continúa, se eliminarán todos los artículos anteriores del carrito.",
-  "if_you_continue_without_another_store": "Si desea cambiar el tipo de tienda, se restablecerá su carrito y otros datos de caché relacionados.",
+  "if_you_continue_without_another_store": "Cambiar el tipo de tienda restablecerá tu carrito y otros datos en caché relacionados.",
   "yes_and_continue": "Sí y continuar",
   "total_order": "Orden total",
   "dark_theme": "Tema oscuro",
@@ -185,7 +185,7 @@
   "you_placed_the_order_successfully": "Realizas el pedido con éxito",
   "your_order_is_failed_to_place": "Su pedido no se pudo realizar",
   "your_order_is_failed_to_place_because": "Su pedido no se pudo realizar porque su pago falló. Asegúrese de realizar un pago exitoso para realizar un pedido.",
-  "your_order_is_placed_successfully": "Su pedido se realizó con éxito. Comenzamos nuestro proceso de entrega y pronto recibirás tu artículo.",
+  "your_order_is_placed_successfully": "Tu pedido se ha realizado con éxito. Pronto comenzaremos el proceso de entrega y recibirás tus artículos en breve.",
   "order_racking": "Seguimiento de pedidos",
   "delivery_man": "repartidor",
   "order_placed": "Pedido realizado",
@@ -1197,7 +1197,7 @@
   "registration_success": "Registro exitoso",
   "transaction_failed": "Transacción fallida",
   "subscription_success_message": "¡Gracias por la compra de tu suscripción! Su pago fue procesado exitosamente. Tenga en cuenta que su suscripción se activará una vez que haya sido aprobada por nuestro equipo administrativo.",
-  "commission_base_success_message": "Ha optado por nuestro plan basado en comisiones. El administrador revisará los detalles y activará su cuenta en breve.",
+  "commission_base_success_message": "Has elegido nuestro plan basado en comisiones. El administrador revisará los detalles y activará tu cuenta en breve. Para explorar el sitio.",
   "continue_to_home_page": "Continuar a la página de inicio",
   "sorry_your_transaction_can_not_be_completed_please_choose_another_payment_method_or_try_again": "Lo sentimos, su transacción no se puede completar. Elija otro método de pago o inténtelo nuevamente.",
   "try_again": "Intentar otra vez",
@@ -1702,5 +1702,8 @@
   "your_takeaway_order_has_been_placed_successfully" : "Tu pedido para recoger ha sido realizado con éxito. Lo estamos preparando y estará listo pronto.",
   "insert_delivery_location" : "Ingresar ubicación de entrega",
   "please_insert_delivery_location" : "Por favor, agrega tu ubicación de entrega para que podamos verificar si la tienda llega a tu zona.",
-  "module_is_not_available" : "El módulo no está disponible"
+  "module_is_not_available" : "El módulo no está disponible",
+  "zone_unselected": "Seleccione la zona primero.",
+  "on_all_provider": "¡En todos los proveedores!",
+  "safety_policy": "Política de seguridad"
 }

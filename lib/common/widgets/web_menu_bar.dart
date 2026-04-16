@@ -9,6 +9,7 @@ import 'package:sixam_mart/features/item/controllers/item_controller.dart';
 import 'package:sixam_mart/features/language/controllers/language_controller.dart';
 import 'package:sixam_mart/features/location/controllers/location_controller.dart';
 import 'package:sixam_mart/common/controllers/theme_controller.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
@@ -25,6 +26,8 @@ class WebMenuBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final splashController = Get.find<SplashController>();
+
     return Column(
       children: [
 
@@ -56,7 +59,7 @@ class WebMenuBar extends StatelessWidget implements PreferredSizeWidget {
                               const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                               Text(
-                                '${AuthHelper.isLoggedIn() ? AddressHelper.getAddressTypeLabel(AddressHelper.getUserAddressFromSharedPref()!.addressType) : 'your_location'.tr}: ',
+                                '${AuthHelper.isLoggedIn() ? AddressHelper.getUserAddressFromSharedPref()!.addressType!.tr : 'your_location'.tr}: ',
                                 style: robotoMedium.copyWith(
                                   color: Theme.of(context).primaryColor, fontSize: Dimensions.fontSizeExtraSmall,
                                 ),
@@ -138,6 +141,15 @@ class WebMenuBar extends StatelessWidget implements PreferredSizeWidget {
 
                   for(int index=0; index<AppConstants.joinDropdown.length; index++) {
                     if(index != 0) {
+                      if((index == 1 && !(Get.find<SplashController>().configModel?.toggleStoreRegistration ?? false))){
+                        continue;
+                      }
+                      if((index == 2 && !(Get.find<SplashController>().configModel?.toggleDmRegistration ?? false))){
+                        continue;
+                      }
+                      if((index == 3 && !(Get.find<SplashController>().configModel?.toggleRiderRegistration ?? false))){
+                        continue;
+                      }
                       joinUsList.add(DropdownItem<int>(value: index, child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 5),
                         child: Text(AppConstants.joinDropdown[index].tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall, fontWeight: FontWeight.w100, color: Get.find<ThemeController>().darkTheme ? Colors.white : Colors.black)),
@@ -187,6 +199,7 @@ class WebMenuBar extends StatelessWidget implements PreferredSizeWidget {
                       ),
                     ),
 
+                    if((splashController.configModel?.toggleStoreRegistration?? false) || (splashController.configModel?.toggleDmRegistration?? false) || (splashController.configModel?.toggleRiderRegistration?? false))
                     ConstrainedBox (
                       constraints: const BoxConstraints(minWidth: 100, maxWidth: 170),
                       child: CustomDropdown<int>(
@@ -195,6 +208,9 @@ class WebMenuBar extends StatelessWidget implements PreferredSizeWidget {
                             Get.toNamed(RouteHelper.getRestaurantRegistrationRoute());
                           } else if (index == 1) {
                             Get.toNamed(RouteHelper.getDeliverymanRegistrationRoute());
+                          }
+                          else if (index == 2) {
+                            Get.toNamed(RouteHelper.getRiderRegistrationRoute());
                           }
                         },
                         canAddValue: false,
@@ -260,7 +276,7 @@ class WebMenuBar extends StatelessWidget implements PreferredSizeWidget {
 
             InkWell(
               onTap: () => Get.toNamed(RouteHelper.getInitialRoute()),
-              child: Image.asset(Images.logo, width: 50, height: 50),
+              child: Image.asset(Images.logo, width: 100, height: 50),
             ),
 
             const SizedBox(width: 20),
@@ -300,12 +316,17 @@ class WebMenuBar extends StatelessWidget implements PreferredSizeWidget {
                 }),
                 const SizedBox(width: 20),
 
+                // MenuButton(title: 'popular_stores'.tr, onTap: () {
+                //   // if(AddressHelper.getUserAddressFromSharedPref() != null) {
+                //     Get.toNamed(RouteHelper.getAllStoreRoute('popular'));
+                //   // } else {
+                //   //   showCustomSnackBar('please_select_address_first'.tr,);
+                //   // }
+                // }),
+                // const SizedBox(width: 20),
+
                 MenuButton(title: 'stores'.tr, onTap: () {
-                  // if(AddressHelper.getUserAddressFromSharedPref() != null) {
-                    Get.toNamed(RouteHelper.getAllStoreRoute('popular'));
-                  // } else {
-                  //   showCustomSnackBar('please_select_address_first'.tr,);
-                  // }
+                  Get.toNamed(RouteHelper.getAllStoreScreenRoute());
                 }),
                 const SizedBox(width: 20),
               ]
@@ -431,5 +452,6 @@ class MenuIconButton extends StatelessWidget {
     });
   }
 }
+
 
 

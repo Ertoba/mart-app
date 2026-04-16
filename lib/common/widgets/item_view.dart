@@ -59,7 +59,7 @@ class _ItemsViewState extends State<ItemsView> {
           mainAxisSpacing: ResponsiveHelper.isDesktop(context) ? Dimensions.paddingSizeExtremeLarge : widget.stores != null && widget.isStore ? Dimensions.paddingSizeLarge : Dimensions.paddingSizeSmall,
           mainAxisExtent: ResponsiveHelper.isDesktop(context) && widget.isStore ? 220
           : ResponsiveHelper.isMobile(context) ? widget.stores != null && widget.isStore ? 200 : 122
-          : ResponsiveHelper.isDesktop(context) ? 300 : 122,
+          : ResponsiveHelper.isDesktop(context) ? 220 : widget.isStore ? 200 : 122,
           crossAxisCount: ResponsiveHelper.isMobile(context) ? 1 : ResponsiveHelper.isDesktop(context) && widget.stores != null  ? 3 : ResponsiveHelper.isDesktop(context) ? 4 : 3,
         ),
         physics: widget.isScrollable ? const BouncingScrollPhysics() : const NeverScrollableScrollPhysics(),
@@ -87,7 +87,7 @@ class _ItemsViewState extends State<ItemsView> {
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisSpacing: ResponsiveHelper.isDesktop(context) ? Dimensions.paddingSizeExtremeLarge : widget.stores != null ? Dimensions.paddingSizeLarge : Dimensions.paddingSizeLarge,
           mainAxisSpacing: ResponsiveHelper.isDesktop(context) ? Dimensions.paddingSizeLarge : widget.stores != null ? Dimensions.paddingSizeLarge : Dimensions.paddingSizeSmall,
-          mainAxisExtent: ResponsiveHelper.isDesktop(context) && widget.isStore ? 220 : ResponsiveHelper.isMobile(context) ? widget.isStore ? 200 : 110 : 110,
+          mainAxisExtent: ResponsiveHelper.isDesktop(context) && widget.isStore ? 220 : ResponsiveHelper.isMobile(context) ? widget.isStore ? 200 : 110 : widget.isStore ? 200 : 110,
           crossAxisCount: ResponsiveHelper.isMobile(context) ? 1 : ResponsiveHelper.isDesktop(context) ? 3 : 3,
         ),
         physics: widget.isScrollable ? const BouncingScrollPhysics() : const NeverScrollableScrollPhysics(),

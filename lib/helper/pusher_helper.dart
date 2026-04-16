@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:dart_pusher_channels/dart_pusher_channels.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 
@@ -30,17 +31,18 @@ class PusherHelper{
       },
     );
 
+    debugPrint('[PUSHER] connecting to host=$host port=$port key=$key scheme=wss');
     await pusherClient?.connect();
-
 
     String? pusherChannelId =  pusherClient?.channelsManager.channelsConnectionDelegate.socketId;
       if(pusherChannelId != null){
-        log('=================Pusher Connected');
+        debugPrint('[PUSHER] connected socketId=$pusherChannelId');
+      } else {
+        debugPrint('[PUSHER] connected but socketId is null');
       }
 
-
      pusherClient?.lifecycleStream.listen((event) {
-       log('=================Pusher DisConnected');
+       debugPrint('[PUSHER] lifecycle event: $event');
      });
 
 
@@ -53,25 +55,21 @@ class PusherHelper{
 
     String channel = 'dm_location_$deliverymanId';
 
-    log('========channel is: $channel');
+    debugPrint('[PUSHER] subscribing to channel=$channel (pusherClient=${pusherClient != null ? "ok" : "NULL"})');
 
-    // _publicChannel = pusherClient!.publicChannel('pusher:subscribe');
     publicChannel = pusherClient!.publicChannel(channel);
-
-    // _publicChannel.subscribe();
     publicChannel?.subscribeIfNotUnsubscribed();
-    // FIX: PublicChannel uses 'pusher:subscription_succeeded' event via bind()
 
     publicChannel?.bind('pusher:subscription_succeeded').listen((_) {
-      log('=======Public Subscribed');
+      debugPrint('[PUSHER] subscription_succeeded on channel=$channel');
     });
 
     publicChannel?.bind('pusher:subscription_error').listen((error) {
-      log('=======Public Subscription Failed: ${error.data}');
+      debugPrint('[PUSHER] subscription_error on channel=$channel: ${error.data}');
     });
 
     publicChannel?.bind(channel).listen((event) {
-      log('===========pusherDriverStatus bind is: ${event.data}');
+      debugPrint('[PUSHER] event received on $channel: ${event.data}');
       onLocationReceived(RecordLocationBodyModel(
         latitude: jsonDecode(event.data)['latitude'],
         longitude: jsonDecode(event.data)['longitude'],

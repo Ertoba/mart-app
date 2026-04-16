@@ -80,22 +80,22 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
   }
 
   void _trackWithPusher() {
+    final tm = Get.find<OrderController>().trackModel;
     bool canTrackDeliveryman =
-        Get.find<OrderController>().trackModel?.orderStatus != 'delivered' &&
-        Get.find<OrderController>().trackModel?.orderStatus != 'failed' &&
-        Get.find<OrderController>().trackModel?.orderStatus != 'canceled';
-    if (Get.find<OrderController>().trackModel != null &&
-        Get.find<OrderController>().trackModel!.deliveryMan != null &&
-        canTrackDeliveryman) {
+        tm?.orderStatus != 'delivered' &&
+        tm?.orderStatus != 'failed' &&
+        tm?.orderStatus != 'canceled';
+    debugPrint('[PUSHER] _trackWithPusher: order=${tm?.id} status=${tm?.orderStatus} deliveryMan=${tm?.deliveryMan?.id} canTrack=$canTrackDeliveryman');
+    if (tm != null && tm.deliveryMan != null && canTrackDeliveryman) {
       Get.find<OrderController>().timerTrackOrder(
         widget.orderID.toString(),
         contactNumber: widget.contactNumber,
       );
 
       PusherHelper().pusherDriverStatus(
-        deliverymanId: Get.find<OrderController>().trackModel!.deliveryMan!.id
-            .toString(),
+        deliverymanId: tm.deliveryMan!.id.toString(),
         onLocationReceived: (RecordLocationBodyModel dmLocation) {
+          debugPrint('[PUSHER] location received lat=${dmLocation.latitude} lng=${dmLocation.longitude}');
           updateDeliverymanMarker(dmLocation);
         },
       );

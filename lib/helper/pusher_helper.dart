@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:dart_pusher_channels/dart_pusher_channels.dart';
-import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 
@@ -31,18 +30,15 @@ class PusherHelper{
       },
     );
 
-    debugPrint('[PUSHER] connecting to host=$host port=$port key=$key scheme=wss');
     await pusherClient?.connect();
 
     String? pusherChannelId =  pusherClient?.channelsManager.channelsConnectionDelegate.socketId;
       if(pusherChannelId != null){
-        debugPrint('[PUSHER] connected socketId=$pusherChannelId');
-      } else {
-        debugPrint('[PUSHER] connected but socketId is null');
+        log('=================Pusher Connected');
       }
 
      pusherClient?.lifecycleStream.listen((event) {
-       debugPrint('[PUSHER] lifecycle event: $event');
+       log('=================Pusher DisConnected');
      });
 
 
@@ -55,21 +51,22 @@ class PusherHelper{
 
     String channel = 'dm_location_$deliverymanId';
 
-    debugPrint('[PUSHER] subscribing to channel=$channel (pusherClient=${pusherClient != null ? "ok" : "NULL"})');
+    log('========channel is: $channel');
 
     publicChannel = pusherClient!.publicChannel(channel);
+
     publicChannel?.subscribeIfNotUnsubscribed();
 
     publicChannel?.bind('pusher:subscription_succeeded').listen((_) {
-      debugPrint('[PUSHER] subscription_succeeded on channel=$channel');
+      log('=======Public Subscribed');
     });
 
     publicChannel?.bind('pusher:subscription_error').listen((error) {
-      debugPrint('[PUSHER] subscription_error on channel=$channel: ${error.data}');
+      log('=======Public Subscription Failed: ${error.data}');
     });
 
     publicChannel?.bind(channel).listen((event) {
-      debugPrint('[PUSHER] event received on $channel: ${event.data}');
+      log('===========pusherDriverStatus bind is: ${event.data}');
       final data = jsonDecode(event.data);
       onLocationReceived(RecordLocationBodyModel(
         latitude: data['latitude']?.toString(),

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';

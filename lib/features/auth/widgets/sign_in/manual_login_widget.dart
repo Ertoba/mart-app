@@ -146,28 +146,30 @@ class ManualLoginWidget extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                InkWell(
-                  onTap: () => authController.toggleRememberMe(),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: Checkbox(
-                          side: BorderSide(color: Theme.of(context).hintColor),
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          activeColor: Theme.of(context).primaryColor,
-                          value: authController.isActiveRememberMe,
-                          onChanged: (bool? isChecked) =>
-                              authController.toggleRememberMe(),
+                Flexible(
+                  child: InkWell(
+                    onTap: () => authController.toggleRememberMe(),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: Checkbox(
+                            side: BorderSide(color: Theme.of(context).hintColor),
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            activeColor: Theme.of(context).primaryColor,
+                            value: authController.isActiveRememberMe,
+                            onChanged: (bool? isChecked) =>
+                                authController.toggleRememberMe(),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: Dimensions.paddingSizeSmall),
+                        const SizedBox(width: Dimensions.paddingSizeSmall),
 
-                      Text('remember_me'.tr, style: robotoRegular),
-                    ],
+                        Flexible(child: Text('remember_me'.tr, style: robotoRegular, overflow: TextOverflow.ellipsis)),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -384,35 +386,36 @@ class ManualLoginWidget extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    InkWell(
-                      onTap: () => authController.toggleRememberMe(),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: Checkbox(
-                              side: BorderSide(
-                                color: Theme.of(context).hintColor,
+                    Flexible(
+                      child: InkWell(
+                        onTap: () => authController.toggleRememberMe(),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: Checkbox(
+                                side: BorderSide(
+                                  color: Theme.of(context).hintColor,
+                                ),
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                activeColor: Theme.of(context).primaryColor,
+                                value: authController.isActiveRememberMe,
+                                onChanged: (bool? isChecked) =>
+                                    authController.toggleRememberMe(),
                               ),
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
-                              activeColor: Theme.of(context).primaryColor,
-                              value: authController.isActiveRememberMe,
-                              onChanged: (bool? isChecked) =>
-                                  authController.toggleRememberMe(),
                             ),
-                          ),
-                          const SizedBox(width: Dimensions.paddingSizeSmall),
+                            const SizedBox(width: Dimensions.paddingSizeSmall),
 
-                          Text(
-                            'remember_me'.tr,
-                            style: robotoRegular.copyWith(
-                              fontSize: Dimensions.fontSizeSmall,
-                            ),
-                          ),
-                        ],
+                            Flexible(child: Text(
+                              'remember_me'.tr,
+                              style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
+                              overflow: TextOverflow.ellipsis,
+                            )),
+                          ],
+                        ),
                       ),
                     ),
 

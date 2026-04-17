@@ -247,10 +247,11 @@ class VerificationScreenState extends State<VerificationScreen> {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: isDesktop ? 29 : Dimensions.paddingSizeDefault),
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Text(
+                  Flexible(child: Text(
                     'did_not_receive_the_code'.tr,
                     style: robotoRegular.copyWith(color: Theme.of(context).hintColor),
-                  ),
+                    overflow: TextOverflow.ellipsis,
+                  )),
                   TextButton(
                     onPressed: _seconds < 1 ? () async {
                       if(widget.firebaseSession != null) {

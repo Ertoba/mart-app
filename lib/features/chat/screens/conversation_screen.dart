@@ -200,6 +200,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
                                 ]),
                               ),
 
+                              if (conversation.conversations![index]?.lastMessageTime != null)
                               Positioned(
                                 right: Get.find<LocalizationController>().isLtr ? 5 : null, bottom: 5, left: Get.find<LocalizationController>().isLtr ? null : 5,
                                 child: Text(
@@ -211,14 +212,14 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
                               GetBuilder<ProfileController>(builder: (profileController) {
                                 return (profileController.userInfoModel != null && profileController.userInfoModel!.userInfo != null
-                                && conversation!.conversations![index]!.lastMessage!.senderId != profileController.userInfoModel!.userInfo!.id
-                                && conversation.conversations![index]!.unreadMessageCount! > 0) ? Positioned(
+                                && conversation?.conversations?[index]?.lastMessage?.senderId != profileController.userInfoModel!.userInfo!.id
+                                && (conversation?.conversations?[index]?.unreadMessageCount ?? 0) > 0) ? Positioned(
                                   right: Get.find<LocalizationController>().isLtr ? 5 : null, top: 5, left: Get.find<LocalizationController>().isLtr ? null : 5,
                                   child: Container(
                                     padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
                                     decoration: BoxDecoration(color: Theme.of(context).primaryColor, shape: BoxShape.circle),
                                     child: Text(
-                                      conversation.conversations![index]!.unreadMessageCount.toString(),
+                                      (conversation?.conversations?[index]?.unreadMessageCount ?? 0).toString(),
                                       style: robotoMedium.copyWith(color: Theme.of(context).cardColor, fontSize: Dimensions.fontSizeExtraSmall),
                                     ),
                                   ),

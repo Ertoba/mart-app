@@ -800,10 +800,9 @@ class _StoreRegistrationScreenState extends State<StoreRegistrationScreen> with 
                     child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
 
                       Row(children: [
-                        Container(
+                        Flexible(
+                          child: SizedBox(
                           height:  40,
-                          width: 500,
-                          color: Colors.transparent,
                           child: TabBar(
                             tabAlignment: TabAlignment.start,
                             controller: _tabController,
@@ -821,6 +820,7 @@ class _StoreRegistrationScreenState extends State<StoreRegistrationScreen> with 
                               setState(() {});
                             },
                           ),
+                        ),
                         ),
                       ]),
                       const SizedBox(height: Dimensions.paddingSizeSmall),

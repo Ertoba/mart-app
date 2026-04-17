@@ -99,8 +99,8 @@ class RunningOrderViewWidget extends StatelessWidget {
                             crossAxisAlignment: isFirstOrder ? CrossAxisAlignment.center : CrossAxisAlignment.start, children: [
                               Row( mainAxisAlignment: isFirstOrder ? MainAxisAlignment.center : MainAxisAlignment.start, children: [
 
-                                Text('${'your_order_is'.tr} ', style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault)),
-                                Text(reversOrder[index].orderStatus!.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).primaryColor)),
+                                Flexible(child: Text('${'your_order_is'.tr} ', style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault), overflow: TextOverflow.ellipsis)),
+                                Flexible(child: Text(reversOrder[index].orderStatus!.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).primaryColor), overflow: TextOverflow.ellipsis)),
                               ]) ,
                               const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 

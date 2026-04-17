@@ -123,19 +123,16 @@ class StoreCardWithDistance extends StatelessWidget {
                             const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
                             //if(store.ratingCount! > 0)
-                            Padding(
-                              padding: const EdgeInsets.only(right: Dimensions.paddingSizeDefault),
-                              child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+                            Row(mainAxisAlignment: MainAxisAlignment.start, children: [
 
-                                Icon(Icons.star, color: Colors.orange, size: 14),
-                                const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                              Icon(Icons.star, color: Colors.orange, size: 14),
+                              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
-                                Text('${store.avgRating}', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall)),
-                                const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                              Text('${store.avgRating}', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall)),
+                              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
-                                Text('(${store.ratingCount})', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall, color: Theme.of(context).disabledColor)),
-                              ]),
-                            ),
+                              Flexible(child: Text('(${store.ratingCount})', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall, color: Theme.of(context).disabledColor), overflow: TextOverflow.ellipsis)),
+                            ]),
                           ]),
                         ),
                       ),

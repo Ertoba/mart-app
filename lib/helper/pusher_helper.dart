@@ -4,11 +4,10 @@ import 'package:dart_pusher_channels/dart_pusher_channels.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 
-class PusherHelper{
+class PusherHelper {
+  static PusherChannelsClient? pusherClient;
 
-  static PusherChannelsClient?  pusherClient;
-
-  static Future<void> initializePusher() async{
+  static Future<void> initializePusher() async {
     final config = Get.find<SplashController>().configModel;
     final rawUrl = config?.websocketUrl ?? '';
     final host = rawUrl.isNotEmpty ? Uri.parse(rawUrl).host : '';
@@ -22,6 +21,7 @@ class PusherHelper{
       port: port,
     );
 
+    pusherClient?.disconnect();
     pusherClient = PusherChannelsClient.websocket(
       options: testOptions,
       connectionErrorHandler: (exception, trace, refresh) async {
@@ -32,27 +32,38 @@ class PusherHelper{
 
     await pusherClient?.connect();
 
-    String? pusherChannelId =  pusherClient?.channelsManager.channelsConnectionDelegate.socketId;
-      if(pusherChannelId != null){
-        log('=================Pusher Connected');
-      }
+    String? pusherChannelId =
+        pusherClient?.channelsManager.channelsConnectionDelegate.socketId;
+    if (pusherChannelId != null) {
+      log('=================Pusher Connected');
+    }
 
-     pusherClient?.lifecycleStream.listen((event) {
-       log('=================Pusher DisConnected');
-     });
-
-
+    pusherClient?.lifecycleStream.listen((event) {
+      log('=================Pusher DisConnected');
+    });
   }
 
-  // late PrivateChannel pusherDriverLocation;
-  late PublicChannel? publicChannel;
+  PublicChannel? publicChannel;
+  String? _driverChannelName;
 
-  void pusherDriverStatus({required String deliverymanId, required Function(RecordLocationBodyModel) onLocationReceived}){
-
+  void pusherDriverStatus({
+    required String deliverymanId,
+    required Function(RecordLocationBodyModel) onLocationReceived,
+  }) {
     String channel = 'dm_location_$deliverymanId';
 
     log('========channel is: $channel');
 
+    if (pusherClient == null) {
+      return;
+    }
+
+    if (_driverChannelName != null && _driverChannelName != channel) {
+      publicChannel?.unsubscribe();
+      publicChannel = null;
+    }
+
+    _driverChannelName = channel;
     publicChannel = pusherClient!.publicChannel(channel);
 
     publicChannel?.subscribeIfNotUnsubscribed();
@@ -68,23 +79,22 @@ class PusherHelper{
     publicChannel?.bind(channel).listen((event) {
       log('===========pusherDriverStatus bind is: ${event.data}');
       final data = jsonDecode(event.data);
-      onLocationReceived(RecordLocationBodyModel(
-        latitude: data['latitude']?.toString(),
-        longitude: data['longitude']?.toString(),
-        location: data['location'],
-      ));
+      onLocationReceived(
+        RecordLocationBodyModel(
+          latitude: data['latitude']?.toString(),
+          longitude: data['longitude']?.toString(),
+          location: data['location'],
+        ),
+      );
     });
-
-
   }
 
-
-  void pusherDisconnectPusher(){
+  void pusherDisconnectPusher() {
     publicChannel?.unsubscribe();
+    publicChannel = null;
+    _driverChannelName = null;
     pusherClient?.disconnect();
   }
-
-
 }
 
 class RecordLocationBodyModel {

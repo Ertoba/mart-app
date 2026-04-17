@@ -51,6 +51,8 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
   Set<Marker> _markers = HashSet<Marker>();
   Set<Polyline> _polylines = HashSet<Polyline>();
   Timer? _timer;
+  final PusherHelper _pusherHelper = PusherHelper();
+  bool _isDisposed = false;
   bool showChatPermission = true;
   bool isHovered = false;
   String? _routeKey;
@@ -85,17 +87,22 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
         tm?.orderStatus != 'delivered' &&
         tm?.orderStatus != 'failed' &&
         tm?.orderStatus != 'canceled';
-    debugPrint('[PUSHER] _trackWithPusher: order=${tm?.id} status=${tm?.orderStatus} deliveryMan=${tm?.deliveryMan?.id} canTrack=$canTrackDeliveryman');
+    debugPrint(
+      '[PUSHER] _trackWithPusher: order=${tm?.id} status=${tm?.orderStatus} deliveryMan=${tm?.deliveryMan?.id} canTrack=$canTrackDeliveryman',
+    );
     if (tm != null && tm.deliveryMan != null && canTrackDeliveryman) {
       Get.find<OrderController>().timerTrackOrder(
         widget.orderID.toString(),
         contactNumber: widget.contactNumber,
       );
 
-      PusherHelper().pusherDriverStatus(
+      _pusherHelper.pusherDriverStatus(
         deliverymanId: tm.deliveryMan!.id.toString(),
         onLocationReceived: (RecordLocationBodyModel dmLocation) {
-          debugPrint('[PUSHER] location received lat=${dmLocation.latitude} lng=${dmLocation.longitude}');
+          if (_isDisposed || !mounted) return;
+          debugPrint(
+            '[PUSHER] location received lat=${dmLocation.latitude} lng=${dmLocation.longitude}',
+          );
           updateDeliverymanMarker(dmLocation);
         },
       );
@@ -182,11 +189,12 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
 
   @override
   void dispose() {
-    super.dispose();
-    _controller?.dispose();
+    _isDisposed = true;
     _timer?.cancel();
-    PusherHelper().pusherDisconnectPusher();
+    _pusherHelper.pusherDisconnectPusher();
+    _controller?.dispose();
     WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   void onEntered(bool isHovered) {
@@ -212,8 +220,10 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
               if (_localTrackModel!.store!.storeBusinessModel == 'commission') {
                 showChatPermission = true;
               } else if (_localTrackModel!.store!.storeSubscription != null &&
-                  _localTrackModel!.store!.storeBusinessModel == 'subscription') {
-                showChatPermission = _localTrackModel!.store!.storeSubscription!.chat == 1;
+                  _localTrackModel!.store!.storeBusinessModel ==
+                      'subscription') {
+                showChatPermission =
+                    _localTrackModel!.store!.storeSubscription!.chat == 1;
               } else {
                 showChatPermission = false;
               }
@@ -677,6 +687,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
   Future<void> updateDeliverymanMarker(
     RecordLocationBodyModel dmLocation,
   ) async {
+    if (_isDisposed || !mounted) return;
     BitmapDescriptor deliveryBoyImageData =
         await MarkerHelper.convertAssetToBitmapDescriptor(
           width: 30,
@@ -701,7 +712,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
         ),
       );
 
-      if (!mounted) return;
+      if (_isDisposed || !mounted) return;
       setState(() {});
     }
   }
@@ -716,6 +727,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
     AddressModel? currentAddress,
     bool fromCurrentLocation = false,
   }) async {
+    if (_isDisposed || !mounted) return;
     try {
       BitmapDescriptor restaurantImageData =
           await MarkerHelper.convertAssetToBitmapDescriptor(
@@ -789,7 +801,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
             icon: destinationImageData,
           ),
         );
-        if (!mounted) return;
+        if (_isDisposed || !mounted) return;
         setState(() {});
       }
 
@@ -863,7 +875,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
         parcel: parcel,
       );
     } catch (_) {}
-    if (!mounted) return;
+    if (_isDisposed || !mounted) return;
     setState(() {});
   }
 

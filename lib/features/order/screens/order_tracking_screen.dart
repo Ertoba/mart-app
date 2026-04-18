@@ -731,12 +731,9 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
     );
 
     if (distance <= _deliveryMarkerJitterDistance) {
-      _setDeliveryMarkerPosition(
-        position: startPosition,
-        icon: deliveryBoyImageData,
-        snippet: dmLocation.location,
-        rotation: _deliveryMarkerRotation,
-      );
+      _deliveryMarkerPosition = startPosition;
+      _deliveryMarkerIcon = deliveryBoyImageData;
+      _deliveryMarkerSnippet = dmLocation.location;
       return;
     }
 

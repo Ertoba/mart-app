@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:math' as math;
 
 import 'package:geolocator/geolocator.dart';
 import 'package:sixam_mart/common/controllers/theme_controller.dart';
@@ -62,13 +63,21 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
   BitmapDescriptor? _deliveryMarkerIcon;
   String? _deliveryMarkerSnippet;
   double _deliveryMarkerRotation = 0;
+  List<LatLng> _routePolylinePoints = const <LatLng>[];
 
-  static const Duration _deliveryMarkerAnimationDuration = Duration(seconds: 9);
+  static const Duration _deliveryMarkerMinAnimationDuration = Duration(
+    seconds: 5,
+  );
+  static const Duration _deliveryMarkerMaxAnimationDuration = Duration(
+    seconds: 18,
+  );
   static const Duration _deliveryMarkerFrameDuration = Duration(
     milliseconds: 50,
   );
   static const double _deliveryMarkerJitterDistance = 3;
-  static const double _deliveryMarkerSnapDistance = 300;
+  static const double _deliveryMarkerAnimationMetersPerSecond = 35;
+  static const double _deliveryMarkerTeleportDistance = 5000;
+  static const double _routeProjectionMaxDistance = 120;
 
   void _loadData() async {
     await Get.find<LocationController>().getCurrentLocation(
@@ -820,7 +829,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
       targetPosition.longitude,
     );
 
-    if (distance >= _deliveryMarkerSnapDistance) {
+    if (distance >= _deliveryMarkerTeleportDistance) {
       _setDeliveryMarkerPosition(
         position: targetPosition,
         icon: deliveryBoyImageData,
@@ -830,12 +839,22 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
       return;
     }
 
+    final _RouteTravel? routeTravel = _routeTravelBetween(
+      startPosition,
+      targetPosition,
+    );
+    final Duration animationDuration = _deliveryMarkerAnimationDurationFor(
+      routeTravel?.distance ?? distance,
+    );
+
     _animateDeliveryMarker(
       from: startPosition,
       to: targetPosition,
       icon: deliveryBoyImageData,
       snippet: dmLocation.location,
       rotation: rotation,
+      duration: animationDuration,
+      routeTravel: routeTravel,
     );
   }
 
@@ -1040,11 +1059,14 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
     required BitmapDescriptor icon,
     required String? snippet,
     required double rotation,
+    required Duration duration,
+    _RouteTravel? routeTravel,
   }) {
     _deliveryMarkerAnimationTimer?.cancel();
     _deliveryMarkerSnippet = snippet;
     _deliveryMarkerRotation = rotation;
 
+    final int durationMs = math.max(1, duration.inMilliseconds);
     final DateTime startedAt = DateTime.now();
     _deliveryMarkerAnimationTimer = Timer.periodic(
       _deliveryMarkerFrameDuration,
@@ -1058,21 +1080,29 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
             .difference(startedAt)
             .inMilliseconds
             .toDouble();
-        final double t =
-            (progress / _deliveryMarkerAnimationDuration.inMilliseconds)
-                .clamp(0.0, 1.0)
-                .toDouble();
-        final LatLng position = _lerpLatLng(
-          from,
-          to,
-          Curves.easeInOut.transform(t),
-        );
+        final double t = (progress / durationMs).clamp(0.0, 1.0).toDouble();
+        final double easedT = Curves.easeInOut.transform(t);
+        final LatLng position;
+        final double markerRotation;
+        if (routeTravel != null) {
+          final double routeDistance =
+              routeTravel.fromDistance +
+              ((routeTravel.toDistance - routeTravel.fromDistance) * easedT);
+          position = _latLngAtRouteDistance(routeDistance);
+          markerRotation = _routeBearingAtDistance(
+            routeDistance,
+            routeTravel.forward,
+          );
+        } else {
+          position = _lerpLatLng(from, to, easedT);
+          markerRotation = rotation;
+        }
 
         _setDeliveryMarkerPosition(
           position: position,
           icon: icon,
           snippet: snippet,
-          rotation: rotation,
+          rotation: markerRotation,
         );
 
         if (t >= 1) {
@@ -1089,6 +1119,176 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
     return LatLng(
       from.latitude + (to.latitude - from.latitude) * t,
       from.longitude + (to.longitude - from.longitude) * t,
+    );
+  }
+
+  Duration _deliveryMarkerAnimationDurationFor(double distance) {
+    final double seconds = (distance / _deliveryMarkerAnimationMetersPerSecond)
+        .clamp(
+          _deliveryMarkerMinAnimationDuration.inSeconds.toDouble(),
+          _deliveryMarkerMaxAnimationDuration.inSeconds.toDouble(),
+        )
+        .toDouble();
+    return Duration(milliseconds: (seconds * 1000).round());
+  }
+
+  _RouteTravel? _routeTravelBetween(LatLng from, LatLng to) {
+    if (_routePolylinePoints.length < 2) {
+      return null;
+    }
+
+    final _RouteProjection? fromProjection = _projectToRoute(from);
+    final _RouteProjection? toProjection = _projectToRoute(to);
+    if (fromProjection == null || toProjection == null) {
+      return null;
+    }
+    if (fromProjection.distanceFromRoute > _routeProjectionMaxDistance ||
+        toProjection.distanceFromRoute > _routeProjectionMaxDistance) {
+      return null;
+    }
+
+    final double routeDistance =
+        (toProjection.routeDistance - fromProjection.routeDistance).abs();
+    if (routeDistance <= _deliveryMarkerJitterDistance) {
+      return null;
+    }
+
+    return _RouteTravel(
+      fromDistance: fromProjection.routeDistance,
+      toDistance: toProjection.routeDistance,
+    );
+  }
+
+  _RouteProjection? _projectToRoute(LatLng point) {
+    if (_routePolylinePoints.length < 2) {
+      return null;
+    }
+
+    double traveledDistance = 0;
+    _RouteProjection? bestProjection;
+    for (int i = 0; i < _routePolylinePoints.length - 1; i++) {
+      final LatLng segmentStart = _routePolylinePoints[i];
+      final LatLng segmentEnd = _routePolylinePoints[i + 1];
+      final double segmentLength = Geolocator.distanceBetween(
+        segmentStart.latitude,
+        segmentStart.longitude,
+        segmentEnd.latitude,
+        segmentEnd.longitude,
+      );
+
+      if (segmentLength <= 0) {
+        continue;
+      }
+
+      final _MeterPoint localStart = _toLocalMeters(segmentStart, point);
+      final _MeterPoint localEnd = _toLocalMeters(segmentEnd, point);
+      final double dx = localEnd.x - localStart.x;
+      final double dy = localEnd.y - localStart.y;
+      final double segmentLengthSquared = (dx * dx) + (dy * dy);
+      if (segmentLengthSquared <= 0) {
+        traveledDistance += segmentLength;
+        continue;
+      }
+
+      final double t =
+          ((-(localStart.x * dx) - (localStart.y * dy)) / segmentLengthSquared)
+              .clamp(0.0, 1.0)
+              .toDouble();
+      final double projectedX = localStart.x + (dx * t);
+      final double projectedY = localStart.y + (dy * t);
+      final double distanceFromRoute = math.sqrt(
+        (projectedX * projectedX) + (projectedY * projectedY),
+      );
+      final _RouteProjection projection = _RouteProjection(
+        routeDistance: traveledDistance + (segmentLength * t),
+        distanceFromRoute: distanceFromRoute,
+      );
+
+      if (bestProjection == null ||
+          projection.distanceFromRoute < bestProjection.distanceFromRoute) {
+        bestProjection = projection;
+      }
+
+      traveledDistance += segmentLength;
+    }
+
+    return bestProjection;
+  }
+
+  LatLng _latLngAtRouteDistance(double routeDistance) {
+    if (_routePolylinePoints.isEmpty) {
+      return _deliveryMarkerPosition ?? const LatLng(0, 0);
+    }
+    if (_routePolylinePoints.length < 2) {
+      return _routePolylinePoints.first;
+    }
+
+    double traveledDistance = 0;
+    for (int i = 0; i < _routePolylinePoints.length - 1; i++) {
+      final LatLng segmentStart = _routePolylinePoints[i];
+      final LatLng segmentEnd = _routePolylinePoints[i + 1];
+      final double segmentLength = Geolocator.distanceBetween(
+        segmentStart.latitude,
+        segmentStart.longitude,
+        segmentEnd.latitude,
+        segmentEnd.longitude,
+      );
+
+      if (segmentLength <= 0) {
+        continue;
+      }
+
+      if (routeDistance <= traveledDistance + segmentLength) {
+        final double t = ((routeDistance - traveledDistance) / segmentLength)
+            .clamp(0.0, 1.0)
+            .toDouble();
+        return _lerpLatLng(segmentStart, segmentEnd, t);
+      }
+
+      traveledDistance += segmentLength;
+    }
+
+    return _routePolylinePoints.last;
+  }
+
+  double _routeBearingAtDistance(double routeDistance, bool forward) {
+    const double sampleDistance = 10;
+    final LatLng start = _latLngAtRouteDistance(
+      forward ? routeDistance : routeDistance + sampleDistance,
+    );
+    final LatLng end = _latLngAtRouteDistance(
+      forward ? routeDistance + sampleDistance : routeDistance - sampleDistance,
+    );
+    final double sampleGap = Geolocator.distanceBetween(
+      start.latitude,
+      start.longitude,
+      end.latitude,
+      end.longitude,
+    );
+
+    if (sampleGap <= 1) {
+      return _deliveryMarkerRotation;
+    }
+
+    return Geolocator.bearingBetween(
+      start.latitude,
+      start.longitude,
+      end.latitude,
+      end.longitude,
+    );
+  }
+
+  _MeterPoint _toLocalMeters(LatLng point, LatLng origin) {
+    const double earthRadius = 6371000;
+    final double originLatRadians = origin.latitude * math.pi / 180;
+    return _MeterPoint(
+      x:
+          (point.longitude - origin.longitude) *
+          math.pi /
+          180 *
+          earthRadius *
+          math.cos(originLatRadians),
+      y: (point.latitude - origin.latitude) * math.pi / 180 * earthRadius,
     );
   }
 
@@ -1133,6 +1333,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
 
     if (routeOrigin == null || routeDestination == null) {
       _routeKey = null;
+      _routePolylinePoints = const <LatLng>[];
       _polylines = HashSet<Polyline>();
       return;
     }
@@ -1152,6 +1353,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
     }
 
     _routeKey = nextRouteKey;
+    _routePolylinePoints = routePoints;
     _polylines = routePoints.isEmpty
         ? HashSet<Polyline>()
         : HashSet<Polyline>.from([
@@ -1278,4 +1480,31 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
       onTap();
     }
   }
+}
+
+class _RouteTravel {
+  const _RouteTravel({required this.fromDistance, required this.toDistance});
+
+  final double fromDistance;
+  final double toDistance;
+
+  double get distance => (toDistance - fromDistance).abs();
+  bool get forward => toDistance >= fromDistance;
+}
+
+class _RouteProjection {
+  const _RouteProjection({
+    required this.routeDistance,
+    required this.distanceFromRoute,
+  });
+
+  final double routeDistance;
+  final double distanceFromRoute;
+}
+
+class _MeterPoint {
+  const _MeterPoint({required this.x, required this.y});
+
+  final double x;
+  final double y;
 }

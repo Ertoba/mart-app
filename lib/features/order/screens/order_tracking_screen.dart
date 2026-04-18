@@ -92,6 +92,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
   static const double _routeForwardWindowMax = 1000;
   static const double _routeForwardWindowMultiplier = 4;
   static const double _routeDensifySegmentLength = 8;
+  static const double _routeInferredProgressMaxBearingDelta = 110;
   static const int _offRouteFallbackThreshold = 3;
 
   void _loadData() async {
@@ -1300,7 +1301,14 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
     final double routeDistance = (toProjection.routeDistance - fromDistance)
         .abs();
     if (routeDistance <= _deliveryMarkerJitterDistance) {
-      return const _RouteTravelResult(allowRawFallback: false);
+      final _RouteTravel? inferredTravel = _inferRouteTravelFromRawMovement(
+        rawTarget: to,
+        fromDistance: fromDistance,
+      );
+      return _RouteTravelResult(
+        travel: inferredTravel,
+        allowRawFallback: false,
+      );
     }
 
     return _RouteTravelResult(
@@ -1310,6 +1318,105 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
       ),
       allowRawFallback: false,
     );
+  }
+
+  _RouteTravel? _inferRouteTravelFromRawMovement({
+    required LatLng rawTarget,
+    required double fromDistance,
+  }) {
+    final LatLng? previousRawTarget = _lastDeliveryLocationTarget;
+    if (previousRawTarget == null) {
+      return null;
+    }
+
+    final double rawDistance = Geolocator.distanceBetween(
+      previousRawTarget.latitude,
+      previousRawTarget.longitude,
+      rawTarget.latitude,
+      rawTarget.longitude,
+    );
+    if (rawDistance <= _deliveryMarkerJitterDistance) {
+      return null;
+    }
+
+    final double? routeDirection = _routeProgressDirection(
+      from: previousRawTarget,
+      to: rawTarget,
+      routeDistance: fromDistance,
+    );
+    if (routeDirection == null) {
+      return null;
+    }
+
+    final double toDistance = _clampRouteDistance(
+      fromDistance + (rawDistance * routeDirection),
+    );
+    if ((toDistance - fromDistance).abs() <= _deliveryMarkerJitterDistance) {
+      return null;
+    }
+
+    return _RouteTravel(fromDistance: fromDistance, toDistance: toDistance);
+  }
+
+  double? _routeProgressDirection({
+    required LatLng from,
+    required LatLng to,
+    required double routeDistance,
+  }) {
+    final double rawDistance = Geolocator.distanceBetween(
+      from.latitude,
+      from.longitude,
+      to.latitude,
+      to.longitude,
+    );
+    if (rawDistance <= 0) {
+      return null;
+    }
+
+    final double rawBearing = Geolocator.bearingBetween(
+      from.latitude,
+      from.longitude,
+      to.latitude,
+      to.longitude,
+    );
+    final double forwardDelta = _bearingDifference(
+      rawBearing,
+      _routeBearingAtDistance(routeDistance, true),
+    );
+    final double backwardDelta = _bearingDifference(
+      rawBearing,
+      _routeBearingAtDistance(routeDistance, false),
+    );
+    final double bestDelta = math.min(forwardDelta, backwardDelta);
+    if (bestDelta > _routeInferredProgressMaxBearingDelta) {
+      return null;
+    }
+
+    return forwardDelta <= backwardDelta ? 1 : -1;
+  }
+
+  double _bearingDifference(double first, double second) {
+    final double diff = (first - second).abs() % 360;
+    return diff > 180 ? 360 - diff : diff;
+  }
+
+  double _clampRouteDistance(double routeDistance) {
+    return routeDistance.clamp(0.0, _routeTotalDistance()).toDouble();
+  }
+
+  double _routeTotalDistance() {
+    double totalDistance = 0;
+    for (int i = 0; i < _routePolylinePoints.length - 1; i++) {
+      final LatLng segmentStart = _routePolylinePoints[i];
+      final LatLng segmentEnd = _routePolylinePoints[i + 1];
+      totalDistance += Geolocator.distanceBetween(
+        segmentStart.latitude,
+        segmentStart.longitude,
+        segmentEnd.latitude,
+        segmentEnd.longitude,
+      );
+    }
+    return totalDistance;
   }
 
   _RouteProjection? _projectToRoute(

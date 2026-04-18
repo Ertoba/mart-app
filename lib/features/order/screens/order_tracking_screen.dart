@@ -66,16 +66,16 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
   List<LatLng> _routePolylinePoints = const <LatLng>[];
 
   static const Duration _deliveryMarkerMinAnimationDuration = Duration(
-    seconds: 5,
+    milliseconds: 1200,
   );
   static const Duration _deliveryMarkerMaxAnimationDuration = Duration(
-    seconds: 18,
+    seconds: 8,
   );
   static const Duration _deliveryMarkerFrameDuration = Duration(
     milliseconds: 50,
   );
   static const double _deliveryMarkerJitterDistance = 3;
-  static const double _deliveryMarkerAnimationMetersPerSecond = 35;
+  static const double _deliveryMarkerAnimationMetersPerSecond = 20;
   static const double _deliveryMarkerTeleportDistance = 5000;
   static const double _routeProjectionMaxDistance = 120;
 
@@ -1081,20 +1081,20 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
             .inMilliseconds
             .toDouble();
         final double t = (progress / durationMs).clamp(0.0, 1.0).toDouble();
-        final double easedT = Curves.easeInOut.transform(t);
+        final double movementT = t;
         final LatLng position;
         final double markerRotation;
         if (routeTravel != null) {
           final double routeDistance =
               routeTravel.fromDistance +
-              ((routeTravel.toDistance - routeTravel.fromDistance) * easedT);
+              ((routeTravel.toDistance - routeTravel.fromDistance) * movementT);
           position = _latLngAtRouteDistance(routeDistance);
           markerRotation = _routeBearingAtDistance(
             routeDistance,
             routeTravel.forward,
           );
         } else {
-          position = _lerpLatLng(from, to, easedT);
+          position = _lerpLatLng(from, to, movementT);
           markerRotation = rotation;
         }
 
@@ -1123,11 +1123,14 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
   }
 
   Duration _deliveryMarkerAnimationDurationFor(double distance) {
+    final double minSeconds =
+        _deliveryMarkerMinAnimationDuration.inMilliseconds /
+        Duration.millisecondsPerSecond;
+    final double maxSeconds =
+        _deliveryMarkerMaxAnimationDuration.inMilliseconds /
+        Duration.millisecondsPerSecond;
     final double seconds = (distance / _deliveryMarkerAnimationMetersPerSecond)
-        .clamp(
-          _deliveryMarkerMinAnimationDuration.inSeconds.toDouble(),
-          _deliveryMarkerMaxAnimationDuration.inSeconds.toDouble(),
-        )
+        .clamp(minSeconds, maxSeconds)
         .toDouble();
     return Duration(milliseconds: (seconds * 1000).round());
   }

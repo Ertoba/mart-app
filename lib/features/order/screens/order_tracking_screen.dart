@@ -87,27 +87,51 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
     );
 
     if (Get.find<SplashController>().configModel!.websocketEnabled!) {
-      _trackWithPusher();
+      await _startLiveTracking();
     } else {
       _timerTrackOrder();
     }
   }
 
+  bool _canTrackDeliveryman(OrderModel? trackModel) {
+    return trackModel?.orderStatus != 'delivered' &&
+        trackModel?.orderStatus != 'failed' &&
+        trackModel?.orderStatus != 'canceled';
+  }
+
+  bool get _isWebsocketTrackingEnabled =>
+      Get.find<SplashController>().configModel?.websocketEnabled ?? false;
+
+  Future<void> _startLiveTracking() async {
+    _timer?.cancel();
+    try {
+      await PusherHelper.initializePusher();
+    } catch (error) {
+      debugPrint('[PUSHER] initialize failed: $error');
+    }
+    if (_isDisposed || !mounted) return;
+
+    await _refreshDeliveryMarkerFromTrack();
+    if (_isDisposed || !mounted) return;
+
+    _trackWithPusher();
+    _startDeliveryLocationFallbackTimer();
+  }
+
   void _trackWithPusher() {
     final tm = Get.find<OrderController>().trackModel;
-    bool canTrackDeliveryman =
-        tm?.orderStatus != 'delivered' &&
-        tm?.orderStatus != 'failed' &&
-        tm?.orderStatus != 'canceled';
+    bool canTrackDeliveryman = _canTrackDeliveryman(tm);
     debugPrint(
       '[PUSHER] _trackWithPusher: order=${tm?.id} status=${tm?.orderStatus} deliveryMan=${tm?.deliveryMan?.id} canTrack=$canTrackDeliveryman',
     );
-    if (tm != null && tm.deliveryMan != null && canTrackDeliveryman) {
-      Get.find<OrderController>().timerTrackOrder(
-        widget.orderID.toString(),
-        contactNumber: widget.contactNumber,
-      );
 
+    if (!canTrackDeliveryman) {
+      _timer?.cancel();
+      _pusherHelper.pusherDisconnectPusher();
+      return;
+    }
+
+    if (tm != null && tm.deliveryMan != null) {
       _pusherHelper.pusherDriverStatus(
         deliverymanId: tm.deliveryMan!.id.toString(),
         onLocationReceived: (RecordLocationBodyModel dmLocation) {
@@ -119,6 +143,58 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
         },
       );
     }
+  }
+
+  void _startDeliveryLocationFallbackTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+      if (_isDisposed || !mounted) {
+        timer.cancel();
+        return;
+      }
+
+      if (Get.currentRoute.contains(RouteHelper.orderDetails) ||
+          Get.currentRoute.contains(RouteHelper.orderTracking)) {
+        await _refreshDeliveryMarkerFromTrack();
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  Future<void> _refreshDeliveryMarkerFromTrack() async {
+    if (_isDisposed || !mounted || widget.orderID == null) return;
+
+    await Get.find<OrderController>().timerTrackOrder(
+      widget.orderID.toString(),
+      contactNumber: widget.contactNumber,
+    );
+
+    if (_isDisposed || !mounted) return;
+    final OrderModel? trackModel = Get.find<OrderController>().trackModel;
+    if (trackModel == null || trackModel.id?.toString() != widget.orderID) {
+      return;
+    }
+
+    if (!_canTrackDeliveryman(trackModel)) {
+      _timer?.cancel();
+      _pusherHelper.pusherDisconnectPusher();
+      return;
+    }
+
+    final DeliveryMan? deliveryMan = trackModel.deliveryMan;
+    if (deliveryMan == null) return;
+
+    debugPrint(
+      '[PUSHER] fallback location lat=${deliveryMan.lat} lng=${deliveryMan.lng}',
+    );
+    await updateDeliverymanMarker(
+      RecordLocationBodyModel(
+        latitude: deliveryMan.lat,
+        longitude: deliveryMan.lng,
+        location: deliveryMan.location,
+      ),
+    );
   }
 
   void _timerTrackOrder() {
@@ -183,20 +259,20 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    if (Get.find<SplashController>().configModel!.websocketEnabled!) {
-      PusherHelper.initializePusher();
-    }
     _loadData();
   }
 
   @override
   void didChangeAppLifecycleState(final AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _timerTrackOrder();
+      if (_isWebsocketTrackingEnabled) {
+        _startLiveTracking();
+      } else {
+        _timerTrackOrder();
+      }
     } else if (state == AppLifecycleState.paused) {
       _timer?.cancel();
       _deliveryMarkerAnimationTimer?.cancel();
-      _controller?.dispose();
     }
   }
 
@@ -796,33 +872,12 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
             imagePath: Images.userMarker,
           );
 
-      LatLngBounds? bounds;
       double rotation = 0;
-      if (_controller != null) {
-        if (double.parse(addressModel!.latitude!) <
-            double.parse(store!.latitude!)) {
-          bounds = LatLngBounds(
-            southwest: LatLng(
-              double.parse(addressModel.latitude!),
-              double.parse(addressModel.longitude!),
-            ),
-            northeast: LatLng(
-              double.parse(store.latitude!),
-              double.parse(store.longitude!),
-            ),
-          );
+      if (_controller != null && addressModel != null && store != null) {
+        if (double.parse(addressModel.latitude!) <
+            double.parse(store.latitude!)) {
           rotation = 0;
         } else {
-          bounds = LatLngBounds(
-            southwest: LatLng(
-              double.parse(store.latitude!),
-              double.parse(store.longitude!),
-            ),
-            northeast: LatLng(
-              double.parse(addressModel.latitude!),
-              double.parse(addressModel.longitude!),
-            ),
-          );
           rotation = 180;
         }
       }

@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
+
 import 'package:dart_pusher_channels/dart_pusher_channels.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 
 class PusherHelper {
   static PusherChannelsClient? pusherClient;
+  static StreamSubscription? _lifecycleSubscription;
 
   static Future<void> initializePusher() async {
     final config = Get.find<SplashController>().configModel;
@@ -14,6 +17,11 @@ class PusherHelper {
     final port = config?.webSocketPort ?? 443;
     final key = config?.webSocketKey ?? '6ammart';
 
+    if (host.isEmpty) {
+      debugPrint('[PUSHER] skipped: websocket host is empty');
+      return;
+    }
+
     PusherChannelsOptions testOptions = PusherChannelsOptions.fromHost(
       host: host,
       scheme: 'wss',
@@ -21,30 +29,29 @@ class PusherHelper {
       port: port,
     );
 
+    await _lifecycleSubscription?.cancel();
     pusherClient?.disconnect();
     pusherClient = PusherChannelsClient.websocket(
       options: testOptions,
       connectionErrorHandler: (exception, trace, refresh) async {
-        log('=================$exception');
+        debugPrint('[PUSHER] connection error: $exception');
         refresh();
       },
     );
 
     await pusherClient?.connect();
+    debugPrint('[PUSHER] connected host=$host port=$port');
 
-    String? pusherChannelId =
-        pusherClient?.channelsManager.channelsConnectionDelegate.socketId;
-    if (pusherChannelId != null) {
-      log('=================Pusher Connected');
-    }
-
-    pusherClient?.lifecycleStream.listen((event) {
-      log('=================Pusher DisConnected');
+    _lifecycleSubscription = pusherClient?.lifecycleStream.listen((event) {
+      debugPrint('[PUSHER] lifecycle: $event');
     });
   }
 
   PublicChannel? publicChannel;
-  String? _driverChannelName;
+  StreamSubscription? _driverSubscribedSubscription;
+  StreamSubscription? _driverSubscriptionErrorSubscription;
+  StreamSubscription? _driverEventSubscription;
+  StreamSubscription? _driverDotEventSubscription;
 
   void pusherDriverStatus({
     required String deliverymanId,
@@ -52,48 +59,87 @@ class PusherHelper {
   }) {
     String channel = 'dm_location_$deliverymanId';
 
-    log('========channel is: $channel');
+    debugPrint('[PUSHER] subscribing channel=$channel');
 
     if (pusherClient == null) {
+      debugPrint('[PUSHER] skipped channel=$channel because client is null');
       return;
     }
 
-    if (_driverChannelName != null && _driverChannelName != channel) {
-      publicChannel?.unsubscribe();
-      publicChannel = null;
-    }
+    _cancelDriverBindings();
+    publicChannel?.unsubscribe();
+    publicChannel = null;
 
-    _driverChannelName = channel;
     publicChannel = pusherClient!.publicChannel(channel);
 
     publicChannel?.subscribeIfNotUnsubscribed();
 
-    publicChannel?.bind('pusher:subscription_succeeded').listen((_) {
-      log('=======Public Subscribed');
-    });
+    _driverSubscribedSubscription = publicChannel
+        ?.bind('pusher:subscription_succeeded')
+        .listen((_) {
+          debugPrint('[PUSHER] public subscribed channel=$channel');
+        });
 
-    publicChannel?.bind('pusher:subscription_error').listen((error) {
-      log('=======Public Subscription Failed: ${error.data}');
-    });
+    _driverSubscriptionErrorSubscription = publicChannel
+        ?.bind('pusher:subscription_error')
+        .listen((error) {
+          debugPrint(
+            '[PUSHER] public subscription failed channel=$channel error=${error.data}',
+          );
+        });
 
-    publicChannel?.bind(channel).listen((event) {
-      log('===========pusherDriverStatus bind is: ${event.data}');
-      final data = jsonDecode(event.data);
-      onLocationReceived(
-        RecordLocationBodyModel(
-          latitude: data['latitude']?.toString(),
-          longitude: data['longitude']?.toString(),
-          location: data['location'],
-        ),
-      );
+    _driverEventSubscription = publicChannel?.bind(channel).listen((event) {
+      _handleDriverLocationEvent(event.data, onLocationReceived);
+    });
+    _driverDotEventSubscription = publicChannel?.bind('.$channel').listen((
+      event,
+    ) {
+      _handleDriverLocationEvent(event.data, onLocationReceived);
     });
   }
 
   void pusherDisconnectPusher() {
+    _cancelDriverBindings();
     publicChannel?.unsubscribe();
     publicChannel = null;
-    _driverChannelName = null;
     pusherClient?.disconnect();
+  }
+
+  void _handleDriverLocationEvent(
+    dynamic eventData,
+    Function(RecordLocationBodyModel) onLocationReceived,
+  ) {
+    try {
+      debugPrint('[PUSHER] driver event data=$eventData');
+      final dynamic decoded = eventData is String
+          ? jsonDecode(eventData)
+          : eventData;
+      if (decoded is! Map) {
+        debugPrint('[PUSHER] ignored driver event with invalid payload');
+        return;
+      }
+
+      onLocationReceived(
+        RecordLocationBodyModel(
+          latitude: decoded['latitude']?.toString(),
+          longitude: decoded['longitude']?.toString(),
+          location: decoded['location']?.toString(),
+        ),
+      );
+    } catch (error) {
+      debugPrint('[PUSHER] failed to parse driver event: $error');
+    }
+  }
+
+  void _cancelDriverBindings() {
+    _driverSubscribedSubscription?.cancel();
+    _driverSubscriptionErrorSubscription?.cancel();
+    _driverEventSubscription?.cancel();
+    _driverDotEventSubscription?.cancel();
+    _driverSubscribedSubscription = null;
+    _driverSubscriptionErrorSubscription = null;
+    _driverEventSubscription = null;
+    _driverDotEventSubscription = null;
   }
 }
 

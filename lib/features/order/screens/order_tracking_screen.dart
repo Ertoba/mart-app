@@ -57,6 +57,18 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
   bool isHovered = false;
   String? _routeKey;
   OrderModel? _localTrackModel;
+  Timer? _deliveryMarkerAnimationTimer;
+  LatLng? _deliveryMarkerPosition;
+  BitmapDescriptor? _deliveryMarkerIcon;
+  String? _deliveryMarkerSnippet;
+  double _deliveryMarkerRotation = 0;
+
+  static const Duration _deliveryMarkerAnimationDuration = Duration(seconds: 9);
+  static const Duration _deliveryMarkerFrameDuration = Duration(
+    milliseconds: 50,
+  );
+  static const double _deliveryMarkerJitterDistance = 3;
+  static const double _deliveryMarkerSnapDistance = 300;
 
   void _loadData() async {
     await Get.find<LocationController>().getCurrentLocation(
@@ -183,6 +195,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
       _timerTrackOrder();
     } else if (state == AppLifecycleState.paused) {
       _timer?.cancel();
+      _deliveryMarkerAnimationTimer?.cancel();
       _controller?.dispose();
     }
   }
@@ -191,6 +204,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
   void dispose() {
     _isDisposed = true;
     _timer?.cancel();
+    _deliveryMarkerAnimationTimer?.cancel();
     _pusherHelper.pusherDisconnectPusher();
     _controller?.dispose();
     WidgetsBinding.instance.removeObserver(this);
@@ -655,23 +669,24 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
             )
           : const SizedBox();
 
-      deliveryMan != null
-          ? _markers.add(
-              Marker(
-                markerId: const MarkerId('delivery_boy'),
-                position: LatLng(
-                  double.parse(deliveryMan.lat ?? '0'),
-                  double.parse(deliveryMan.lng ?? '0'),
-                ),
-                infoWindow: InfoWindow(
-                  title: 'delivery_man'.tr,
-                  snippet: deliveryMan.location,
-                ),
-                rotation: rotation,
-                icon: deliveryBoyImageData,
-              ),
-            )
-          : const SizedBox();
+      if (deliveryMan != null) {
+        final LatLng deliveryManPosition = LatLng(
+          double.parse(deliveryMan.lat ?? '0'),
+          double.parse(deliveryMan.lng ?? '0'),
+        );
+        _deliveryMarkerPosition = deliveryManPosition;
+        _deliveryMarkerIcon = deliveryBoyImageData;
+        _deliveryMarkerSnippet = deliveryMan.location;
+        _deliveryMarkerRotation = rotation;
+        _markers.add(
+          _buildDeliveryMarker(
+            position: deliveryManPosition,
+            icon: deliveryBoyImageData,
+            snippet: deliveryMan.location,
+            rotation: rotation,
+          ),
+        );
+      }
 
       await _updateRoutePolyline(
         store: store,
@@ -688,33 +703,67 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
     RecordLocationBodyModel dmLocation,
   ) async {
     if (_isDisposed || !mounted) return;
-    BitmapDescriptor deliveryBoyImageData =
-        await MarkerHelper.convertAssetToBitmapDescriptor(
-          width: 30,
-          imagePath: Images.deliveryManMarker,
-        );
 
-    if (dmLocation.latitude != null && dmLocation.latitude!.isNotEmpty) {
-      _markers.removeWhere((m) => m.markerId.value == 'delivery_boy');
-      _markers.add(
-        Marker(
-          markerId: const MarkerId('delivery_boy'),
-          position: LatLng(
-            double.parse(dmLocation.latitude ?? '0'),
-            double.parse(dmLocation.longitude ?? '0'),
-          ),
-          infoWindow: InfoWindow(
-            title: 'delivery_man'.tr,
-            snippet: dmLocation.location,
-          ),
-          // rotation: rotation,
-          icon: deliveryBoyImageData,
-        ),
+    final LatLng? targetPosition = _latLngFromDeliverymanLocation(dmLocation);
+    if (targetPosition == null) return;
+
+    final BitmapDescriptor deliveryBoyImageData =
+        await _getDeliveryMarkerIcon();
+    if (_isDisposed || !mounted) return;
+
+    final LatLng? startPosition =
+        _deliveryMarkerPosition ?? _currentDeliveryMarkerPosition();
+    if (startPosition == null) {
+      _setDeliveryMarkerPosition(
+        position: targetPosition,
+        icon: deliveryBoyImageData,
+        snippet: dmLocation.location,
+        rotation: _deliveryMarkerRotation,
       );
-
-      if (_isDisposed || !mounted) return;
-      setState(() {});
+      return;
     }
+
+    final double distance = Geolocator.distanceBetween(
+      startPosition.latitude,
+      startPosition.longitude,
+      targetPosition.latitude,
+      targetPosition.longitude,
+    );
+
+    if (distance <= _deliveryMarkerJitterDistance) {
+      _setDeliveryMarkerPosition(
+        position: startPosition,
+        icon: deliveryBoyImageData,
+        snippet: dmLocation.location,
+        rotation: _deliveryMarkerRotation,
+      );
+      return;
+    }
+
+    final double rotation = Geolocator.bearingBetween(
+      startPosition.latitude,
+      startPosition.longitude,
+      targetPosition.latitude,
+      targetPosition.longitude,
+    );
+
+    if (distance >= _deliveryMarkerSnapDistance) {
+      _setDeliveryMarkerPosition(
+        position: targetPosition,
+        icon: deliveryBoyImageData,
+        snippet: dmLocation.location,
+        rotation: rotation,
+      );
+      return;
+    }
+
+    _animateDeliveryMarker(
+      from: startPosition,
+      to: targetPosition,
+      icon: deliveryBoyImageData,
+      snippet: dmLocation.location,
+      rotation: rotation,
+    );
   }
 
   void updateMarker(
@@ -850,23 +899,24 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
             )
           : const SizedBox();
 
-      deliveryMan != null
-          ? _markers.add(
-              Marker(
-                markerId: const MarkerId('delivery_boy'),
-                position: LatLng(
-                  double.parse(deliveryMan.lat ?? '0'),
-                  double.parse(deliveryMan.lng ?? '0'),
-                ),
-                infoWindow: InfoWindow(
-                  title: 'delivery_man'.tr,
-                  snippet: deliveryMan.location,
-                ),
-                rotation: rotation,
-                icon: deliveryBoyImageData,
-              ),
-            )
-          : const SizedBox();
+      if (deliveryMan != null) {
+        final LatLng deliveryManPosition = LatLng(
+          double.parse(deliveryMan.lat ?? '0'),
+          double.parse(deliveryMan.lng ?? '0'),
+        );
+        _deliveryMarkerPosition = deliveryManPosition;
+        _deliveryMarkerIcon = deliveryBoyImageData;
+        _deliveryMarkerSnippet = deliveryMan.location;
+        _deliveryMarkerRotation = rotation;
+        _markers.add(
+          _buildDeliveryMarker(
+            position: deliveryManPosition,
+            icon: deliveryBoyImageData,
+            snippet: deliveryMan.location,
+            rotation: rotation,
+          ),
+        );
+      }
 
       await _updateRoutePolyline(
         store: store,
@@ -875,6 +925,142 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
         parcel: parcel,
       );
     } catch (_) {}
+    if (_isDisposed || !mounted) return;
+    setState(() {});
+  }
+
+  Future<BitmapDescriptor> _getDeliveryMarkerIcon() async {
+    final BitmapDescriptor? icon = _deliveryMarkerIcon;
+    if (icon != null) {
+      return icon;
+    }
+
+    final BitmapDescriptor deliveryBoyImageData =
+        await MarkerHelper.convertAssetToBitmapDescriptor(
+          width: 30,
+          imagePath: Images.deliveryManMarker,
+        );
+    _deliveryMarkerIcon = deliveryBoyImageData;
+    return deliveryBoyImageData;
+  }
+
+  Marker _buildDeliveryMarker({
+    required LatLng position,
+    required BitmapDescriptor icon,
+    required String? snippet,
+    required double rotation,
+  }) {
+    return Marker(
+      markerId: const MarkerId('delivery_boy'),
+      position: position,
+      infoWindow: InfoWindow(title: 'delivery_man'.tr, snippet: snippet),
+      rotation: rotation,
+      icon: icon,
+      zIndexInt: 3,
+    );
+  }
+
+  LatLng? _latLngFromDeliverymanLocation(RecordLocationBodyModel dmLocation) {
+    final double? latitude = double.tryParse(dmLocation.latitude ?? '');
+    final double? longitude = double.tryParse(dmLocation.longitude ?? '');
+
+    if (latitude == null ||
+        longitude == null ||
+        (latitude == 0 && longitude == 0)) {
+      return null;
+    }
+
+    return LatLng(latitude, longitude);
+  }
+
+  LatLng? _currentDeliveryMarkerPosition() {
+    for (final Marker marker in _markers) {
+      if (marker.markerId.value == 'delivery_boy') {
+        return marker.position;
+      }
+    }
+    return null;
+  }
+
+  void _animateDeliveryMarker({
+    required LatLng from,
+    required LatLng to,
+    required BitmapDescriptor icon,
+    required String? snippet,
+    required double rotation,
+  }) {
+    _deliveryMarkerAnimationTimer?.cancel();
+    _deliveryMarkerSnippet = snippet;
+    _deliveryMarkerRotation = rotation;
+
+    final DateTime startedAt = DateTime.now();
+    _deliveryMarkerAnimationTimer = Timer.periodic(
+      _deliveryMarkerFrameDuration,
+      (Timer timer) {
+        if (_isDisposed || !mounted) {
+          timer.cancel();
+          return;
+        }
+
+        final double progress = DateTime.now()
+            .difference(startedAt)
+            .inMilliseconds
+            .toDouble();
+        final double t =
+            (progress / _deliveryMarkerAnimationDuration.inMilliseconds)
+                .clamp(0.0, 1.0)
+                .toDouble();
+        final LatLng position = _lerpLatLng(
+          from,
+          to,
+          Curves.easeInOut.transform(t),
+        );
+
+        _setDeliveryMarkerPosition(
+          position: position,
+          icon: icon,
+          snippet: snippet,
+          rotation: rotation,
+        );
+
+        if (t >= 1) {
+          timer.cancel();
+          if (_deliveryMarkerAnimationTimer == timer) {
+            _deliveryMarkerAnimationTimer = null;
+          }
+        }
+      },
+    );
+  }
+
+  LatLng _lerpLatLng(LatLng from, LatLng to, double t) {
+    return LatLng(
+      from.latitude + (to.latitude - from.latitude) * t,
+      from.longitude + (to.longitude - from.longitude) * t,
+    );
+  }
+
+  void _setDeliveryMarkerPosition({
+    required LatLng position,
+    required BitmapDescriptor icon,
+    required String? snippet,
+    required double rotation,
+  }) {
+    _deliveryMarkerPosition = position;
+    _deliveryMarkerIcon = icon;
+    _deliveryMarkerSnippet = snippet;
+    _deliveryMarkerRotation = rotation;
+
+    _markers.removeWhere((m) => m.markerId.value == 'delivery_boy');
+    _markers.add(
+      _buildDeliveryMarker(
+        position: position,
+        icon: icon,
+        snippet: _deliveryMarkerSnippet,
+        rotation: _deliveryMarkerRotation,
+      ),
+    );
+
     if (_isDisposed || !mounted) return;
     setState(() {});
   }

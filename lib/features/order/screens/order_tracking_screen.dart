@@ -64,6 +64,10 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
   String? _deliveryMarkerSnippet;
   double _deliveryMarkerRotation = 0;
   List<LatLng> _routePolylinePoints = const <LatLng>[];
+  double? _deliveryMarkerRouteDistance;
+  LatLng? _lastDeliveryLocationTarget;
+  DateTime? _lastDeliveryLocationReceivedAt;
+  int _offRouteLocationCount = 0;
 
   static const Duration _deliveryMarkerMinAnimationDuration = Duration(
     milliseconds: 1200,
@@ -75,9 +79,19 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
     milliseconds: 50,
   );
   static const double _deliveryMarkerJitterDistance = 3;
-  static const double _deliveryMarkerAnimationMetersPerSecond = 20;
+  static const double _deliveryMarkerDefaultMetersPerSecond = 8;
+  static const double _deliveryMarkerWalkingSpeedThreshold = 3;
+  static const double _deliveryMarkerWalkingMetersPerSecond = 2.2;
+  static const double _deliveryMarkerMaxMetersPerSecond = 12;
   static const double _deliveryMarkerTeleportDistance = 5000;
-  static const double _routeProjectionMaxDistance = 120;
+  static const double _routeSnapCorridorDistance = 45;
+  static const double _routeHardOffRouteDistance = 90;
+  static const double _routeBacktrackAllowance = 25;
+  static const double _routeForwardWindowMin = 120;
+  static const double _routeForwardWindowMax = 1000;
+  static const double _routeForwardWindowMultiplier = 4;
+  static const double _routeDensifySegmentLength = 8;
+  static const int _offRouteFallbackThreshold = 3;
 
   void _loadData() async {
     await Get.find<LocationController>().getCurrentLocation(
@@ -791,6 +805,11 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
 
     final LatLng? targetPosition = _latLngFromDeliverymanLocation(dmLocation);
     if (targetPosition == null) return;
+    final DateTime receivedAt = DateTime.now();
+    final double? observedSpeed = _deliveryLocationObservedSpeed(
+      targetPosition,
+      receivedAt,
+    );
 
     final BitmapDescriptor deliveryBoyImageData =
         await _getDeliveryMarkerIcon();
@@ -799,6 +818,25 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
     final LatLng? startPosition =
         _deliveryMarkerPosition ?? _currentDeliveryMarkerPosition();
     if (startPosition == null) {
+      _rememberDeliveryLocation(targetPosition, receivedAt);
+      final _RouteProjection? initialProjection = _projectToRoute(
+        targetPosition,
+      );
+      if (initialProjection != null &&
+          initialProjection.distanceFromRoute <= _routeHardOffRouteDistance) {
+        _setDeliveryMarkerPosition(
+          position: _latLngAtRouteDistance(initialProjection.routeDistance),
+          icon: deliveryBoyImageData,
+          snippet: dmLocation.location,
+          rotation: _routeBearingAtDistance(
+            initialProjection.routeDistance,
+            true,
+          ),
+          routeDistance: initialProjection.routeDistance,
+        );
+        return;
+      }
+
       _setDeliveryMarkerPosition(
         position: targetPosition,
         icon: deliveryBoyImageData,
@@ -819,6 +857,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
       _deliveryMarkerPosition = startPosition;
       _deliveryMarkerIcon = deliveryBoyImageData;
       _deliveryMarkerSnippet = dmLocation.location;
+      _rememberDeliveryLocation(targetPosition, receivedAt);
       return;
     }
 
@@ -836,16 +875,34 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
         snippet: dmLocation.location,
         rotation: rotation,
       );
+      _rememberDeliveryLocation(targetPosition, receivedAt);
       return;
     }
 
-    final _RouteTravel? routeTravel = _routeTravelBetween(
+    final _RouteTravelResult routeTravelResult = _routeTravelBetween(
       startPosition,
       targetPosition,
     );
     final Duration animationDuration = _deliveryMarkerAnimationDurationFor(
-      routeTravel?.distance ?? distance,
+      routeTravelResult.travel?.distance ?? distance,
+      observedSpeed: observedSpeed,
     );
+    debugPrint(
+      '[TRACKING] marker distance=${distance.toStringAsFixed(1)}m '
+      'speed=${observedSpeed?.toStringAsFixed(2) ?? "-"}mps '
+      'route=${routeTravelResult.travel != null} '
+      'rawFallback=${routeTravelResult.allowRawFallback} '
+      'offRoute=$_offRouteLocationCount '
+      'duration=${animationDuration.inMilliseconds}ms',
+    );
+
+    if (routeTravelResult.travel == null &&
+        !routeTravelResult.allowRawFallback) {
+      _deliveryMarkerIcon = deliveryBoyImageData;
+      _deliveryMarkerSnippet = dmLocation.location;
+      _rememberDeliveryLocation(targetPosition, receivedAt);
+      return;
+    }
 
     _animateDeliveryMarker(
       from: startPosition,
@@ -854,8 +911,9 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
       snippet: dmLocation.location,
       rotation: rotation,
       duration: animationDuration,
-      routeTravel: routeTravel,
+      routeTravel: routeTravelResult.travel,
     );
+    _rememberDeliveryLocation(targetPosition, receivedAt);
   }
 
   void updateMarker(
@@ -1084,6 +1142,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
         final double movementT = t;
         final LatLng position;
         final double markerRotation;
+        final double? markerRouteDistance;
         if (routeTravel != null) {
           final double routeDistance =
               routeTravel.fromDistance +
@@ -1093,9 +1152,11 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
             routeDistance,
             routeTravel.forward,
           );
+          markerRouteDistance = routeDistance;
         } else {
           position = _lerpLatLng(from, to, movementT);
           markerRotation = rotation;
+          markerRouteDistance = null;
         }
 
         _setDeliveryMarkerPosition(
@@ -1103,6 +1164,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
           icon: icon,
           snippet: snippet,
           rotation: markerRotation,
+          routeDistance: markerRouteDistance,
         );
 
         if (t >= 1) {
@@ -1122,47 +1184,133 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
     );
   }
 
-  Duration _deliveryMarkerAnimationDurationFor(double distance) {
+  Duration _deliveryMarkerAnimationDurationFor(
+    double distance, {
+    double? observedSpeed,
+  }) {
     final double minSeconds =
         _deliveryMarkerMinAnimationDuration.inMilliseconds /
         Duration.millisecondsPerSecond;
     final double maxSeconds =
         _deliveryMarkerMaxAnimationDuration.inMilliseconds /
         Duration.millisecondsPerSecond;
-    final double seconds = (distance / _deliveryMarkerAnimationMetersPerSecond)
+    final double animationSpeed = _deliveryMarkerAnimationSpeedFor(
+      observedSpeed,
+    );
+    final double seconds = (distance / animationSpeed)
         .clamp(minSeconds, maxSeconds)
         .toDouble();
     return Duration(milliseconds: (seconds * 1000).round());
   }
 
-  _RouteTravel? _routeTravelBetween(LatLng from, LatLng to) {
+  double _deliveryMarkerAnimationSpeedFor(double? observedSpeed) {
+    if (observedSpeed == null || observedSpeed <= 0) {
+      return _deliveryMarkerDefaultMetersPerSecond;
+    }
+    if (observedSpeed <= _deliveryMarkerWalkingSpeedThreshold) {
+      return _deliveryMarkerWalkingMetersPerSecond;
+    }
+    return observedSpeed
+        .clamp(
+          _deliveryMarkerWalkingMetersPerSecond,
+          _deliveryMarkerMaxMetersPerSecond,
+        )
+        .toDouble();
+  }
+
+  double? _deliveryLocationObservedSpeed(LatLng target, DateTime receivedAt) {
+    final LatLng? previousTarget = _lastDeliveryLocationTarget;
+    final DateTime? previousReceivedAt = _lastDeliveryLocationReceivedAt;
+    if (previousTarget == null || previousReceivedAt == null) {
+      return null;
+    }
+
+    final int elapsedMs = receivedAt
+        .difference(previousReceivedAt)
+        .inMilliseconds;
+    if (elapsedMs < 1000 || elapsedMs > 60000) {
+      return null;
+    }
+
+    final double distance = Geolocator.distanceBetween(
+      previousTarget.latitude,
+      previousTarget.longitude,
+      target.latitude,
+      target.longitude,
+    );
+    return distance / (elapsedMs / Duration.millisecondsPerSecond);
+  }
+
+  void _rememberDeliveryLocation(LatLng target, DateTime receivedAt) {
+    _lastDeliveryLocationTarget = target;
+    _lastDeliveryLocationReceivedAt = receivedAt;
+  }
+
+  _RouteTravelResult _routeTravelBetween(LatLng from, LatLng to) {
     if (_routePolylinePoints.length < 2) {
-      return null;
+      return const _RouteTravelResult(allowRawFallback: true);
     }
 
+    final double directDistance = Geolocator.distanceBetween(
+      from.latitude,
+      from.longitude,
+      to.latitude,
+      to.longitude,
+    );
     final _RouteProjection? fromProjection = _projectToRoute(from);
-    final _RouteProjection? toProjection = _projectToRoute(to);
-    if (fromProjection == null || toProjection == null) {
-      return null;
-    }
-    if (fromProjection.distanceFromRoute > _routeProjectionMaxDistance ||
-        toProjection.distanceFromRoute > _routeProjectionMaxDistance) {
-      return null;
+    final double? fromDistance =
+        _deliveryMarkerRouteDistance ?? fromProjection?.routeDistance;
+    if (fromDistance == null) {
+      return const _RouteTravelResult(allowRawFallback: true);
     }
 
-    final double routeDistance =
-        (toProjection.routeDistance - fromProjection.routeDistance).abs();
+    final double forwardWindow = math
+        .max(
+          _routeForwardWindowMin,
+          directDistance * _routeForwardWindowMultiplier,
+        )
+        .clamp(_routeForwardWindowMin, _routeForwardWindowMax)
+        .toDouble();
+    final _RouteProjection? toProjection = _projectToRoute(
+      to,
+      minRouteDistance: math.max(0, fromDistance - _routeBacktrackAllowance),
+      maxRouteDistance: fromDistance + forwardWindow,
+    );
+
+    if (toProjection == null ||
+        toProjection.distanceFromRoute > _routeHardOffRouteDistance) {
+      _offRouteLocationCount++;
+      return _RouteTravelResult(
+        allowRawFallback: _offRouteLocationCount >= _offRouteFallbackThreshold,
+      );
+    }
+
+    if (toProjection.distanceFromRoute > _routeSnapCorridorDistance) {
+      _offRouteLocationCount++;
+    } else {
+      _offRouteLocationCount = 0;
+    }
+
+    final double routeDistance = (toProjection.routeDistance - fromDistance)
+        .abs();
     if (routeDistance <= _deliveryMarkerJitterDistance) {
-      return null;
+      return const _RouteTravelResult(allowRawFallback: false);
     }
 
-    return _RouteTravel(
-      fromDistance: fromProjection.routeDistance,
-      toDistance: toProjection.routeDistance,
+    return _RouteTravelResult(
+      travel: _RouteTravel(
+        fromDistance: fromDistance,
+        toDistance: toProjection.routeDistance,
+      ),
+      allowRawFallback: false,
     );
   }
 
-  _RouteProjection? _projectToRoute(LatLng point) {
+  _RouteProjection? _projectToRoute(
+    LatLng point, {
+    double? minRouteDistance,
+    double? maxRouteDistance,
+  }) {
     if (_routePolylinePoints.length < 2) {
       return null;
     }
@@ -1202,8 +1350,17 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
       final double distanceFromRoute = math.sqrt(
         (projectedX * projectedX) + (projectedY * projectedY),
       );
+      final double projectionRouteDistance =
+          traveledDistance + (segmentLength * t);
+      if ((minRouteDistance != null &&
+              projectionRouteDistance < minRouteDistance) ||
+          (maxRouteDistance != null &&
+              projectionRouteDistance > maxRouteDistance)) {
+        traveledDistance += segmentLength;
+        continue;
+      }
       final _RouteProjection projection = _RouteProjection(
-        routeDistance: traveledDistance + (segmentLength * t),
+        routeDistance: projectionRouteDistance,
         distanceFromRoute: distanceFromRoute,
       );
 
@@ -1295,16 +1452,48 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
     );
   }
 
+  List<LatLng> _densifyRoutePoints(List<LatLng> routePoints) {
+    if (routePoints.length < 2) {
+      return routePoints;
+    }
+
+    final List<LatLng> densifiedPoints = <LatLng>[routePoints.first];
+    for (int i = 0; i < routePoints.length - 1; i++) {
+      final LatLng segmentStart = routePoints[i];
+      final LatLng segmentEnd = routePoints[i + 1];
+      final double segmentLength = Geolocator.distanceBetween(
+        segmentStart.latitude,
+        segmentStart.longitude,
+        segmentEnd.latitude,
+        segmentEnd.longitude,
+      );
+      final int steps = math.max(
+        1,
+        (segmentLength / _routeDensifySegmentLength).ceil(),
+      );
+
+      for (int step = 1; step <= steps; step++) {
+        densifiedPoints.add(
+          _lerpLatLng(segmentStart, segmentEnd, step / steps),
+        );
+      }
+    }
+
+    return densifiedPoints;
+  }
+
   void _setDeliveryMarkerPosition({
     required LatLng position,
     required BitmapDescriptor icon,
     required String? snippet,
     required double rotation,
+    double? routeDistance,
   }) {
     _deliveryMarkerPosition = position;
     _deliveryMarkerIcon = icon;
     _deliveryMarkerSnippet = snippet;
     _deliveryMarkerRotation = rotation;
+    _deliveryMarkerRouteDistance = routeDistance;
 
     _markers.removeWhere((m) => m.markerId.value == 'delivery_boy');
     _markers.add(
@@ -1337,6 +1526,8 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
     if (routeOrigin == null || routeDestination == null) {
       _routeKey = null;
       _routePolylinePoints = const <LatLng>[];
+      _deliveryMarkerRouteDistance = null;
+      _offRouteLocationCount = 0;
       _polylines = HashSet<Polyline>();
       return;
     }
@@ -1356,7 +1547,9 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
     }
 
     _routeKey = nextRouteKey;
-    _routePolylinePoints = routePoints;
+    _routePolylinePoints = _densifyRoutePoints(routePoints);
+    _deliveryMarkerRouteDistance = null;
+    _offRouteLocationCount = 0;
     _polylines = routePoints.isEmpty
         ? HashSet<Polyline>()
         : HashSet<Polyline>.from([
@@ -1493,6 +1686,13 @@ class _RouteTravel {
 
   double get distance => (toDistance - fromDistance).abs();
   bool get forward => toDistance >= fromDistance;
+}
+
+class _RouteTravelResult {
+  const _RouteTravelResult({this.travel, required this.allowRawFallback});
+
+  final _RouteTravel? travel;
+  final bool allowRawFallback;
 }
 
 class _RouteProjection {

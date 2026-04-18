@@ -78,10 +78,11 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
   static const Duration _deliveryMarkerFrameDuration = Duration(
     milliseconds: 50,
   );
-  static const double _deliveryMarkerJitterDistance = 3;
+  static const double _deliveryMarkerJitterDistance = 2;
   static const double _deliveryMarkerDefaultMetersPerSecond = 8;
   static const double _deliveryMarkerWalkingSpeedThreshold = 3;
-  static const double _deliveryMarkerWalkingMetersPerSecond = 2.2;
+  static const double _deliveryMarkerMinWalkingMetersPerSecond = 1;
+  static const double _deliveryMarkerMaxWalkingMetersPerSecond = 2.2;
   static const double _deliveryMarkerMaxMetersPerSecond = 12;
   static const double _deliveryMarkerTeleportDistance = 5000;
   static const double _routeSnapCorridorDistance = 45;
@@ -1208,11 +1209,16 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen>
       return _deliveryMarkerDefaultMetersPerSecond;
     }
     if (observedSpeed <= _deliveryMarkerWalkingSpeedThreshold) {
-      return _deliveryMarkerWalkingMetersPerSecond;
+      return observedSpeed
+          .clamp(
+            _deliveryMarkerMinWalkingMetersPerSecond,
+            _deliveryMarkerMaxWalkingMetersPerSecond,
+          )
+          .toDouble();
     }
     return observedSpeed
         .clamp(
-          _deliveryMarkerWalkingMetersPerSecond,
+          _deliveryMarkerMaxWalkingMetersPerSecond,
           _deliveryMarkerMaxMetersPerSecond,
         )
         .toDouble();

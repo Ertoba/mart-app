@@ -15,7 +15,11 @@ import 'package:get/get.dart';
 class SplashScreen extends StatefulWidget {
   final NotificationBodyModel? body;
   final String? deeplinkUrl;
-  const SplashScreen({super.key, required this.body, required this.deeplinkUrl});
+  const SplashScreen({
+    super.key,
+    required this.body,
+    required this.deeplinkUrl,
+  });
 
   @override
   SplashScreenState createState() => SplashScreenState();
@@ -30,20 +34,35 @@ class SplashScreenState extends State<SplashScreen> {
     super.initState();
 
     bool firstTime = true;
-    _onConnectivityChanged = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> result) {
-      bool isConnected = result.contains(ConnectivityResult.wifi) || result.contains(ConnectivityResult.mobile);
+    _onConnectivityChanged = Connectivity().onConnectivityChanged.listen((
+      List<ConnectivityResult> result,
+    ) {
+      bool isConnected =
+          result.contains(ConnectivityResult.wifi) ||
+          result.contains(ConnectivityResult.mobile);
 
-      if(!firstTime) {
-        isConnected ? ScaffoldMessenger.of(Get.context!).hideCurrentSnackBar() : const SizedBox();
-        ScaffoldMessenger.of(Get.context!).showSnackBar(SnackBar(
-          backgroundColor: isConnected ? Colors.green : Colors.red,
-          duration: Duration(seconds: isConnected ? 3 : 6000),
-          content: Text(isConnected ? 'connected'.tr : 'no_connection'.tr, textAlign: TextAlign.center),
-        ));
-        if(isConnected) {
-          print('=========here coming-----1-->> ${Get.find<SplashController>().deeplinkRoute}');
-          if(Get.find<SplashController>().deeplinkRoute == null) {
-            Get.find<SplashController>().getConfigData(notificationBody: widget.body);
+      if (!firstTime) {
+        isConnected
+            ? ScaffoldMessenger.of(Get.context!).hideCurrentSnackBar()
+            : const SizedBox();
+        ScaffoldMessenger.of(Get.context!).showSnackBar(
+          SnackBar(
+            backgroundColor: isConnected ? Colors.green : Colors.red,
+            duration: Duration(seconds: isConnected ? 3 : 6000),
+            content: Text(
+              isConnected ? 'connected'.tr : 'no_connection'.tr,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        );
+        if (isConnected) {
+          print(
+            '=========here coming-----1-->> ${Get.find<SplashController>().deeplinkRoute}',
+          );
+          if (Get.find<SplashController>().deeplinkRoute == null) {
+            Get.find<SplashController>().getConfigData(
+              notificationBody: widget.body,
+            );
           }
         }
       }
@@ -52,12 +71,15 @@ class SplashScreenState extends State<SplashScreen> {
     });
 
     Get.find<SplashController>().initSharedData();
-    if((AuthHelper.getGuestId().isNotEmpty || AuthHelper.isLoggedIn()) && Get.find<SplashController>().cacheModule != null) {
+    if ((AuthHelper.getGuestId().isNotEmpty || AuthHelper.isLoggedIn()) &&
+        Get.find<SplashController>().cacheModule != null) {
       Get.find<CartController>().getCartDataOnline();
     }
     // _route();
-    print('=========here coming-----2-->> ${Get.find<SplashController>().deeplinkRoute == null}');
-    if(Get.find<SplashController>().deeplinkRoute == null) {
+    print(
+      '=========here coming-----2-->> ${Get.find<SplashController>().deeplinkRoute == null}',
+    );
+    if (Get.find<SplashController>().deeplinkRoute == null) {
       Get.find<SplashController>().getConfigData(notificationBody: widget.body);
     }
   }
@@ -163,18 +185,26 @@ class SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     Get.find<SplashController>().initSharedData();
-    if(AddressHelper.getUserAddressFromSharedPref() != null && AddressHelper.getUserAddressFromSharedPref()!.zoneIds == null) {
+    if (AddressHelper.getUserAddressFromSharedPref() != null &&
+        AddressHelper.getUserAddressFromSharedPref()!.zoneIds == null) {
       Get.find<AuthController>().clearSharedAddress();
     }
 
     return Scaffold(
       key: _globalKey,
-      backgroundColor: const Color(0xFFF75D04),
-      body: GetBuilder<SplashController>(builder: (splashController) {
-        return splashController.hasConnection
-            ? const SizedBox.expand()
-            : NoInternetScreen(child: SplashScreen(body: widget.body, deeplinkUrl: widget.deeplinkUrl));
-      }),
+      backgroundColor: const Color(0xFFD35701),
+      body: GetBuilder<SplashController>(
+        builder: (splashController) {
+          return splashController.hasConnection
+              ? const SizedBox.expand()
+              : NoInternetScreen(
+                  child: SplashScreen(
+                    body: widget.body,
+                    deeplinkUrl: widget.deeplinkUrl,
+                  ),
+                );
+        },
+      ),
     );
   }
 }

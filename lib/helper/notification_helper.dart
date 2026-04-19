@@ -47,7 +47,7 @@ class NotificationHelper {
     await androidPlugin.createNotificationChannel(
       const AndroidNotificationChannel(
         'portal_notifications',
-        'პორტალი შეტყობინებები',
+        'მილი შეტყობინებები',
         importance: Importance.max,
         playSound: true,
         sound: RawResourceAndroidNotificationSound('notification'),

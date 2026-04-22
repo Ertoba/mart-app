@@ -4,8 +4,10 @@ import 'package:sixam_mart/features/language/domain/models/language_model.dart';
 import 'package:sixam_mart/util/images.dart';
 
 class AppConstants {
-  static const String appName = 'პორტალი';
-  static const double appVersion = 3.8; ///Flutter sdk 3.41.6
+  static const String appName = 'მილი';
+  static const double appVersion = 3.8;
+
+  ///Flutter sdk 3.41.6
   static const bool stopPolylineAnimation = false;
   static const String pusherBroadcustUrl = '/api/v1/broadcasting/user-auth';
 
@@ -23,12 +25,12 @@ class AppConstants {
   static const String fontFamily = 'Roboto';
   static const bool payInWevView = false;
   static const int balanceInputLen = 10;
-  static const String webHostedUrl = 'https://store.crypt.ge';
+  static const String webHostedUrl = 'https://store.mili.ge';
   static const bool useReactWebsite = false;
   static const String googleServerClientId =
       '491987943015-agln6biv84krpnngdphj87jkko7r9lb8.apps.googleusercontent.com';
 
-  static const String baseUrl = 'https://portal.crypt.ge';
+  static const String baseUrl = 'https://mili.ge';
   static const String categoryUri = '/api/v1/categories';
   static const String bannerUri = '/api/v1/banners';
   static const String storeItemUri = '/api/v1/items/latest';
@@ -261,115 +263,201 @@ class AppConstants {
   static const String getTripTaxUri = '/api/v1/rental/user/trip/get-tax';
   static const String getParcelCancellationReasons =
       '/api/v1/get-parcel-cancellation-reasons';
-  static const String dashboardOrderUri = '/api/v1/customer/order/all-running-orders';
+  static const String dashboardOrderUri =
+      '/api/v1/customer/order/all-running-orders';
 
   /// Ride Share
-  static const String getRideShareBannerUri = '/api/v1/rideshare/customer/banner/list';
-  static const String getRideShareCategoryUri = '/api/v1/rideshare/customer/vehicle/category';
-  static const String getRideShareCouponUri = '/api/v1/rideshare/customer/coupon/list';
-  static const String getRideShareCouponApplyUri = '/api/v1/rideshare/customer/coupon/apply';
-  static const String estimatedFare = '/api/v1/rideshare/customer/ride/get-estimated-fare';
+  static const String getRideShareBannerUri =
+      '/api/v1/rideshare/customer/banner/list';
+  static const String getRideShareCategoryUri =
+      '/api/v1/rideshare/customer/vehicle/category';
+  static const String getRideShareCouponUri =
+      '/api/v1/rideshare/customer/coupon/list';
+  static const String getRideShareCouponApplyUri =
+      '/api/v1/rideshare/customer/coupon/apply';
+  static const String estimatedFare =
+      '/api/v1/rideshare/customer/ride/get-estimated-fare';
   static const String tripDetails = '/api/v1/rideshare/customer/ride/details/';
-  static const String updateTripStatus = '/api/v1/rideshare/customer/ride/update-status/';
-  static const String remainDistance = '/api/v1/rideshare/customer/config/get-routes';
-  static const String biddingList = '/api/v1/rideshare/customer/ride/bidding-list/';
-  static const String nearestDriverList = '/api/v1/rideshare/customer/drivers-near-me';
-  static const String ignoreBidding = '/api/v1/rideshare/customer/ride/ignore-bidding';
-  static const String tripAcceptOrReject = '/api/v1/rideshare/customer/ride/trip-action';
-  static const String currentRideStatus = '/api/v1/rideshare/customer/ride/ride-resume-status';
+  static const String updateTripStatus =
+      '/api/v1/rideshare/customer/ride/update-status/';
+  static const String remainDistance =
+      '/api/v1/rideshare/customer/config/get-routes';
+  static const String biddingList =
+      '/api/v1/rideshare/customer/ride/bidding-list/';
+  static const String nearestDriverList =
+      '/api/v1/rideshare/customer/drivers-near-me';
+  static const String ignoreBidding =
+      '/api/v1/rideshare/customer/ride/ignore-bidding';
+  static const String tripAcceptOrReject =
+      '/api/v1/rideshare/customer/ride/trip-action';
+  static const String currentRideStatus =
+      '/api/v1/rideshare/customer/ride/ride-resume-status';
   static const String finalFare = '/api/v1/rideshare/customer/ride/final-fare';
-  static const String arrivalPickupPoint = '/api/v1/rideshare/customer/ride/arrival-time';
-  static const String getRunningRideList = '/api/v1/rideshare/customer/ride/pending-ride-list';
-  static const String parcelReceived = '/api/v1/rideshare/customer/ride/received-returning-parcel/';
+  static const String arrivalPickupPoint =
+      '/api/v1/rideshare/customer/ride/arrival-time';
+  static const String getRunningRideList =
+      '/api/v1/rideshare/customer/ride/pending-ride-list';
+  static const String parcelReceived =
+      '/api/v1/rideshare/customer/ride/received-returning-parcel/';
   static const String rideRequest = '/api/v1/rideshare/customer/ride/create';
-  static const String bestOfferList = '/api/v1/rideshare/customer/discount/list?limit=10&offset=';
+  static const String bestOfferList =
+      '/api/v1/rideshare/customer/discount/list?limit=10&offset=';
   static const String tripList = '/api/v1/rideshare/customer/ride/list';
-  static const String rideCancellationReasonList = '/api/v1/rideshare/customer/config/cancellation-reason-list';
-  static const String getOtherEmergencyNumberList = '/api/v1/rideshare/customer/config/other-emergency-contact-list';
-  static const String getSafetyAlertReasonList = '/api/v1/rideshare/customer/config/safety-alert-reason-list';
-  static const String getPrecautionList = '/api/v1/rideshare/customer/config/safety-precaution-list';
-  static const String storeSafetyAlert = '/api/v1/rideshare/customer/safety-alert/store';
-  static const String markAsSolvedSafetyAlert = '/api/v1/rideshare/customer/safety-alert/mark-as-solved/';
-  static const String resendSafetyAlert = '/api/v1/rideshare/customer/safety-alert/resend/';
-  static const String undoSafetyAlert = '/api/v1/rideshare/customer/safety-alert/undo/';
-  static const String customerAlertDetails = '/api/v1/rideshare/customer/safety-alert/show/';
+  static const String rideCancellationReasonList =
+      '/api/v1/rideshare/customer/config/cancellation-reason-list';
+  static const String getOtherEmergencyNumberList =
+      '/api/v1/rideshare/customer/config/other-emergency-contact-list';
+  static const String getSafetyAlertReasonList =
+      '/api/v1/rideshare/customer/config/safety-alert-reason-list';
+  static const String getPrecautionList =
+      '/api/v1/rideshare/customer/config/safety-precaution-list';
+  static const String storeSafetyAlert =
+      '/api/v1/rideshare/customer/safety-alert/store';
+  static const String markAsSolvedSafetyAlert =
+      '/api/v1/rideshare/customer/safety-alert/mark-as-solved/';
+  static const String resendSafetyAlert =
+      '/api/v1/rideshare/customer/safety-alert/resend/';
+  static const String undoSafetyAlert =
+      '/api/v1/rideshare/customer/safety-alert/undo/';
+  static const String customerAlertDetails =
+      '/api/v1/rideshare/customer/safety-alert/show/';
   static const String submitReview = '/api/v1/rideshare/customer/review/store';
   static const String paymentUri = '/api/v1/rideshare/customer/ride/payment';
-  static const String getPaymentMethods = '/api/v1/rideshare/customer/config/get-payment-methods';
-  static const String getZoneIdUri = '/api/v1/rideshare/customer/config/get-zone-id';
-  static const String getRunningRideListUri = '/api/v1/rideshare/customer/ride/list-running';
-  static const String getHistoryRideListUri = '/api/v1/rideshare/customer/ride/list-history';
-  static const String digitalPayment = '/api/v1/rideshare/customer/ride/digital-payment';
-  static const String bannerCountUpdate = '/api/v1/rideshare/customer/banner/update-redirection-count';
-  static const String updateLiveLocation = '/api/v1/rideshare/user/store-live-location';
+  static const String getPaymentMethods =
+      '/api/v1/rideshare/customer/config/get-payment-methods';
+  static const String getZoneIdUri =
+      '/api/v1/rideshare/customer/config/get-zone-id';
+  static const String getRunningRideListUri =
+      '/api/v1/rideshare/customer/ride/list-running';
+  static const String getHistoryRideListUri =
+      '/api/v1/rideshare/customer/ride/list-history';
+  static const String digitalPayment =
+      '/api/v1/rideshare/customer/ride/digital-payment';
+  static const String bannerCountUpdate =
+      '/api/v1/rideshare/customer/banner/update-redirection-count';
+  static const String updateLiveLocation =
+      '/api/v1/rideshare/user/store-live-location';
 
   /// Service module
-  static const String getServiceBannerUri = '/api/v1/service/customer/banner?limit=50&offset=1';
-  static const String getServiceCategoryUri = '/api/v1/service/customer/category?limit=20&offset=1';
-  static const String getServicePopularServicesUri = '/api/v1/service/customer/service/popular';
-  static const String getServiceRecommendedServicesUri = '/api/v1/service/customer/service/recommended';
-  static const String getServiceTrendingServicesUri = '/api/v1/service/customer/service/trending';
-  static const String getServiceSpecialOfferServicesUri = '/api/v1/service/customer/service/offers';
-  static const String getServiceFeatheredCategoryServicesUri = '/api/v1/service/customer/featured-categories';
-  static const String getServiceAllServicesUri = '/api/v1/service/customer/service';
-  static const String getServiceProviderListUri = '/api/v1/service/customer/provider/list';
-  static const String getServiceDetailsUri = '/api/v1/service/customer/service/detail';
+  static const String getServiceBannerUri =
+      '/api/v1/service/customer/banner?limit=50&offset=1';
+  static const String getServiceCategoryUri =
+      '/api/v1/service/customer/category?limit=20&offset=1';
+  static const String getServicePopularServicesUri =
+      '/api/v1/service/customer/service/popular';
+  static const String getServiceRecommendedServicesUri =
+      '/api/v1/service/customer/service/recommended';
+  static const String getServiceTrendingServicesUri =
+      '/api/v1/service/customer/service/trending';
+  static const String getServiceSpecialOfferServicesUri =
+      '/api/v1/service/customer/service/offers';
+  static const String getServiceFeatheredCategoryServicesUri =
+      '/api/v1/service/customer/featured-categories';
+  static const String getServiceAllServicesUri =
+      '/api/v1/service/customer/service';
+  static const String getServiceProviderListUri =
+      '/api/v1/service/customer/provider/list';
+  static const String getServiceDetailsUri =
+      '/api/v1/service/customer/service/detail';
   static const String serviceAddToCart = '/api/v1/service/customer/cart/add';
-  static const String getCartList = '/api/v1/service/customer/cart/list?limit=100&offset=1';
+  static const String getCartList =
+      '/api/v1/service/customer/cart/list?limit=100&offset=1';
   static const String removeCartItem = '/api/v1/service/customer/cart/remove/';
-  static const String removeAllCartItem = '/api/v1/service/customer/cart/data/empty';
-  static const String updateCartProvider = '/api/v1/service/customer/cart/update/provider';
-  static const String updateCartQuantity = '/api/v1/service/customer/cart/update-quantity/';
-  static const String getProviderBasedOnSubcategory = '/api/v1/service/customer/provider/list-by-sub-category';
+  static const String removeAllCartItem =
+      '/api/v1/service/customer/cart/data/empty';
+  static const String updateCartProvider =
+      '/api/v1/service/customer/cart/update/provider';
+  static const String updateCartQuantity =
+      '/api/v1/service/customer/cart/update-quantity/';
+  static const String getProviderBasedOnSubcategory =
+      '/api/v1/service/customer/provider/list-by-sub-category';
   static const String rebookApi = '/api/v1/service/customer/rebook/cart-add';
   static const String getPostDetails = '/api/v1/service/customer/post/details';
-  static const String offlinePaymentDataStore = '/api/v1/service/customer/booking/store-offline-payment-data';
-  static const String switchPaymentMethod = '/api/v1/service/customer/booking/switch-payment-method';
-  static const String placeRequest = '/api/v1/service/customer/booking/request/send';
-  static const String checkExistingUser = '/api/v1/service/customer/check-existing-customer';
-  static const String serviceCouponUri = '/api/v1/service/customer/coupon?limit=100&offset=1';
-  static const String serviceApplyCouponUri = '/api/v1/service/customer/coupon/apply';
-  static const String serviceRemoveCouponUri = '/api/v1/service/customer/coupon/remove';
-  static const String searchServiceUri = '/api/v1/service/customer/service/search';
-  static const String searchServiceProviderUri = '/api/v1/service/customer/provider/list';
-  static const String searchSuggestion = '/api/v1/service/customer/service/search-suggestion';
-  static const String serviceItemsBasedOnCampaignId = '/api/v1/service/customer/campaign/data/items?campaign_id=';
-  static const String serviceSubcategoryUri = '/api/v1/service/customer/category/childes?limit=20&offset=1&id=';
-  static const String recommendedSearchUri = '/api/v1/service/customer/service/search/recommended';
-  static const String serviceBasedOnSubcategory = '/api/v1/service/customer/service/sub-category/';
+  static const String offlinePaymentDataStore =
+      '/api/v1/service/customer/booking/store-offline-payment-data';
+  static const String switchPaymentMethod =
+      '/api/v1/service/customer/booking/switch-payment-method';
+  static const String placeRequest =
+      '/api/v1/service/customer/booking/request/send';
+  static const String checkExistingUser =
+      '/api/v1/service/customer/check-existing-customer';
+  static const String serviceCouponUri =
+      '/api/v1/service/customer/coupon?limit=100&offset=1';
+  static const String serviceApplyCouponUri =
+      '/api/v1/service/customer/coupon/apply';
+  static const String serviceRemoveCouponUri =
+      '/api/v1/service/customer/coupon/remove';
+  static const String searchServiceUri =
+      '/api/v1/service/customer/service/search';
+  static const String searchServiceProviderUri =
+      '/api/v1/service/customer/provider/list';
+  static const String searchSuggestion =
+      '/api/v1/service/customer/service/search-suggestion';
+  static const String serviceItemsBasedOnCampaignId =
+      '/api/v1/service/customer/campaign/data/items?campaign_id=';
+  static const String serviceSubcategoryUri =
+      '/api/v1/service/customer/category/childes?limit=20&offset=1&id=';
+  static const String recommendedSearchUri =
+      '/api/v1/service/customer/service/search/recommended';
+  static const String serviceBasedOnSubcategory =
+      '/api/v1/service/customer/service/sub-category/';
   static const String createCustomizedPost = '/api/v1/service/customer/post';
   static const String getMyPostList = '/api/v1/service/customer/post';
-  static const String getProviderDetails = '/api/v1/service/customer/provider/details';
-  static const String getServiceAdvertisementListUri = '/api/v1/service/customer/advertisements/ads-list';
+  static const String getProviderDetails =
+      '/api/v1/service/customer/provider/details';
+  static const String getServiceAdvertisementListUri =
+      '/api/v1/service/customer/advertisements/ads-list';
   static const String bookingDetails = '/api/v1/service/customer/booking';
-  static const String digitalPaymentResponse = '/api/v1/digital-payment-booking-response';
-  static const String subBookingDetails = '/api/v1/service/customer/booking/single';
+  static const String digitalPaymentResponse =
+      '/api/v1/digital-payment-booking-response';
+  static const String subBookingDetails =
+      '/api/v1/service/customer/booking/single';
   static const String trackBooking = '/api/v1/service/customer/booking/track';
-  static const String bookingCancel = '/api/v1/service/customer/booking/status-update';
-  static const String subBookingCancel = '/api/v1/service/customer/booking/single-repeat-cancel';
+  static const String bookingCancel =
+      '/api/v1/service/customer/booking/status-update';
+  static const String subBookingCancel =
+      '/api/v1/service/customer/booking/single-repeat-cancel';
   static const String bookingList = '/api/v1/service/customer/booking';
-  static const String rebookAvailabilityApi = '/api/v1/service/customer/provider/rebooking-information?limit=100&offset=1';
-  static const String singleRepeatBookingInvoiceUrl = '/admin/service/booking/customer-fullbooking-single-invoice/';
-  static const String regularBookingInvoiceUrl = '/admin/service/booking/customer-invoice/';
-  static const String repeatBookingInvoiceUrl = '/admin/service/booking/customer-fullbooking-invoice/';
-  static const String getFavoriteServiceList = '/api/v1/service/customer/service/favorite/service-list';
-  static const String removeFavoriteService = '/api/v1/service/customer/service/favorite/service-delete';
-  static const String updateFavoriteServiceStatus = '/api/v1/service/customer/service/favorite/service';
-  static const String getFavoriteProviderList = '/api/v1/service/customer/provider/favorite/provider-list';
-  static const String removeFavoriteProvider = '/api/v1/service/customer/provider/favorite/provider-destroy';
-  static const String updateFavoriteProviderStatus = '/api/v1/service/customer/provider/favorite/provider';
-  static const String getServiceReviewList = '/api/v1/service/customer/service/review';
-  static const String recentlyViewedServiceUri = '/api/v1/customer/service/recently-viewed';
+  static const String rebookAvailabilityApi =
+      '/api/v1/service/customer/provider/rebooking-information?limit=100&offset=1';
+  static const String singleRepeatBookingInvoiceUrl =
+      '/admin/service/booking/customer-fullbooking-single-invoice/';
+  static const String regularBookingInvoiceUrl =
+      '/admin/service/booking/customer-invoice/';
+  static const String repeatBookingInvoiceUrl =
+      '/admin/service/booking/customer-fullbooking-invoice/';
+  static const String getFavoriteServiceList =
+      '/api/v1/service/customer/service/favorite/service-list';
+  static const String removeFavoriteService =
+      '/api/v1/service/customer/service/favorite/service-delete';
+  static const String updateFavoriteServiceStatus =
+      '/api/v1/service/customer/service/favorite/service';
+  static const String getFavoriteProviderList =
+      '/api/v1/service/customer/provider/favorite/provider-list';
+  static const String removeFavoriteProvider =
+      '/api/v1/service/customer/provider/favorite/provider-destroy';
+  static const String updateFavoriteProviderStatus =
+      '/api/v1/service/customer/provider/favorite/provider';
+  static const String getServiceReviewList =
+      '/api/v1/service/customer/service/review';
+  static const String recentlyViewedServiceUri =
+      '/api/v1/customer/service/recently-viewed';
   static const String serviceReview = '/api/v1/service/customer/review/submit';
   static const String bookingReviewList = '/api/v1/service/customer/review';
-  static const String itemsBasedOnCampaignId = '/api/v1/service/customer/campaign/data/items?campaign_id=';
-  static const String getInterestedProviderList = '/api/v1/service/customer/post/bid';
-  static const String updatePostStatus = '/api/v1/service/customer/post/bid/update-status';
+  static const String itemsBasedOnCampaignId =
+      '/api/v1/service/customer/campaign/data/items?campaign_id=';
+  static const String getInterestedProviderList =
+      '/api/v1/service/customer/post/bid';
+  static const String updatePostStatus =
+      '/api/v1/service/customer/post/bid/update-status';
   static const String getServiceZoneId = '/api/v1/service/customer/get-zone-id';
-  static const String getServiceZoneIdUri = '/api/v1/service/customer/config/get-zone-id';
+  static const String getServiceZoneIdUri =
+      '/api/v1/service/customer/config/get-zone-id';
   static const String serviceCampaignUri = '/api/v1/service/customer/campaign';
-  static const String getSuggestedServiceList = '/api/v1/service/customer/service/request/list';
-  static const String submitNewServiceRequest = '/api/v1/service/customer/service/request/make';
+  static const String getSuggestedServiceList =
+      '/api/v1/service/customer/service/request/list';
+  static const String submitNewServiceRequest =
+      '/api/v1/service/customer/service/request/make';
 
   /// Shared Key
   static const String theme = '6ammart_theme';
@@ -410,12 +498,14 @@ class AppConstants {
       '6ammart_taxi_search_address_history';
 
   ///Ride Share
-  static const String rideSearchAddressHistory = '6ammart_ride_search_address_history';
+  static const String rideSearchAddressHistory =
+      '6ammart_ride_search_address_history';
   static const String paymentType = 'paymentType';
   static const String paymentMethod = 'payment_method';
 
   ///service
-  static const String lastIncompleteOfflineBookingId = 'last_incomplete_offline_booking_id';
+  static const String lastIncompleteOfflineBookingId =
+      'last_incomplete_offline_booking_id';
 
   static const String topic = 'all_zone_customer';
   static const String zoneId = 'zoneId';

@@ -43,7 +43,11 @@ import '../widgets/running_order_view_widget.dart';
 class DashboardScreen extends StatefulWidget {
   final int pageIndex;
   final bool fromSplash;
-  const DashboardScreen({super.key, required this.pageIndex, this.fromSplash = false});
+  const DashboardScreen({
+    super.key,
+    required this.pageIndex,
+    this.fromSplash = false,
+  });
 
   @override
   DashboardScreenState createState() => DashboardScreenState();
@@ -58,7 +62,6 @@ class DashboardScreenState extends State<DashboardScreen> {
 
   GlobalKey<ExpandableBottomSheetState> key = GlobalKey();
 
-
   late bool _isLogin;
   bool active = false;
 
@@ -69,30 +72,59 @@ class DashboardScreenState extends State<DashboardScreen> {
     _isLogin = AuthHelper.isLoggedIn();
 
     _showRegistrationSuccessBottomSheet();
-    if(!_isLogin && Get.find<SplashController>().showLoginSuggestion() && (GetPlatform.isAndroid || GetPlatform.isIOS)) {
+    if (!_isLogin &&
+        Get.find<SplashController>().showLoginSuggestion() &&
+        (GetPlatform.isAndroid || GetPlatform.isIOS)) {
       Future.delayed(const Duration(milliseconds: 3000), () {
-        Get.bottomSheet(LoginSuggestionBottomSheet(), isScrollControlled: true).then((v) {
+        Get.bottomSheet(
+          LoginSuggestionBottomSheet(),
+          isScrollControlled: true,
+        ).then((v) {
           Get.find<SplashController>().disableLoginSuggestion();
         });
       });
     }
 
-    if(_isLogin){
-      if(Get.find<SplashController>().configModel!.loyaltyPointStatus == 1 && Get.find<AuthController>().getEarningPint().isNotEmpty
-          && !ResponsiveHelper.isDesktop(Get.context)){
-        Future.delayed(const Duration(seconds: 1), () => showAnimatedDialog(Get.context!, const CongratulationDialogue()));
+    if (_isLogin) {
+      if (Get.find<SplashController>().configModel!.loyaltyPointStatus == 1 &&
+          Get.find<AuthController>().getEarningPint().isNotEmpty &&
+          !ResponsiveHelper.isDesktop(Get.context)) {
+        Future.delayed(
+          const Duration(seconds: 1),
+          () =>
+              showAnimatedDialog(Get.context!, const CongratulationDialogue()),
+        );
       }
       suggestAddressBottomSheet();
       Get.find<OrderController>().getRunningOrders(1, fromDashboard: true);
 
       Get.find<SplashController>().getPaymentIncompleteSheetStatus();
-      if((Get.find<SplashController>().showPaymentIncompleteBottomSheet && !GetPlatform.isWeb) || (GetPlatform.isWeb && !Get.find<SplashController>().getPaymentIncompleteSheetStatus())) {
-        Get.find<OrderController>().getPaymentFailedDetails(null).then((paymentModel) {
+      if ((Get.find<SplashController>().showPaymentIncompleteBottomSheet &&
+              !GetPlatform.isWeb) ||
+          (GetPlatform.isWeb &&
+              !Get.find<SplashController>()
+                  .getPaymentIncompleteSheetStatus())) {
+        Get.find<OrderController>().getPaymentFailedDetails(null).then((
+          paymentModel,
+        ) {
           if (paymentModel != null) {
-            if(ResponsiveHelper.isDesktop(Get.context)) {
-              Get.dialog(Center(child: PaymentIncompleteBottomSheet(paymentModel: paymentModel, fromHome: true)));
+            if (ResponsiveHelper.isDesktop(Get.context)) {
+              Get.dialog(
+                Center(
+                  child: PaymentIncompleteBottomSheet(
+                    paymentModel: paymentModel,
+                    fromHome: true,
+                  ),
+                ),
+              );
             } else {
-              Get.bottomSheet(PaymentIncompleteBottomSheet(paymentModel: paymentModel, fromHome: true), isScrollControlled: true);
+              Get.bottomSheet(
+                PaymentIncompleteBottomSheet(
+                  paymentModel: paymentModel,
+                  fromHome: true,
+                ),
+                isScrollControlled: true,
+              );
             }
           }
         });
@@ -108,36 +140,55 @@ class DashboardScreenState extends State<DashboardScreen> {
       const FavouriteScreen(),
       const SizedBox(),
       const OrderScreen(),
-      const MenuScreen()
+      const MenuScreen(),
     ];
   }
 
   void _showRegistrationSuccessBottomSheet() {
-    bool canShowBottomSheet = Get.find<HomeController>().getRegistrationSuccessfulSharedPref();
-    if(canShowBottomSheet) {
+    bool canShowBottomSheet = Get.find<HomeController>()
+        .getRegistrationSuccessfulSharedPref();
+    if (canShowBottomSheet) {
       Future.delayed(const Duration(seconds: 1), () {
-        ResponsiveHelper.isDesktop(Get.context) ? Get.dialog(const Dialog(child: StoreRegistrationSuccessBottomSheet())).then((value) {
-          Get.find<HomeController>().saveRegistrationSuccessfulSharedPref(false);
-          Get.find<HomeController>().saveIsStoreRegistrationSharedPref(false);
-          setState(() {});
-        }) : showModalBottomSheet(
-          context: Get.context!, isScrollControlled: true, backgroundColor: Colors.transparent,
-          builder: (con) => const StoreRegistrationSuccessBottomSheet(),
-        ).then((value) {
-          Get.find<HomeController>().saveRegistrationSuccessfulSharedPref(false);
-          Get.find<HomeController>().saveIsStoreRegistrationSharedPref(false);
-          setState(() {});
-        });
+        ResponsiveHelper.isDesktop(Get.context)
+            ? Get.dialog(
+                const Dialog(child: StoreRegistrationSuccessBottomSheet()),
+              ).then((value) {
+                Get.find<HomeController>().saveRegistrationSuccessfulSharedPref(
+                  false,
+                );
+                Get.find<HomeController>().saveIsStoreRegistrationSharedPref(
+                  false,
+                );
+                setState(() {});
+              })
+            : showModalBottomSheet(
+                context: Get.context!,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (con) => const StoreRegistrationSuccessBottomSheet(),
+              ).then((value) {
+                Get.find<HomeController>().saveRegistrationSuccessfulSharedPref(
+                  false,
+                );
+                Get.find<HomeController>().saveIsStoreRegistrationSharedPref(
+                  false,
+                );
+                setState(() {});
+              });
       });
     }
   }
 
   Future<void> suggestAddressBottomSheet() async {
     active = await Get.find<LocationController>().checkLocationActive();
-    if(widget.fromSplash && Get.find<LocationController>().showLocationSuggestion && active) {
+    if (widget.fromSplash &&
+        Get.find<LocationController>().showLocationSuggestion &&
+        active) {
       Future.delayed(const Duration(seconds: 1), () {
         showModalBottomSheet(
-          context: Get.context!, isScrollControlled: true, backgroundColor: Colors.transparent,
+          context: Get.context!,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
           builder: (con) => const AddressBottomSheetWidget(),
         ).then((value) {
           Get.find<LocationController>().showSuggestedLocation(false);
@@ -159,25 +210,34 @@ class DashboardScreenState extends State<DashboardScreen> {
             if (_pageIndex != 0) {
               _setPage(0);
             } else {
-              if(!ResponsiveHelper.isDesktop(context) && Get.find<SplashController>().module != null && Get.find<SplashController>().configModel!.module == null && splashController.moduleList != null && splashController.moduleList!.length != 1) {
+              if (!ResponsiveHelper.isDesktop(context) &&
+                  Get.find<SplashController>().module != null &&
+                  Get.find<SplashController>().configModel!.module == null &&
+                  splashController.moduleList != null &&
+                  splashController.moduleList!.length != 1) {
                 // Get.find<SplashController>().setModule(null);
                 splashController.removeModule();
                 Get.find<StoreController>().resetStoreData();
-              }else {
-                if(_canExit) {
+              } else {
+                if (_canExit) {
                   if (GetPlatform.isAndroid) {
                     SystemNavigator.pop();
                   } else if (GetPlatform.isIOS) {
                     exit(0);
                   }
-                }else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('back_press_again_to_exit'.tr, style: const TextStyle(color: Colors.white)),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.green,
-                    duration: const Duration(seconds: 2),
-                    margin: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                  ));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'back_press_again_to_exit'.tr,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Colors.green,
+                      duration: const Duration(seconds: 2),
+                      margin: const EdgeInsets.all(Dimensions.paddingSizeSmall),
+                    ),
+                  );
                   _canExit = true;
                   Timer(const Duration(seconds: 2), () {
                     _canExit = false;
@@ -188,17 +248,22 @@ class DashboardScreenState extends State<DashboardScreen> {
           },
           child: GetBuilder<OrderController>(
             builder: (orderController) {
-              List<OrderModel> runningOrder = orderController.runningOrderModel != null ? orderController.runningOrderModel!.orders! : [];
+              List<OrderModel> runningOrder =
+                  orderController.runningOrderModel != null
+                  ? orderController.runningOrderModel!.orders!
+                  : [];
 
-              List<OrderModel> reversOrder =  List.from(runningOrder.reversed);
+              List<OrderModel> reversOrder = List.from(runningOrder.reversed);
 
               return SafeArea(
-                top: false, bottom: GetPlatform.isAndroid,
+                top: false,
+                bottom: GetPlatform.isAndroid,
                 child: Scaffold(
                   key: _scaffoldKey,
                   body: ExpandableBottomSheet(
-                    background: Stack(children: [
-                      PageView.builder(
+                    background: Stack(
+                      children: [
+                        PageView.builder(
                           controller: _pageController,
                           itemCount: _screens.length,
                           physics: const NeverScrollableScrollPhysics(),
@@ -207,138 +272,355 @@ class DashboardScreenState extends State<DashboardScreen> {
                           },
                         ),
 
-                        ResponsiveHelper.isDesktop(context) || keyboardVisible ? const SizedBox() : Align(
-                          alignment: Alignment.bottomCenter,
-                          child: GetBuilder<SplashController>(
-                            builder: (splashController) {
-                              bool isParcel = splashController.module != null && splashController.configModel!.moduleConfig!.module!.isParcel!;
-                              bool isTaxiWithCache = ((splashController.module != null && splashController.module!.moduleType.toString() == AppConstants.taxi) || (splashController.cacheModule != null && splashController.cacheModule!.moduleType.toString() == AppConstants.taxi)) && TaxiHelper.haveTaxiModule();
-                              bool isTaxi = (splashController.module != null && splashController.module!.moduleType.toString() == AppConstants.taxi);
-                              isParcel = isParcel && !isTaxiWithCache;
+                        ResponsiveHelper.isDesktop(context) || keyboardVisible
+                            ? const SizedBox()
+                            : Align(
+                                alignment: Alignment.bottomCenter,
+                                child: GetBuilder<SplashController>(
+                                  builder: (splashController) {
+                                    bool isParcel =
+                                        splashController.module != null &&
+                                        splashController
+                                            .configModel!
+                                            .moduleConfig!
+                                            .module!
+                                            .isParcel!;
+                                    bool isTaxiWithCache =
+                                        ((splashController.module != null &&
+                                                splashController
+                                                        .module!
+                                                        .moduleType
+                                                        .toString() ==
+                                                    AppConstants.taxi) ||
+                                            (splashController.cacheModule !=
+                                                    null &&
+                                                splashController
+                                                        .cacheModule!
+                                                        .moduleType
+                                                        .toString() ==
+                                                    AppConstants.taxi)) &&
+                                        TaxiHelper.haveTaxiModule();
+                                    bool isTaxi =
+                                        (splashController.module != null &&
+                                        splashController.module!.moduleType
+                                                .toString() ==
+                                            AppConstants.taxi);
+                                    isParcel = isParcel && !isTaxiWithCache;
 
-                              _screens = [
-                                const HomeScreen(),
-                                isParcel ? const AddressScreen(fromDashboard: true)
-                                    : isTaxi ? const VehicleFavouriteScreen()
-                                    : const FavouriteScreen(),
-                                const SizedBox(),
-                                OrderScreen(index: isTaxi ? 1 : 0),
-                                const MenuScreen()
-                              ];
-                              return Container(
-                                width: size.width, height: GetPlatform.isIOS ? 80 : 65,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).cardColor,
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(Dimensions.radiusLarge)),
-                                    boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5, spreadRadius: 1)],
+                                    _screens = [
+                                      const HomeScreen(),
+                                      isParcel
+                                          ? const AddressScreen(
+                                              fromDashboard: true,
+                                            )
+                                          : isTaxi
+                                          ? const VehicleFavouriteScreen()
+                                          : const FavouriteScreen(),
+                                      const SizedBox(),
+                                      OrderScreen(index: isTaxi ? 1 : 0),
+                                      const MenuScreen(),
+                                    ];
+                                    return Container(
+                                      width: size.width,
+                                      height: GetPlatform.isIOS ? 80 : 65,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).cardColor,
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                              top: Radius.circular(
+                                                Dimensions.radiusLarge,
+                                              ),
+                                            ),
+                                        boxShadow: const [
+                                          BoxShadow(
+                                            color: Colors.black12,
+                                            blurRadius: 5,
+                                            spreadRadius: 1,
+                                          ),
+                                        ],
+                                      ),
+                                      child: Stack(
+                                        children: [
+                                          Center(
+                                            heightFactor: 0.6,
+                                            child:
+                                                ResponsiveHelper.isDesktop(
+                                                  context,
+                                                )
+                                                ? null
+                                                : (widget.fromSplash &&
+                                                      Get.find<
+                                                            LocationController
+                                                          >()
+                                                          .showLocationSuggestion &&
+                                                      active)
+                                                ? null
+                                                : (orderController
+                                                          .showBottomSheet &&
+                                                      orderController
+                                                              .runningOrderModel !=
+                                                          null &&
+                                                      orderController
+                                                          .runningOrderModel!
+                                                          .orders!
+                                                          .isNotEmpty &&
+                                                      _isLogin)
+                                                ? const SizedBox()
+                                                : Container(
+                                                    width: 60,
+                                                    height: 60,
+                                                    decoration: BoxDecoration(
+                                                      border: Border.all(
+                                                        color: Theme.of(
+                                                          context,
+                                                        ).cardColor,
+                                                        width: 5,
+                                                      ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            30,
+                                                          ),
+                                                      boxShadow: const [
+                                                        BoxShadow(
+                                                          color: Colors.black12,
+                                                          blurRadius: 5,
+                                                          spreadRadius: 1,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    child: FloatingActionButton(
+                                                      backgroundColor: Theme.of(
+                                                        context,
+                                                      ).primaryColor,
+                                                      onPressed: () {
+                                                        if (isParcel) {
+                                                          showModalBottomSheet(
+                                                            context: context,
+                                                            isScrollControlled:
+                                                                true,
+                                                            backgroundColor:
+                                                                Colors
+                                                                    .transparent,
+                                                            builder: (con) =>
+                                                                ParcelBottomSheetWidget(
+                                                                  parcelCategoryList:
+                                                                      Get.find<
+                                                                            ParcelController
+                                                                          >()
+                                                                          .parcelCategoryList,
+                                                                ),
+                                                          );
+                                                        } else if (isTaxiWithCache) {
+                                                          Get.to(
+                                                            () =>
+                                                                const TaxiCartScreen(),
+                                                          );
+                                                        } else {
+                                                          Get.toNamed(
+                                                            RouteHelper.getCartRoute(),
+                                                          );
+                                                        }
+                                                      },
+                                                      elevation: 0,
+                                                      child: isTaxiWithCache
+                                                          ? TaxiCartWidget(
+                                                              color: Theme.of(
+                                                                context,
+                                                              ).cardColor,
+                                                              size: 22,
+                                                            )
+                                                          : isParcel
+                                                          ? Icon(
+                                                              CupertinoIcons
+                                                                  .add,
+                                                              size: 34,
+                                                              color: Theme.of(
+                                                                context,
+                                                              ).cardColor,
+                                                            )
+                                                          : CartWidget(
+                                                              color: Theme.of(
+                                                                context,
+                                                              ).cardColor,
+                                                              size: 22,
+                                                            ),
+                                                    ),
+                                                  ),
+                                          ),
+
+                                          ResponsiveHelper.isDesktop(context)
+                                              ? const SizedBox()
+                                              : (widget.fromSplash &&
+                                                    Get.find<
+                                                          LocationController
+                                                        >()
+                                                        .showLocationSuggestion &&
+                                                    active)
+                                              ? const SizedBox()
+                                              : (orderController
+                                                        .showBottomSheet &&
+                                                    orderController
+                                                            .runningOrderModel !=
+                                                        null &&
+                                                    orderController
+                                                        .runningOrderModel!
+                                                        .orders!
+                                                        .isNotEmpty &&
+                                                    _isLogin)
+                                              ? const SizedBox()
+                                              : Center(
+                                                  child: SizedBox(
+                                                    width: size.width,
+                                                    height: 80,
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceEvenly,
+                                                      children: [
+                                                        BottomNavItemWidget(
+                                                          title:
+                                                              Get
+                                                                      .locale
+                                                                      ?.languageCode ==
+                                                                  'ka'
+                                                              ? AppConstants
+                                                                    .appName
+                                                              : 'home'.tr,
+                                                          selectedIcon:
+                                                              Images.homeSelect,
+                                                          unSelectedIcon: Images
+                                                              .homeUnselect,
+                                                          isSelected:
+                                                              _pageIndex == 0,
+                                                          onTap: () =>
+                                                              _setPage(0),
+                                                        ),
+                                                        BottomNavItemWidget(
+                                                          title: isParcel
+                                                              ? 'address'.tr
+                                                              : isTaxi
+                                                              ? 'wishlist'.tr
+                                                              : 'favourite'.tr,
+                                                          selectedIcon: isParcel
+                                                              ? Images
+                                                                    .addressSelect
+                                                              : Images
+                                                                    .favouriteSelect,
+                                                          unSelectedIcon:
+                                                              isParcel
+                                                              ? Images
+                                                                    .addressUnselect
+                                                              : Images
+                                                                    .favouriteUnselect,
+                                                          isSelected:
+                                                              _pageIndex == 1,
+                                                          onTap: () =>
+                                                              _setPage(1),
+                                                        ),
+                                                        Container(
+                                                          width:
+                                                              size.width * 0.2,
+                                                        ),
+                                                        BottomNavItemWidget(
+                                                          title: isTaxi
+                                                              ? 'trips'.tr
+                                                              : 'orders'.tr,
+                                                          selectedIcon: Images
+                                                              .orderSelect,
+                                                          unSelectedIcon: Images
+                                                              .orderUnselect,
+                                                          isSelected:
+                                                              _pageIndex == 3,
+                                                          onTap: () =>
+                                                              _setPage(3),
+                                                        ),
+                                                        BottomNavItemWidget(
+                                                          title: 'menu'.tr,
+                                                          selectedIcon:
+                                                              Images.menu,
+                                                          unSelectedIcon:
+                                                              Images.menu,
+                                                          isSelected:
+                                                              _pageIndex == 4,
+                                                          onTap: () =>
+                                                              _setPage(4),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                        ],
+                                      ),
+                                    );
+                                  },
                                 ),
-                                child: Stack(children: [
+                              ),
+                      ],
+                    ),
 
-                                  Center(
-                                    heightFactor: 0.6,
-                                    child: ResponsiveHelper.isDesktop(context) ? null : (widget.fromSplash && Get.find<LocationController>().showLocationSuggestion && active) ? null
-                                      : (orderController.showBottomSheet && orderController.runningOrderModel != null && orderController.runningOrderModel!.orders!.isNotEmpty && _isLogin) ? const SizedBox() : Container(
-                                        width: 60, height: 60,
-                                        decoration: BoxDecoration(
-                                          border: Border.all(color: Theme.of(context).cardColor, width: 5),
-                                          borderRadius: BorderRadius.circular(30),
-                                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5, spreadRadius: 1)],
-                                        ),
-                                        child: FloatingActionButton(
-                                          backgroundColor: Theme.of(context).primaryColor,
-                                          onPressed: () {
-                                            if(isParcel) {
-                                              showModalBottomSheet(
-                                                context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-                                                builder: (con) => ParcelBottomSheetWidget(parcelCategoryList: Get.find<ParcelController>().parcelCategoryList),
-                                              );
-                                            } else if(isTaxiWithCache) {
-                                              Get.to(()=> const TaxiCartScreen());
-                                            } else {
-                                              Get.toNamed(RouteHelper.getCartRoute());
-                                            }
-                                          },
-                                          elevation: 0,
-                                          child: isTaxiWithCache ? TaxiCartWidget(color: Theme.of(context).cardColor, size: 22) : isParcel ? Icon(CupertinoIcons.add, size: 34, color: Theme.of(context).cardColor) : CartWidget(color: Theme.of(context).cardColor, size: 22),
-                                        ),
-                                    ),
-                                  ),
-
-                                  ResponsiveHelper.isDesktop(context) ? const SizedBox() : (widget.fromSplash && Get.find<LocationController>().showLocationSuggestion && active) ? const SizedBox()
-                                  : (orderController.showBottomSheet && orderController.runningOrderModel != null && orderController.runningOrderModel!.orders!.isNotEmpty && _isLogin) ? const SizedBox() : Center(
-                                    child: SizedBox(
-                                        width: size.width, height: 80,
-                                        child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                                          BottomNavItemWidget(
-                                            title: Get.locale?.languageCode == 'ka' ? 'პორტალი' : 'home'.tr, selectedIcon: Images.homeSelect,
-                                            unSelectedIcon: Images.homeUnselect, isSelected: _pageIndex == 0,
-                                            onTap: () => _setPage(0),
-                                          ),
-                                          BottomNavItemWidget(
-                                            title: isParcel ? 'address'.tr : isTaxi ? 'wishlist'.tr : 'favourite'.tr,
-                                            selectedIcon: isParcel ? Images.addressSelect : Images.favouriteSelect,
-                                            unSelectedIcon: isParcel ? Images.addressUnselect : Images.favouriteUnselect,
-                                            isSelected: _pageIndex == 1, onTap: () => _setPage(1),
-                                          ),
-                                          Container(width: size.width * 0.2),
-                                          BottomNavItemWidget(
-                                            title: isTaxi ? 'trips'.tr : 'orders'.tr, selectedIcon: Images.orderSelect, unSelectedIcon: Images.orderUnselect,
-                                            isSelected: _pageIndex == 3, onTap: () => _setPage(3),
-                                          ),
-                                          BottomNavItemWidget(
-                                            title: 'menu'.tr, selectedIcon: Images.menu, unSelectedIcon: Images.menu,
-                                            isSelected: _pageIndex == 4, onTap: () => _setPage(4),
-                                          ),
-                                        ]),
-                                    ),
-                                  ),
-                                ],
-                                ),
-                              );
-                            }
-                          ),
-                        ),
-                      ]),
-
-                    persistentContentHeight: (widget.fromSplash && Get.find<LocationController>().showLocationSuggestion && active) ? 0 : GetPlatform.isIOS ? 110 : 100,
+                    persistentContentHeight:
+                        (widget.fromSplash &&
+                            Get.find<LocationController>()
+                                .showLocationSuggestion &&
+                            active)
+                        ? 0
+                        : GetPlatform.isIOS
+                        ? 110
+                        : 100,
 
                     onIsContractedCallback: () {
-                      if(!orderController.showOneOrder) {
+                      if (!orderController.showOneOrder) {
                         orderController.showOrders();
                       }
                     },
                     onIsExtendedCallback: () {
-                      if(orderController.showOneOrder) {
+                      if (orderController.showOneOrder) {
                         orderController.showOrders();
                       }
                     },
 
                     enableToggle: true,
 
-                    expandableContent: (widget.fromSplash && Get.find<LocationController>().showLocationSuggestion && active && !ResponsiveHelper.isDesktop(context)) ?  const SizedBox()
-                    : (ResponsiveHelper.isDesktop(context) || !_isLogin || orderController.runningOrderModel == null
-                    || orderController.runningOrderModel!.orders!.isEmpty || !orderController.showBottomSheet) ? const SizedBox()
-                    : Dismissible(
-                      key: UniqueKey(),
-                      onDismissed: (direction) {
-                        if(orderController.showBottomSheet){
-                          orderController.showRunningOrders();
-                        }
-                      },
-                      child: RunningOrderViewWidget(reversOrder: reversOrder, onOrderTap: () {
-                        _setPage(3);
-                        if(orderController.showBottomSheet){
-                          orderController.showRunningOrders();
-                        }
-                      }),
-                    ),
+                    expandableContent:
+                        (widget.fromSplash &&
+                            Get.find<LocationController>()
+                                .showLocationSuggestion &&
+                            active &&
+                            !ResponsiveHelper.isDesktop(context))
+                        ? const SizedBox()
+                        : (ResponsiveHelper.isDesktop(context) ||
+                              !_isLogin ||
+                              orderController.runningOrderModel == null ||
+                              orderController
+                                  .runningOrderModel!
+                                  .orders!
+                                  .isEmpty ||
+                              !orderController.showBottomSheet)
+                        ? const SizedBox()
+                        : Dismissible(
+                            key: UniqueKey(),
+                            onDismissed: (direction) {
+                              if (orderController.showBottomSheet) {
+                                orderController.showRunningOrders();
+                              }
+                            },
+                            child: RunningOrderViewWidget(
+                              reversOrder: reversOrder,
+                              onOrderTap: () {
+                                _setPage(3);
+                                if (orderController.showBottomSheet) {
+                                  orderController.showRunningOrders();
+                                }
+                              },
+                            ),
+                          ),
                   ),
                 ),
               );
-            }
+            },
           ),
         );
-      }
+      },
     );
   }
 
@@ -350,9 +632,14 @@ class DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget trackView(BuildContext context, {required bool status}) {
-    return Container(height: 3, decoration: BoxDecoration(color: status ? Theme.of(context).primaryColor
-        : Theme.of(context).disabledColor.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(Dimensions.radiusDefault)));
+    return Container(
+      height: 3,
+      decoration: BoxDecoration(
+        color: status
+            ? Theme.of(context).primaryColor
+            : Theme.of(context).disabledColor.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+      ),
+    );
   }
-
-
 }

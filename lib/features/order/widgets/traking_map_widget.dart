@@ -45,10 +45,70 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget> {
   }
 
   @override
+  void didUpdateWidget(covariant TrackingMapWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_controller == null) return;
+    if (_trackSignature(oldWidget.track) != _trackSignature(widget.track)) {
+      _setMarkerFromTrack(widget.track, moveCamera: false);
+    }
+  }
+
+  @override
   void dispose() {
     super.dispose();
 
     _controller?.dispose();
+  }
+
+  String _trackSignature(OrderModel? track) {
+    final DeliveryMan? deliveryMan = track?.deliveryMan;
+    return [
+      track?.id,
+      track?.orderStatus,
+      deliveryMan?.id,
+      deliveryMan?.lat,
+      deliveryMan?.lng,
+    ].join('|');
+  }
+
+  void _setMarkerFromTrack(OrderModel? track, {bool moveCamera = true}) {
+    if (track == null) return;
+    setMarker(
+      _trackingStore(track),
+      track.deliveryMan,
+      _trackingAddress(track),
+      track.orderType == 'take_away',
+      track.orderType == 'parcel',
+      track.moduleType == 'food',
+      moveCamera: moveCamera,
+    );
+  }
+
+  Store? _trackingStore(OrderModel track) {
+    return track.orderType == 'parcel'
+        ? Store(
+            latitude: track.receiverDetails!.latitude,
+            longitude: track.receiverDetails!.longitude,
+            address: track.receiverDetails!.address,
+            name: track.receiverDetails!.contactPersonName,
+          )
+        : track.store;
+  }
+
+  AddressModel? _trackingAddress(OrderModel track) {
+    if (track.orderType != 'take_away') {
+      return track.deliveryAddress;
+    }
+
+    if (Get.find<LocationController>().position.latitude == 0) {
+      return track.deliveryAddress;
+    }
+
+    return AddressModel(
+      latitude: Get.find<LocationController>().position.latitude.toString(),
+      longitude: Get.find<LocationController>().position.longitude.toString(),
+      address: Get.find<LocationController>().address,
+    );
   }
 
   @override
@@ -85,44 +145,7 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget> {
                     onMapCreated: (GoogleMapController controller) {
                       _controller = controller;
                       _isLoading = false;
-                      setMarker(
-                        widget.track!.orderType == 'parcel'
-                            ? Store(
-                                latitude:
-                                    widget.track!.receiverDetails!.latitude,
-                                longitude:
-                                    widget.track!.receiverDetails!.longitude,
-                                address: widget.track!.receiverDetails!.address,
-                                name: widget
-                                    .track!
-                                    .receiverDetails!
-                                    .contactPersonName,
-                              )
-                            : widget.track!.store,
-                        widget.track!.deliveryMan,
-                        widget.track!.orderType == 'take_away'
-                            ? Get.find<LocationController>()
-                                          .position
-                                          .latitude ==
-                                      0
-                                  ? widget.track!.deliveryAddress
-                                  : AddressModel(
-                                      latitude: Get.find<LocationController>()
-                                          .position
-                                          .latitude
-                                          .toString(),
-                                      longitude: Get.find<LocationController>()
-                                          .position
-                                          .longitude
-                                          .toString(),
-                                      address: Get.find<LocationController>()
-                                          .address,
-                                    )
-                            : widget.track!.deliveryAddress,
-                        widget.track!.orderType == 'take_away',
-                        widget.track!.orderType == 'parcel',
-                        widget.track!.moduleType == 'food',
-                      );
+                      _setMarkerFromTrack(widget.track);
                     },
                     gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
                       Factory<OneSequenceGestureRecognizer>(
@@ -168,8 +191,9 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget> {
     AddressModel? addressModel,
     bool takeAway,
     bool parcel,
-    bool isRestaurant,
-  ) async {
+    bool isRestaurant, {
+    bool moveCamera = true,
+  }) async {
     try {
       BitmapDescriptor restaurantImageData =
           await MarkerHelper.convertAssetToBitmapDescriptor(
@@ -227,16 +251,18 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget> {
         (bounds.northeast.longitude + bounds.southwest.longitude) / 2,
       );
 
-      _controller!.moveCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: centerBounds,
-            zoom: GetPlatform.isWeb ? 10 : 17,
+      if (moveCamera) {
+        _controller!.moveCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: centerBounds,
+              zoom: GetPlatform.isWeb ? 10 : 17,
+            ),
           ),
-        ),
-      );
-      if (!ResponsiveHelper.isWeb()) {
-        zoomToFit(_controller, bounds, centerBounds, padding: 1.5);
+        );
+        if (!ResponsiveHelper.isWeb()) {
+          zoomToFit(_controller, bounds, centerBounds, padding: 1.5);
+        }
       }
 
       /// user for normal order , but sender for parcel order
@@ -308,6 +334,7 @@ class _TrackingMapWidgetState extends State<TrackingMapWidget> {
         parcel: parcel,
       );
     } catch (_) {}
+    if (!mounted) return;
     setState(() {});
   }
 

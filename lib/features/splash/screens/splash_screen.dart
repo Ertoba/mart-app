@@ -192,7 +192,7 @@ class SplashScreenState extends State<SplashScreen> {
 
     return Scaffold(
       key: _globalKey,
-      backgroundColor: const Color(0xFFD35701),
+      backgroundColor: const Color(0xFF039D55),
       body: GetBuilder<SplashController>(
         builder: (splashController) {
           return splashController.hasConnection

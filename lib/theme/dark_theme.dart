@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 
-ThemeData dark({Color color = const Color(0xFFE06A18)}) => ThemeData(
+ThemeData dark({Color color = const Color(0xFF039D55)}) => ThemeData(
   fontFamily: AppConstants.fontFamily,
   primaryColor: color,
-  secondaryHeaderColor: const Color(0xFFD35701),
+  secondaryHeaderColor: const Color(0xFF10B981),
   disabledColor: const Color(0xffa2a7ad),
   brightness: Brightness.dark,
   hintColor: const Color(0xFFbebebe),

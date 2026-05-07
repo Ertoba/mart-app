@@ -6,19 +6,20 @@ import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 
-class LinkConverter{
-
-  static String? convertDeepLink(Uri? uri){
+class LinkConverter {
+  static String? convertDeepLink(Uri? uri) {
     String? link;
-    if(uri != null) {
+    if (uri != null) {
       if (kDebugMode) {
         print('Received Deep Link URI: $uri');
       }
 
       String host = uri.host;
-      if(host.isNotEmpty && AppConstants.webHostedUrl.contains(host)) {
+      if (host.isNotEmpty &&
+          (AppConstants.webHostedUrl.contains(host) ||
+              AppConstants.legacyWebHostedUrl.contains(host))) {
         link = uri.path;
-        if(uri.queryParameters.isNotEmpty) {
+        if (uri.queryParameters.isNotEmpty) {
           link += '?';
           uri.queryParameters.forEach((key, value) {
             link = '$link$key=$value&';
@@ -42,24 +43,32 @@ class LinkConverter{
   }
 
   static Future<void> navigateFromLink(String? link, {Uri? uri}) async {
-    if(link != null) {
-      print('====linked route config: ${Get.find<SplashController>().configModel}');
-      if(Get.find<SplashController>().configModel == null) {
+    if (link != null) {
+      print(
+        '====linked route config: ${Get.find<SplashController>().configModel}',
+      );
+      if (Get.find<SplashController>().configModel == null) {
         print('======config data call from link converter helper');
-       await Get.find<SplashController>().getConfigData(notificationBody: null, canRoute: false);
+        await Get.find<SplashController>().getConfigData(
+          notificationBody: null,
+          canRoute: false,
+        );
       }
 
-      if(link.startsWith('/?module=')) {
+      if (link.startsWith('/?module=')) {
         if (kDebugMode) {
           print('=======Navigating to initial route: $link');
         }
         String moduleId = uri?.queryParameters['module'] ?? '';
         Future.delayed(const Duration(milliseconds: 500), () {
-          Get.toNamed(RouteHelper.getInitialRoute(moduleId: moduleId, fromDeeplink: true));
+          Get.toNamed(
+            RouteHelper.getInitialRoute(moduleId: moduleId, fromDeeplink: true),
+          );
         });
-      } else if(link.startsWith(RouteHelper.store) && !GetPlatform.isWeb) {
+      } else if (link.startsWith(RouteHelper.store) && !GetPlatform.isWeb) {
         if (kDebugMode) {
           print('=======Navigating to store route: $link');
+
           ///store details: https://ammart-8bc78.web.app/store/hungry-puppets46?id=46&page=store&module=food
         }
         int storeID = int.tryParse(uri!.queryParameters['id'] ?? '') ?? 0;
@@ -67,10 +76,21 @@ class LinkConverter{
         String page = uri.queryParameters['page'] ?? '';
         String slug = link.split('/').last;
         Future.delayed(const Duration(milliseconds: 500), () {
-          print('======store route parameters: storeID: $storeID, moduleId: $moduleId, page: $page, slug: $slug');
-          Get.toNamed(RouteHelper.getStoreRoute(id: storeID, page: page, slug: slug, moduleId: moduleId, fromDeeplink: true));
+          print(
+            '======store route parameters: storeID: $storeID, moduleId: $moduleId, page: $page, slug: $slug',
+          );
+          Get.toNamed(
+            RouteHelper.getStoreRoute(
+              id: storeID,
+              page: page,
+              slug: slug,
+              moduleId: moduleId,
+              fromDeeplink: true,
+            ),
+          );
         });
-      } else if(link.startsWith(RouteHelper.itemDetails) && !GetPlatform.isWeb) {
+      } else if (link.startsWith(RouteHelper.itemDetails) &&
+          !GetPlatform.isWeb) {
         if (kDebugMode) {
           print('=======Navigating to item details route: $link');
         }
@@ -78,15 +98,27 @@ class LinkConverter{
         String moduleId = uri.queryParameters['module'] ?? '';
         String slug = link.split('/').last;
         Future.delayed(const Duration(milliseconds: 500), () {
-          Get.toNamed(RouteHelper.getItemDetailsRoute(itemID, false, slug, slug: slug, moduleId: moduleId, fromDeeplink: true));
+          Get.toNamed(
+            RouteHelper.getItemDetailsRoute(
+              itemID,
+              false,
+              slug,
+              slug: slug,
+              moduleId: moduleId,
+              fromDeeplink: true,
+            ),
+          );
         });
-      } else if(link.startsWith(RouteHelper.referAndEarn) && !GetPlatform.isWeb) {
+      } else if (link.startsWith(RouteHelper.referAndEarn) &&
+          !GetPlatform.isWeb) {
         Future.delayed(const Duration(milliseconds: 500), () {
-          if(AuthHelper.isLoggedIn()) {
+          if (AuthHelper.isLoggedIn()) {
             Get.toNamed(RouteHelper.getReferAndEarnRoute());
           } else {
             String? referCode = uri!.queryParameters['code'];
-            Get.to(()=> SignUpScreen(exitFromApp: false, referCode: referCode));
+            Get.to(
+              () => SignUpScreen(exitFromApp: false, referCode: referCode),
+            );
           }
         });
       } else {
@@ -99,6 +131,4 @@ class LinkConverter{
       }
     }
   }
-
 }
-

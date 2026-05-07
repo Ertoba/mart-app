@@ -25,7 +25,8 @@ class AppConstants {
   static const String fontFamily = 'Roboto';
   static const bool payInWevView = false;
   static const int balanceInputLen = 10;
-  static const String webHostedUrl = 'https://store.mili.ge';
+  static const String webHostedUrl = 'https://mili.ge';
+  static const String legacyWebHostedUrl = 'https://store.mili.ge';
   static const bool useReactWebsite = false;
   static const String googleServerClientId =
       '491987943015-agln6biv84krpnngdphj87jkko7r9lb8.apps.googleusercontent.com';

@@ -1,4 +1,4 @@
-package com.vendor.portal_mart_store_app
+package ge.mili.customer
 
 import com.flitt.mobile.GooglePayButton.GooglePayButtonPlugin
 import io.flutter.embedding.android.FlutterActivity

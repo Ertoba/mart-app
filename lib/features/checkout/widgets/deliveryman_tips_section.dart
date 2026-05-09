@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
@@ -96,17 +97,37 @@ class _DeliveryManTipsSectionState extends State<DeliveryManTipsSection> {
                             physics: const BouncingScrollPhysics(),
                             itemCount: AppConstants.tips.length,
                             itemBuilder: (context, index) {
+                              final String tipValue = AppConstants.tips[index];
+                              final double? tipAmount = double.tryParse(
+                                tipValue,
+                              );
+
+                              if (tipAmount == null) {
+                                return _CustomTipField(
+                                  checkoutController: checkoutController,
+                                  onChanged: (double customTip) {
+                                    total = total - checkoutController.tips;
+                                    checkoutController.updateTips(
+                                      -1,
+                                      notify: false,
+                                    );
+                                    checkoutController.addTips(customTip);
+                                    widget.onTotalChange(total + customTip);
+                                  },
+                                );
+                              }
+
                               final bool isAlreadySelected =
                                   checkoutController.selectedTips == index;
                               return TipsWidget(
                                 title: PriceConverter.convertPrice(
-                                  double.parse(AppConstants.tips[index]),
+                                  tipAmount,
                                   forDM: true,
                                 ),
                                 isSelected:
                                     checkoutController.selectedTips == index,
                                 isSuggested:
-                                    AppConstants.tips[index] ==
+                                    tipValue ==
                                     checkoutController.mostDmTipAmount
                                         .toString(),
                                 onTap: () async {
@@ -115,9 +136,7 @@ class _DeliveryManTipsSectionState extends State<DeliveryManTipsSection> {
                                     isAlreadySelected ? -1 : index,
                                   );
                                   if (checkoutController.selectedTips != -1) {
-                                    checkoutController.addTips(
-                                      double.parse(AppConstants.tips[index]),
-                                    );
+                                    checkoutController.addTips(tipAmount);
                                   } else {
                                     checkoutController.addTips(0);
                                   }
@@ -187,6 +206,77 @@ class _DeliveryManTipsSectionState extends State<DeliveryManTipsSection> {
           ],
         );
       },
+    );
+  }
+}
+
+class _CustomTipField extends StatelessWidget {
+  final CheckoutController checkoutController;
+  final ValueChanged<double> onChanged;
+
+  const _CustomTipField({
+    required this.checkoutController,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool hasCustomTip =
+        checkoutController.selectedTips == -1 &&
+        checkoutController.tipController.text.trim().isNotEmpty &&
+        checkoutController.tipController.text.trim() != 'not_now';
+
+    return Container(
+      width: ResponsiveHelper.isDesktop(context) ? 190 : 160,
+      height: 46,
+      margin: const EdgeInsets.only(
+        right: Dimensions.paddingSizeSmall,
+        top: Dimensions.paddingSizeExtraSmall,
+      ),
+      child: TextField(
+        controller: checkoutController.tipController,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        textInputAction: TextInputAction.done,
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+        ],
+        style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault),
+        decoration: InputDecoration(
+          hintText: 'enter_amount'.tr,
+          suffixText:
+              Get.find<SplashController>().configModel?.currencySymbol ?? '',
+          suffixStyle: robotoMedium.copyWith(
+            color: Theme.of(context).primaryColor,
+            fontSize: Dimensions.fontSizeDefault,
+          ),
+          filled: true,
+          fillColor: Theme.of(context).cardColor,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: Dimensions.paddingSizeSmall,
+            vertical: Dimensions.paddingSizeSmall,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+            borderSide: BorderSide(
+              color: hasCustomTip
+                  ? Theme.of(context).primaryColor
+                  : Theme.of(context).disabledColor.withValues(alpha: 0.35),
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+            borderSide: BorderSide(color: Theme.of(context).primaryColor),
+          ),
+        ),
+        onTap: () {
+          if (checkoutController.selectedTips != -1) {
+            checkoutController.updateTips(-1);
+          }
+        },
+        onChanged: (String value) {
+          onChanged(double.tryParse(value.trim()) ?? 0);
+        },
+      ),
     );
   }
 }

@@ -315,11 +315,18 @@ class CheckoutController extends GetxController implements GetxService {
   }
 
   void updateTips(int index, {bool notify = true}) {
-    _selectedTips = index;
-    if (_selectedTips < 0 || _selectedTips >= AppConstants.tips.length) {
+    if (index < 0 || index >= AppConstants.tips.length) {
+      _selectedTips = -1;
       _tips = 0;
     } else {
-      _tips = double.parse(AppConstants.tips[index]);
+      final double? parsedTips = double.tryParse(AppConstants.tips[index]);
+      if (parsedTips == null) {
+        _selectedTips = -1;
+        _tips = 0;
+      } else {
+        _selectedTips = index;
+        _tips = parsedTips;
+      }
     }
     if (notify) {
       update();

@@ -287,9 +287,20 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                   '====> COD : $_isCashOnDeliveryActive, Digital : $_isDigitalPaymentActive, Offline : $_isOfflinePaymentActive',
                 );
 
-                if (checkoutController.isFirstTimeCodActive &&
-                    (_isCashOnDeliveryActive ?? false)) {
-                  checkoutController.setPaymentMethod(0);
+                if (checkoutController.isFirstTimeCodActive) {
+                  final activePaymentMethods = Get.find<SplashController>()
+                      .configModel!
+                      .activePaymentMethodList;
+                  if ((_isDigitalPaymentActive ?? false) &&
+                      activePaymentMethods != null &&
+                      activePaymentMethods.isNotEmpty) {
+                    checkoutController.setPaymentMethod(2);
+                    checkoutController.changeDigitalPaymentName(
+                      activePaymentMethods.first.getWay!,
+                    );
+                  } else if (_isCashOnDeliveryActive ?? false) {
+                    checkoutController.setPaymentMethod(0);
+                  }
                 }
 
                 if (checkoutController.store != null) {
@@ -619,7 +630,20 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                     total = total - referralDiscount;
 
                     if (widget.storeId != null) {
-                      checkoutController.setPaymentMethod(0, isUpdate: false);
+                      final activePaymentMethods = Get.find<SplashController>()
+                          .configModel!
+                          .activePaymentMethodList;
+                      if ((_isDigitalPaymentActive ?? false) &&
+                          activePaymentMethods != null &&
+                          activePaymentMethods.isNotEmpty) {
+                        checkoutController.setPaymentMethod(2, isUpdate: false);
+                        checkoutController.changeDigitalPaymentName(
+                          activePaymentMethods.first.getWay!,
+                          willUpdate: false,
+                        );
+                      } else {
+                        checkoutController.setPaymentMethod(0, isUpdate: false);
+                      }
                     }
                     checkoutController.setTotalAmount(
                       total -

@@ -2569,6 +2569,8 @@ class _DeliveryManRegistrationScreenState
                       .identityTypeList[deliverymanRegiController
                       .identityTypeIndex],
               earning: deliverymanRegiController.dmTypeIndex == 1 ? '1' : '0',
+              type: deliverymanRegiController
+                  .dmTypeList[deliverymanRegiController.dmTypeIndex],
               zoneId: deliverymanRegiController
                   .zoneList![deliverymanRegiController.selectedZoneIndex!]
                   .id
@@ -2648,6 +2650,8 @@ class _DeliveryManRegistrationScreenState
             identityType: deliverymanRegiController
                 .identityTypeList[deliverymanRegiController.identityTypeIndex],
             earning: deliverymanRegiController.dmTypeIndex == 1 ? '1' : '0',
+            type: deliverymanRegiController
+                .dmTypeList[deliverymanRegiController.dmTypeIndex],
             zoneId: deliverymanRegiController
                 .zoneList![deliverymanRegiController.selectedZoneIndex!]
                 .id

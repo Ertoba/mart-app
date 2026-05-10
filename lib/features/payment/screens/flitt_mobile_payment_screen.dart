@@ -58,6 +58,7 @@ class _FlittMobilePaymentScreenState extends State<FlittMobilePaymentScreen> {
   bool _supportsApplePay = false;
   bool _supportsGooglePay = false;
   bool _awaitingConfirmation = false;
+  bool _saveCard = false;
   String? _initializationError;
   String? _paymentId;
   String? _token;
@@ -77,6 +78,10 @@ class _FlittMobilePaymentScreenState extends State<FlittMobilePaymentScreen> {
     return !_isOrderFlow &&
         addFundEmpty &&
         (widget.subscriptionUrl?.isNotEmpty ?? false);
+  }
+
+  bool get _canSaveCard {
+    return _isOrderFlow && widget.orderModel.userId != 0;
   }
 
   @override
@@ -154,10 +159,17 @@ class _FlittMobilePaymentScreenState extends State<FlittMobilePaymentScreen> {
 
     late final Uri uri;
     if (directPaymentId != null) {
-      uri = Uri.parse('${AppConstants.baseUrl}/payment/flitt/mobile-intent')
-          .replace(
-            queryParameters: <String, String>{'payment_id': directPaymentId},
-          );
+      final Map<String, String> queryParameters = <String, String>{
+        'payment_id': directPaymentId,
+      };
+
+      if (_canSaveCard) {
+        queryParameters['save_card'] = _saveCard ? '1' : '0';
+      }
+
+      uri = Uri.parse(
+        '${AppConstants.baseUrl}/payment/flitt/mobile-intent',
+      ).replace(queryParameters: queryParameters);
     } else {
       final String customerId = widget.orderModel.userId == 0
           ? widget.guestId
@@ -168,6 +180,7 @@ class _FlittMobilePaymentScreenState extends State<FlittMobilePaymentScreen> {
               'customer_id': customerId,
               'order_id': widget.orderModel.id.toString(),
               'payment_method': widget.paymentMethod,
+              'save_card': _canSaveCard && _saveCard ? '1' : '0',
             },
           );
     }
@@ -695,6 +708,67 @@ class _FlittMobilePaymentScreenState extends State<FlittMobilePaymentScreen> {
     );
   }
 
+  Future<void> _setSaveCard(bool? value) async {
+    final bool nextValue = value ?? false;
+
+    if (nextValue == _saveCard || _isProcessing || _isInitializing) {
+      return;
+    }
+
+    setState(() {
+      _saveCard = nextValue;
+    });
+
+    await _initializeFlitt();
+  }
+
+  Widget _buildSaveCardOption(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Checkbox(
+            value: _saveCard,
+            onChanged: _isProcessing || _isInitializing ? null : _setSaveCard,
+            activeColor: Colors.white,
+            checkColor: _brandBackgroundStart(context),
+            side: const BorderSide(color: Colors.white),
+            visualDensity: VisualDensity.compact,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'ბარათის დამახსოვრება',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'შემდეგ გადახდებზე გამოიყენება მხოლოდ Flitt-ის უსაფრთხო token-ი. ბარათის სრული ნომერი და CVV არ ინახება.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.82),
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildGooglePayAction(BuildContext context) {
     return SizedBox(
       width: double.infinity,
@@ -871,6 +945,10 @@ class _FlittMobilePaymentScreenState extends State<FlittMobilePaymentScreen> {
                 ),
                 child: _buildCardForm(context),
               ),
+              if (_canSaveCard) ...<Widget>[
+                const SizedBox(height: 12),
+                _buildSaveCardOption(context),
+              ],
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,

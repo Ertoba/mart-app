@@ -43,6 +43,12 @@ class ServerMessageTranslator {
       'the identity number has already been taken':
           'ეს პირადი ნომერი უკვე გამოყენებულია.',
       'the referral code is invalid': 'რეფერალური კოდი არასწორია.',
+      'order cancelled succesfully': 'შეკვეთა წარმატებით გაუქმდა.',
+      'order cancelled successfully': 'შეკვეთა წარმატებით გაუქმდა.',
+      'order canceled successfully': 'შეკვეთა წარმატებით გაუქმდა.',
+      'successfully added': 'წარმატებით დაემატა.',
+      'successfully removed': 'წარმატებით წაიშალა.',
+      'address deleted successfully': 'მისამართი წარმატებით წაიშალა.',
       'item already exists': 'ნივთი უკვე დამატებულია.',
       'cart item remove successfully': 'ნივთი კალათიდან წარმატებით წაიშალა.',
       'request failed': 'მოთხოვნა ვერ შესრულდა.',

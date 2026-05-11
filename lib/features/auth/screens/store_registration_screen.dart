@@ -585,7 +585,7 @@ class _StoreRegistrationScreenState extends State<StoreRegistrationScreen> with 
                             const SizedBox(height: Dimensions.paddingSizeExtraLarge),
 
                             CustomTextField(
-                              titleText: 'enter_phone_number'.tr,
+                              titleText: 'XXX-XXXXXX',
                               controller: _phoneController,
                               focusNode: _phoneFocus,
                               nextFocus: _emailFocus,
@@ -1381,7 +1381,7 @@ class _StoreRegistrationScreenState extends State<StoreRegistrationScreen> with 
 
                         Expanded(
                           child: CustomTextField(
-                            titleText: 'enter_phone_number'.tr,
+                            titleText: 'XXX-XXXXXX',
                             controller: _phoneController,
                             focusNode: _phoneFocus,
                             nextFocus: _emailFocus,

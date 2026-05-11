@@ -78,7 +78,7 @@ class _GuestTrackOrderInputViewWidgetState extends State<GuestTrackOrderInputVie
                   const SizedBox(height: Dimensions.paddingSizeDefault),
 
                   CustomTextField(
-                    titleText: 'enter_phone_number'.tr,
+                    titleText: 'XXX-XXXXXX',
                     labelText: 'phone'.tr,
                     controller: _phoneNumberController,
                     focusNode: _phoneFocus,
@@ -151,7 +151,7 @@ class _GuestTrackOrderInputViewWidgetState extends State<GuestTrackOrderInputVie
           const SizedBox(height: Dimensions.paddingSizeExtraLarge),
 
           CustomTextField(
-            titleText: 'enter_phone_number'.tr,
+            titleText: 'XXX-XXXXXX',
             labelText: 'phone'.tr,
             controller: _phoneNumberController,
             focusNode: _phoneFocus,

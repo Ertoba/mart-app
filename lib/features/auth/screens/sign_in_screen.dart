@@ -163,7 +163,11 @@ class SignInScreenState extends State<SignInScreen> {
                           )
                         : const SizedBox(),
 
-                    Image.asset(Images.logo, width: 125),
+                    Image.asset(
+                      Images.authLogo,
+                      width: 320,
+                      fit: BoxFit.contain,
+                    ),
                     const SizedBox(height: Dimensions.paddingSizeExtremeLarge),
 
                     SignInView(

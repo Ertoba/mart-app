@@ -63,7 +63,11 @@ class AuthDialogWidgetState extends State<AuthDialogWidget> {
                 ),
                 child: Column(
                   children: [
-                    Image.asset(Images.logo, width: 130),
+                    Image.asset(
+                      Images.authLogo,
+                      width: 300,
+                      fit: BoxFit.contain,
+                    ),
                     const SizedBox(height: Dimensions.paddingSizeLarge),
 
                     SignInView(

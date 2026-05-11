@@ -126,7 +126,7 @@ class _NewUserSetupScreenState extends State<NewUserSetupScreen> {
 
                     Image.asset(
                       Images.authLogo,
-                      width: 320,
+                      width: 160,
                       fit: BoxFit.contain,
                     ),
                     const SizedBox(height: Dimensions.paddingSizeLarge),

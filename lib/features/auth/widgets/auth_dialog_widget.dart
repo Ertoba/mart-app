@@ -65,7 +65,7 @@ class AuthDialogWidgetState extends State<AuthDialogWidget> {
                   children: [
                     Image.asset(
                       Images.authLogo,
-                      width: 300,
+                      width: 150,
                       fit: BoxFit.contain,
                     ),
                     const SizedBox(height: Dimensions.paddingSizeLarge),

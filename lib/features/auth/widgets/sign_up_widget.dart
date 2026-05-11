@@ -109,7 +109,7 @@ class SignUpWidgetState extends State<SignUpWidget> {
                               ),
                               child: Image.asset(
                                 Images.authLogo,
-                                width: 300,
+                                width: 150,
                                 fit: BoxFit.contain,
                               ),
                             )

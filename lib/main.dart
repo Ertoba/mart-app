@@ -51,19 +51,8 @@ Future<void> main() async {
     return true;
   };*/
 
-  if(GetPlatform.isAndroid) {
-    await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: "AIzaSyDDuD7JPPP-9xGrI_J5aygfNvvSKjqUa6Y",
-        appId: "1:100879464630:android:2a56ef0c36129fd92cce17",
-        messagingSenderId: "100879464630",
-        projectId: "portal-9524e",
-      ),
-    );
-  } else {
-    if(!GetPlatform.isWeb) {
-      await Firebase.initializeApp();
-    }
+  if(!GetPlatform.isWeb) {
+    await Firebase.initializeApp();
   }
 
   Map<String, Map<String, String>> languages = await di.init();

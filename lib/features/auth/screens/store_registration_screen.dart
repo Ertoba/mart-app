@@ -351,7 +351,7 @@ class _StoreRegistrationScreenState extends State<StoreRegistrationScreen> with 
                                     ),
                                 ])),
                                 SizedBox(height: Dimensions.paddingSizeDefault),
-                                Align( alignment: Alignment.center, child: Text('JPG, JPEG, PNG Less Than 2MB', style: robotoRegular.copyWith(color: Theme.of(context).disabledColor),)),
+                                Align( alignment: Alignment.center, child: Text('JPG, JPEG, PNG | 10 MB', style: robotoRegular.copyWith(color: Theme.of(context).disabledColor),)),
                                 Align( alignment: Alignment.center, child: Text('(Ratio 2:1)', style: robotoMedium.copyWith(color: Colors.black54))),
                               ]),
                             ),

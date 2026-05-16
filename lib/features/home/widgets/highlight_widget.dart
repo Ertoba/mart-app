@@ -422,25 +422,6 @@ class _HighlightVideoWidgetState extends State<HighlightVideoWidget> {
   void initState() {
     super.initState();
     initializePlayer();
-
-    videoPlayerController.addListener(() {
-      if (videoPlayerController.value.duration ==
-          videoPlayerController.value.position) {
-        if (GetPlatform.isWeb) {
-          Future.delayed(const Duration(seconds: 4), () {
-            Get.find<AdvertisementController>().updateAutoPlayStatus(
-              status: true,
-              shouldUpdate: true,
-            );
-          });
-        } else {
-          Get.find<AdvertisementController>().updateAutoPlayStatus(
-            status: true,
-            shouldUpdate: true,
-          );
-        }
-      }
-    });
   }
 
   Future<void> initializePlayer() async {
@@ -448,7 +429,11 @@ class _HighlightVideoWidgetState extends State<HighlightVideoWidget> {
       Uri.parse(widget.advertisement.videoAttachmentFullUrl ?? ""),
     );
 
-    await Future.wait([videoPlayerController.initialize()]);
+    await videoPlayerController.initialize();
+
+    if (!mounted) {
+      return;
+    }
 
     _createChewieController();
     setState(() {});
@@ -458,6 +443,13 @@ class _HighlightVideoWidgetState extends State<HighlightVideoWidget> {
     _chewieController = ChewieController(
       videoPlayerController: videoPlayerController,
       autoPlay: true,
+      looping: true,
+      showControls: false,
+      showControlsOnInitialize: false,
+      allowFullScreen: false,
+      allowMuting: false,
+      allowPlaybackSpeedChanging: false,
+      allowedScreenSleep: false,
       aspectRatio:
           videoPlayerController.value.aspectRatio *
           (ResponsiveHelper.isDesktop(context) ? 1 : 1.3),
@@ -467,6 +459,8 @@ class _HighlightVideoWidgetState extends State<HighlightVideoWidget> {
 
   @override
   void dispose() {
+    _chewieController?.dispose();
+    videoPlayerController.dispose();
     super.dispose();
   }
 

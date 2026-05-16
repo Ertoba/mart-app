@@ -91,6 +91,7 @@ import 'package:sixam_mart/features/store/screens/store_item_search_screen.dart'
 import 'package:sixam_mart/features/store/screens/store_screen.dart';
 import 'package:sixam_mart/features/review/screens/review_screen.dart';
 import 'package:sixam_mart/features/search/screens/search_screen.dart';
+import 'package:sixam_mart/features/splash/screens/intro_loading_screen.dart';
 import 'package:sixam_mart/features/splash/screens/splash_screen.dart';
 import 'package:sixam_mart/features/support/screens/support_screen.dart';
 import 'package:sixam_mart/features/update/screens/update_screen.dart';
@@ -101,6 +102,7 @@ import 'package:sixam_mart/features/wallet/screens/wallet_screen.dart';
 class RouteHelper {
   static const String initial = '/';
   static const String splash = '/splash';
+  static const String introLoading = '/intro-loading';
   static const String language = '/language';
   static const String onBoarding = '/on-boarding';
   static const String signIn = '/sign-in';
@@ -209,6 +211,15 @@ class RouteHelper {
       '=======splash screen calling-------------: $splash?data=$data&deeplink=$deeplink',
     );
     return '$splash?data=$data&deeplink=$deeplink';
+  }
+
+  static String getIntroLoadingRoute(NotificationBodyModel? body) {
+    String data = 'null';
+    if (body != null) {
+      List<int> encoded = utf8.encode(jsonEncode(body.toJson()));
+      data = base64Encode(encoded);
+    }
+    return '$introLoading?data=$data';
   }
 
   static String getLanguageRoute(String page) => '$language?page=$page';
@@ -611,6 +622,21 @@ class RouteHelper {
             : null;
         print('-------going to splash screen======2');
         return SplashScreen(body: data, deeplinkUrl: deeplink);
+      },
+    ),
+    GetPage(
+      name: introLoading,
+      page: () {
+        NotificationBodyModel? data;
+        if (Get.parameters['data'] != 'null') {
+          List<int> decode = base64Decode(
+            Get.parameters['data']!.replaceAll(' ', '+'),
+          );
+          data = NotificationBodyModel.fromJson(
+            jsonDecode(utf8.decode(decode)),
+          );
+        }
+        return IntroLoadingScreen(body: data);
       },
     ),
     GetPage(
@@ -1551,7 +1577,10 @@ class RouteHelper {
       name: deliveryManRegistration,
       page: () => const DeliveryManRegistrationScreen(),
     ),
-    GetPage(name: riderRegistration, page: () => const RiderRegistrationScreen()),
+    GetPage(
+      name: riderRegistration,
+      page: () => const RiderRegistrationScreen(),
+    ),
     GetPage(
       name: refund,
       page: () => RefundRequestScreen(orderId: Get.parameters['id']),
@@ -1804,7 +1833,8 @@ class RouteHelper {
                   sharedPreferences.getString(AppConstants.languageCode),
                   moduleSlug,
                   addressModel.latitude,
-                  addressModel.longitude, null,
+                  addressModel.longitude,
+                  null,
                 );
                 Get.find<SplashController>().clearDataNull(foundModule);
 
@@ -1818,7 +1848,8 @@ class RouteHelper {
                   sharedPreferences.getString(AppConstants.languageCode),
                   null,
                   addressModel.latitude,
-                  addressModel.longitude, null,
+                  addressModel.longitude,
+                  null,
                 );
                 showCustomSnackBar('no_module_found'.tr);
                 Get.offAllNamed(getInitialRoute());
@@ -1833,7 +1864,8 @@ class RouteHelper {
             sharedPreferences.getString(AppConstants.languageCode),
             moduleSlug,
             addressModel.latitude,
-            addressModel.longitude, null,
+            addressModel.longitude,
+            null,
           );
 
           await Get.find<SplashController>().getModules(
@@ -1886,7 +1918,8 @@ class RouteHelper {
                 sharedPreferences.getString(AppConstants.languageCode),
                 moduleSlug,
                 '0',
-                '0', null,
+                '0',
+                null,
               );
             } else {
               apiClient.updateHeader(
@@ -1896,7 +1929,8 @@ class RouteHelper {
                 sharedPreferences.getString(AppConstants.languageCode),
                 null,
                 '0',
-                '0', null,
+                '0',
+                null,
               );
               Get.dialog(
                 ZoneWarningDialog(

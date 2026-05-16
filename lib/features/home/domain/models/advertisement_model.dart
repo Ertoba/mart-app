@@ -1,6 +1,8 @@
 class AdvertisementModel {
   int? id;
   int? storeId;
+  int? moduleId;
+  String? storeSlug;
   String? addType;
   String? title;
   String? description;
@@ -29,6 +31,8 @@ class AdvertisementModel {
   AdvertisementModel({
     this.id,
     this.storeId,
+    this.moduleId,
+    this.storeSlug,
     this.addType,
     this.title,
     this.description,
@@ -58,6 +62,13 @@ class AdvertisementModel {
   AdvertisementModel.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     storeId = json['store_id'];
+    moduleId = int.tryParse('${json['module_id'] ?? ''}');
+    final dynamic store = json['store'];
+    if (store is Map<String, dynamic>) {
+      storeSlug = store['slug']?.toString();
+      storeId ??= int.tryParse('${store['id'] ?? ''}');
+      moduleId ??= int.tryParse('${store['module_id'] ?? ''}');
+    }
     addType = json['add_type'];
     title = json['title'];
     description = json['description'];
@@ -89,6 +100,8 @@ class AdvertisementModel {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
     data['store_id'] = storeId;
+    data['module_id'] = moduleId;
+    data['store_slug'] = storeSlug;
     data['add_type'] = addType;
     data['title'] = title;
     data['description'] = description;

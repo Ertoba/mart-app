@@ -372,7 +372,7 @@ class LocationController extends GetxController implements GetxService {
         await Get.find<FavouriteController>().getFavouriteList();
       } else {
         print('======config data call from location controller');
-        Get.find<SplashController>().getConfigData();
+        Get.find<SplashController>().getConfigData(canRoute: false);
       }
       Get.find<AuthController>().updateZone();
     }

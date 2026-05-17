@@ -58,9 +58,10 @@ class _CartItemWidgetState extends State<CartItemWidget> {
 
     double totalPrice = _calculatePriceWithVariation(cartModel: widget.cart, discount: discount, discountType: discountType);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 0),
-      child: Slidable(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Slidable(
         key: UniqueKey(),
         endActionPane: ActionPane(
           motion: const ScrollMotion(),
@@ -311,16 +312,17 @@ class _CartItemWidgetState extends State<CartItemWidget> {
                     ]),
                   ),
 
-                if(widget.showDivider)
-                  Padding(
-                    padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
-                    child: ResponsiveHelper.isDesktop(context) ? const SizedBox() : const Divider(),
-                  ),
               ],
             ),
           ),
         ),
-      ),
+        ),
+        if(widget.showDivider)
+          Padding(
+            padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
+            child: ResponsiveHelper.isDesktop(context) ? const SizedBox() : const Divider(),
+          ),
+      ],
     );
   }
 

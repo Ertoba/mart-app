@@ -123,7 +123,7 @@ class SplashController extends GetxController implements GetxService {
       response = await splashServiceInterface.getConfigData(
         source: DataSourceEnum.local,
       );
-      _handleConfigResponse(
+      final bool didRouteFromLocalConfig = await _handleConfigResponse(
         response,
         loadModuleData,
         loadLandingData,
@@ -137,6 +137,9 @@ class SplashController extends GetxController implements GetxService {
         loadModuleData: loadModuleData,
         loadLandingData: loadLandingData,
         source: DataSourceEnum.client,
+        notificationBody: notificationBody,
+        fromMainFunction: fromMainFunction,
+        canRoute: canRoute && !didRouteFromLocalConfig,
       );
     } else {
       response = await splashServiceInterface.getConfigData(
@@ -155,7 +158,7 @@ class SplashController extends GetxController implements GetxService {
     }
   }
 
-  Future<void> _handleConfigResponse(
+  Future<bool> _handleConfigResponse(
     Response response,
     bool loadModuleData,
     bool loadLandingData,
@@ -165,6 +168,7 @@ class SplashController extends GetxController implements GetxService {
     bool canRoute,
     bool isClient,
   ) async {
+    bool didRoute = false;
     if (response.statusCode == 200) {
       try {
         _data = response.body;
@@ -177,20 +181,20 @@ class SplashController extends GetxController implements GetxService {
           );
         }
         print('=====deeplink url: $_deeplinkRoute and canRoute: $canRoute');
-        if (!canRoute || _deeplinkRoute != null) {
-          return;
+        if (canRoute && _deeplinkRoute == null) {
+          if (loadLandingData) {
+            await getLandingPageData();
+          }
+          if (fromMainFunction) {
+            _mainConfigRouting();
+          } else if (fromDemoReset) {
+            Get.offAllNamed(RouteHelper.getInitialRoute(fromSplash: true));
+          } else {
+            Get.offNamed(RouteHelper.getIntroLoadingRoute(notificationBody));
+          }
+          didRoute = true;
+          _onRemoveLoader();
         }
-        if (loadLandingData) {
-          await getLandingPageData();
-        }
-        if (fromMainFunction) {
-          _mainConfigRouting();
-        } else if (fromDemoReset) {
-          Get.offAllNamed(RouteHelper.getInitialRoute(fromSplash: true));
-        } else {
-          Get.offNamed(RouteHelper.getIntroLoadingRoute(notificationBody));
-        }
-        _onRemoveLoader();
       } catch (e) {
         if (isClient) _hasConnection = false;
       }
@@ -198,6 +202,7 @@ class SplashController extends GetxController implements GetxService {
       if (isClient) _hasConnection = false;
     }
     update();
+    return didRoute;
   }
 
   Future<void> _mainConfigRouting() async {

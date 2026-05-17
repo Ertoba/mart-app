@@ -53,13 +53,11 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: true,
       onPopInvokedWithResult: (didPop, result) async {
         if(Get.find<SplashController>().deeplinkRoute != null) {
           Get.find<SplashController>().setDeeplink(null);
           Get.offAllNamed(RouteHelper.getInitialRoute());
-        } else {
-          Get.back();
         }
       },
       child: GetBuilder<CartController>(builder: (cartController) {

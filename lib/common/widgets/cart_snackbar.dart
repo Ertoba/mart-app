@@ -24,31 +24,54 @@ void showCartSnackBar() {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
       ),
-      content: Row(
-        children: [
-          SizedBox.square(
-            dimension: 24,
-            child: Lottie.asset(
-              'assets/json/cart_success.json',
-              repeat: false,
-              fit: BoxFit.contain,
+      content: SizedBox(
+        height: 78,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'item_added_to_cart'.tr,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: robotoMedium.copyWith(color: Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                SizedBox.square(
+                  dimension: 52,
+                  child: Lottie.asset(
+                    'assets/json/cart_success.json',
+                    repeat: false,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'item_added_to_cart'.tr,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: robotoMedium.copyWith(color: Colors.white),
+            const Spacer(),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(Get.context!).hideCurrentSnackBar();
+                  Get.toNamed(RouteHelper.getCartRoute());
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  minimumSize: Size.zero,
+                  padding: EdgeInsets.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  'view_cart'.tr,
+                  style: robotoMedium.copyWith(color: Colors.white),
+                ),
+              ),
             ),
-          ),
-        ],
-      ),
-      action: SnackBarAction(
-        label: 'view_cart'.tr,
-        onPressed: () => Get.toNamed(RouteHelper.getCartRoute()),
-        textColor: Colors.white,
+          ],
+        ),
       ),
     ),
   );

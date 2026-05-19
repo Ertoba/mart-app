@@ -174,11 +174,12 @@ class ItemRepository implements ItemRepositoryInterface {
         ? jsonEncode(categoryIds)
         : [];
 
+    final bool hasSearch = search != null && search.trim().isNotEmpty;
     Map<String, dynamic>? query = {
       'type': type,
       'offset': offset.toString(),
       'limit': '25',
-      if (search != null && search.isNotEmpty) 'search': search,
+      if (hasSearch) 'search': search.trim(),
       if (categoryIds != null && categoryIds.isNotEmpty)
         'category_ids': categoryIdsString,
       if (filter != null && filter.isNotEmpty) 'filter': filterString,
@@ -187,9 +188,34 @@ class ItemRepository implements ItemRepositoryInterface {
       if (maxPrice != null) 'max_price': maxPrice.toString(),
     };
 
-    String uri = Uri.parse(
-      AppConstants.popularItemUri,
-    ).replace(queryParameters: query).toString();
+    String uri;
+    if (hasSearch) {
+      final List<String> searchFilter = List<String>.from(filter ?? <String>[]);
+      if (!searchFilter.contains('popular')) {
+        searchFilter.add('popular');
+      }
+
+      final Map<String, dynamic> searchQuery = {
+        'name': search.trim(),
+        'type': type,
+        'offset': offset.toString(),
+        'limit': '25',
+        'filter': jsonEncode(searchFilter),
+        if (categoryIds != null && categoryIds.isNotEmpty)
+          'category_ids': categoryIdsString,
+        if (rating != null) 'rating_count': rating.toString(),
+        if (minPrice != null) 'min_price': minPrice.toString(),
+        if (maxPrice != null) 'max_price': maxPrice.toString(),
+      };
+
+      uri = Uri.parse(
+        '${AppConstants.searchUri}items/search',
+      ).replace(queryParameters: searchQuery).toString();
+    } else {
+      uri = Uri.parse(
+        AppConstants.popularItemUri,
+      ).replace(queryParameters: query).toString();
+    }
     String cacheId = '$uri-${Get.find<SplashController>().module!.id!}';
 
     switch (source) {

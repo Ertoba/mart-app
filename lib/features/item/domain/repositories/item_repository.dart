@@ -196,7 +196,7 @@ class ItemRepository implements ItemRepositoryInterface {
       }
 
       final Map<String, dynamic> searchQuery = {
-        'name': search.trim(),
+        'name': _withMtavruliSearchVariants(search.trim()),
         'type': type,
         'offset': offset.toString(),
         'limit': '25',
@@ -246,6 +246,37 @@ class ItemRepository implements ItemRepositoryInterface {
     }
 
     return popularItemList;
+  }
+
+  String _withMtavruliSearchVariants(String search) {
+    final words = search.split(RegExp(r'\s+')).where((word) => word.isNotEmpty);
+    final variants = <String>{};
+
+    for (final word in words) {
+      variants.add(word);
+      final mtavruliVariant = _withMtavruliFirstLetter(word);
+      if (mtavruliVariant != word) {
+        variants.add(mtavruliVariant);
+      }
+    }
+
+    return variants.join(' ');
+  }
+
+  String _withMtavruliFirstLetter(String word) {
+    final buffer = StringBuffer();
+    bool converted = false;
+
+    for (final rune in word.runes) {
+      if (!converted && rune >= 0x10D0 && rune <= 0x10F5) {
+        buffer.writeCharCode(rune + 0x0BC0);
+        converted = true;
+      } else {
+        buffer.writeCharCode(rune);
+      }
+    }
+
+    return buffer.toString();
   }
 
   Future<ItemModel?> _getReviewedItemList({

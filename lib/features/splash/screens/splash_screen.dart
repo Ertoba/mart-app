@@ -6,7 +6,6 @@ import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/notification/domain/models/notification_body_model.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
-import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/common/widgets/no_internet_screen.dart';
 import 'package:flutter/material.dart';
@@ -196,7 +195,12 @@ class SplashScreenState extends State<SplashScreen> {
       body: GetBuilder<SplashController>(
         builder: (splashController) {
           return splashController.hasConnection
-              ? const SizedBox.expand()
+              ? Image.asset(
+                  Images.splashScreen,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                )
               : NoInternetScreen(
                   child: SplashScreen(
                     body: widget.body,

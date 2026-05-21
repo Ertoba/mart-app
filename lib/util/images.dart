@@ -1,5 +1,6 @@
 class Images {
   static const String logo = 'assets/image/logo.png';
+  static const String splashScreen = 'assets/image/splash.png';
   static const String authLogo = 'assets/image/auth_logo.png';
   static const String placeholder = 'assets/image/placeholder.jpg';
   static const String notificationPlaceholder =
@@ -323,8 +324,6 @@ class Images {
 
   static const String mapIconExtended = 'assets/json/map-picker-1.json';
   static const String mapIconMinimised = 'assets/json/map-picker-2.json';
-  static const String shoppingCartIntro =
-      'assets/json/shopping_cart_intro.json';
 
   /// Ride share module
   static const String searchRider = 'assets/image/rider/search_rider.png';

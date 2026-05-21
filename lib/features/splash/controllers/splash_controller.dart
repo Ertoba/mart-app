@@ -8,6 +8,7 @@ import 'package:sixam_mart/features/home/controllers/home_controller.dart';
 import 'package:sixam_mart/features/item/controllers/campaign_controller.dart';
 import 'package:sixam_mart/features/cart/controllers/cart_controller.dart';
 import 'package:sixam_mart/features/item/controllers/item_controller.dart';
+import 'package:sixam_mart/features/location/controllers/location_controller.dart';
 import 'package:sixam_mart/features/notification/domain/models/notification_body_model.dart';
 import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
 import 'package:sixam_mart/features/store/controllers/store_controller.dart';
@@ -20,6 +21,7 @@ import 'package:sixam_mart/features/address/controllers/address_controller.dart'
 import 'package:sixam_mart/features/rental_module/rental_cart_screen/controllers/taxi_cart_controller.dart';
 import 'package:sixam_mart/features/rental_module/rental_favourite/controllers/taxi_favourite_controller.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
+import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/home/screens/home_screen.dart';
 import 'package:sixam_mart/features/splash/domain/services/splash_service_interface.dart';
@@ -190,7 +192,7 @@ class SplashController extends GetxController implements GetxService {
           } else if (fromDemoReset) {
             Get.offAllNamed(RouteHelper.getInitialRoute(fromSplash: true));
           } else {
-            Get.offNamed(RouteHelper.getIntroLoadingRoute(notificationBody));
+            _routeFromSplash(notificationBody);
           }
           didRoute = true;
           _onRemoveLoader();
@@ -211,6 +213,117 @@ class SplashController extends GetxController implements GetxService {
       if (Get.find<SplashController>().module != null) {
         await Get.find<FavouriteController>().getFavouriteList();
       }
+    }
+  }
+
+  void _routeFromSplash(NotificationBodyModel? body) {
+    final double? minimumVersion = _getMinimumVersion();
+    final bool isMaintenanceMode = configModel!.maintenanceMode!;
+    final bool needsUpdate = AppConstants.appVersion < minimumVersion!;
+
+    if (needsUpdate || isMaintenanceMode) {
+      Get.offNamed(RouteHelper.getUpdateRoute(needsUpdate));
+    } else if (!GetPlatform.isWeb) {
+      if (body != null) {
+        _forNotificationRouteProcess(body);
+      } else {
+        _handleUserRouting();
+      }
+    }
+  }
+
+  double? _getMinimumVersion() {
+    if (GetPlatform.isAndroid) {
+      return configModel!.appMinimumVersionAndroid;
+    } else if (GetPlatform.isIOS) {
+      return configModel!.appMinimumVersionIos;
+    }
+    return 0;
+  }
+
+  void _forNotificationRouteProcess(NotificationBodyModel notificationBody) {
+    final NotificationType? notificationType =
+        notificationBody.notificationType;
+
+    final Map<NotificationType, Function> notificationActions = {
+      NotificationType.order: () => Get.toNamed(
+        RouteHelper.getOrderDetailsRoute(
+          notificationBody.orderId,
+          fromNotification: true,
+        ),
+      ),
+      NotificationType.block: () =>
+          Get.offNamed(RouteHelper.getSignInRoute(RouteHelper.notification)),
+      NotificationType.unblock: () =>
+          Get.offNamed(RouteHelper.getSignInRoute(RouteHelper.notification)),
+      NotificationType.message: () => Get.toNamed(
+        RouteHelper.getChatRoute(
+          notificationBody: notificationBody,
+          conversationID: notificationBody.conversationId,
+          fromNotification: true,
+        ),
+      ),
+      NotificationType.otp: () => null,
+      NotificationType.add_fund: () =>
+          Get.toNamed(RouteHelper.getWalletRoute(fromNotification: true)),
+      NotificationType.referral_earn: () =>
+          Get.toNamed(RouteHelper.getWalletRoute(fromNotification: true)),
+      NotificationType.cashback: () =>
+          Get.toNamed(RouteHelper.getWalletRoute(fromNotification: true)),
+      NotificationType.loyalty_point: () =>
+          Get.toNamed(RouteHelper.getLoyaltyRoute(fromNotification: true)),
+      NotificationType.general: () =>
+          Get.toNamed(RouteHelper.getNotificationRoute(fromNotification: true)),
+    };
+
+    notificationActions[notificationType]?.call();
+  }
+
+  Future<void> _forLoggedInUserRouteProcess() async {
+    Get.find<AuthController>().updateToken();
+    if (AddressHelper.getUserAddressFromSharedPref() != null) {
+      if (module != null &&
+          module!.moduleType.toString() != AppConstants.ride) {
+        await Get.find<FavouriteController>().getFavouriteList();
+      }
+      Get.offNamed(RouteHelper.getInitialRoute(fromSplash: true));
+    } else {
+      Get.find<LocationController>().navigateToLocationScreen(
+        'splash',
+        offNamed: true,
+      );
+    }
+  }
+
+  void _newlyRegisteredRouteProcess() {
+    if (AppConstants.languages.length > 1) {
+      Get.offNamed(RouteHelper.getLanguageRoute('splash'));
+    } else {
+      Get.offNamed(RouteHelper.getOnBoardingRoute());
+    }
+  }
+
+  void _forGuestUserRouteProcess() {
+    if (AddressHelper.getUserAddressFromSharedPref() != null) {
+      Get.offNamed(RouteHelper.getInitialRoute(fromSplash: true));
+    } else {
+      Get.find<LocationController>().navigateToLocationScreen(
+        'splash',
+        offNamed: true,
+      );
+    }
+  }
+
+  Future<void> _handleUserRouting() async {
+    if (AuthHelper.isLoggedIn()) {
+      _forLoggedInUserRouteProcess();
+    } else if (showIntro() == true) {
+      _newlyRegisteredRouteProcess();
+    } else if (AuthHelper.isGuestLoggedIn()) {
+      _forGuestUserRouteProcess();
+    } else {
+      await Get.find<AuthController>().guestLogin();
+      _forGuestUserRouteProcess();
     }
   }
 

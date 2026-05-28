@@ -1,7 +1,7 @@
 name: sixam_mart
 description: A Multi-vendor Food. Grocery, eCommerce, Pharmacy & Parcel service.
 publish_to: 'none' #
-version: 1.0.0+20
+version: 1.0.0+21
 
 environment:
   sdk: ^3.10.0
@@ -43,7 +43,6 @@ dependencies:
   expandable_bottom_sheet: ^1.1.1+1
   google_sign_in: ^7.2.0
   google_sign_in_web: ^1.1.0
-  flutter_facebook_auth: ^7.1.2
   sign_in_with_apple: ^7.0.1
   flutter_animarker: ^3.2.0
   intl: ^0.20.2

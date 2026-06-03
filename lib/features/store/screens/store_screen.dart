@@ -356,9 +356,18 @@ class _StoreScreenState extends State<StoreScreen> {
                         );
                       },
                     ),
-                    background: CustomImage(
-                      fit: BoxFit.cover,
-                      image: '${store!.coverPhotoFullUrl}',
+                    background: ColoredBox(
+                      color: Theme.of(context).cardColor,
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: AspectRatio(
+                          aspectRatio: 3,
+                          child: CustomImage(
+                            fit: BoxFit.contain,
+                            image: '${store!.coverPhotoFullUrl}',
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                   actions: const [

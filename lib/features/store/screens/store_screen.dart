@@ -125,6 +125,10 @@ class _StoreScreenState extends State<StoreScreen> {
               print('=====> store zone id: ${store!.zoneId}, schedule length: ${store.schedules != null ? store.schedules!.length : 'null'}');
             }
 
+            final double mobileStoreCoverHeight = MediaQuery.sizeOf(context).width / 3;
+            final double mobileStoreInfoHeight = store?.discount != null ? 165 : 100;
+            final double mobileStoreExpandedHeight = mobileStoreCoverHeight + mobileStoreInfoHeight;
+
             return (storeController.store != null && storeController.store!.name != null && categoryController.categoryList != null) ? CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               controller: scrollController,
@@ -180,7 +184,7 @@ class _StoreScreenState extends State<StoreScreen> {
                     ))),
                   ),
                 ) : SliverAppBar(
-                  expandedHeight: 300, toolbarHeight: 100,
+                  expandedHeight: mobileStoreExpandedHeight, toolbarHeight: mobileStoreInfoHeight,
                   pinned: true, floating: false, elevation: 0.5,
                   backgroundColor: Theme.of(context).cardColor,
                   leading: IconButton(
@@ -205,25 +209,26 @@ class _StoreScreenState extends State<StoreScreen> {
                     expandedTitleScale: 1.1,
                     title: CustomizableSpaceBarWidget(
                       builder: (context, scrollingRate) {
+                        final Store currentStore = store!;
                         return Container(
-                          height: store!.discount != null ? 165 : 100,
+                          height: mobileStoreInfoHeight,
                           decoration: BoxDecoration(
                             color: Theme.of(context).cardColor,
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(Dimensions.radiusLarge)),
                           ),
                           child: Column(
                             children: [
-                              store.discount != null ? Container(
+                              currentStore.discount != null ? Container(
                                 width: double.infinity,
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).primaryColor.withValues(alpha: 1 - scrollingRate),
                                   borderRadius: const BorderRadius.vertical(top: Radius.circular(Dimensions.radiusLarge)),
                                 ),
                                 padding: EdgeInsets.all(Dimensions.paddingSizeSmall - (GetPlatform.isAndroid ? (scrollingRate * Dimensions.paddingSizeSmall) : 0)),
-                                child: Text('${store.discount!.discountType == 'percent' ? '${store.discount!.discount}%'
-                                    : PriceConverter.convertPrice(store.discount!.discount)} '
-                                    '${'discount_will_be_applicable_when_order_amount_exceeds_is_more_than'.tr} ${PriceConverter.convertPrice(store.discount!.minPurchase)},'
-                                    ' ${'Max'.tr}: ${PriceConverter.convertPrice(store.discount!.maxDiscount)} ${'discount_is_applicable'.tr}',
+                                child: Text('${currentStore.discount!.discountType == 'percent' ? '${currentStore.discount!.discount}%'
+                                    : PriceConverter.convertPrice(currentStore.discount!.discount)} '
+                                    '${'discount_will_be_applicable_when_order_amount_exceeds_is_more_than'.tr} ${PriceConverter.convertPrice(currentStore.discount!.minPurchase)},'
+                                    ' ${'Max'.tr}: ${PriceConverter.convertPrice(currentStore.discount!.maxDiscount)} ${'discount_is_applicable'.tr}',
                                   style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall,
                                     color: Colors.white.withValues(alpha: 1 - scrollingRate),
                                   ),
@@ -251,11 +256,11 @@ class _StoreScreenState extends State<StoreScreen> {
                                         borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
                                         child: Stack(children: [
                                           CustomImage(
-                                            image: '${store.logoFullUrl}',
+                                            image: '${currentStore.logoFullUrl}',
                                             height: 60 - (scrollingRate * 15), width: 70 - (scrollingRate * 15), fit: BoxFit.cover,
                                           ),
 
-                                          storeController.isStoreOpenNow(store.active!, store.schedules) ? const SizedBox() : Positioned(
+                                          storeController.isStoreOpenNow(currentStore.active!, currentStore.schedules) ? const SizedBox() : Positioned(
                                             bottom: 0, left: 0, right: 0,
                                             child: Container(
                                               height: 30,
@@ -277,7 +282,7 @@ class _StoreScreenState extends State<StoreScreen> {
                                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,mainAxisAlignment: MainAxisAlignment.center, children: [
                                         Row(children: [
                                           Expanded(child: Text(
-                                            store.name!, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge - (scrollingRate * 3), color: Theme.of(context).textTheme.bodyMedium!.color),
+                                            currentStore.name!, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge - (scrollingRate * 3), color: Theme.of(context).textTheme.bodyMedium!.color),
                                             maxLines: 1, overflow: TextOverflow.ellipsis,
                                           )),
                                           const SizedBox(width: Dimensions.paddingSizeSmall),
@@ -285,7 +290,7 @@ class _StoreScreenState extends State<StoreScreen> {
                                         ]),
                                         const SizedBox(height: Dimensions.paddingSizeExtraSmall),
                                         Text(
-                                          store.address ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
+                                          currentStore.address ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
                                           style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall - (scrollingRate * 2), color: Theme.of(context).disabledColor),
                                         ),
                                         SizedBox(height: ResponsiveHelper.isDesktop(context) ? Dimensions.paddingSizeExtraSmall : 0),
@@ -297,19 +302,19 @@ class _StoreScreenState extends State<StoreScreen> {
                                           ),
                                           const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                                           Text(
-                                            PriceConverter.convertPrice(store.minimumOrder), textDirection: TextDirection.ltr,
+                                            PriceConverter.convertPrice(currentStore.minimumOrder), textDirection: TextDirection.ltr,
                                             style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeExtraSmall - (scrollingRate * 2), color: Theme.of(context).primaryColor),
                                           ),
                                         ]),
                                       ])),
 
                                       GetBuilder<FavouriteController>(builder: (favouriteController) {
-                                        bool isWished = favouriteController.wishStoreIdList.contains(store!.id);
+                                        bool isWished = favouriteController.wishStoreIdList.contains(currentStore.id);
                                         return InkWell(
                                           onTap: () {
                                             if(AuthHelper.isLoggedIn()) {
-                                              isWished ? favouriteController.removeFromFavouriteList(store!.id, true)
-                                                  : favouriteController.addToFavouriteList(null, store?.id, true);
+                                              isWished ? favouriteController.removeFromFavouriteList(currentStore.id, true)
+                                                  : favouriteController.addToFavouriteList(null, currentStore.id, true);
                                             }else {
                                               showCustomSnackBar('you_are_not_logged_in'.tr);
                                             }
@@ -360,10 +365,12 @@ class _StoreScreenState extends State<StoreScreen> {
                       color: Theme.of(context).cardColor,
                       child: Align(
                         alignment: Alignment.topCenter,
-                        child: AspectRatio(
-                          aspectRatio: 3,
+                        child: SizedBox(
+                          height: mobileStoreCoverHeight,
+                          width: double.infinity,
                           child: CustomImage(
                             fit: BoxFit.contain,
+                            height: mobileStoreCoverHeight, width: double.infinity,
                             image: '${store!.coverPhotoFullUrl}',
                           ),
                         ),

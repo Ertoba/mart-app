@@ -382,6 +382,42 @@ class SearchController extends GetxController implements GetxService {
     setVoiceListening(false);
   }
 
+  Future<String?> _resolveVoiceLocaleId() async {
+    try {
+      final List<stt.LocaleName> locales = await _speech.locales();
+      if (locales.isEmpty) return null;
+
+      final locale = Get.find<LocalizationController>().locale;
+      final languageCode = locale.languageCode.toLowerCase();
+      final countryCode = locale.countryCode?.toLowerCase();
+      final candidates = <String>[
+        if (languageCode == 'ka') 'ka_GE',
+        if (countryCode != null && countryCode.isNotEmpty) '${languageCode}_$countryCode',
+        languageCode,
+      ];
+
+      for (final candidate in candidates) {
+        final normalizedCandidate = candidate.toLowerCase().replaceAll('-', '_');
+        for (final supportedLocale in locales) {
+          final normalizedSupported = supportedLocale.localeId.toLowerCase().replaceAll('-', '_');
+          if (normalizedSupported == normalizedCandidate || normalizedSupported.startsWith('${normalizedCandidate}_')) {
+            return supportedLocale.localeId;
+          }
+        }
+      }
+
+      if (languageCode == 'ka') {
+        for (final supportedLocale in locales) {
+          if (supportedLocale.localeId.toLowerCase().startsWith('ka')) {
+            return supportedLocale.localeId;
+          }
+        }
+      }
+    } catch (_) {}
+
+    return null;
+  }
+
   /// Start listening and optionally update an external TextEditingController live
   Future<void> startVoiceListening({TextEditingController? externalController}) async {
     cancelVoiceAutoSubmit();
@@ -400,6 +436,7 @@ class SearchController extends GetxController implements GetxService {
     // reset
     setVoiceText('');
     setVoiceSoundLevel(0.0);
+    final localeId = await _resolveVoiceLocaleId();
 
     try {
       await _speech.listen(
@@ -417,7 +454,7 @@ class SearchController extends GetxController implements GetxService {
           final normalized = (level / 50).clamp(0.0, 1.0);
           setVoiceSoundLevel(normalized);
         },
-        localeId: '${Get.find<LocalizationController>().locale.languageCode}_${Get.find<LocalizationController>().locale.countryCode}',
+        localeId: localeId,
         listenOptions: stt.SpeechListenOptions(partialResults: true, cancelOnError: true, listenMode: stt.ListenMode.search),
       );
       if (_speech.isListening) {

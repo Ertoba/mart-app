@@ -109,7 +109,7 @@ class _WebBestStoreNearbyViewWidgetState extends State<WebBestStoreNearbyViewWid
                       padding: const EdgeInsets.fromLTRB(10, 5, 0, 5),
                       child: Text(
                         'see_all'.tr,
-                        style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor, decoration: TextDecoration.underline),
+                        style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor, decoration: TextDecoration.none),
                       ),
                     ),
                   ),

@@ -1,4 +1,5 @@
 import 'package:sixam_mart/common/widgets/custom_asset_image_widget.dart';
+import 'package:sixam_mart/common/widgets/markdown_text_span.dart';
 import 'package:sixam_mart/common/widgets/custom_tool_tip_widget.dart';
 import 'package:sixam_mart/common/widgets/item_bottom_sheet_shimmer.dart';
 import 'package:sixam_mart/features/cart/controllers/cart_controller.dart';
@@ -318,7 +319,12 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                               ]),
                               const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
-                              Text(item.description!, style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color?.withValues(alpha: 0.5))),
+                              RichText(
+                                text: buildMarkdownTextSpan(
+                                  item.description!,
+                                  robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color?.withValues(alpha: 0.5)),
+                                ),
+                              ),
                               const SizedBox(height: Dimensions.paddingSizeLarge),
                             ],
                           ) : const SizedBox(),

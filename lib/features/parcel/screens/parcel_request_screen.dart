@@ -37,6 +37,7 @@ import 'package:sixam_mart/common/widgets/not_logged_in_screen.dart';
 import 'package:sixam_mart/features/checkout/widgets/condition_check_box.dart';
 import 'package:sixam_mart/features/checkout/widgets/tips_widget.dart';
 import 'package:sixam_mart/features/parcel/widgets/card_widget.dart';
+import 'package:sixam_mart/features/parcel/widgets/deliver_item_card_widget.dart';
 import 'package:sixam_mart/features/parcel/widgets/delivery_instruction_bottom_sheet_widget.dart';
 import 'package:sixam_mart/features/parcel/widgets/details_widget.dart';
 
@@ -134,6 +135,7 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
     bool guestCheckoutPermission =
         AuthHelper.isGuestLoggedIn() &&
         Get.find<SplashController>().configModel!.guestCheckoutStatus!;
+    final IconData? parcelIconData = parcelIconForCategory(widget.parcelCategory.name ?? '');
 
     return Scaffold(
       appBar: CustomAppBar(title: 'parcel_request'.tr),
@@ -283,18 +285,16 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
                                               ),
                                               child: Row(
                                                 children: [
-                                                  ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          200,
+                                                  parcelIconData != null
+                                                      ? Icon(parcelIconData, size: 60, color: Theme.of(context).primaryColor)
+                                                      : ClipRRect(
+                                                          borderRadius: BorderRadius.circular(200),
+                                                          child: CustomImage(
+                                                            image: '${widget.parcelCategory.imageFullUrl}',
+                                                            height: 60,
+                                                            width: 60,
+                                                          ),
                                                         ),
-                                                    child: CustomImage(
-                                                      image:
-                                                          '${widget.parcelCategory.imageFullUrl}',
-                                                      height: 60,
-                                                      width: 60,
-                                                    ),
-                                                  ),
                                                   const SizedBox(
                                                     width: Dimensions
                                                         .paddingSizeSmall,

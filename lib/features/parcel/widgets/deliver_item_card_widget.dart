@@ -5,6 +5,17 @@ import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
 import 'package:sixam_mart/common/widgets/custom_image.dart';
 
+IconData? parcelIconForCategory(String name) {
+  final normalized = name.toLowerCase();
+  if (normalized.contains('დოკუმ') || normalized.contains('document')) return Icons.description_outlined;
+  if (normalized.contains('საჩუქ') || normalized.contains('gift')) return Icons.card_giftcard_outlined;
+  if (normalized.contains('მედ') || normalized.contains('medicine')) return Icons.medical_services_outlined;
+  if (normalized.contains('სახლ') || normalized.contains('home')) return Icons.home_outlined;
+  if (normalized.contains('ბიზნეს') || normalized.contains('business')) return Icons.handshake_outlined;
+  if (normalized.contains('საკვ') || normalized.contains('food')) return Icons.room_service_outlined;
+  return null;
+}
+
 class DeliverItemCardWidget extends StatelessWidget {
   final String image;
   final String itemName;
@@ -15,6 +26,12 @@ class DeliverItemCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final IconData? iconData = parcelIconForCategory(itemName);
+    final Color iconColor = Theme.of(context).primaryColor;
+    Widget categoryVisual({required double size}) => iconData != null
+        ? Icon(iconData, size: size, color: iconColor)
+        : CustomImage(image: image, height: size, width: size, fit: BoxFit.contain);
+
     return Container(
       padding: EdgeInsets.all(isDeliverItem ? 0 : Dimensions.paddingSizeSmall),
       decoration: BoxDecoration(
@@ -31,10 +48,7 @@ class DeliverItemCardWidget extends StatelessWidget {
         radius: Dimensions.radiusDefault,
         padding: EdgeInsets.symmetric(vertical: Dimensions.paddingSizeExtraSmall, horizontal: Dimensions.paddingSizeSmall),
         child: Column(children: [
-          CustomImage(
-            image: image,
-            width: 45,
-          ),
+          categoryVisual(size: 45),
 
           Text(itemName, maxLines: 1, overflow: TextOverflow.ellipsis, style: robotoMedium),
 
@@ -45,10 +59,7 @@ class DeliverItemCardWidget extends StatelessWidget {
           ),
         ]),
       ) : Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-        CustomImage(
-          image: image,
-          height: 40, width: 40,
-        ),
+        categoryVisual(size: 40),
         const SizedBox(width: Dimensions.paddingSizeSmall),
 
         Expanded(

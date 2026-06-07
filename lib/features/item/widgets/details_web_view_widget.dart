@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/custom_ink_well.dart';
+import 'package:sixam_mart/common/widgets/markdown_text_span.dart';
 import 'package:sixam_mart/common/widgets/zone_warning_dialog.dart';
 import 'package:sixam_mart/features/cart/controllers/cart_controller.dart';
 import 'package:sixam_mart/features/item/controllers/item_controller.dart';
@@ -176,9 +177,11 @@ class _DetailsWebViewWidgetState extends State<DetailsWebViewWidget> {
                               Text('description'.tr, style: robotoBold),
                               const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
-                              Text(
-                                itemController.item!.description!,
-                                style: robotoRegular,
+                              RichText(
+                                text: buildMarkdownTextSpan(
+                                  itemController.item!.description!,
+                                  robotoRegular,
+                                ),
                                 maxLines: itemController.isReadMore ? 10 : 2,
                                 overflow: TextOverflow.ellipsis,
                               ),

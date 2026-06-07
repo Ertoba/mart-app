@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sixam_mart/common/widgets/markdown_text_span.dart';
 import 'package:sixam_mart/common/widgets/readmore_widget.dart';
 import 'package:sixam_mart/features/cart/controllers/cart_controller.dart';
 import 'package:sixam_mart/features/item/controllers/item_controller.dart';
@@ -179,8 +180,11 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                         children: [
                           Text('description'.tr, style: robotoMedium),
                           const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-                          ReadMoreText(
-                            item.description!,
+                          ReadMoreText.rich(
+                            buildMarkdownTextSpan(
+                              item.description!,
+                              robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color?.withValues(alpha: 0.7)),
+                            ),
                             style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color?.withValues(alpha: 0.7)),
                             trimMode: TrimMode.Line,
                             trimLines: 3,

@@ -38,12 +38,22 @@ class _WebHighlightWidgetState extends State<WebHighlightWidget> {
                       child: Stack(
                         children: [
                           Positioned.fill(
-                            child: ColoredBox(
-                              color: Get.isDarkMode
-                                  ? const Color(0xFF07140F)
-                                  : Theme.of(
-                                      context,
-                                    ).primaryColor.withValues(alpha: 0.08),
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: Get.isDarkMode
+                                      ? [
+                                          const Color(0xFF07140F),
+                                          Theme.of(context).primaryColor.withValues(alpha: 0.18),
+                                        ]
+                                      : [
+                                          Theme.of(context).primaryColor.withValues(alpha: 0.12),
+                                          Theme.of(context).primaryColor.withValues(alpha: 0.04),
+                                        ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                              ),
                             ),
                           ),
                           CustomAssetImageWidget(

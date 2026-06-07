@@ -137,8 +137,8 @@ class BestStoreNearbyView extends StatelessWidget {
                                                   color: Theme.of(
                                                     context,
                                                   ).primaryColor,
-                                                  decoration:
-                                                      TextDecoration.underline,
+                                                    decoration:
+                                                        TextDecoration.none,
                                                 ),
                                               ),
                                             ),
@@ -719,7 +719,7 @@ class BestStoreNearbyShimmer extends StatelessWidget {
                           style: robotoMedium.copyWith(
                             fontSize: Dimensions.fontSizeExtraSmall,
                             color: Theme.of(context).primaryColor,
-                            decoration: TextDecoration.underline,
+                            decoration: TextDecoration.none,
                           ),
                         ),
                       ),

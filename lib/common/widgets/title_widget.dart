@@ -12,7 +12,7 @@ class TitleWidget extends StatelessWidget {
   final double? titleFontSize;
   final double? seeAllFontSize;
   final bool seeAllUnderline;
-  const TitleWidget({super.key, required this.title, this.onTap, this.image, this.titleFontSize, this.seeAllFontSize, this.seeAllUnderline=true});
+  const TitleWidget({super.key, required this.title, this.onTap, this.image, this.titleFontSize, this.seeAllFontSize, this.seeAllUnderline=false});
 
   @override
   Widget build(BuildContext context) {

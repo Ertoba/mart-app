@@ -112,6 +112,7 @@ class _WebNewOnViewWidgetState extends State<WebNewOnViewWidget> {
                                     ),
                                     child: StoreCardWithDistance(
                                       store: storeList[index],
+                                      preserveCoverArtwork: true,
                                     ),
                                   );
                                 },

@@ -70,6 +70,7 @@ class NewOnMartView extends StatelessWidget {
                                         child: StoreCardWithDistance(
                                           store: storeList[index],
                                           isNewStore: isNewStore,
+                                          preserveCoverArtwork: true,
                                         ),
                                       );
                                     },

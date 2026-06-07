@@ -324,6 +324,8 @@ class Images {
 
   static const String mapIconExtended = 'assets/json/map-picker-1.json';
   static const String mapIconMinimised = 'assets/json/map-picker-2.json';
+  static const String liveChatbotAnimation = 'assets/json/live_chatbot.json';
+  static const String highlightStarAnimation = 'assets/json/star.json';
 
   /// Ride share module
   static const String searchRider = 'assets/image/rider/search_rider.png';

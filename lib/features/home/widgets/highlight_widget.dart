@@ -20,6 +20,7 @@ import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
 import 'package:video_player/video_player.dart';
+import 'package:lottie/lottie.dart';
 
 String _advertisementStoreRouteSlug(AdvertisementModel advertisement) {
   final String? slug = advertisement.storeSlug?.trim();
@@ -81,6 +82,15 @@ class _HighlightWidgetState extends State<HighlightWidget> {
                 ),
                 child: Stack(
                   children: [
+                    Positioned.fill(
+                      child: ColoredBox(
+                        color: Get.isDarkMode
+                            ? const Color(0xFF07140F)
+                            : Theme.of(
+                                context,
+                              ).primaryColor.withValues(alpha: 0.08),
+                      ),
+                    ),
                     CustomAssetImageWidget(
                       Get.isDarkMode
                           ? Images.highlightDarkBg
@@ -123,10 +133,14 @@ class _HighlightWidgetState extends State<HighlightWidget> {
                                 ],
                               ),
 
-                              const CustomAssetImageWidget(
-                                Images.highlightIcon,
-                                height: 50,
-                                width: 50,
+                              SizedBox(
+                                height: 58,
+                                width: 58,
+                                child: Lottie.asset(
+                                  Images.highlightStarAnimation,
+                                  fit: BoxFit.contain,
+                                  repeat: true,
+                                ),
                               ),
                             ],
                           ),

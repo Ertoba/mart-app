@@ -32,6 +32,7 @@ import 'package:sixam_mart/features/rental_module/home/screens/taxi_home_screen.
 import 'package:sixam_mart/features/rental_module/rental_cart_screen/controllers/taxi_cart_controller.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
@@ -777,17 +778,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                               ),
                                                               Expanded(
                                                                 child: Text(
-                                                                  Get.find<
-                                                                            SplashController
-                                                                          >()
-                                                                          .configModel!
-                                                                          .moduleConfig!
-                                                                          .module!
-                                                                          .showRestaurantText!
-                                                                      ? 'search_food_or_restaurant'
-                                                                            .tr
-                                                                      : 'search_item_or_store'
-                                                                            .tr,
+                                                                  ModuleHelper
+                                                                      .searchHintKey
+                                                                      .tr,
                                                                   style: robotoRegular.copyWith(
                                                                     fontSize:
                                                                         Dimensions

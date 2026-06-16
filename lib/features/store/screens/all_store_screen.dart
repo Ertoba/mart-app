@@ -1,5 +1,6 @@
 import 'package:sixam_mart/features/store/controllers/store_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
@@ -56,7 +57,8 @@ class _AllStoreScreenState extends State<AllStoreScreen> {
     bool isFood =
         Get.find<SplashController>().module != null &&
         Get.find<SplashController>().module!.moduleType.toString() ==
-            AppConstants.food;
+            AppConstants.food &&
+        !ModuleHelper.isBeerModule;
 
     return GetBuilder<StoreController>(
       builder: (storeController) {
@@ -65,17 +67,9 @@ class _AllStoreScreenState extends State<AllStoreScreen> {
             title: widget.isFeatured
                 ? 'featured_stores'.tr
                 : widget.isPopular
-                ? Get.find<SplashController>()
-                          .configModel!
-                          .moduleConfig!
-                          .module!
-                          .showRestaurantText!
-                      ? widget.isNearbyStore
-                            ? 'best_store_nearby'.tr
-                            : 'popular_restaurants'.tr
-                      : widget.isNearbyStore
-                      ? 'best_store_nearby'.tr
-                      : 'popular_stores'.tr
+                ? widget.isNearbyStore
+                      ? ModuleHelper.bestStoreNearbyKey.tr
+                      : ModuleHelper.popularStoresKey.tr
                 : widget.isTopOfferStore
                 ? 'top_offers_near_me'.tr
                 : widget.isRecommendedStore
@@ -292,18 +286,12 @@ class _AllStoreScreenState extends State<AllStoreScreen> {
                                 ? 'featured_stores'.tr
                                 : widget.isPopular
                                 ? widget.isNearbyStore
-                                      ? 'best_store_nearby'.tr
-                                      : Get.find<SplashController>()
-                                            .configModel!
-                                            .moduleConfig!
-                                            .module!
-                                            .showRestaurantText!
-                                      ? 'popular_restaurants'.tr
-                                      : 'popular_stores'.tr
+                                      ? ModuleHelper.bestStoreNearbyKey.tr
+                                      : ModuleHelper.popularStoresKey.tr
                                 : widget.isTopOfferStore
                                 ? 'top_offers_near_me'.tr
                                 : widget.isNearbyStore
-                                ? 'best_store_nearby'.tr
+                                ? ModuleHelper.bestStoreNearbyKey.tr
                                 : AppConstants.newOnAppTitle,
                           ),
 
@@ -317,13 +305,7 @@ class _AllStoreScreenState extends State<AllStoreScreen> {
                             isFeatured: widget.isFeatured,
                             noDataText: widget.isFeatured
                                 ? 'no_store_available'.tr
-                                : Get.find<SplashController>()
-                                      .configModel!
-                                      .moduleConfig!
-                                      .module!
-                                      .showRestaurantText!
-                                ? 'no_restaurant_available'.tr
-                                : 'no_store_available'.tr,
+                                : ModuleHelper.noStoreAvailableKey.tr,
                             stores: widget.isFeatured
                                 ? storeController.featuredStoreList
                                 : widget.isPopular

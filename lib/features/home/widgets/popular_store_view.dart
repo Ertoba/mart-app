@@ -16,6 +16,7 @@ import 'package:sixam_mart/common/widgets/not_available_widget.dart';
 import 'package:sixam_mart/common/widgets/rating_bar.dart';
 import 'package:sixam_mart/common/widgets/title_widget.dart';
 import 'package:sixam_mart/features/store/screens/store_screen.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
 import 'package:get/get.dart';
@@ -54,13 +55,7 @@ class PopularStoreView extends StatelessWidget {
                       title: isFeatured
                           ? 'recommended_for_you'.tr
                           : isPopular
-                          ? Get.find<SplashController>()
-                                    .configModel!
-                                    .moduleConfig!
-                                    .module!
-                                    .showRestaurantText!
-                                ? 'popular_restaurants'.tr
-                                : 'popular_stores'.tr
+                          ? ModuleHelper.popularStoresKey.tr
                           : AppConstants.newOnAppTitle,
                       onTap: () => Get.toNamed(
                         RouteHelper.getAllStoreRoute(

@@ -9,6 +9,7 @@ import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/store/controllers/store_controller.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
@@ -416,7 +417,7 @@ class StoreCardWithDistance extends StatelessWidget {
                                                     ),
 
                                                   Text(
-                                                    '${store.itemCount} ${'items'.tr}',
+                                                    '${store.itemCount} ${ModuleHelper.itemPluralKey.tr}',
                                                     style: robotoRegular.copyWith(
                                                       fontSize: Dimensions
                                                           .fontSizeExtraSmall,

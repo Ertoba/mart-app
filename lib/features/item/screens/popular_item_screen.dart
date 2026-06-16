@@ -5,6 +5,7 @@ import 'package:sixam_mart/features/item/controllers/item_controller.dart';
 import 'package:sixam_mart/features/item/widgets/item_view_all_filter_bottom_sheet.dart';
 import 'package:sixam_mart/features/item/widgets/item_view_all_sort_bottom_sheet.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
@@ -113,7 +114,7 @@ class _PopularItemScreenState extends State<PopularItemScreen> {
                   : widget.isPopular
                   ? isShop
                         ? 'most_popular_products'.tr
-                        : 'most_popular_items'.tr
+                        : ModuleHelper.popularItemsKey.tr
                   : widget.isSpecial
                   ? 'special_offer'.tr
                   : 'best_reviewed_item'.tr,
@@ -344,7 +345,8 @@ class _PopularItemScreenState extends State<PopularItemScreen> {
                                                   ? isShop
                                                         ? 'most_popular_products'
                                                               .tr
-                                                        : 'most_popular_items'
+                                                        : ModuleHelper
+                                                              .popularItemsKey
                                                               .tr
                                                   : widget.isSpecial
                                                   ? 'special_offer'.tr

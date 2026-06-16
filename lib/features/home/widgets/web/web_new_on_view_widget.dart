@@ -6,6 +6,7 @@ import 'package:sixam_mart/features/language/controllers/language_controller.dar
 import 'package:sixam_mart/features/store/controllers/store_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/common/widgets/title_widget.dart';
@@ -74,7 +75,7 @@ class _WebNewOnViewWidgetState extends State<WebNewOnViewWidget> {
                           ),
                           child: TitleWidget(
                             title: widget.isFood
-                                ? 'best_store_nearby'.tr
+                                ? ModuleHelper.bestStoreNearbyKey.tr
                                 : AppConstants.newOnAppTitle,
                             onTap: () => Get.toNamed(
                               RouteHelper.getAllStoreRoute(
@@ -178,7 +179,7 @@ class WebNewOnShimmerView extends StatelessWidget {
                 ),
                 child: TitleWidget(
                   title: isFood!
-                      ? 'best_store_nearby'.tr
+                      ? ModuleHelper.bestStoreNearbyKey.tr
                       : AppConstants.newOnAppTitle,
                   onTap: () => Get.toNamed(
                     RouteHelper.getAllStoreRoute(

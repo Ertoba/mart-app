@@ -22,6 +22,7 @@ import 'package:sixam_mart/common/widgets/custom_ink_well.dart';
 import 'package:sixam_mart/features/item/controllers/item_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/images.dart';
@@ -184,7 +185,9 @@ class _ItemViewAllScreenState extends State<ItemViewAllScreen> {
                               controller: itemController.searchController,
                               isFocused: false,
                               radius: 50,
-                              hint: 'search_your_desired_item'.tr,
+                              hint: ModuleHelper.isBeerModule
+                                  ? 'search_your_desired_beer'.tr
+                                  : 'search_your_desired_item'.tr,
                               prefixIcon: CupertinoIcons.search,
                               suffixIcon: itemController.isSearching
                                   ? CupertinoIcons.clear_thick
@@ -298,7 +301,7 @@ class _ItemViewAllScreenState extends State<ItemViewAllScreen> {
                           widget.isPopular
                               ? isShop
                                     ? 'most_popular_products'.tr
-                                    : 'most_popular_items'.tr
+                                    : ModuleHelper.popularItemsKey.tr
                               : widget.isSpecial
                               ? 'special_offer'.tr
                               : 'best_reviewed_item'.tr,

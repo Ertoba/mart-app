@@ -22,6 +22,7 @@ import 'package:sixam_mart/common/widgets/discount_tag.dart';
 import 'package:sixam_mart/common/widgets/rating_bar.dart';
 import 'package:sixam_mart/common/widgets/title_widget.dart';
 import 'package:sixam_mart/features/store/screens/store_screen.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
 
 class BestStoreNearbyView extends StatelessWidget {
   const BestStoreNearbyView({super.key});
@@ -68,7 +69,7 @@ class BestStoreNearbyView extends StatelessWidget {
                                     child: TitleWidget(
                                       title: isPharmacy
                                           ? 'featured_store'.tr
-                                          : 'best_store_nearby'.tr,
+                                          : ModuleHelper.bestStoreNearbyKey.tr,
                                       seeAllFontSize:
                                           Dimensions.fontSizeExtraSmall,
                                       onTap: () => Get.toNamed(
@@ -137,8 +138,8 @@ class BestStoreNearbyView extends StatelessWidget {
                                                   color: Theme.of(
                                                     context,
                                                   ).primaryColor,
-                                                    decoration:
-                                                        TextDecoration.none,
+                                                  decoration:
+                                                      TextDecoration.none,
                                                 ),
                                               ),
                                             ),
@@ -244,7 +245,7 @@ class BestStoreNearbyView extends StatelessWidget {
                                         RotatedBox(
                                           quarterTurns: 3,
                                           child: Text(
-                                            'best_store_nearby'.tr,
+                                            ModuleHelper.bestStoreNearbyKey.tr,
                                             style: robotoBold.copyWith(
                                               fontSize:
                                                   Dimensions.fontSizeLarge,
@@ -681,7 +682,7 @@ class BestStoreNearbyShimmer extends StatelessWidget {
                 child: TitleWidget(
                   title: isPharmacy
                       ? 'featured_store'.tr
-                      : 'best_store_nearby'.tr,
+                      : ModuleHelper.bestStoreNearbyKey.tr,
                   seeAllFontSize: Dimensions.fontSizeExtraSmall,
                 ),
               )

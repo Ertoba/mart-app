@@ -7,6 +7,7 @@ import 'package:sixam_mart/features/order/controllers/order_controller.dart';
 import 'package:sixam_mart/features/order/domain/models/order_model.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
+import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/common/widgets/custom_app_bar.dart';
@@ -45,7 +46,12 @@ class PaymentScreenState extends State<PaymentScreen> {
     super.initState();
 
     if(widget.addFundUrl == '' && widget.addFundUrl!.isEmpty && widget.subscriptionUrl == '' && widget.subscriptionUrl!.isEmpty){
-      selectedUrl = '${AppConstants.baseUrl}/payment-mobile?customer_id=${widget.orderModel.userId == 0 ? widget.guestId : widget.orderModel.userId}&order_id=${widget.orderModel.id}&payment_method=${widget.paymentMethod}';
+      selectedUrl = Uri.parse('${AppConstants.baseUrl}/payment-mobile').replace(queryParameters: {
+        'customer_id': (widget.orderModel.userId == 0 ? widget.guestId : widget.orderModel.userId).toString(),
+        'order_id': widget.orderModel.id.toString(),
+        'payment_method': widget.paymentMethod,
+        'payment_platform': 'app',
+      }).toString();
     } else if(widget.subscriptionUrl != '' && widget.subscriptionUrl!.isNotEmpty){
       selectedUrl = widget.subscriptionUrl!;
     } else{
@@ -170,7 +176,8 @@ class MyInAppBrowser extends InAppBrowser {
     this.addFundUrl, this.subscriptionUrl, this.contactNumber, this.storeId,
     required this.createAccount, required this.guestId});
 
-  final bool _canRedirect = true;
+  bool _canRedirect = true;
+  bool _handledRedirect = false;
 
   @override
   Future onBrowserCreated() async {
@@ -184,11 +191,7 @@ class MyInAppBrowser extends InAppBrowser {
     if (kDebugMode) {
       print("\n\nStarted: $url\n\n");
     }
-    Get.find<OrderController>().paymentRedirect(
-      url: url.toString(), canRedirect: _canRedirect, onClose: () => close(),
-      addFundUrl: addFundUrl, orderID: orderID, contactNumber: contactNumber, storeId: storeId,
-      subscriptionUrl: subscriptionUrl, createAccount: createAccount, guestId: guestId,
-    );
+    _handlePaymentRedirect(url.toString());
 
   }
 
@@ -199,11 +202,7 @@ class MyInAppBrowser extends InAppBrowser {
     if (kDebugMode) {
       print("\n\nStopped: $url\n\n");
     }
-    Get.find<OrderController>().paymentRedirect(
-      url: url.toString(), canRedirect: _canRedirect, onClose: () => close(),
-      addFundUrl: addFundUrl, orderID: orderID, contactNumber: contactNumber, storeId: storeId,
-      subscriptionUrl: subscriptionUrl, createAccount: createAccount, guestId: guestId,
-    );
+    _handlePaymentRedirect(url.toString());
   }
 
   // @override
@@ -245,6 +244,50 @@ class MyInAppBrowser extends InAppBrowser {
     if (kDebugMode) {
       print("\n\nBrowser closed!\n\n");
     }
+    if (!_handledRedirect && _isOrderPayment()) {
+      Future.microtask(() {
+        if (Get.currentRoute.contains(RouteHelper.payment)) {
+          Get.offNamed(RouteHelper.getDigitalPaymentFailedScreen(orderID, createAccount: createAccount));
+        }
+      });
+    }
+  }
+
+  void _handlePaymentRedirect(String url) {
+    final bool terminalUrl = _isTerminalUrl(url);
+    if (terminalUrl) {
+      _handledRedirect = true;
+    }
+
+    Get.find<OrderController>().paymentRedirect(
+      url: url, canRedirect: _canRedirect, onClose: () => close(),
+      addFundUrl: addFundUrl, orderID: orderID, contactNumber: contactNumber, storeId: storeId,
+      subscriptionUrl: subscriptionUrl, createAccount: createAccount, guestId: guestId,
+    );
+
+    if (terminalUrl) {
+      _canRedirect = false;
+    }
+  }
+
+  bool _isTerminalUrl(String url) {
+    final String baseUrl = AppConstants.baseUrl;
+    final bool forSubscription = subscriptionUrl != null && subscriptionUrl!.isNotEmpty && (addFundUrl == null || addFundUrl!.isEmpty);
+
+    if (forSubscription) {
+      return url.startsWith('$baseUrl/subscription-success')
+          || url.startsWith('$baseUrl/subscription-fail')
+          || url.startsWith('$baseUrl/subscription-cancel');
+    }
+
+    return url.startsWith('$baseUrl/payment-success')
+        || url.startsWith('$baseUrl/payment-fail')
+        || url.startsWith('$baseUrl/payment-cancel');
+  }
+
+  bool _isOrderPayment() {
+    return (addFundUrl == null || addFundUrl!.isEmpty)
+        && (subscriptionUrl == null || subscriptionUrl!.isEmpty);
   }
 
   @override

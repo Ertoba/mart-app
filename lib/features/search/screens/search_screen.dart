@@ -9,6 +9,7 @@ import 'package:sixam_mart/features/search/controllers/search_controller.dart'
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
+import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/helper/voice_permission_handler.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
@@ -859,16 +860,21 @@ class SearchScreenState extends State<SearchScreen>
                                                         ),
                                                         child: CustomInkWell(
                                                           onTap: () {
-                                                            _searchController
-                                                                    .text =
+                                                            if (category.id ==
+                                                                null) {
+                                                              return;
+                                                            }
+
+                                                            Get.toNamed(
+                                                              RouteHelper.getCategoryItemRoute(
+                                                                category.id,
                                                                 category.name ??
-                                                                '';
-                                                            searchController
-                                                                .searchData(
-                                                                  category.name ??
-                                                                      '',
-                                                                  false,
-                                                                );
+                                                                    '',
+                                                                moduleId: category
+                                                                    .moduleId,
+                                                                slug: '',
+                                                              ),
+                                                            );
                                                           },
                                                           radius: 50,
                                                           child: Container(

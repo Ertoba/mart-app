@@ -526,7 +526,7 @@ class AppConstants {
   ];
 
   /// Delivery Tips
-  static List<String> tips = ['0', '15', '10', '20', '40', 'custom'];
+  static List<String> tips = ['5', '10', '15', '20', '50', 'custom'];
   static List<String> deliveryInstructionList = [
     'deliver_to_front_door',
     'deliver_the_reception_desk',

@@ -487,9 +487,9 @@ class DashboardScreenState extends State<DashboardScreen> {
                                                                     .appName
                                                               : 'home'.tr,
                                                           selectedIcon:
-                                                              Images.homeSelect,
-                                                          unSelectedIcon: Images
-                                                              .homeUnselect,
+                                                              Images.homeIcon,
+                                                          unSelectedIcon:
+                                                              Images.homeIcon,
                                                           isSelected:
                                                               _pageIndex == 0,
                                                           onTap: () =>

@@ -227,7 +227,7 @@ class _CustomTipField extends StatelessWidget {
         checkoutController.tipController.text.trim() != 'not_now';
 
     return Container(
-      width: ResponsiveHelper.isDesktop(context) ? 190 : 160,
+      width: ResponsiveHelper.isDesktop(context) ? 140 : 112,
       height: 46,
       margin: const EdgeInsets.only(
         right: Dimensions.paddingSizeSmall,

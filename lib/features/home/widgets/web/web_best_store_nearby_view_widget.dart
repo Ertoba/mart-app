@@ -202,28 +202,19 @@ class _WebBestStoreNearbyViewWidgetState
                                           )
                                         : const SizedBox(),
                                     !isPharmacy
-                                        ? RotatedBox(
-                                            quarterTurns: 3,
-                                            child: Padding(
-                                              padding: EdgeInsets.only(
-                                                bottom:
-                                                    Get.find<
-                                                          LocalizationController
-                                                        >()
-                                                        .isLtr
-                                                    ? Dimensions
-                                                          .paddingSizeExtremeLarge
-                                                    : 0,
-                                                left: 25,
-                                              ),
-                                              child: Text(
-                                                ModuleHelper
-                                                    .bestStoreNearbyKey
-                                                    .tr,
-                                                style: robotoBold.copyWith(
-                                                  fontSize:
-                                                      Dimensions.fontSizeLarge,
-                                                ),
+                                        ? SizedBox(
+                                            width: 120,
+                                            child: Text(
+                                              ModuleHelper
+                                                  .bestStoreNearbyKey
+                                                  .tr,
+                                              textAlign: TextAlign.center,
+                                              maxLines: 3,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: robotoBold.copyWith(
+                                                fontSize:
+                                                    Dimensions.fontSizeSmall,
+                                                height: 1.15,
                                               ),
                                             ),
                                           )

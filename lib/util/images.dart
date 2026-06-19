@@ -104,7 +104,7 @@ class Images {
   static const String profileIcon = 'assets/image/profile_icon.png';
   static const String addressIcon = 'assets/image/address_icon.png';
   static const String languageIcon = 'assets/image/language_icon.png';
-  static const String couponIcon = 'assets/image/coupon_icon.png';
+  static const String couponIcon = 'assets/image/coupon.png';
   static const String pointIcon = 'assets/image/point_icon.png';
   static const String referIcon = 'assets/image/refer_icon.png';
   static const String dmIcon = 'assets/image/dm_icon.png';

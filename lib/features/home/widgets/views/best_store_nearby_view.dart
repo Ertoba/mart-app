@@ -242,13 +242,17 @@ class BestStoreNearbyView extends StatelessWidget {
                                         const SizedBox(
                                           width: Dimensions.paddingSizeDefault,
                                         ),
-                                        RotatedBox(
-                                          quarterTurns: 3,
+                                        SizedBox(
+                                          width: 96,
                                           child: Text(
                                             ModuleHelper.bestStoreNearbyKey.tr,
+                                            textAlign: TextAlign.center,
+                                            maxLines: 3,
+                                            overflow: TextOverflow.ellipsis,
                                             style: robotoBold.copyWith(
                                               fontSize:
-                                                  Dimensions.fontSizeLarge,
+                                                  Dimensions.fontSizeSmall,
+                                              height: 1.15,
                                             ),
                                           ),
                                         ),

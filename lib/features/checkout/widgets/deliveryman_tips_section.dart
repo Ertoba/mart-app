@@ -227,8 +227,8 @@ class _CustomTipField extends StatelessWidget {
         checkoutController.tipController.text.trim() != 'not_now';
 
     return Container(
-      width: ResponsiveHelper.isDesktop(context) ? 140 : 112,
-      height: 46,
+      width: ResponsiveHelper.isDesktop(context) ? 140 : 96,
+      height: ResponsiveHelper.isDesktop(context) ? 46 : 32,
       margin: const EdgeInsets.only(
         right: Dimensions.paddingSizeSmall,
         top: Dimensions.paddingSizeExtraSmall,
@@ -240,7 +240,12 @@ class _CustomTipField extends StatelessWidget {
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
         ],
-        style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault),
+        textAlign: TextAlign.center,
+        style: robotoRegular.copyWith(
+          fontSize: ResponsiveHelper.isDesktop(context)
+              ? Dimensions.fontSizeDefault
+              : Dimensions.fontSizeSmall,
+        ),
         decoration: InputDecoration(
           hintText: 'enter_amount'.tr,
           suffixText:
@@ -251,9 +256,11 @@ class _CustomTipField extends StatelessWidget {
           ),
           filled: true,
           fillColor: Theme.of(context).cardColor,
-          contentPadding: const EdgeInsets.symmetric(
+          contentPadding: EdgeInsets.symmetric(
             horizontal: Dimensions.paddingSizeSmall,
-            vertical: Dimensions.paddingSizeSmall,
+            vertical: ResponsiveHelper.isDesktop(context)
+                ? Dimensions.paddingSizeSmall
+                : 0,
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(Dimensions.radiusSmall),

@@ -110,8 +110,6 @@ class CheckoutScreenState extends State<CheckoutScreen> {
       '',
       isUpdate: false,
     );
-    Get.find<CheckoutController>().setExchangeAmount(0);
-
     Get.find<CheckoutController>().getOfflineMethodList();
 
     if (Get.find<CheckoutController>().isCreateAccount) {
@@ -1579,11 +1577,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                             ? 1
                             : 0,
                         password: guestPasswordController.text,
-                        bringChangeAmount:
-                            checkoutController.paymentMethodIndex == 0 &&
-                                checkoutController.exchangeAmount > 0
-                            ? checkoutController.exchangeAmount
-                            : null,
+                        bringChangeAmount: null,
                       );
 
                       checkoutController.placeOrder(

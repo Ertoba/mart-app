@@ -159,9 +159,6 @@ class CheckoutController extends GetxController implements GetxService {
   bool _isExpand = false;
   bool get isExpand => _isExpand;
 
-  double _exchangeAmount = 0;
-  double get exchangeAmount => _exchangeAmount;
-
   bool _isCreateAccount = false;
   bool get isCreateAccount => _isCreateAccount;
 
@@ -193,10 +190,6 @@ class CheckoutController extends GetxController implements GetxService {
   void resetOrderTax() {
     _orderTax = 0.0;
     _taxIncluded = null;
-  }
-
-  void setExchangeAmount(double value) {
-    _exchangeAmount = value;
   }
 
   void initAdditionData() {

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/checkout/controllers/checkout_controller.dart';
+import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
+import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
@@ -30,6 +33,10 @@ class PaymentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (storeId == null && !ResponsiveHelper.isDesktop(context)) {
+      return _buildMobilePaymentOptions(context);
+    }
+
     return Column(
       children: [
         Row(
@@ -293,6 +300,187 @@ class PaymentSection extends StatelessWidget {
                   ),
                 ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildMobilePaymentOptions(BuildContext context) {
+    final activeDigitalMethods =
+        Get.find<SplashController>().configModel?.activePaymentMethodList ?? [];
+    final bool canUseDigital =
+        isDigitalPaymentActive && activeDigitalMethods.isNotEmpty;
+    final double walletBalance =
+        Get.find<ProfileController>().userInfoModel?.walletBalance ?? 0;
+    final bool canUseWallet =
+        isWalletActive && AuthHelper.isLoggedIn() && walletBalance > 0;
+
+    void selectPayment(int index) {
+      if (index == 2) {
+        checkoutController.setPaymentMethod(2);
+        checkoutController.changeDigitalPaymentName(
+          activeDigitalMethods.first.getWay!,
+        );
+        return;
+      }
+
+      if (index == 1) {
+        if (checkoutController.isPartialPay) {
+          checkoutController.changePartialPayment();
+        }
+        checkoutController.setPaymentMethod(1);
+        if (walletBalance < total) {
+          checkoutController.changePartialPayment();
+        }
+        return;
+      }
+
+      checkoutController.setPaymentMethod(0);
+    }
+
+    Widget paymentOption({
+      required int value,
+      required String label,
+      required bool enabled,
+    }) {
+      return Expanded(
+        child: InkWell(
+          onTap: enabled ? () => selectPayment(value) : null,
+          borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Radio<int>(
+                  value: value,
+                  enabled: enabled,
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                const SizedBox(width: 2),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: robotoMedium.copyWith(
+                      fontSize: Dimensions.fontSizeSmall,
+                      color: enabled
+                          ? Theme.of(context).textTheme.bodyLarge!.color
+                          : Theme.of(context).disabledColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final bool hasPrimaryPayment =
+        isCashOnDeliveryActive || canUseDigital || canUseWallet;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('choose_payment_method'.tr, style: robotoMedium),
+            Image.asset(
+              Images.cash,
+              width: 26,
+              height: 26,
+              color: Theme.of(context).primaryColor,
+            ),
+          ],
+        ),
+        const SizedBox(height: Dimensions.paddingSizeSmall),
+        if (hasPrimaryPayment)
+          RadioGroup<int>(
+            groupValue: checkoutController.paymentMethodIndex,
+            onChanged: (int? selected) {
+              if (selected != null) selectPayment(selected);
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: Dimensions.paddingSizeExtraSmall,
+                vertical: Dimensions.paddingSizeExtraSmall,
+              ),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                border: Border.all(
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.55),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      if (isCashOnDeliveryActive)
+                        paymentOption(
+                          value: 0,
+                          label: 'cash_on_delivery'.tr,
+                          enabled: true,
+                        ),
+                      if (canUseDigital)
+                        paymentOption(
+                          value: 2,
+                          label: 'digital_payment'.tr,
+                          enabled: true,
+                        ),
+                    ],
+                  ),
+                  if (canUseWallet) ...[
+                    const Divider(height: 1),
+                    Row(
+                      children: [
+                        paymentOption(
+                          value: 1,
+                          label: 'wallet_payment'.tr,
+                          enabled: true,
+                        ),
+                        const Spacer(),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          )
+        else
+          Text(
+            'no_payment_method_found'.tr,
+            style: robotoRegular.copyWith(
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        if (isOfflinePaymentActive) ...[
+          const SizedBox(height: Dimensions.paddingSizeSmall),
+          InkWell(
+            onTap: () {
+              Get.bottomSheet(
+                PaymentMethodBottomSheet(
+                  isCashOnDeliveryActive: false,
+                  isDigitalPaymentActive: false,
+                  totalPrice: total,
+                  isOfflinePaymentActive: true,
+                ),
+                backgroundColor: Colors.transparent,
+                isScrollControlled: true,
+              );
+            },
+            child: Text(
+              'offline_payment'.tr,
+              style: robotoMedium.copyWith(
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

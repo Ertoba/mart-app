@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
 import 'package:sixam_mart/common/widgets/custom_ink_well.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
-import 'package:sixam_mart/common/widgets/custom_text_field.dart';
 import 'package:sixam_mart/features/checkout/domain/models/payment_model.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
@@ -31,14 +30,11 @@ class PaymentMethodBottomSheet extends StatefulWidget {
   @override
   State<PaymentMethodBottomSheet> createState() => _PaymentMethodBottomSheetState();
 }
-
 class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
   bool notHideCod = true;
   bool notHideWallet = true;
   bool notHideDigital = true;
   final JustTheController tooltipController = JustTheController();
-  final TextEditingController _amountController = TextEditingController();
-  bool showChangeAmount = true;
 
   @override
   void initState() {
@@ -51,10 +47,6 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
       checkoutController.setPaymentMethod(-1, isUpdate: false);
     }
 
-    if(checkoutController.exchangeAmount > 0) {
-      showChangeAmount = true;
-      _amountController.text = checkoutController.exchangeAmount.toString();
-    }
 
     configurePartialPayment();
   }
@@ -171,11 +163,6 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
                                 onTap: disablePayments ? null : () {
                                   checkoutController.setPaymentMethod(2);
                                   checkoutController.changeDigitalPaymentName(Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWay!);
-                                  if(showChangeAmount) {
-                                    setState(() {
-                                      showChangeAmount = false;
-                                    });
-                                  }
                                 },
                                 title: Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWayTitle!,
                                 isSelected: isSelected,
@@ -194,11 +181,6 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
                       isOfflinePaymentActive: widget.isOfflinePaymentActive,
                       onTap: disablePayments ? null : () {
                         checkoutController.setPaymentMethod(3);
-                        if(showChangeAmount) {
-                          setState(() {
-                            showChangeAmount = false;
-                          });
-                        }
                       },
                       checkoutController: checkoutController, tooltipController: tooltipController,
                       disablePayment: disablePayments, forParcel: widget.paymentModel?.orderType == 'parcel',
@@ -211,15 +193,8 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
                       disablePayments: disablePayments,
                       onTap: disablePayments ? null : (){
                         checkoutController.setPaymentMethod(0);
-                        if(!showChangeAmount) {
-                          setState(() {
-                            showChangeAmount = true;
-                          });
-                        }
                       },
                     ) : const SizedBox(),
-
-                    widget.isCashOnDeliveryActive && notHideCod && widget.paymentModel == null ? changeAmountView(checkoutController) : const SizedBox(),
                   ],
                 ),
               ),
@@ -263,64 +238,6 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
     );
   }
 
-  Widget changeAmountView(CheckoutController checkoutController) {
-    return Column(children: [
-      AnimatedSize(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        child: showChangeAmount && checkoutController.paymentMethodIndex == 0 
-          ? AnimatedOpacity(
-              duration: const Duration(milliseconds: 250),
-              opacity: showChangeAmount ? 1.0 : 0.0,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).disabledColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-                  border: Border.all(color: Theme.of(context).disabledColor.withValues(alpha: 0.2)),
-                ),
-                padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
-                margin: EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, spacing: Dimensions.paddingSizeExtraSmall, children: [
-
-                  Text('${'change_amount'.tr}(${Get.find<SplashController>().configModel?.currencySymbol})', style: robotoBold.copyWith(
-                    color: checkoutController.paymentMethodIndex == 0 ? Theme.of(context).textTheme.bodyLarge!.color : Theme.of(context).disabledColor,
-                  )),
-
-                  Text('specify_the_amount_of_change_the_deliveryman_needs_to_bring_when_delivering_the_order'.tr, style: robotoRegular.copyWith(color: Theme.of(context).disabledColor)),
-                  const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-
-                  CustomTextField(
-                    titleText: 'amount'.tr,
-                    showLabelText: false,
-                    inputType: TextInputType.number,
-                    isAmount: true,
-                    inputAction: TextInputAction.done,
-                    controller: _amountController,
-                    isEnabled: checkoutController.paymentMethodIndex == 0 ? true : false,
-                    onChanged: (String value){
-                      checkoutController.setExchangeAmount(double.tryParse(value) ?? 0);
-                    },
-                  ),
-                ]),
-              ),
-            )
-          : const SizedBox(),
-      ),
-
-      if(checkoutController.paymentMethodIndex == 0)
-        CustomInkWell(
-          onTap: (){
-            setState(() {
-              showChangeAmount = !showChangeAmount;
-            });
-          },
-          radius: Dimensions.radiusSmall,
-          padding: EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
-          child: Text(showChangeAmount ? 'see_less'.tr : 'see_more'.tr , style: robotoBold.copyWith(color: Colors.blue)),
-        ),
-      const SizedBox(height: Dimensions.paddingSizeSmall),
-    ]);
-  }
 
   Widget paymentButtonView({required String title, String? image, required bool isSelected, required Function? onTap, bool disablePayments = false, bool isDigitalPayment = false, required EdgeInsetsGeometry padding}) {
     return Padding(
@@ -414,11 +331,6 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
                 checkoutController.setPaymentMethod(1);
                 if(walletBalance < widget.totalPrice) {
                   checkoutController.changePartialPayment();
-                }
-                if(showChangeAmount) {
-                  setState(() {
-                    showChangeAmount = false;
-                  });
                 }
               }
               configurePartialPayment();

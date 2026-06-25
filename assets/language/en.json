@@ -2288,5 +2288,8 @@
   "on_all_provider": "On all provider!",
   "enter_valid_fare_amount": "Enter valid fare amount",
   "no_payment_selected": "No payment method selected",
-  "safety_policy": "Safety Policy"
+  "safety_policy": "Safety Policy",
+  "please_upload_image_within_5_mb": "Please upload an image up to 5MB",
+  "please_upload_logo_within_5_mb": "Please upload a logo up to 5MB",
+  "please_upload_cover_within_10_mb": "Please upload a cover image up to 10MB"
 }

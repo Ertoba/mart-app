@@ -89,11 +89,17 @@ class _HighlightWidgetState extends State<HighlightWidget> {
                             colors: Get.isDarkMode
                                 ? [
                                     const Color(0xFF07140F),
-                                    Theme.of(context).primaryColor.withValues(alpha: 0.18),
+                                    Theme.of(
+                                      context,
+                                    ).primaryColor.withValues(alpha: 0.18),
                                   ]
                                 : [
-                                    Theme.of(context).primaryColor.withValues(alpha: 0.12),
-                                    Theme.of(context).primaryColor.withValues(alpha: 0.04),
+                                    Theme.of(
+                                      context,
+                                    ).primaryColor.withValues(alpha: 0.12),
+                                    Theme.of(
+                                      context,
+                                    ).primaryColor.withValues(alpha: 0.04),
                                   ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -128,7 +134,9 @@ class _HighlightWidgetState extends State<HighlightWidget> {
                                     'highlights_for_you'.tr,
                                     style: robotoBold.copyWith(
                                       fontSize: Dimensions.fontSizeLarge,
-                                      color: Get.isDarkMode ? Colors.white : Colors.black,
+                                      color: Get.isDarkMode
+                                          ? Colors.white
+                                          : Colors.black,
                                     ),
                                   ),
                                   const SizedBox(width: 5),
@@ -219,8 +227,119 @@ class _HighlightWidgetState extends State<HighlightWidget> {
               )
             : advertisementController.advertisementList == null
             ? const AdvertisementShimmer()
-            : const SizedBox();
+            : const EmptyHighlightWidget();
       },
+    );
+  }
+}
+
+class EmptyHighlightWidget extends StatelessWidget {
+  final bool isWeb;
+  const EmptyHighlightWidget({super.key, this.isWeb = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: Dimensions.paddingSizeDefault,
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: Get.isDarkMode
+                      ? [
+                          const Color(0xFF07140F),
+                          Theme.of(
+                            context,
+                          ).primaryColor.withValues(alpha: 0.18),
+                        ]
+                      : [
+                          Theme.of(
+                            context,
+                          ).primaryColor.withValues(alpha: 0.12),
+                          Theme.of(
+                            context,
+                          ).primaryColor.withValues(alpha: 0.04),
+                        ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
+          ),
+          CustomAssetImageWidget(
+            Get.isDarkMode ? Images.highlightDarkBg : Images.highlightBg,
+            width: context.width,
+            height: isWeb ? 220 : 170,
+            fit: BoxFit.cover,
+          ),
+          SizedBox(
+            height: isWeb ? 220 : 170,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'highlights_for_you'.tr,
+                              style: robotoBold.copyWith(
+                                fontSize: Dimensions.fontSizeLarge,
+                                color: Get.isDarkMode
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
+                            ),
+                            const SizedBox(
+                              height: Dimensions.paddingSizeExtraSmall,
+                            ),
+                            Text(
+                              'see_our_most_popular_store_and_item'.tr,
+                              style: robotoRegular.copyWith(
+                                color: Theme.of(context).disabledColor,
+                                fontSize: Dimensions.fontSizeSmall,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        height: 58,
+                        width: 58,
+                        child: Lottie.asset(
+                          Images.highlightStarAnimation,
+                          fit: BoxFit.contain,
+                          repeat: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                Padding(
+                  padding: const EdgeInsets.only(
+                    bottom: Dimensions.paddingSizeDefault,
+                  ),
+                  child: Text(
+                    'no_data_found'.tr,
+                    style: robotoMedium.copyWith(
+                      color: Theme.of(context).disabledColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

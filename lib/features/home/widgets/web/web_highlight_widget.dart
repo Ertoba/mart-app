@@ -44,11 +44,14 @@ class _WebHighlightWidgetState extends State<WebHighlightWidget> {
                                   colors: Get.isDarkMode
                                       ? [
                                           const Color(0xFF07140F),
-                                          Theme.of(context).primaryColor.withValues(alpha: 0.18),
+                                          Theme.of(context).primaryColor
+                                              .withValues(alpha: 0.18),
                                         ]
                                       : [
-                                          Theme.of(context).primaryColor.withValues(alpha: 0.12),
-                                          Theme.of(context).primaryColor.withValues(alpha: 0.04),
+                                          Theme.of(context).primaryColor
+                                              .withValues(alpha: 0.12),
+                                          Theme.of(context).primaryColor
+                                              .withValues(alpha: 0.04),
                                         ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -208,7 +211,7 @@ class _WebHighlightWidgetState extends State<WebHighlightWidget> {
               )
             : advertisementController.advertisementList == null
             ? const AdvertisementShimmer()
-            : const SizedBox();
+            : const EmptyHighlightWidget(isWeb: true);
       },
     );
   }

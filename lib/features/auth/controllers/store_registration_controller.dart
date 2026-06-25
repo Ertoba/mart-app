@@ -19,7 +19,9 @@ import 'package:sixam_mart/helper/date_converter.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 
 class StoreRegistrationController extends GetxController implements GetxService {
-  static const int _maxRegistrationUploadBytes = 10 * 1024 * 1024;
+  static const int _maxLogoUploadBytes = 5 * 1024 * 1024;
+  static const int _maxCoverUploadBytes = 10 * 1024 * 1024;
+  static const int _maxDocumentUploadBytes = 10 * 1024 * 1024;
 
   final StoreRegistrationServiceInterface storeRegistrationServiceInterface;
   final LocationServiceInterface locationServiceInterface;
@@ -209,8 +211,11 @@ class StoreRegistrationController extends GetxController implements GetxService 
         return;
       }
       final int fileSize = await pickedImage.length();
-      if (fileSize > _maxRegistrationUploadBytes) {
-        showCustomSnackBar('please_upload_lower_size_file'.tr);
+      final int maximumBytes = isLogo ? _maxLogoUploadBytes : _maxCoverUploadBytes;
+      if (fileSize > maximumBytes) {
+        showCustomSnackBar(isLogo
+            ? 'please_upload_logo_within_5_mb'.tr
+            : 'please_upload_cover_within_10_mb'.tr);
         return;
       }
       if (isLogo) {
@@ -416,7 +421,7 @@ class StoreRegistrationController extends GetxController implements GetxService 
 
     if (result != null && result.files.isNotEmpty) {
       for (var file in result.files) {
-        if (file.size > _maxRegistrationUploadBytes) {
+        if (file.size > _maxDocumentUploadBytes) {
           showCustomSnackBar('please_upload_lower_size_file'.tr);
         } else {
           _tinFiles.add(result);

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
 import 'package:sixam_mart/features/language/controllers/language_controller.dart';
 import 'package:sixam_mart/features/search/domain/models/popular_categories_model.dart';
@@ -17,80 +18,80 @@ class SearchController extends GetxController implements GetxService {
 
   List<Item>? _searchItemList;
   List<Item>? get searchItemList => _searchItemList;
-  
+
   List<Item>? _allItemList;
   List<Item>? get allItemList => _allItemList;
-  
+
   List<Item>? _suggestedItemList;
   List<Item>? get suggestedItemList => _suggestedItemList;
-  
+
   List<Store>? _searchStoreList;
   List<Store>? get searchStoreList => _searchStoreList;
-  
+
   List<Store>? _allStoreList;
   List<Store>? get allStoreList => _allStoreList;
-  
+
   String? _searchText = '';
   String? get searchText => _searchText;
-  
+
   String? _storeResultText = '';
-  
+
   String? _itemResultText = '';
-  
+
   double _lowerValue = 0;
   double get lowerValue => _lowerValue;
-  
+
   double _upperValue = 0;
   double get upperValue => _upperValue;
-  
+
   List<String> _historyList = [];
   List<String> get historyList => _historyList;
-  
+
   bool _isSearchMode = true;
   bool get isSearchMode => _isSearchMode;
-  
+
   final List<String> _sortList = ['ascending'.tr, 'descending'.tr];
   List<String> get sortList => _sortList;
-  
+
   int _sortIndex = -1;
   int get sortIndex => _sortIndex;
 
   int _storeSortIndex = -1;
   int get storeSortIndex => _storeSortIndex;
-  
+
   int _rating = -1;
   int get rating => _rating;
 
   int _storeRating = -1;
   int get storeRating => _storeRating;
-  
+
   bool _isStore = false;
   bool get isStore => _isStore;
-  
+
   bool _isAvailableItems = false;
   bool get isAvailableItems => _isAvailableItems;
 
   bool _isAvailableStore = false;
   bool get isAvailableStore => _isAvailableStore;
-  
+
   bool _isDiscountedItems = false;
   bool get isDiscountedItems => _isDiscountedItems;
 
   bool _isDiscountedStore = false;
   bool get isDiscountedStore => _isDiscountedStore;
-  
+
   bool _veg = false;
   bool get veg => _veg;
 
   bool _storeVeg = false;
   bool get storeVeg => _storeVeg;
-  
+
   bool _nonVeg = false;
   bool get nonVeg => _nonVeg;
 
   bool _storeNonVeg = false;
   bool get storeNonVeg => _storeNonVeg;
-  
+
   String? _searchHomeText = '';
   String? get searchHomeText => _searchHomeText;
 
@@ -147,7 +148,7 @@ class SearchController extends GetxController implements GetxService {
 
   void setSearchMode(bool isSearchMode, {bool canUpdate = true}) {
     _isSearchMode = isSearchMode;
-    if(isSearchMode) {
+    if (isSearchMode) {
       _searchText = '';
       _itemResultText = '';
       _storeResultText = '';
@@ -170,10 +171,10 @@ class SearchController extends GetxController implements GetxService {
       _upperValue = 0;
       _lowerValue = 0;
     }
-    if(_isStore) {
+    if (_isStore) {
       _isStore = !_isStore;
     }
-    if(canUpdate) {
+    if (canUpdate) {
       update();
     }
   }
@@ -185,12 +186,30 @@ class SearchController extends GetxController implements GetxService {
   }
 
   void sortItemSearchList() {
-    _searchItemList = searchServiceInterface.sortItemSearchList(_allItemList, _upperValue, _lowerValue, _rating, _veg, _nonVeg, _isAvailableItems, _isDiscountedItems, _sortIndex);
+    _searchItemList = searchServiceInterface.sortItemSearchList(
+      _allItemList,
+      _upperValue,
+      _lowerValue,
+      _rating,
+      _veg,
+      _nonVeg,
+      _isAvailableItems,
+      _isDiscountedItems,
+      _sortIndex,
+    );
     update();
   }
 
   void sortStoreSearchList() {
-    _searchStoreList = searchServiceInterface.sortStoreSearchList(_allStoreList, _storeRating, _storeVeg, _storeNonVeg, _isAvailableStore, _isDiscountedStore, _storeSortIndex);
+    _searchStoreList = searchServiceInterface.sortStoreSearchList(
+      _allStoreList,
+      _storeRating,
+      _storeVeg,
+      _storeNonVeg,
+      _isAvailableStore,
+      _isDiscountedStore,
+      _storeSortIndex,
+    );
     update();
   }
 
@@ -200,8 +219,9 @@ class SearchController extends GetxController implements GetxService {
   }
 
   void getSuggestedItems() async {
-    List<Item>? suggestedItemList = await searchServiceInterface.getSuggestedItems();
-    if(suggestedItemList != null) {
+    List<Item>? suggestedItemList = await searchServiceInterface
+        .getSuggestedItems();
+    if (suggestedItemList != null) {
       _suggestedItemList = [];
       _suggestedItemList!.addAll(suggestedItemList);
     }
@@ -209,7 +229,10 @@ class SearchController extends GetxController implements GetxService {
   }
 
   Future<void> searchData(String? query, bool fromHome) async {
-    if((_isStore && query!.isNotEmpty && query != _storeResultText) || (!_isStore && query!.isNotEmpty && (query != _itemResultText || fromHome))) {
+    if ((_isStore && query!.isNotEmpty && query != _storeResultText) ||
+        (!_isStore &&
+            query!.isNotEmpty &&
+            (query != _itemResultText || fromHome))) {
       _searchHomeText = query;
       _searchText = query;
       _rating = -1;
@@ -228,11 +251,14 @@ class SearchController extends GetxController implements GetxService {
       }
       searchServiceInterface.saveSearchHistory(_historyList);
       _isSearchMode = false;
-      if(!fromHome) {
+      if (!fromHome) {
         update();
       }
 
-      Response response = await searchServiceInterface.getSearchData(query, _isStore);
+      Response response = await searchServiceInterface.getSearchData(
+        query,
+        _isStore,
+      );
       if (response.statusCode == 200) {
         if (query.isEmpty) {
           if (_isStore) {
@@ -245,7 +271,9 @@ class SearchController extends GetxController implements GetxService {
             _storeResultText = query;
             _searchStoreList = [];
             _allStoreList = [];
-            _searchStoreList!.addAll(StoreModel.fromJson(response.body).stores!);
+            _searchStoreList!.addAll(
+              StoreModel.fromJson(response.body).stores!,
+            );
             _allStoreList!.addAll(StoreModel.fromJson(response.body).stores!);
           } else {
             _itemResultText = query;
@@ -328,8 +356,10 @@ class SearchController extends GetxController implements GetxService {
 
   Future<List<String>> getSearchSuggestions(String searchText) async {
     List<String> items = <String>[];
-    _searchSuggestionModel = await searchServiceInterface.getSearchSuggestions(searchText);
-    if(_searchSuggestionModel != null) {
+    _searchSuggestionModel = await searchServiceInterface.getSearchSuggestions(
+      searchText,
+    );
+    if (_searchSuggestionModel != null) {
       for (var item in _searchSuggestionModel!.items!) {
         items.add(item.name!);
       }
@@ -346,7 +376,6 @@ class SearchController extends GetxController implements GetxService {
     update();
   }
 
-
   ///Voice Search..................
 
   bool voiceIsListening = false;
@@ -360,19 +389,24 @@ class SearchController extends GetxController implements GetxService {
   /// Initialize speech (safe to call multiple times)
   Future<void> initVoice({bool isUpdate = true}) async {
     try {
-      final available = await _speech.initialize(onStatus: _onStatus, onError: _onError);
+      final available = await _speech.initialize(
+        onStatus: _onStatus,
+        onError: _onError,
+      );
       voiceAvailable = available;
     } catch (e) {
       voiceAvailable = false;
     }
-    if(isUpdate) update();
+    if (isUpdate) update();
   }
 
   void _onStatus(String status) {
     if (status == stt.SpeechToText.listeningStatus) {
       setVoiceListening(true);
       cancelVoiceAutoSubmit();
-    } else if (status == stt.SpeechToText.doneStatus || status == stt.SpeechToText.notListeningStatus || status == 'not listening') {
+    } else if (status == stt.SpeechToText.doneStatus ||
+        status == stt.SpeechToText.notListeningStatus ||
+        status == 'not listening') {
       setVoiceListening(false);
       scheduleVoiceAutoSubmit(const Duration(seconds: 2));
     }
@@ -380,6 +414,12 @@ class SearchController extends GetxController implements GetxService {
 
   void _onError(dynamic error) {
     setVoiceListening(false);
+  }
+
+  bool _isCurrentVoiceLanguageGeorgian() {
+    return Get.find<LocalizationController>().locale.languageCode
+            .toLowerCase() ==
+        'ka';
   }
 
   Future<String?> _resolveVoiceLocaleId() async {
@@ -392,15 +432,22 @@ class SearchController extends GetxController implements GetxService {
       final countryCode = locale.countryCode?.toLowerCase();
       final candidates = <String>[
         if (languageCode == 'ka') 'ka_GE',
-        if (countryCode != null && countryCode.isNotEmpty) '${languageCode}_$countryCode',
+        if (countryCode != null && countryCode.isNotEmpty)
+          '${languageCode}_$countryCode',
         languageCode,
       ];
 
       for (final candidate in candidates) {
-        final normalizedCandidate = candidate.toLowerCase().replaceAll('-', '_');
+        final normalizedCandidate = candidate.toLowerCase().replaceAll(
+          '-',
+          '_',
+        );
         for (final supportedLocale in locales) {
-          final normalizedSupported = supportedLocale.localeId.toLowerCase().replaceAll('-', '_');
-          if (normalizedSupported == normalizedCandidate || normalizedSupported.startsWith('${normalizedCandidate}_')) {
+          final normalizedSupported = supportedLocale.localeId
+              .toLowerCase()
+              .replaceAll('-', '_');
+          if (normalizedSupported == normalizedCandidate ||
+              normalizedSupported.startsWith('${normalizedCandidate}_')) {
             return supportedLocale.localeId;
           }
         }
@@ -419,7 +466,9 @@ class SearchController extends GetxController implements GetxService {
   }
 
   /// Start listening and optionally update an external TextEditingController live
-  Future<void> startVoiceListening({TextEditingController? externalController}) async {
+  Future<void> startVoiceListening({
+    TextEditingController? externalController,
+  }) async {
     cancelVoiceAutoSubmit();
 
     // clear any previous session
@@ -430,13 +479,21 @@ class SearchController extends GetxController implements GetxService {
 
     if (!voiceAvailable) {
       await initVoice();
-      if (!voiceAvailable) return;
+      if (!voiceAvailable) {
+        showCustomSnackBar('voice_recognition_not_available'.tr);
+        return;
+      }
     }
 
     // reset
     setVoiceText('');
     setVoiceSoundLevel(0.0);
     final localeId = await _resolveVoiceLocaleId();
+    if (_isCurrentVoiceLanguageGeorgian() && localeId == null) {
+      showCustomSnackBar('georgian_voice_recognition_not_available'.tr);
+      setVoiceListening(false);
+      return;
+    }
 
     try {
       await _speech.listen(
@@ -445,7 +502,9 @@ class SearchController extends GetxController implements GetxService {
           setVoiceText(recognized);
           if (externalController != null) {
             externalController.text = recognized;
-            externalController.selection = TextSelection.fromPosition(TextPosition(offset: externalController.text.length));
+            externalController.selection = TextSelection.fromPosition(
+              TextPosition(offset: externalController.text.length),
+            );
           }
         },
         listenFor: const Duration(seconds: 60),
@@ -455,7 +514,11 @@ class SearchController extends GetxController implements GetxService {
           setVoiceSoundLevel(normalized);
         },
         localeId: localeId,
-        listenOptions: stt.SpeechListenOptions(partialResults: true, cancelOnError: true, listenMode: stt.ListenMode.search),
+        listenOptions: stt.SpeechListenOptions(
+          partialResults: true,
+          cancelOnError: true,
+          listenMode: stt.ListenMode.search,
+        ),
       );
       if (_speech.isListening) {
         setVoiceListening(true);
@@ -483,17 +546,17 @@ class SearchController extends GetxController implements GetxService {
 
   void setVoiceListening(bool value, {bool isUpdate = true}) {
     voiceIsListening = value;
-    if(isUpdate) update();
+    if (isUpdate) update();
   }
 
   void setVoiceText(String text, {bool isUpdate = true}) {
     voiceText = text;
-    if(isUpdate) update();
+    if (isUpdate) update();
   }
 
   void setVoiceSoundLevel(double level, {bool isUpdate = true}) {
     voiceSoundLevel = level;
-    if(isUpdate) update();
+    if (isUpdate) update();
   }
 
   void scheduleVoiceAutoSubmit(Duration duration) {
@@ -526,5 +589,4 @@ class SearchController extends GetxController implements GetxService {
     _voiceAutoSubmitTimer?.cancel();
     super.onClose();
   }
-  
 }

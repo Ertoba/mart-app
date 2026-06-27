@@ -211,7 +211,7 @@ class _WebHighlightWidgetState extends State<WebHighlightWidget> {
               )
             : advertisementController.advertisementList == null
             ? const AdvertisementShimmer()
-            : const EmptyHighlightWidget(isWeb: true);
+            : const SizedBox();
       },
     );
   }

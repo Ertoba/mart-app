@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:sixam_mart/features/item/controllers/item_controller.dart';
 import 'package:sixam_mart/features/item/domain/models/basic_medicine_model.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
+import 'package:sixam_mart/features/home/widgets/web/web_basic_medicine_nearby_view_widget.dart';
 import 'package:sixam_mart/features/home/widgets/web/widgets/medicine_item_card.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
@@ -25,27 +26,21 @@ class _ProductWithCategoriesViewState extends State<ProductWithCategoriesView> {
     return GetBuilder<ItemController>(builder: (itemController) {
       List<Categories>? categories = [];
       List<Item>? products = [];
-      final bool isLoaded = widget.fromShop
-          ? itemController.reviewedCategoriesList != null && itemController.reviewedItemList != null
-          : itemController.basicMedicineModel != null;
-      if(isLoaded){
+      if(widget.fromShop ? itemController.reviewedCategoriesList != null && itemController.reviewedItemList != null : itemController.basicMedicineModel != null){
         categories.add(Categories(name: 'all'.tr, id: 0));
         for (var category in widget.fromShop ? itemController.reviewedCategoriesList! : itemController.basicMedicineModel!.categories!) {
           categories.add(category);
         }
-        final int activeCategory = selectedCategory < categories.length ? selectedCategory : 0;
         for (var product in widget.fromShop ? itemController.reviewedItemList! : itemController.basicMedicineModel!.products!) {
-          if(activeCategory == 0) {
+          if(selectedCategory == 0) {
             products.add(product);
-          } else if (
-            categories[activeCategory].id == product.categoryId
-            || (product.categoryIds?.any((category) => category.id == categories[activeCategory].id) ?? false)
-          ) {
+          }
+          if(categories[selectedCategory].id == product.categoryIds?[0].id){
             products.add(product);
           }
         }
       }
-      return isLoaded && categories.isNotEmpty ? Padding(
+      return products.isNotEmpty ? Padding(
         padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
@@ -66,7 +61,7 @@ class _ProductWithCategoriesViewState extends State<ProductWithCategoriesView> {
                   scrollDirection: Axis.horizontal,
                   padding: EdgeInsets.zero,
                   itemBuilder: (context, index) {
-                    bool isSelected = (selectedCategory < categories.length ? selectedCategory : 0) == index;
+                    bool isSelected = selectedCategory == index;
                     return InkWell(
                       onTap: () {
                         setState(() {
@@ -107,7 +102,7 @@ class _ProductWithCategoriesViewState extends State<ProductWithCategoriesView> {
               ),
               child: SizedBox(
                 height: ResponsiveHelper.isDesktop(context) ? widget.fromShop ? 290 : 260 : widget.fromShop ? 292 : 250, width: Get.width,
-                child: products.isNotEmpty ? ListView.builder(
+                child: (widget.fromShop ? itemController.reviewedCategoriesList != null : itemController.basicMedicineModel != null) ? ListView.builder(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.only(left: Dimensions.paddingSizeDefault),
@@ -118,9 +113,7 @@ class _ProductWithCategoriesViewState extends State<ProductWithCategoriesView> {
                       child: MedicineItemCard(item: products[index]),
                     );
                   },
-                ) : Center(
-                  child: Text('no_item_available'.tr, style: robotoMedium.copyWith(color: Theme.of(context).disabledColor)),
-                ),
+                ) : const MedicineCardShimmer(),
               ),
             ),
           ]),

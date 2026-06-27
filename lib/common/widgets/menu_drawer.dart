@@ -29,6 +29,7 @@ class MenuDrawerState extends State<MenuDrawer>
   final List<Menu> _menuList = [
     Menu(
       icon: Images.profile,
+      materialIcon: Icons.person_outline,
       title: 'profile'.tr,
       onTap: () {
         Get.back();
@@ -37,6 +38,7 @@ class MenuDrawerState extends State<MenuDrawer>
     ),
     Menu(
       icon: Images.orders,
+      materialIcon: Icons.receipt_long_outlined,
       title: 'my_orders'.tr,
       onTap: () {
         Get.back();
@@ -45,6 +47,7 @@ class MenuDrawerState extends State<MenuDrawer>
     ),
     Menu(
       icon: Images.location,
+      materialIcon: Icons.map_outlined,
       title: 'my_address'.tr,
       onTap: () {
         Get.back();
@@ -53,6 +56,7 @@ class MenuDrawerState extends State<MenuDrawer>
     ),
     Menu(
       icon: Images.language,
+      materialIcon: Icons.translate,
       title: 'language'.tr,
       onTap: () {
         Get.back();
@@ -61,6 +65,7 @@ class MenuDrawerState extends State<MenuDrawer>
     ),
     Menu(
       icon: Images.coupon,
+      materialIcon: Icons.confirmation_number_outlined,
       title: 'coupon'.tr,
       onTap: () {
         Get.back();
@@ -69,6 +74,7 @@ class MenuDrawerState extends State<MenuDrawer>
     ),
     Menu(
       icon: Images.support,
+      materialIcon: Icons.support_agent_outlined,
       title: 'help_support'.tr,
       onTap: () {
         Get.back();
@@ -77,6 +83,7 @@ class MenuDrawerState extends State<MenuDrawer>
     ),
     Menu(
       icon: Images.chat,
+      materialIcon: Icons.chat_bubble_outline,
       title: 'live_chat'.tr,
       onTap: () {
         Get.back();
@@ -104,6 +111,7 @@ class MenuDrawerState extends State<MenuDrawer>
       _menuList.add(
         Menu(
           icon: Images.refund,
+          materialIcon: Icons.assignment_return_outlined,
           title: 'refund_policy'.tr,
           onTap: () {
             Get.back();
@@ -117,6 +125,7 @@ class MenuDrawerState extends State<MenuDrawer>
       _menuList.add(
         Menu(
           icon: Images.cancellation,
+          materialIcon: Icons.cancel_presentation_outlined,
           title: 'cancellation_policy'.tr,
           onTap: () {
             Get.back();
@@ -129,6 +138,7 @@ class MenuDrawerState extends State<MenuDrawer>
       _menuList.add(
         Menu(
           icon: Images.shippingPolicy,
+          materialIcon: Icons.local_shipping_outlined,
           title: 'shipping_policy'.tr,
           onTap: () {
             Get.back();
@@ -142,6 +152,7 @@ class MenuDrawerState extends State<MenuDrawer>
       _menuList.add(
         Menu(
           icon: Images.wallet,
+          materialIcon: Icons.account_balance_wallet_outlined,
           title: 'wallet'.tr,
           onTap: () {
             if (Get.currentRoute.contains('wallet')) {
@@ -158,6 +169,7 @@ class MenuDrawerState extends State<MenuDrawer>
       _menuList.add(
         Menu(
           icon: Images.loyal,
+          materialIcon: Icons.stars_outlined,
           title: 'loyalty_points'.tr,
           onTap: () {
             Get.back();
@@ -170,6 +182,7 @@ class MenuDrawerState extends State<MenuDrawer>
       _menuList.add(
         Menu(
           icon: Images.referCode,
+          materialIcon: Icons.person_add_alt_1_outlined,
           title: 'refer_and_earn'.tr,
           onTap: () {
             Get.back();
@@ -182,6 +195,7 @@ class MenuDrawerState extends State<MenuDrawer>
       _menuList.add(
         Menu(
           icon: Images.deliveryManJoin,
+          materialIcon: Icons.two_wheeler,
           title: 'join_as_a_delivery_man'.tr,
           onTap: () {
             Get.back();
@@ -194,6 +208,7 @@ class MenuDrawerState extends State<MenuDrawer>
       _menuList.add(
         Menu(
           icon: Images.restaurantJoin,
+          materialIcon: Icons.storefront,
           title: ModuleHelper.isBeerModule
               ? 'join_as_a_bar'.tr
               : Get.find<SplashController>()
@@ -213,6 +228,9 @@ class MenuDrawerState extends State<MenuDrawer>
     _menuList.add(
       Menu(
         icon: Images.logOut,
+        materialIcon: AuthHelper.isLoggedIn()
+            ? Icons.power_settings_new
+            : Icons.login,
         title: AuthHelper.isLoggedIn() ? 'logout'.tr : 'sign_in'.tr,
         onTap: () {
           Get.back();
@@ -378,12 +396,18 @@ class MenuDrawerState extends State<MenuDrawer>
                                       ? Theme.of(context).colorScheme.error
                                       : Colors.green,
                                 ),
-                                child: Image.asset(
-                                  _menuList[index].icon,
-                                  color: Colors.white,
-                                  height: 30,
-                                  width: 30,
-                                ),
+                                child: _menuList[index].materialIcon != null
+                                    ? Icon(
+                                        _menuList[index].materialIcon,
+                                        color: Colors.white,
+                                        size: 30,
+                                      )
+                                    : Image.asset(
+                                        _menuList[index].icon,
+                                        color: Colors.white,
+                                        height: 30,
+                                        width: 30,
+                                      ),
                               ),
                               const SizedBox(
                                 width: Dimensions.paddingSizeSmall,
@@ -415,8 +439,14 @@ class MenuDrawerState extends State<MenuDrawer>
 
 class Menu {
   String icon;
+  IconData? materialIcon;
   String title;
   Function onTap;
 
-  Menu({required this.icon, required this.title, required this.onTap});
+  Menu({
+    required this.icon,
+    this.materialIcon,
+    required this.title,
+    required this.onTap,
+  });
 }

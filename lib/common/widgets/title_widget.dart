@@ -52,6 +52,9 @@ class TitleWidget extends StatelessWidget {
                     height: iconSize,
                     width: iconSize,
                     fit: BoxFit.contain,
+                    decoder: lottieAsset!.toLowerCase().endsWith('.lottie')
+                        ? _decodeDotLottie
+                        : null,
                   )
                 : image != null
                 ? Image.asset(image!, height: iconSize, width: iconSize)
@@ -82,6 +85,21 @@ class TitleWidget extends StatelessWidget {
               )
             : const SizedBox(),
       ],
+    );
+  }
+
+  static Future<LottieComposition?> _decodeDotLottie(List<int> bytes) {
+    return LottieComposition.decodeZip(
+      bytes,
+      filePicker: (files) {
+        for (final file in files) {
+          final String name = file.name.toLowerCase();
+          if (name.startsWith('animations/') && name.endsWith('.json')) {
+            return file;
+          }
+        }
+        return null;
+      },
     );
   }
 }

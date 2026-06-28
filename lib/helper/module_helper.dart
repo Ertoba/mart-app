@@ -63,6 +63,10 @@ class ModuleHelper {
     return isBeerModule ? 'popular_beer' : 'most_popular_items';
   }
 
+  static String get bestReviewedItemsKey {
+    return isBeerModule ? 'top_rated' : 'best_reviewed_item';
+  }
+
   static String get bestStoreNearbyKey {
     return isBeerModule ? 'best_bar_nearby' : 'best_store_nearby';
   }

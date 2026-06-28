@@ -199,6 +199,7 @@ class Images {
   static const String discountOfferIcon =
       'assets/image/discount_offer_icon.png';
   static const String mostPopularIcon = 'assets/image/most_popular_icon.png';
+  static const String cheersLottie = 'assets/json/cheers!.lottie';
   static const String distanceLine = 'assets/image/distance_line.png';
   static const String clockIcon = 'assets/image/clock.png';
   static const String deliveryIcon = 'assets/image/delivery_icon.png';

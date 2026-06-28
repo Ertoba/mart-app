@@ -939,8 +939,8 @@ class BestStoreNearbyShimmer extends StatelessWidget {
                                         children: [
                                           Image.asset(
                                             Images.clockIcon,
-                                            height: 15,
-                                            width: 15,
+                                            height: 13.5,
+                                            width: 13.5,
                                           ),
                                           const SizedBox(
                                             width: Dimensions

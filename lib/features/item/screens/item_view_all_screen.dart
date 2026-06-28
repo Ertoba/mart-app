@@ -304,7 +304,7 @@ class _ItemViewAllScreenState extends State<ItemViewAllScreen> {
                                     : ModuleHelper.popularItemsKey.tr
                               : widget.isSpecial
                               ? 'special_offer'.tr
-                              : 'best_reviewed_item'.tr,
+                              : ModuleHelper.bestReviewedItemsKey.tr,
                           style: robotoBold,
                         ),
                         Text(

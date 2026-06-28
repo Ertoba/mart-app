@@ -117,7 +117,7 @@ class _PopularItemScreenState extends State<PopularItemScreen> {
                         : ModuleHelper.popularItemsKey.tr
                   : widget.isSpecial
                   ? 'special_offer'.tr
-                  : 'best_reviewed_item'.tr,
+                  : ModuleHelper.bestReviewedItemsKey.tr,
               showCart: true,
               type: widget.isCommonCondition
                   ? null
@@ -350,7 +350,9 @@ class _PopularItemScreenState extends State<PopularItemScreen> {
                                                               .tr
                                                   : widget.isSpecial
                                                   ? 'special_offer'.tr
-                                                  : 'best_reviewed_item'.tr,
+                                                  : ModuleHelper
+                                                        .bestReviewedItemsKey
+                                                        .tr,
                                               style: robotoMedium,
                                             ),
                                           ),

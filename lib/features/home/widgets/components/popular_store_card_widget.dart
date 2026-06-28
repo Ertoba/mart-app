@@ -49,12 +49,17 @@ class PopularStoreCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
               child: Stack(
                 children: [
-                  CustomImage(
-                    isHovered: hovered,
-                    image: '${store.coverPhotoFullUrl}',
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: 170,
+                  ColoredBox(
+                    color: Theme.of(context).disabledColor.withValues(
+                      alpha: Get.isDarkMode ? 0.08 : 0.05,
+                    ),
+                    child: CustomImage(
+                      isHovered: false,
+                      image: '${store.coverPhotoFullUrl}',
+                      fit: BoxFit.contain,
+                      width: double.infinity,
+                      height: 170,
+                    ),
                   ),
 
                   Positioned(

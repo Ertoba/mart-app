@@ -50,7 +50,7 @@ class _DigitalPaymentFailedScreenState extends State<DigitalPaymentFailedScreen>
           ),
         ),
         child: Stack(children: [
-          PaymentIncompleteView(),
+          PaymentIncompleteView(orderId: widget.orderId),
 
           Positioned(
             top: 0,
@@ -73,7 +73,7 @@ class _DigitalPaymentFailedScreenState extends State<DigitalPaymentFailedScreen>
     }
     return Scaffold(
       body: SafeArea(
-        child: PaymentIncompleteView(createAccount: widget.createAccount!),
+        child: PaymentIncompleteView(createAccount: widget.createAccount!, orderId: widget.orderId),
       ),
     );
   }
@@ -81,7 +81,8 @@ class _DigitalPaymentFailedScreenState extends State<DigitalPaymentFailedScreen>
 
 class PaymentIncompleteView extends StatelessWidget {
   final bool createAccount;
-  const PaymentIncompleteView({super.key, this.createAccount = false});
+  final String? orderId;
+  const PaymentIncompleteView({super.key, this.createAccount = false, this.orderId});
 
   @override
   Widget build(BuildContext context) {
@@ -279,8 +280,57 @@ class PaymentIncompleteView extends StatelessWidget {
                 const SizedBox(height: 50),
               ],
             ),
-          ) : const Center(child: CircularProgressIndicator());
+          ) : orderController.isLoading ? const Center(child: CircularProgressIndicator()) : _PaymentFailedFallbackView(orderId: orderId);
         }
+    );
+  }
+}
+
+class _PaymentFailedFallbackView extends StatelessWidget {
+  final String? orderId;
+  const _PaymentFailedFallbackView({this.orderId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(Images.warning, width: 70, height: 70),
+            const SizedBox(height: Dimensions.paddingSizeDefault),
+
+            if(orderId != null && orderId!.isNotEmpty) ...[
+              SelectableText(
+                '${'order'.tr} #$orderId',
+                style: robotoBold.copyWith(color: Theme.of(context).primaryColor),
+              ),
+              const SizedBox(height: Dimensions.paddingSizeSmall),
+            ],
+
+            Text(
+              '${'payment_failed'.tr} !!',
+              textAlign: TextAlign.center,
+              style: robotoBold.copyWith(color: Colors.red, fontSize: Dimensions.fontSizeLarge),
+            ),
+            const SizedBox(height: Dimensions.paddingSizeSmall),
+
+            Text(
+              'your_order_is_failed_to_place_because'.tr,
+              textAlign: TextAlign.center,
+              style: robotoRegular.copyWith(color: Theme.of(context).disabledColor),
+            ),
+            const SizedBox(height: Dimensions.paddingSizeExtraLarge),
+
+            CustomButton(
+              width: ResponsiveHelper.isDesktop(context) ? 300 : double.infinity,
+              buttonText: 'back_to_home'.tr,
+              onPressed: () => Get.offAllNamed(RouteHelper.getInitialRoute()),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

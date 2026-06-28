@@ -72,6 +72,8 @@ class OrderController extends GetxController implements GetxService {
 
   Future<PaymentModel?> getPaymentFailedDetails(String? orderID) async {
     _paymentModel = null;
+    _isLoading = true;
+    update();
     _paymentModel = await orderServiceInterface.getPaymentFailedDetails(orderID);
     _isLoading = false;
     update();

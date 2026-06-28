@@ -13,7 +13,19 @@ class CustomImage extends StatelessWidget {
   final String placeholder;
   final bool isHovered;
   final Color? color;
-  const CustomImage({super.key, required this.image, this.height, this.width, this.fit = BoxFit.cover, this.isNotification = false, this.placeholder = '', this.isHovered = false, this.color});
+  final Alignment alignment;
+  const CustomImage({
+    super.key,
+    required this.image,
+    this.height,
+    this.width,
+    this.fit = BoxFit.cover,
+    this.isNotification = false,
+    this.placeholder = '',
+    this.isHovered = false,
+    this.color,
+    this.alignment = Alignment.center,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,14 +35,36 @@ class CustomImage extends StatelessWidget {
       curve: Curves.easeInOut,
       child: CachedNetworkImage(
         color: color,
-        imageUrl: kIsWeb ? '${AppConstants.baseUrl}/image-proxy?url=$image' : image, height: height, width: width, fit: fit,
+        imageUrl: kIsWeb
+            ? '${AppConstants.baseUrl}/image-proxy?url=$image'
+            : image,
+        height: height,
+        width: width,
+        fit: fit,
+        alignment: alignment,
         placeholder: (context, url) => Image.asset(
-          placeholder.isNotEmpty ? placeholder : (isNotification ? Images.notificationPlaceholder : Images.placeholder),
-          height: height, width: width, fit: fit, color: color,
+          placeholder.isNotEmpty
+              ? placeholder
+              : (isNotification
+                    ? Images.notificationPlaceholder
+                    : Images.placeholder),
+          height: height,
+          width: width,
+          fit: fit,
+          color: color,
+          alignment: alignment,
         ),
         errorWidget: (context, url, error) => Image.asset(
-          placeholder.isNotEmpty ? placeholder : (isNotification ? Images.notificationPlaceholder : Images.placeholder),
-          height: height, width: width, fit: fit, color: color,
+          placeholder.isNotEmpty
+              ? placeholder
+              : (isNotification
+                    ? Images.notificationPlaceholder
+                    : Images.placeholder),
+          height: height,
+          width: width,
+          fit: fit,
+          color: color,
+          alignment: alignment,
         ),
       ),
     );

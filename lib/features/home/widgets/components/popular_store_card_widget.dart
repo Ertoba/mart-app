@@ -57,6 +57,7 @@ class PopularStoreCard extends StatelessWidget {
                       isHovered: false,
                       image: '${store.coverPhotoFullUrl}',
                       fit: BoxFit.contain,
+                      alignment: Alignment.topCenter,
                       width: double.infinity,
                       height: 170,
                     ),

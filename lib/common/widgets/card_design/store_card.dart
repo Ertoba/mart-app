@@ -409,8 +409,8 @@ class StoreCard extends StatelessWidget {
                                         children: [
                                           Image.asset(
                                             Images.clockIcon,
-                                            height: 13.5,
-                                            width: 13.5,
+                                            height: 10,
+                                            width: 10,
                                             color:
                                                 Get.find<StoreController>()
                                                     .isOpenNow(store)

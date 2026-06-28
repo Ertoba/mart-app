@@ -7,6 +7,7 @@ import 'package:sixam_mart/features/item/controllers/item_controller.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
 import 'package:sixam_mart/features/home/widgets/components/item_that_you_love_card_widget.dart';
 import 'package:sixam_mart/features/home/widgets/components/review_item_card_widget.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
@@ -170,6 +171,8 @@ class _ItemThatYouLoveViewState extends State<ItemThatYouLoveView> {
                       ],
                     )
                   : const SizedBox()
+            : ModuleHelper.isBeerModule
+            ? const SizedBox()
             : ItemThatYouLoveShimmerView(forShop: widget.forShop);
       },
     );

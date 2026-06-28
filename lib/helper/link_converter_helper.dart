@@ -14,6 +14,11 @@ class LinkConverter {
         print('Received Deep Link URI: $uri');
       }
 
+      if (_isCustomerPaymentReturnUri(uri)) {
+        _navigateFromCustomerPaymentReturn(uri);
+        return null;
+      }
+
       String host = uri.host;
       if (host.isNotEmpty &&
           (AppConstants.webHostedUrl.contains(host) ||
@@ -130,5 +135,85 @@ class LinkConverter {
         });
       }
     }
+  }
+
+  static bool _isCustomerPaymentReturnUri(Uri uri) {
+    return uri.scheme == AppConstants.customerPaymentReturnScheme &&
+        uri.host == 'payment-return';
+  }
+
+  static void _navigateFromCustomerPaymentReturn(Uri uri) {
+    final String? orderID =
+        _firstNonEmptyQueryValue(uri, 'id') ??
+        _firstNonEmptyQueryValue(uri, 'order_id');
+    final String? status = _normalizePaymentStatus(
+      _firstNonEmptyQueryValue(uri, 'status') ??
+          _firstNonEmptyQueryValue(uri, 'flag'),
+    );
+
+    if (orderID == null || status == null) {
+      if (kDebugMode) {
+        print('=======Invalid customer payment return URI: $uri');
+      }
+      return;
+    }
+
+    final String? contactNumber = _firstNonEmptyQueryValue(
+      uri,
+      'contact_number',
+    );
+    final bool createAccount =
+        _firstNonEmptyQueryValue(uri, 'create_account') == 'true';
+    final String guestId = _firstNonEmptyQueryValue(uri, 'guest_id') ?? '';
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (status == 'success') {
+        Get.offNamed(
+          RouteHelper.getOrderSuccessRoute(
+            orderID,
+            contactNumber,
+            createAccount: createAccount,
+            guestId: guestId,
+          ),
+        );
+      } else {
+        Get.offNamed(
+          RouteHelper.getDigitalPaymentFailedScreen(
+            orderID,
+            createAccount: createAccount,
+          ),
+        );
+      }
+    });
+  }
+
+  static String? _firstNonEmptyQueryValue(Uri uri, String key) {
+    final List<String>? values = uri.queryParametersAll[key];
+    if (values == null || values.isEmpty) {
+      return null;
+    }
+    for (final String value in values.reversed) {
+      if (value.isNotEmpty) {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  static String? _normalizePaymentStatus(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'success':
+      case 'paid':
+        return 'success';
+      case 'fail':
+      case 'failed':
+      case 'failure':
+        return 'fail';
+      case 'cancel':
+      case 'canceled':
+      case 'cancelled':
+        return 'cancel';
+    }
+    return null;
   }
 }

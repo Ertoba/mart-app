@@ -27,6 +27,7 @@ class AppConstants {
   static const int balanceInputLen = 10;
   static const String webHostedUrl = 'https://mili.ge';
   static const String legacyWebHostedUrl = 'https://store.mili.ge';
+  static const String customerPaymentReturnScheme = 'mili-customer';
   static const bool useReactWebsite = false;
   static const String googleServerClientId =
       '491987943015-agln6biv84krpnngdphj87jkko7r9lb8.apps.googleusercontent.com';

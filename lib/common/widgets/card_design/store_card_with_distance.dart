@@ -108,6 +108,9 @@ class StoreCardWithDistance extends StatelessWidget {
                               fit: preserveCoverArtwork
                                   ? BoxFit.contain
                                   : BoxFit.cover,
+                              alignment: preserveCoverArtwork
+                                  ? Alignment.topCenter
+                                  : Alignment.center,
                               height: double.infinity,
                               width: double.infinity,
                             ),

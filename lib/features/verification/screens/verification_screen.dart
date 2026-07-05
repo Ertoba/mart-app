@@ -57,7 +57,6 @@ class VerificationScreenState extends State<VerificationScreen> {
   String? _email;
   Timer? _timer;
   int _seconds = 0;
-  final ScrollController _scrollController = ScrollController();
   late StreamController<ErrorAnimationType> errorController;
 
   bool hasError = false;
@@ -106,9 +105,14 @@ class VerificationScreenState extends State<VerificationScreen> {
   Widget build(BuildContext context) {
     final bool isDesktop = ResponsiveHelper.isDesktop(context);
     final bool isEmailVerification = _email != null && _email!.isNotEmpty;
-    final double contentWidth = context.width > 700 ? 500 : context.width;
-    final double pinFieldWidth = ((contentWidth - 76) / 6)
-        .clamp(42.0, 54.0)
+    final double screenHorizontalPadding = context.width > 700
+        ? Dimensions.paddingSizeDefault
+        : Dimensions.paddingSizeDefault;
+    final double contentWidth = context.width > 700
+        ? 500
+        : context.width - (screenHorizontalPadding * 2);
+    final double pinFieldWidth = ((contentWidth - 54) / 6)
+        .clamp(38.0, 46.0)
         .toDouble();
     const double borderWidth = 0.8;
 
@@ -127,203 +131,243 @@ class VerificationScreenState extends State<VerificationScreen> {
         child: Stack(
           children: [
             const _VerificationThemeBackground(),
-            Center(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Dimensions.paddingSizeDefault,
-                  vertical: Dimensions.paddingSizeDefault,
-                ),
-                child: Center(
-                  child: Container(
-                    width: contentWidth,
-                    padding: context.width > 700
-                        ? const EdgeInsets.all(Dimensions.paddingSizeExtraLarge)
-                        : EdgeInsets.zero,
-                    decoration: context.width > 700
-                        ? BoxDecoration(
-                            color: Theme.of(context).cardColor,
-                            borderRadius: BorderRadius.circular(
-                              Dimensions.radiusDefault,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Theme.of(
-                                  context,
-                                ).shadowColor.withValues(alpha: 0.08),
-                                blurRadius: 24,
-                                offset: const Offset(0, 14),
-                              ),
-                            ],
-                          )
-                        : null,
-                    child: GetBuilder<VerificationController>(
-                      builder: (verificationController) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (isDesktop) ...[
-                              Align(
-                                alignment: Alignment.topRight,
-                                child: IconButton(
-                                  onPressed: () => Get.back(),
-                                  icon: const Icon(Icons.clear),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  bottom: Dimensions.paddingSizeLarge,
-                                ),
-                                child: Text(
-                                  isEmailVerification
-                                      ? 'email_verification'.tr
-                                      : 'phone_verification'.tr,
-                                  style: robotoMedium.copyWith(
-                                    fontSize: Dimensions.fontSizeLarge,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ],
-
-                            _VerificationHero(
-                              isEmailVerification: isEmailVerification,
-                            ),
-                            const SizedBox(height: Dimensions.paddingSizeLarge),
-
-                            Text(
-                              'enter_code'.tr,
-                              textAlign: TextAlign.center,
-                              style: robotoBold.copyWith(
-                                fontSize: Dimensions.fontSizeOverLarge + 4,
-                                height: 1.15,
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge!.color,
-                              ),
-                            ),
-                            const SizedBox(height: Dimensions.paddingSizeSmall),
-
-                            Get.find<SplashController>().configModel!.demo!
-                                ? Text(
-                                    'for_demo_purpose'.tr,
-                                    style: robotoMedium.copyWith(
-                                      fontSize: Dimensions.fontSizeDefault,
-                                    ),
-                                    textAlign: TextAlign.center,
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenHorizontalPadding,
+                      vertical: Dimensions.paddingSizeSmall,
+                    ),
+                    child: SizedBox(
+                      width: contentWidth,
+                      height: constraints.maxHeight,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.center,
+                        child: SizedBox(
+                          width: contentWidth,
+                          child: Container(
+                            padding: context.width > 700
+                                ? const EdgeInsets.all(
+                                    Dimensions.paddingSizeLarge,
                                   )
-                                : _VerificationDestinationText(
-                                    isEmailVerification: isEmailVerification,
-                                    destination: isEmailVerification
-                                        ? _email
-                                        : _number,
-                                  ),
-                            const SizedBox(height: Dimensions.paddingSizeLarge),
-
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: Dimensions.paddingSizeSmall,
-                              ),
-                              child: PinCodeTextField(
-                                length: 6,
-                                appContext: context,
-                                keyboardType: TextInputType.number,
-                                animationType: AnimationType.fade,
-                                pinTheme: PinTheme(
-                                  shape: PinCodeFieldShape.box,
-                                  fieldHeight: 60,
-                                  fieldWidth: pinFieldWidth,
-                                  borderWidth: borderWidth,
-                                  borderRadius: BorderRadius.circular(
-                                    Dimensions.radiusDefault,
-                                  ),
-                                  selectedColor: Theme.of(context).primaryColor,
-                                  selectedFillColor: Theme.of(
-                                    context,
-                                  ).cardColor,
-                                  inactiveFillColor: Theme.of(
-                                    context,
-                                  ).cardColor,
-                                  inactiveColor: Theme.of(
-                                    context,
-                                  ).disabledColor.withValues(alpha: 0.55),
-                                  activeColor: hasError
-                                      ? Colors.orange
-                                      : Theme.of(
+                                : EdgeInsets.zero,
+                            decoration: context.width > 700
+                                ? BoxDecoration(
+                                    color: Theme.of(context).cardColor,
+                                    borderRadius: BorderRadius.circular(
+                                      Dimensions.radiusDefault,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Theme.of(
                                           context,
-                                        ).primaryColor.withValues(alpha: 0.4),
-                                  activeFillColor: Theme.of(context).cardColor,
-                                  inactiveBorderWidth: borderWidth,
-                                  selectedBorderWidth: 1.2,
-                                  disabledBorderWidth: borderWidth,
-                                  errorBorderWidth: borderWidth,
-                                  activeBorderWidth: borderWidth,
-                                ),
-                                animationDuration: const Duration(
-                                  milliseconds: 220,
-                                ),
-                                backgroundColor: Colors.transparent,
-                                enableActiveFill: true,
-                                textStyle: robotoMedium.copyWith(
-                                  fontSize: Dimensions.fontSizeOverLarge,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                                cursorColor: Theme.of(context).primaryColor,
-                                onChanged: verificationController
-                                    .updateVerificationCode,
-                                beforeTextPaste: (text) => true,
-                                errorAnimationController: errorController,
-                                errorTextSpace: 20,
-                                errorTextMargin: const EdgeInsets.only(top: 10),
-                              ),
-                            ),
+                                        ).shadowColor.withValues(alpha: 0.08),
+                                        blurRadius: 24,
+                                        offset: const Offset(0, 14),
+                                      ),
+                                    ],
+                                  )
+                                : null,
+                            child: GetBuilder<VerificationController>(
+                              builder: (verificationController) {
+                                return Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    if (isDesktop) ...[
+                                      Align(
+                                        alignment: Alignment.topRight,
+                                        child: IconButton(
+                                          onPressed: () => Get.back(),
+                                          icon: const Icon(Icons.clear),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: Dimensions.paddingSizeLarge,
+                                        ),
+                                        child: Text(
+                                          isEmailVerification
+                                              ? 'email_verification'.tr
+                                              : 'phone_verification'.tr,
+                                          style: robotoMedium.copyWith(
+                                            fontSize: Dimensions.fontSizeLarge,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ],
 
-                            Text(
-                              hasError ? errorMessage : '',
-                              textAlign: TextAlign.center,
-                              style: robotoRegular.copyWith(
-                                color: Colors.red,
-                                fontSize: Dimensions.fontSizeSmall,
-                              ),
-                            ),
-                            const SizedBox(
-                              height: Dimensions.paddingSizeDefault,
-                            ),
+                                    _VerificationHero(
+                                      isEmailVerification: isEmailVerification,
+                                    ),
+                                    const SizedBox(
+                                      height: Dimensions.paddingSizeDefault,
+                                    ),
 
-                            const _SecureAuthorizationCard(),
-                            const SizedBox(height: Dimensions.paddingSizeLarge),
+                                    Text(
+                                      'enter_code'.tr,
+                                      textAlign: TextAlign.center,
+                                      style: robotoBold.copyWith(
+                                        fontSize: Dimensions.fontSizeOverLarge,
+                                        height: 1.15,
+                                        color: Theme.of(
+                                          context,
+                                        ).textTheme.bodyLarge!.color,
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                      height: Dimensions.paddingSizeExtraSmall,
+                                    ),
 
-                            GetBuilder<ProfileController>(
-                              builder: (profileController) {
-                                return _VerificationSubmitButton(
-                                  isLoading:
-                                      verificationController.isLoading ||
-                                      profileController.isLoading,
-                                  onPressed: _verifyPressed(
-                                    verificationController,
-                                  ),
+                                    Get.find<SplashController>()
+                                            .configModel!
+                                            .demo!
+                                        ? Text(
+                                            'for_demo_purpose'.tr,
+                                            style: robotoMedium.copyWith(
+                                              fontSize:
+                                                  Dimensions.fontSizeSmall,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          )
+                                        : _VerificationDestinationText(
+                                            isEmailVerification:
+                                                isEmailVerification,
+                                            destination: isEmailVerification
+                                                ? _email
+                                                : _number,
+                                          ),
+                                    const SizedBox(
+                                      height: Dimensions.paddingSizeDefault,
+                                    ),
+
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical:
+                                            Dimensions.paddingSizeExtraSmall,
+                                      ),
+                                      child: PinCodeTextField(
+                                        length: 6,
+                                        appContext: context,
+                                        keyboardType: TextInputType.number,
+                                        animationType: AnimationType.fade,
+                                        pinTheme: PinTheme(
+                                          shape: PinCodeFieldShape.box,
+                                          fieldHeight: 50,
+                                          fieldWidth: pinFieldWidth,
+                                          borderWidth: borderWidth,
+                                          borderRadius: BorderRadius.circular(
+                                            Dimensions.radiusDefault,
+                                          ),
+                                          selectedColor: Theme.of(
+                                            context,
+                                          ).primaryColor,
+                                          selectedFillColor: Theme.of(
+                                            context,
+                                          ).cardColor,
+                                          inactiveFillColor: Theme.of(
+                                            context,
+                                          ).cardColor,
+                                          inactiveColor: Theme.of(context)
+                                              .disabledColor
+                                              .withValues(alpha: 0.55),
+                                          activeColor: hasError
+                                              ? Colors.orange
+                                              : Theme.of(context).primaryColor
+                                                    .withValues(alpha: 0.4),
+                                          activeFillColor: Theme.of(
+                                            context,
+                                          ).cardColor,
+                                          inactiveBorderWidth: borderWidth,
+                                          selectedBorderWidth: 1.2,
+                                          disabledBorderWidth: borderWidth,
+                                          errorBorderWidth: borderWidth,
+                                          activeBorderWidth: borderWidth,
+                                        ),
+                                        animationDuration: const Duration(
+                                          milliseconds: 220,
+                                        ),
+                                        backgroundColor: Colors.transparent,
+                                        enableActiveFill: true,
+                                        textStyle: robotoMedium.copyWith(
+                                          fontSize: Dimensions.fontSizeLarge,
+                                          color: Theme.of(context).primaryColor,
+                                        ),
+                                        cursorColor: Theme.of(
+                                          context,
+                                        ).primaryColor,
+                                        onChanged: verificationController
+                                            .updateVerificationCode,
+                                        beforeTextPaste: (text) => true,
+                                        errorAnimationController:
+                                            errorController,
+                                        errorTextSpace: 20,
+                                        errorTextMargin: const EdgeInsets.only(
+                                          top: 10,
+                                        ),
+                                      ),
+                                    ),
+
+                                    Text(
+                                      hasError ? errorMessage : '',
+                                      textAlign: TextAlign.center,
+                                      style: robotoRegular.copyWith(
+                                        color: Colors.red,
+                                        fontSize: Dimensions.fontSizeSmall,
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                      height: Dimensions.paddingSizeSmall,
+                                    ),
+
+                                    const _SecureAuthorizationCard(),
+                                    const SizedBox(
+                                      height: Dimensions.paddingSizeDefault,
+                                    ),
+
+                                    GetBuilder<ProfileController>(
+                                      builder: (profileController) {
+                                        return _VerificationSubmitButton(
+                                          isLoading:
+                                              verificationController
+                                                  .isLoading ||
+                                              profileController.isLoading,
+                                          onPressed: _verifyPressed(
+                                            verificationController,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(
+                                      height: Dimensions.paddingSizeSmall,
+                                    ),
+
+                                    _ResendCodeSection(
+                                      seconds: _seconds,
+                                      onResend: _seconds < 1
+                                          ? _resendCode
+                                          : null,
+                                    ),
+                                    const SizedBox(
+                                      height: Dimensions.paddingSizeDefault,
+                                    ),
+
+                                    const _VerificationSupportCard(),
+                                  ],
                                 );
                               },
                             ),
-                            const SizedBox(
-                              height: Dimensions.paddingSizeDefault,
-                            ),
-
-                            _ResendCodeSection(
-                              seconds: _seconds,
-                              onResend: _seconds < 1 ? _resendCode : null,
-                            ),
-                            const SizedBox(height: Dimensions.paddingSizeLarge),
-
-                            const _VerificationSupportCard(),
-                          ],
-                        );
-                      },
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ],
         ),
@@ -637,45 +681,45 @@ class _VerificationHero extends StatelessWidget {
     final Color primaryColor = Theme.of(context).primaryColor;
 
     return SizedBox(
-      height: 178,
+      height: 126,
       child: Stack(
         alignment: Alignment.center,
         children: [
           Positioned(
             left: 28,
-            bottom: 26,
+            bottom: 18,
             child: Icon(
               Icons.shield_outlined,
-              size: 86,
+              size: 60,
               color: primaryColor.withValues(alpha: 0.055),
             ),
           ),
           Positioned(
             right: 42,
-            top: 52,
+            top: 36,
             child: Icon(
               Icons.cloud_outlined,
-              size: 52,
+              size: 38,
               color: primaryColor.withValues(alpha: 0.06),
             ),
           ),
           Container(
-            height: 132,
-            width: 88,
+            height: 98,
+            width: 66,
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: primaryColor.withValues(alpha: 0.38),
-                width: 5,
+                width: 4,
               ),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  height: 16,
-                  width: 36,
+                  height: 12,
+                  width: 28,
                   decoration: BoxDecoration(
                     color: primaryColor.withValues(alpha: 0.24),
                     borderRadius: const BorderRadius.only(
@@ -688,13 +732,13 @@ class _VerificationHero extends StatelessWidget {
                   isEmailVerification
                       ? Icons.mark_email_read_outlined
                       : Icons.phone_iphone_rounded,
-                  size: 32,
+                  size: 24,
                   color: primaryColor.withValues(alpha: 0.28),
                 ),
                 Container(
-                  height: 5,
-                  width: 26,
-                  margin: const EdgeInsets.only(bottom: 14),
+                  height: 4,
+                  width: 20,
+                  margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
                     color: primaryColor.withValues(alpha: 0.28),
                     borderRadius: BorderRadius.circular(20),
@@ -704,20 +748,20 @@ class _VerificationHero extends StatelessWidget {
             ),
           ),
           Positioned(
-            right: 72,
-            bottom: 48,
+            right: 70,
+            bottom: 34,
             child: Container(
-              height: 56,
-              width: 130,
-              padding: const EdgeInsets.symmetric(horizontal: 18),
+              height: 42,
+              width: 104,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
                 color: primaryColor,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
                 boxShadow: [
                   BoxShadow(
-                    color: primaryColor.withValues(alpha: 0.24),
-                    blurRadius: 18,
-                    offset: const Offset(0, 10),
+                    color: primaryColor.withValues(alpha: 0.18),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -727,14 +771,14 @@ class _VerificationHero extends StatelessWidget {
                   const Icon(
                     Icons.lock_outline_rounded,
                     color: Colors.white,
-                    size: 24,
+                    size: 18,
                   ),
-                  const SizedBox(width: Dimensions.paddingSizeSmall),
+                  const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                   Text(
                     '***',
                     style: robotoBold.copyWith(
                       color: Colors.white,
-                      fontSize: Dimensions.fontSizeOverLarge,
+                      fontSize: Dimensions.fontSizeLarge,
                     ),
                   ),
                 ],
@@ -742,9 +786,9 @@ class _VerificationHero extends StatelessWidget {
             ),
           ),
           Positioned(
-            right: 48,
-            top: 44,
-            child: Icon(Icons.done_all_rounded, color: primaryColor, size: 30),
+            right: 52,
+            top: 30,
+            child: Icon(Icons.done_all_rounded, color: primaryColor, size: 24),
           ),
         ],
       ),
@@ -775,16 +819,16 @@ class _VerificationDestinationText extends StatelessWidget {
             text: '$copy\n',
             style: robotoRegular.copyWith(
               color: Theme.of(context).hintColor,
-              fontSize: Dimensions.fontSizeDefault,
-              height: 1.45,
+              fontSize: Dimensions.fontSizeSmall,
+              height: 1.30,
             ),
           ),
           TextSpan(
             text: destination ?? '',
             style: robotoBold.copyWith(
               color: Theme.of(context).primaryColor,
-              fontSize: Dimensions.fontSizeDefault,
-              height: 1.45,
+              fontSize: Dimensions.fontSizeSmall,
+              height: 1.30,
             ),
           ),
         ],
@@ -802,8 +846,8 @@ class _SecureAuthorizationCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: Dimensions.paddingSizeDefault,
-        vertical: Dimensions.paddingSizeDefault,
+        horizontal: Dimensions.paddingSizeSmall,
+        vertical: Dimensions.paddingSizeSmall,
       ),
       decoration: BoxDecoration(
         color: primaryColor.withValues(alpha: 0.06),
@@ -812,32 +856,32 @@ class _SecureAuthorizationCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            height: 42,
-            width: 42,
+            height: 34,
+            width: 34,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: primaryColor,
               boxShadow: [
                 BoxShadow(
                   color: primaryColor.withValues(alpha: 0.22),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: const Icon(
               Icons.verified_user_outlined,
               color: Colors.white,
-              size: 22,
+              size: 18,
             ),
           ),
-          const SizedBox(width: Dimensions.paddingSizeDefault),
+          const SizedBox(width: Dimensions.paddingSizeSmall),
           Expanded(
             child: Text(
               'safe_secure_authorization'.tr,
               style: robotoBold.copyWith(
                 color: primaryColor,
-                fontSize: Dimensions.fontSizeDefault,
+                fontSize: Dimensions.fontSizeSmall,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -866,7 +910,7 @@ class _VerificationSubmitButton extends StatelessWidget {
     return TextButton(
       onPressed: isLoading ? null : onPressed,
       style: TextButton.styleFrom(
-        minimumSize: const Size(double.infinity, 58),
+        minimumSize: const Size(double.infinity, 50),
         padding: EdgeInsets.zero,
         backgroundColor: isEnabled ? primaryColor : const Color(0xff93A2AE),
         shape: RoundedRectangleBorder(
@@ -901,7 +945,7 @@ class _VerificationSubmitButton extends StatelessWidget {
                     const Icon(
                       Icons.lock_outline_rounded,
                       color: Colors.white,
-                      size: 22,
+                      size: 20,
                     ),
                     const SizedBox(width: Dimensions.paddingSizeSmall),
                     Flexible(
@@ -912,7 +956,7 @@ class _VerificationSubmitButton extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: robotoBold.copyWith(
                           color: Colors.white,
-                          fontSize: Dimensions.fontSizeLarge,
+                          fontSize: Dimensions.fontSizeDefault,
                         ),
                       ),
                     ),
@@ -923,7 +967,7 @@ class _VerificationSubmitButton extends StatelessWidget {
                   child: Icon(
                     Icons.arrow_forward_rounded,
                     color: Colors.white,
-                    size: 30,
+                    size: 24,
                   ),
                 ),
               ],
@@ -950,7 +994,7 @@ class _ResendCodeSection extends StatelessWidget {
           textAlign: TextAlign.center,
           style: robotoRegular.copyWith(
             color: Theme.of(context).hintColor,
-            fontSize: Dimensions.fontSizeSmall,
+            fontSize: Dimensions.fontSizeExtraSmall,
           ),
         ),
         TextButton(
@@ -962,7 +1006,7 @@ class _ResendCodeSection extends StatelessWidget {
               color: onResend == null
                   ? Theme.of(context).disabledColor
                   : Theme.of(context).primaryColor,
-              fontSize: Dimensions.fontSizeDefault,
+              fontSize: Dimensions.fontSizeSmall,
             ),
           ),
         ),
@@ -982,7 +1026,7 @@ class _VerificationSupportCard extends StatelessWidget {
       onTap: () => Get.toNamed(RouteHelper.getSupportRoute()),
       borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
       child: Container(
-        padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+        padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
@@ -1000,8 +1044,8 @@ class _VerificationSupportCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              height: 48,
-              width: 48,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: primaryColor.withValues(alpha: 0.12),
@@ -1009,10 +1053,10 @@ class _VerificationSupportCard extends StatelessWidget {
               child: Icon(
                 Icons.headset_mic_outlined,
                 color: primaryColor,
-                size: 26,
+                size: 22,
               ),
             ),
-            const SizedBox(width: Dimensions.paddingSizeDefault),
+            const SizedBox(width: Dimensions.paddingSizeSmall),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1021,7 +1065,7 @@ class _VerificationSupportCard extends StatelessWidget {
                     'need_help'.tr,
                     style: robotoBold.copyWith(
                       color: Theme.of(context).textTheme.bodyLarge!.color,
-                      fontSize: Dimensions.fontSizeDefault,
+                      fontSize: Dimensions.fontSizeSmall,
                     ),
                   ),
                   const SizedBox(height: Dimensions.paddingSizeExtraSmall),
@@ -1029,7 +1073,7 @@ class _VerificationSupportCard extends StatelessWidget {
                     'contact_support_for_help'.tr,
                     style: robotoRegular.copyWith(
                       color: Theme.of(context).hintColor,
-                      fontSize: Dimensions.fontSizeSmall,
+                      fontSize: Dimensions.fontSizeExtraSmall,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

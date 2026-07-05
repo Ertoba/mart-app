@@ -163,11 +163,7 @@ class SignInScreenState extends State<SignInScreen> {
                           )
                         : const SizedBox(),
 
-                    Image.asset(
-                      Images.authLogo,
-                      width: 160,
-                      fit: BoxFit.contain,
-                    ),
+                    const _CustomerAuthLogo(),
                     const SizedBox(height: Dimensions.paddingSizeExtremeLarge),
 
                     SignInView(
@@ -182,6 +178,79 @@ class SignInScreenState extends State<SignInScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CustomerAuthLogo extends StatelessWidget {
+  const _CustomerAuthLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    final Color primaryColor = Theme.of(context).primaryColor;
+
+    return SizedBox(
+      height: 142,
+      width: 190,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            top: 6,
+            child: Container(
+              height: 126,
+              width: 126,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: primaryColor.withValues(alpha: 0.07),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 16,
+            bottom: 18,
+            child: Icon(
+              Icons.shopping_bag_outlined,
+              size: 42,
+              color: primaryColor.withValues(alpha: 0.12),
+            ),
+          ),
+          Positioned(
+            right: 12,
+            top: 28,
+            child: Icon(
+              Icons.location_on_outlined,
+              size: 38,
+              color: primaryColor.withValues(alpha: 0.13),
+            ),
+          ),
+          Container(
+            height: 92,
+            width: 92,
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(26),
+              boxShadow: [
+                BoxShadow(
+                  color: primaryColor.withValues(alpha: 0.18),
+                  blurRadius: 22,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.asset(
+                Images.appIconForeground,
+                color: primaryColor,
+                colorBlendMode: BlendMode.srcIn,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

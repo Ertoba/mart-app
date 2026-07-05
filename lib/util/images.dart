@@ -1,4 +1,8 @@
 class Images {
+  static const String appIcon =
+      'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png';
+  static const String appIconForeground =
+      'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png';
   static const String logo = 'assets/image/logo.png';
   static const String splashScreen = 'assets/image/splash.png';
   static const String authLogo = 'assets/image/auth_logo.png';

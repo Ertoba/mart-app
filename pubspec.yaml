@@ -102,6 +102,8 @@ flutter:
     - assets/image/
     - assets/image/rider/
     - assets/image/service/
+    - android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+    - android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
     - assets/language/
     - assets/language/ka.json
     - assets/language/ru.json

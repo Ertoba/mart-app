@@ -244,6 +244,9 @@ class Images {
   static const String uploadIcon = 'assets/image/upload_icon.png';
   static const String infoError = 'assets/image/info_error.png';
   static const String helpAndSupport = 'assets/image/help_and_support.png';
+  static const String miliSupportStatic =
+      'assets/image/mili_support_static.svg';
+  static const String miliEmptyCart = 'assets/image/mili_empty_cart.svg';
 
   ///Svg images
   static const String referBg = 'assets/image/refer_bg.svg';

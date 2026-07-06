@@ -5,6 +5,7 @@ import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/footer_view.dart';
 
@@ -78,58 +79,26 @@ class _EmptyCartView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(
-                height: 260,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      width: 260,
-                      height: 190,
-                      decoration: BoxDecoration(
-                        color: primaryColor.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(96),
-                      ),
-                    ),
-                    Image.asset(
-                      Images.emptyCart,
-                      width: 220,
-                      height: 220,
-                      fit: BoxFit.contain,
-                    ),
-                    Positioned(
-                      right: 70,
-                      top: 74,
-                      child: Icon(
-                        Icons.favorite_rounded,
-                        color: primaryColor.withValues(alpha: 0.70),
-                        size: 28,
-                      ),
-                    ),
-                  ],
+                height: 250,
+                child: SvgPicture.asset(
+                  Images.miliEmptyCart,
+                  fit: BoxFit.contain,
                 ),
               ),
               const SizedBox(height: Dimensions.paddingSizeDefault),
 
-              RichText(
+              Text(
+                'თქვენი კალათა ცარიელია',
                 textAlign: TextAlign.center,
-                text: TextSpan(
-                  style: robotoBold.copyWith(
-                    color: Theme.of(context).textTheme.bodyLarge!.color,
-                    fontSize: Dimensions.fontSizeOverLarge,
-                    height: 1.25,
-                  ),
-                  children: [
-                    const TextSpan(text: 'თქვენი კალათა '),
-                    TextSpan(
-                      text: 'ცარიელია',
-                      style: robotoBold.copyWith(color: primaryColor),
-                    ),
-                  ],
+                style: robotoBold.copyWith(
+                  color: Theme.of(context).textTheme.bodyLarge!.color,
+                  fontSize: Dimensions.fontSizeOverLarge,
+                  height: 1.25,
                 ),
               ),
               const SizedBox(height: Dimensions.paddingSizeSmall),
               Text(
-                'და დაამატე ნივთები, რომლებიც მოგეწონება მაღაზიებიდან',
+                'დაამატე ნივთები კალათაში, ისინი გამოჩნდება აქ',
                 textAlign: TextAlign.center,
                 style: robotoMedium.copyWith(
                   color: Theme.of(context).hintColor,

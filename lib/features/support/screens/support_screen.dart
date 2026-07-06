@@ -1,6 +1,7 @@
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/support/widgets/web_help_support_widget.dart';
 import 'package:sixam_mart/features/notification/domain/models/notification_body_model.dart';
+import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
@@ -11,8 +12,8 @@ import 'package:sixam_mart/common/widgets/footer_view.dart';
 import 'package:sixam_mart/common/widgets/menu_drawer.dart';
 import 'package:sixam_mart/util/styles.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import 'package:lottie/lottie.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class SupportScreen extends StatefulWidget {
@@ -114,6 +115,11 @@ class _SupportScreenState extends State<SupportScreen> {
   }
 
   void _openSupportChat() {
+    if (!AuthHelper.isLoggedIn()) {
+      Get.toNamed(RouteHelper.getSignInRoute(RouteHelper.support));
+      return;
+    }
+
     Get.toNamed(
       RouteHelper.getChatRoute(
         notificationBody: NotificationBodyModel(
@@ -140,18 +146,9 @@ class _SupportHero extends StatelessWidget {
         SizedBox(
           height: context.height * 0.25 > 220 ? 220 : context.height * 0.25,
           width: double.infinity,
-          child: Lottie.asset(
-            Images.liveChatbotAnimation,
+          child: SvgPicture.asset(
+            Images.miliSupportStatic,
             fit: BoxFit.contain,
-            repeat: true,
-            animate: true,
-            frameRate: FrameRate.max,
-            delegates: LottieDelegates(
-              values: [
-                ValueDelegate.color(['**'], value: primaryColor),
-                ValueDelegate.strokeColor(['**'], value: primaryColor),
-              ],
-            ),
           ),
         ),
         const SizedBox(height: Dimensions.paddingSizeDefault),

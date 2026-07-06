@@ -117,6 +117,7 @@ class VerificationScreenState extends State<VerificationScreen> {
     const double borderWidth = 0.8;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: isDesktop
           ? null
           : CustomAppBar(
@@ -324,11 +325,6 @@ class VerificationScreenState extends State<VerificationScreen> {
                                       height: Dimensions.paddingSizeSmall,
                                     ),
 
-                                    const _SecureAuthorizationCard(),
-                                    const SizedBox(
-                                      height: Dimensions.paddingSizeDefault,
-                                    ),
-
                                     GetBuilder<ProfileController>(
                                       builder: (profileController) {
                                         return _VerificationSubmitButton(
@@ -344,6 +340,11 @@ class VerificationScreenState extends State<VerificationScreen> {
                                     ),
                                     const SizedBox(
                                       height: Dimensions.paddingSizeSmall,
+                                    ),
+
+                                    const _SecureAuthorizationCard(),
+                                    const SizedBox(
+                                      height: Dimensions.paddingSizeDefault,
                                     ),
 
                                     _ResendCodeSection(

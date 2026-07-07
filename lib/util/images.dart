@@ -246,7 +246,8 @@ class Images {
   static const String helpAndSupport = 'assets/image/help_and_support.png';
   static const String miliSupportStatic =
       'assets/image/mili_support_static.svg';
-  static const String miliEmptyCart = 'assets/image/mili_empty_cart.svg';
+  static const String manShoppingSupermarket =
+      'assets/image/man_shopping_supermarket.jpg';
 
   ///Svg images
   static const String referBg = 'assets/image/refer_bg.svg';

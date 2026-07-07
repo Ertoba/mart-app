@@ -5,7 +5,6 @@ import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/footer_view.dart';
 
@@ -80,8 +79,8 @@ class _EmptyCartView extends StatelessWidget {
             children: [
               SizedBox(
                 height: 250,
-                child: SvgPicture.asset(
-                  Images.miliEmptyCart,
+                child: Image.asset(
+                  Images.manShoppingSupermarket,
                   fit: BoxFit.contain,
                 ),
               ),

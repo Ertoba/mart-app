@@ -21,8 +21,10 @@ import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
+import 'package:sixam_mart/features/order/domain/models/order_model.dart';
 import 'package:sixam_mart/features/payment/domain/models/keepz_payment_option.dart';
 import 'package:sixam_mart/features/payment/domain/models/offline_method_model.dart';
+import 'package:sixam_mart/features/payment/screens/keepz_native_payment_screen.dart';
 import 'package:sixam_mart/features/checkout/domain/models/place_order_body_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/timeslote_model.dart';
 import 'package:sixam_mart/features/checkout/domain/services/checkout_service_interface.dart';
@@ -742,12 +744,29 @@ class CheckoutController extends GetxController implements GetxService {
               '&payment_method=$digitalPaymentName&payment_platform=web&&callback=$protocol//$hostname${RouteHelper.orderSuccess}?id=$orderID&status=';
 
           html.window.open(selectedUrl, "_self");
+        } else if (_digitalPaymentName == 'keepz') {
+          await KeepzPaymentLauncher.show(
+            orderModel: OrderModel(
+              id: int.parse(orderID),
+              orderType: orderType,
+              userId:
+                  Get.find<ProfileController>().userInfoModel?.id ??
+                  (int.tryParse(userID) ?? 0),
+              orderAmount: amount,
+            ),
+            isCashOnDelivery: isCashOnDeliveryActive,
+            paymentMethod: digitalPaymentName ?? 'keepz',
+            guestId: userID.isNotEmpty ? userID : AuthHelper.getGuestId(),
+            contactNumber: contactNumber ?? '',
+            createAccount: _isCreateAccount,
+            keepzMethodKey: _keepzPaymentOptionKey,
+          );
         } else {
           Get.offNamed(
             RouteHelper.getPaymentRoute(
               orderID,
               Get.find<ProfileController>().userInfoModel?.id ??
-                  (userID.isNotEmpty ? int.parse(userID) : 0),
+                  (int.tryParse(userID) ?? 0),
               orderType,
               amount,
               isCashOnDeliveryActive,
@@ -839,6 +858,21 @@ class CheckoutController extends GetxController implements GetxService {
             '&payment_method=$digitalPaymentName&payment_platform=web&&callback=$protocol//$hostname${RouteHelper.orderSuccess}?id=${paymentData.orderID}&status=';
 
         html.window.open(selectedUrl, "_self");
+      } else if (_digitalPaymentName == 'keepz') {
+        await KeepzPaymentLauncher.show(
+          orderModel: OrderModel(
+            id: int.parse(paymentData.orderID!),
+            orderType: paymentData.orderType,
+            userId: Get.find<ProfileController>().userInfoModel?.id ?? 0,
+            orderAmount: paymentData.orderAmount,
+          ),
+          isCashOnDelivery: paymentData.isCashOnDeliveryActive ?? false,
+          paymentMethod: digitalPaymentName ?? 'keepz',
+          guestId: AuthHelper.getGuestId(),
+          contactNumber: paymentData.contactNumber ?? '',
+          createAccount: false,
+          keepzMethodKey: _keepzPaymentOptionKey,
+        );
       } else {
         Get.offNamed(
           RouteHelper.getPaymentRoute(

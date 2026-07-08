@@ -50,6 +50,411 @@ class KeepzNativePaymentScreen extends StatefulWidget {
       _KeepzNativePaymentScreenState();
 }
 
+class KeepzPaymentLauncher {
+  static Future<void> show({
+    required OrderModel orderModel,
+    required bool isCashOnDelivery,
+    required String paymentMethod,
+    required String guestId,
+    required String contactNumber,
+    required bool createAccount,
+    int? createUserId,
+    String? keepzMethodKey,
+  }) async {
+    final String? status = await Get.bottomSheet<String>(
+      _KeepzBottomSheetFlow(
+        orderModel: orderModel,
+        isCashOnDelivery: isCashOnDelivery,
+        paymentMethod: paymentMethod,
+        guestId: guestId,
+        contactNumber: contactNumber,
+        createAccount: createAccount,
+        createUserId: createUserId,
+        keepzMethodKey: keepzMethodKey,
+      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      ignoreSafeArea: false,
+    );
+
+    if (status != null) {
+      _navigateOrderPaymentResult(
+        status: status,
+        orderId: orderModel.id.toString(),
+        contactNumber: contactNumber,
+        createAccount: createAccount,
+        guestId: guestId,
+      );
+      return;
+    }
+
+    await _resolveClosedOrderPayment(
+      orderId: orderModel.id.toString(),
+      contactNumber: contactNumber,
+      createAccount: createAccount,
+      guestId: guestId,
+      navigateOnUnresolved: false,
+    );
+  }
+
+  static Future<void> _resolveClosedOrderPayment({
+    required String orderId,
+    required String contactNumber,
+    required bool createAccount,
+    required String guestId,
+    bool navigateOnUnresolved = true,
+  }) async {
+    final String? status = await _readClosedOrderPaymentStatus(
+      orderId: orderId,
+      contactNumber: contactNumber,
+    );
+
+    if (status != null) {
+      _navigateOrderPaymentResult(
+        status: status,
+        orderId: orderId,
+        contactNumber: contactNumber,
+        createAccount: createAccount,
+        guestId: guestId,
+      );
+      return;
+    }
+
+    if (navigateOnUnresolved) {
+      showCustomSnackBar(
+        'გადახდა ჯერ არ დადასტურებულა. სტატუსი მოგვიანებით გადაამოწმე.',
+      );
+    }
+  }
+
+  static Future<String?> _readClosedOrderPaymentStatus({
+    required String orderId,
+    required String contactNumber,
+  }) async {
+    final OrderController orderController = Get.find<OrderController>();
+    for (int attempt = 0; attempt < 3; attempt++) {
+      await orderController.trackOrder(
+        orderId,
+        null,
+        false,
+        contactNumber: contactNumber,
+      );
+      final OrderModel? order = orderController.trackModel;
+
+      if (order != null && _isPaidOrder(order)) {
+        return 'success';
+      }
+
+      if (order != null &&
+          (order.orderStatus == 'failed' || order.orderStatus == 'canceled')) {
+        return 'fail';
+      }
+
+      if (attempt < 2) {
+        await Future<void>.delayed(const Duration(milliseconds: 800));
+      }
+    }
+
+    return null;
+  }
+
+  static bool _isPaidOrder(OrderModel order) {
+    return order.paymentStatus == 'paid' ||
+        order.paymentMethod == 'cash_on_delivery' ||
+        order.paymentMethod == 'partial_payment' ||
+        order.paymentMethod == 'wallet';
+  }
+
+  static void _navigateOrderPaymentResult({
+    required String status,
+    required String orderId,
+    required String contactNumber,
+    required bool createAccount,
+    required String guestId,
+  }) {
+    if (Get.isBottomSheetOpen == true) {
+      Get.back();
+    }
+
+    if (status == 'success') {
+      Get.offNamed(
+        RouteHelper.getOrderSuccessRoute(
+          orderId,
+          contactNumber,
+          createAccount: createAccount,
+          guestId: guestId,
+        ),
+      );
+      return;
+    }
+
+    Get.offNamed(
+      RouteHelper.getDigitalPaymentFailedScreen(
+        orderId,
+        createAccount: createAccount,
+      ),
+    );
+  }
+}
+
+class _KeepzBottomSheetFlow extends StatefulWidget {
+  final OrderModel orderModel;
+  final bool isCashOnDelivery;
+  final String paymentMethod;
+  final String guestId;
+  final String contactNumber;
+  final bool createAccount;
+  final int? createUserId;
+  final String? keepzMethodKey;
+
+  const _KeepzBottomSheetFlow({
+    required this.orderModel,
+    required this.isCashOnDelivery,
+    required this.paymentMethod,
+    required this.guestId,
+    required this.contactNumber,
+    required this.createAccount,
+    required this.createUserId,
+    required this.keepzMethodKey,
+  });
+
+  @override
+  State<_KeepzBottomSheetFlow> createState() => _KeepzBottomSheetFlowState();
+}
+
+class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
+    with WidgetsBindingObserver {
+  String? _hostedUrl;
+  String? _statusMessage;
+  bool _isLoading = true;
+  bool _awaitingExternalPayment = false;
+  bool _checkingStatus = false;
+
+  KeepzPaymentOption get _selectedOption =>
+      KeepzPaymentOption.fromKey(widget.keepzMethodKey) ??
+      KeepzPaymentOption.defaultOption;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_startSelectedPayment());
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _awaitingExternalPayment) {
+      unawaited(_resolveExternalPayment());
+    }
+  }
+
+  Future<void> _startSelectedPayment() async {
+    final KeepzPaymentOption option = _selectedOption;
+
+    try {
+      final _KeepzIntent intent = await _fetchIntent(
+        flow: option.flow,
+        provider: option.provider,
+      );
+
+      final bool shouldTryExternal =
+          option.externalFirst && intent.action == 'external_non_browser';
+      if (shouldTryExternal && await _openExternalBankApp(intent.url)) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _isLoading = false;
+          _awaitingExternalPayment = true;
+          _statusMessage =
+              'გადახდის დასრულების შემდეგ დაბრუნდი აპში და სტატუსი გადამოწმდება.';
+        });
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hostedUrl = intent.url;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _statusMessage = _readableError(error);
+        });
+      }
+    }
+  }
+
+  Future<_KeepzIntent> _fetchIntent({
+    required String flow,
+    required String provider,
+  }) async {
+    final String customerId = widget.orderModel.userId == 0
+        ? widget.guestId
+        : widget.orderModel.userId.toString();
+
+    final Map<String, String> queryParameters = <String, String>{
+      'customer_id': customerId,
+      'order_id': widget.orderModel.id.toString(),
+      'payment_method': widget.paymentMethod,
+      'payment_platform': 'app',
+      'keepz_flow': flow,
+    };
+
+    if (provider.isNotEmpty) {
+      queryParameters['keepz_provider'] = provider;
+    }
+
+    if (GetPlatform.isIOS) {
+      queryParameters['callback'] = _buildIosPaymentReturnUrl();
+    }
+
+    final Uri uri = Uri.parse(
+      '${AppConstants.baseUrl}/payment-mobile/keepz-intent',
+    ).replace(queryParameters: queryParameters);
+
+    final http.Response response = await http.get(uri);
+    dynamic decodedBody;
+    try {
+      decodedBody = jsonDecode(response.body);
+    } catch (_) {
+      decodedBody = null;
+    }
+
+    if (response.statusCode != 200 || decodedBody is! Map<String, dynamic>) {
+      throw _extractBackendMessage(decodedBody);
+    }
+
+    return _KeepzIntent.fromJson(decodedBody);
+  }
+
+  Future<bool> _openExternalBankApp(String url) async {
+    final Uri? uri = Uri.tryParse(url);
+    if (uri == null) {
+      return false;
+    }
+
+    try {
+      return await launchUrl(
+        uri,
+        mode: LaunchMode.externalNonBrowserApplication,
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
+  String _buildIosPaymentReturnUrl() {
+    return Uri(
+      scheme: AppConstants.customerPaymentReturnScheme,
+      host: 'payment-return',
+      path: '/order',
+      queryParameters: <String, String>{
+        'id': widget.orderModel.id.toString(),
+        'contact_number': widget.contactNumber,
+        'create_account': widget.createAccount.toString(),
+        'guest_id': widget.createAccount
+            ? (widget.createUserId?.toString() ?? widget.guestId)
+            : widget.guestId,
+      },
+    ).toString();
+  }
+
+  Future<void> _resolveExternalPayment() async {
+    if (_checkingStatus) {
+      return;
+    }
+
+    setState(() {
+      _checkingStatus = true;
+    });
+
+    final String? status =
+        await KeepzPaymentLauncher._readClosedOrderPaymentStatus(
+          orderId: widget.orderModel.id.toString(),
+          contactNumber: widget.contactNumber,
+        );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (status != null) {
+      Navigator.of(context).pop(status);
+      return;
+    }
+
+    showCustomSnackBar(
+      'გადახდა ჯერ არ დადასტურებულა. სტატუსი მოგვიანებით გადაამოწმე.',
+    );
+
+    if (mounted) {
+      setState(() {
+        _checkingStatus = false;
+      });
+    }
+  }
+
+  String _extractBackendMessage(dynamic decodedBody) {
+    if (decodedBody is Map<String, dynamic>) {
+      if ((decodedBody['message'] as String?)?.isNotEmpty ?? false) {
+        return decodedBody['message'] as String;
+      }
+
+      final dynamic errors = decodedBody['errors'];
+      if (errors is List && errors.isNotEmpty) {
+        final dynamic firstError = errors.first;
+        if (firstError is Map<String, dynamic> &&
+            ((firstError['message'] as String?)?.isNotEmpty ?? false)) {
+          return firstError['message'] as String;
+        }
+      }
+    }
+
+    return 'Keepz გადახდის ინიციალიზაცია ვერ მოხერხდა';
+  }
+
+  String _readableError(dynamic error) {
+    if (error is String && error.isNotEmpty) {
+      return error;
+    }
+
+    return 'გადახდა ვერ შესრულდა';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hostedUrl != null) {
+      return _KeepzWebViewSheet(initialUrl: _hostedUrl!);
+    }
+
+    return _KeepzLoadingSheet(
+      option: _selectedOption,
+      isLoading: _isLoading || _checkingStatus,
+      statusMessage: _statusMessage,
+      onRetry: () {
+        setState(() {
+          _isLoading = true;
+          _statusMessage = null;
+        });
+        unawaited(_startSelectedPayment());
+      },
+      onCheckStatus: _resolveExternalPayment,
+    );
+  }
+}
+
 class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
     with WidgetsBindingObserver {
   String? _loadingKey;
@@ -681,6 +1086,136 @@ class _KeepzPreparingSheet extends StatelessWidget {
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _KeepzLoadingSheet extends StatelessWidget {
+  final KeepzPaymentOption option;
+  final bool isLoading;
+  final String? statusMessage;
+  final VoidCallback onRetry;
+  final VoidCallback onCheckStatus;
+
+  const _KeepzLoadingSheet({
+    required this.option,
+    required this.isLoading,
+    required this.statusMessage,
+    required this.onRetry,
+    required this.onCheckStatus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(Dimensions.radiusLarge),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+              width: 42,
+              height: 5,
+              decoration: BoxDecoration(
+                color: Theme.of(context).disabledColor.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: <Widget>[
+                Container(
+                  width: 48,
+                  height: 48,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Image.asset(
+                    option.iconAsset,
+                    width: 34,
+                    height: 34,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'გადახდის მეთოდი',
+                        style: robotoRegular.copyWith(
+                          color: Theme.of(context).hintColor,
+                          fontSize: Dimensions.fontSizeSmall,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        option.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: robotoSemiBold.copyWith(
+                          fontSize: Dimensions.fontSizeDefault,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isLoading)
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.4,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            if (statusMessage != null) ...<Widget>[
+              const SizedBox(height: Dimensions.paddingSizeDefault),
+              Text(
+                statusMessage!,
+                style: robotoRegular.copyWith(
+                  color: Theme.of(context).textTheme.bodyLarge!.color,
+                ),
+              ),
+              const SizedBox(height: Dimensions.paddingSizeDefault),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: isLoading ? null : onCheckStatus,
+                      child: const Text('სტატუსის შემოწმება'),
+                    ),
+                  ),
+                  const SizedBox(width: Dimensions.paddingSizeSmall),
+                  Expanded(
+                    child: CustomButton(
+                      buttonText: 'ხელახლა გახსნა',
+                      isLoading: isLoading,
+                      onPressed: isLoading ? null : onRetry,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

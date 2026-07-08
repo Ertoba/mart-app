@@ -58,8 +58,8 @@ class KeepzPaymentOption {
   static const KeepzPaymentOption card = KeepzPaymentOption(
     key: 'card',
     title: 'საბანკო ბარათი',
-    flow: 'hosted',
-    provider: '',
+    flow: 'card',
+    provider: 'BOG',
     iconAsset: Images.keepzCard,
   );
 

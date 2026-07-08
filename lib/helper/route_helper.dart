@@ -56,6 +56,7 @@ import 'package:sixam_mart/features/chat/screens/conversation_screen.dart';
 import 'package:sixam_mart/features/checkout/screens/checkout_screen.dart';
 import 'package:sixam_mart/features/payment/screens/offline_payment_screen.dart';
 import 'package:sixam_mart/features/payment/screens/flitt_mobile_payment_screen.dart';
+import 'package:sixam_mart/features/payment/screens/keepz_native_payment_screen.dart';
 import 'package:sixam_mart/features/checkout/screens/order_successful_screen.dart';
 import 'package:sixam_mart/features/payment/screens/payment_screen.dart';
 import 'package:sixam_mart/features/payment/screens/payment_webview_screen.dart';
@@ -317,8 +318,15 @@ class RouteHelper {
     int? storeId,
     bool? createAccount,
     int? createUserId,
-  }) =>
-      '$payment?id=$id&user=$user&type=$type&amount=$amount&cod-delivery=$codDelivery&add-fund-url=$addFundUrl&payment-method=$paymentMethod&guest-id=$guestId&number=$contactNumber&subscription-url=$subscriptionUrl&store_id=$storeId&create_account=$createAccount&create_user_id=$createUserId';
+    String? keepzMethodKey,
+  }) {
+    final String keepzQuery =
+        keepzMethodKey != null && keepzMethodKey.isNotEmpty
+        ? '&keepz-method=${Uri.encodeQueryComponent(keepzMethodKey)}'
+        : '';
+
+    return '$payment?id=$id&user=$user&type=$type&amount=$amount&cod-delivery=$codDelivery&add-fund-url=$addFundUrl&payment-method=$paymentMethod&guest-id=$guestId&number=$contactNumber&subscription-url=$subscriptionUrl&store_id=$storeId&create_account=$createAccount&create_user_id=$createUserId$keepzQuery';
+  }
 
   static String getCheckoutRoute(String page, {int? storeId}) =>
       '$checkout?page=$page${storeId != null ? '&store-id=$storeId' : ''}&module=${ModuleHelper.getModule()?.slug ?? ModuleHelper.getModule()?.id ?? ModuleHelper.getCacheModule()?.slug}';
@@ -890,6 +898,7 @@ class RouteHelper {
         }
         String guestId = Get.parameters['guest-id']!;
         String number = Get.parameters['number']!;
+        String? keepzMethodKey = Get.parameters['keepz-method'];
         int? storeId =
             (Get.parameters['store_id'] != null &&
                 Get.parameters['store_id'] != 'null')
@@ -905,6 +914,12 @@ class RouteHelper {
             !GetPlatform.isWeb &&
             paymentMethod == 'flitt' &&
             (GetPlatform.isAndroid || GetPlatform.isIOS);
+        final bool useKeepzNativeFlow =
+            !GetPlatform.isWeb &&
+            paymentMethod == 'keepz' &&
+            addFundUrl.isEmpty &&
+            subscriptionUrl.isEmpty &&
+            (GetPlatform.isAndroid || GetPlatform.isIOS);
         return getRoute(
           useFlittMobileSdk
               ? FlittMobilePaymentScreen(
@@ -918,6 +933,17 @@ class RouteHelper {
                   storeId: storeId,
                   createAccount: createAccount,
                   createUserId: createUserId,
+                )
+              : useKeepzNativeFlow
+              ? KeepzNativePaymentScreen(
+                  orderModel: order,
+                  isCashOnDelivery: isCodActive,
+                  paymentMethod: paymentMethod,
+                  guestId: guestId,
+                  contactNumber: number,
+                  createAccount: createAccount,
+                  createUserId: createUserId,
+                  keepzMethodKey: keepzMethodKey,
                 )
               : AppConstants.payInWevView
               ? PaymentWebViewScreen(

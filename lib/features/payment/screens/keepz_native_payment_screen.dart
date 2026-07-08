@@ -1,0 +1,1011 @@
+import 'dart:async';
+import 'dart:collection';
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:sixam_mart/common/widgets/custom_app_bar.dart';
+import 'package:sixam_mart/common/widgets/custom_button.dart';
+import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
+import 'package:sixam_mart/features/checkout/widgets/payment_failed_dialog.dart';
+import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
+import 'package:sixam_mart/features/order/controllers/order_controller.dart';
+import 'package:sixam_mart/features/order/domain/models/order_model.dart';
+import 'package:sixam_mart/features/payment/domain/models/keepz_payment_option.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
+import 'package:sixam_mart/helper/address_helper.dart';
+import 'package:sixam_mart/helper/price_converter.dart';
+import 'package:sixam_mart/helper/route_helper.dart';
+import 'package:sixam_mart/util/app_constants.dart';
+import 'package:sixam_mart/util/dimensions.dart';
+import 'package:sixam_mart/util/styles.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+class KeepzNativePaymentScreen extends StatefulWidget {
+  final OrderModel orderModel;
+  final bool isCashOnDelivery;
+  final String paymentMethod;
+  final String guestId;
+  final String contactNumber;
+  final bool createAccount;
+  final int? createUserId;
+  final String? keepzMethodKey;
+
+  const KeepzNativePaymentScreen({
+    super.key,
+    required this.orderModel,
+    required this.isCashOnDelivery,
+    required this.paymentMethod,
+    required this.guestId,
+    required this.contactNumber,
+    this.createAccount = false,
+    this.createUserId,
+    this.keepzMethodKey,
+  });
+
+  @override
+  State<KeepzNativePaymentScreen> createState() =>
+      _KeepzNativePaymentScreenState();
+}
+
+class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
+    with WidgetsBindingObserver {
+  String? _loadingKey;
+  String? _statusMessage;
+  bool _awaitingExternalPayment = false;
+  bool _checkingStatus = false;
+  bool _autoStarted = false;
+  double? _maximumCodOrderAmount;
+
+  KeepzPaymentOption get _selectedOption =>
+      KeepzPaymentOption.fromKey(widget.keepzMethodKey) ??
+      KeepzPaymentOption.defaultOption;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _initData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_startSelectedPayment());
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _awaitingExternalPayment) {
+      unawaited(_resolveClosedOrderPayment());
+    }
+  }
+
+  void _initData() {
+    for (final ZoneData zData
+        in AddressHelper.getUserAddressFromSharedPref()?.zoneData ??
+            <ZoneData>[]) {
+      for (final Modules module in zData.modules ?? <Modules>[]) {
+        if (module.id == Get.find<SplashController>().module?.id) {
+          _maximumCodOrderAmount = module.pivot?.maximumCodOrderAmount;
+          break;
+        }
+      }
+    }
+  }
+
+  Future<void> _startSelectedPayment() async {
+    if (_autoStarted || !mounted) {
+      return;
+    }
+
+    _autoStarted = true;
+    final KeepzPaymentOption option = _selectedOption;
+
+    if (option.requiresPersonalNumber) {
+      final String? personalNumber = await _requestInstallmentPersonalNumber();
+      if (!mounted) {
+        return;
+      }
+      if (personalNumber == null || personalNumber.isEmpty) {
+        setState(() {
+          _statusMessage =
+              'გადახდა არ დაწყებულა. გასაგრძელებლად გახსენი გადახდა ხელახლა.';
+        });
+        return;
+      }
+
+      await _runPaymentAction(
+        loadingKey: option.key,
+        flow: option.flow,
+        provider: option.provider,
+        personalNumber: personalNumber,
+        externalFirst: option.externalFirst,
+      );
+      return;
+    }
+
+    await _runPaymentAction(
+      loadingKey: option.key,
+      flow: option.flow,
+      provider: option.provider,
+      externalFirst: option.externalFirst,
+    );
+  }
+
+  Future<void> _retrySelectedPayment() async {
+    _autoStarted = false;
+    await _startSelectedPayment();
+  }
+
+  Future<void> _runPaymentAction({
+    required String loadingKey,
+    required String flow,
+    required String provider,
+    required bool externalFirst,
+    String? personalNumber,
+  }) async {
+    if (_loadingKey != null) {
+      return;
+    }
+
+    setState(() {
+      _loadingKey = loadingKey;
+      _statusMessage = null;
+    });
+
+    try {
+      final _KeepzIntent intent = await _fetchIntent(
+        flow: flow,
+        provider: provider,
+        personalNumber: personalNumber,
+      );
+
+      final bool shouldTryExternal =
+          externalFirst && intent.action == 'external_non_browser';
+      if (shouldTryExternal && await _openExternalBankApp(intent.url)) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _awaitingExternalPayment = true;
+          _statusMessage =
+              'გადახდის დასრულების შემდეგ დაბრუნდი აპში და სტატუსი გადამოწმდება.';
+        });
+        return;
+      }
+
+      await _openHostedBottomSheet(intent.url);
+    } catch (error) {
+      showCustomSnackBar(_readableError(error));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingKey = null;
+        });
+      }
+    }
+  }
+
+  Future<_KeepzIntent> _fetchIntent({
+    required String flow,
+    required String provider,
+    String? personalNumber,
+  }) async {
+    final String customerId = widget.orderModel.userId == 0
+        ? widget.guestId
+        : widget.orderModel.userId.toString();
+
+    final Map<String, String> queryParameters = <String, String>{
+      'customer_id': customerId,
+      'order_id': widget.orderModel.id.toString(),
+      'payment_method': widget.paymentMethod,
+      'payment_platform': 'app',
+      'keepz_flow': flow,
+      'keepz_provider': provider,
+    };
+
+    if (personalNumber != null && personalNumber.isNotEmpty) {
+      queryParameters['personal_number'] = personalNumber;
+      queryParameters['is_foreign'] = 'false';
+    }
+
+    if (GetPlatform.isIOS) {
+      queryParameters['callback'] = _buildIosPaymentReturnUrl();
+    }
+
+    final Uri uri = Uri.parse(
+      '${AppConstants.baseUrl}/payment-mobile/keepz-intent',
+    ).replace(queryParameters: queryParameters);
+
+    final http.Response response = await http.get(uri);
+    dynamic decodedBody;
+    try {
+      decodedBody = jsonDecode(response.body);
+    } catch (_) {
+      decodedBody = null;
+    }
+
+    if (response.statusCode != 200 || decodedBody is! Map<String, dynamic>) {
+      throw _extractBackendMessage(decodedBody);
+    }
+
+    return _KeepzIntent.fromJson(decodedBody);
+  }
+
+  Future<bool> _openExternalBankApp(String url) async {
+    final Uri? uri = Uri.tryParse(url);
+    if (uri == null) {
+      return false;
+    }
+
+    try {
+      return await launchUrl(
+        uri,
+        mode: LaunchMode.externalNonBrowserApplication,
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _openHostedBottomSheet(String url) async {
+    if (!mounted) {
+      return;
+    }
+
+    final String? status = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return _KeepzWebViewSheet(initialUrl: url);
+      },
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (status != null) {
+      _navigateOrderPaymentResult(status);
+      return;
+    }
+
+    await _resolveClosedOrderPayment();
+  }
+
+  Future<String?> _requestInstallmentPersonalNumber() {
+    final TextEditingController controller = TextEditingController();
+
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setSheetState) {
+            final String value = controller.text.trim();
+            final bool isValid = value.length == 9 || value.length == 11;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(Dimensions.radiusLarge),
+                  ),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Center(
+                        child: Container(
+                          width: 42,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).disabledColor.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        'დაყავი 4 ნაწილად',
+                        style: robotoBold.copyWith(
+                          fontSize: Dimensions.fontSizeLarge,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'გაგრძელებისთვის შეიყვანე პირადი ნომერი.',
+                        style: robotoRegular.copyWith(
+                          color: Theme.of(context).hintColor,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: controller,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: <TextInputFormatter>[
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(11),
+                        ],
+                        decoration: InputDecoration(
+                          labelText: 'პირადი ნომერი',
+                          hintText: '9 ან 11 ციფრი',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                              Dimensions.radiusSmall,
+                            ),
+                          ),
+                        ),
+                        onChanged: (_) => setSheetState(() {}),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('დახურვა'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: CustomButton(
+                              buttonText: 'გაგრძელება',
+                              onPressed: isValid
+                                  ? () => Navigator.of(context).pop(value)
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ).whenComplete(controller.dispose);
+  }
+
+  String _buildIosPaymentReturnUrl() {
+    return Uri(
+      scheme: AppConstants.customerPaymentReturnScheme,
+      host: 'payment-return',
+      path: '/order',
+      queryParameters: <String, String>{
+        'id': widget.orderModel.id.toString(),
+        'contact_number': widget.contactNumber,
+        'create_account': widget.createAccount.toString(),
+        'guest_id': widget.createAccount
+            ? (widget.createUserId?.toString() ?? widget.guestId)
+            : widget.guestId,
+      },
+    ).toString();
+  }
+
+  Future<void> _resolveClosedOrderPayment() async {
+    if (_checkingStatus || !Get.currentRoute.startsWith(RouteHelper.payment)) {
+      return;
+    }
+
+    setState(() {
+      _checkingStatus = true;
+    });
+
+    final OrderController orderController = Get.find<OrderController>();
+    for (int attempt = 0; attempt < 3; attempt++) {
+      await orderController.trackOrder(
+        widget.orderModel.id.toString(),
+        null,
+        false,
+        contactNumber: widget.contactNumber,
+      );
+      final OrderModel? order = orderController.trackModel;
+
+      if (order != null && _isPaidOrder(order)) {
+        _navigateOrderPaymentResult('success');
+        return;
+      }
+
+      if (order != null &&
+          (order.orderStatus == 'failed' || order.orderStatus == 'canceled')) {
+        _navigateOrderPaymentResult('fail');
+        return;
+      }
+
+      if (attempt < 2) {
+        await Future<void>.delayed(const Duration(milliseconds: 800));
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _checkingStatus = false;
+        _statusMessage =
+            'გადახდა ჯერ არ დადასტურებულა. საჭიროების შემთხვევაში სტატუსი ხელახლა გადაამოწმე.';
+      });
+    }
+  }
+
+  bool _isPaidOrder(OrderModel order) {
+    return order.paymentStatus == 'paid' ||
+        order.paymentMethod == 'cash_on_delivery' ||
+        order.paymentMethod == 'partial_payment' ||
+        order.paymentMethod == 'wallet';
+  }
+
+  void _navigateOrderPaymentResult(String status) {
+    if (!Get.currentRoute.startsWith(RouteHelper.payment)) {
+      return;
+    }
+
+    if (status == 'success') {
+      Get.offNamed(
+        RouteHelper.getOrderSuccessRoute(
+          widget.orderModel.id.toString(),
+          widget.contactNumber,
+          createAccount: widget.createAccount,
+          guestId: widget.guestId,
+        ),
+      );
+      return;
+    }
+
+    Get.offNamed(
+      RouteHelper.getDigitalPaymentFailedScreen(
+        widget.orderModel.id.toString(),
+        createAccount: widget.createAccount,
+      ),
+    );
+  }
+
+  String _extractBackendMessage(dynamic decodedBody) {
+    if (decodedBody is Map<String, dynamic>) {
+      if ((decodedBody['message'] as String?)?.isNotEmpty ?? false) {
+        return decodedBody['message'] as String;
+      }
+
+      final dynamic errors = decodedBody['errors'];
+      if (errors is List && errors.isNotEmpty) {
+        final dynamic firstError = errors.first;
+        if (firstError is Map<String, dynamic> &&
+            ((firstError['message'] as String?)?.isNotEmpty ?? false)) {
+          return firstError['message'] as String;
+        }
+      }
+    }
+
+    return 'Keepz გადახდის ინიციალიზაცია ვერ მოხერხდა';
+  }
+
+  String _readableError(dynamic error) {
+    if (error is String && error.isNotEmpty) {
+      return error;
+    }
+
+    return 'გადახდა ვერ შესრულდა';
+  }
+
+  Future<bool?> _exitApp() {
+    return Get.dialog(
+      PaymentFailedDialog(
+        orderID: widget.orderModel.id.toString(),
+        orderAmount: widget.orderModel.orderAmount,
+        maxCodOrderAmount: _maximumCodOrderAmount,
+        orderType: widget.orderModel.orderType,
+        isCashOnDelivery: widget.isCashOnDelivery,
+        guestId: widget.createAccount
+            ? widget.createUserId.toString()
+            : widget.guestId,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final KeepzPaymentOption selectedOption = _selectedOption;
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
+        await _exitApp();
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).cardColor,
+        appBar: CustomAppBar(title: 'გადახდა', onBackPressed: () => _exitApp()),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            children: <Widget>[
+              _AmountHeader(orderModel: widget.orderModel),
+              const SizedBox(height: 18),
+              _SelectedKeepzMethodCard(
+                option: selectedOption,
+                isLoading: _loadingKey == selectedOption.key,
+              ),
+              const SizedBox(height: 18),
+              CustomButton(
+                buttonText: _loadingKey == null
+                    ? 'გადახდის გახსნა'
+                    : 'გადახდა იხსნება',
+                isLoading: _loadingKey != null,
+                onPressed: _loadingKey == null ? _retrySelectedPayment : null,
+              ),
+              if (_statusMessage != null) ...<Widget>[
+                const SizedBox(height: 16),
+                _StatusCard(
+                  message: _statusMessage!,
+                  checkingStatus: _checkingStatus,
+                  onCheckStatus: _resolveClosedOrderPayment,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _KeepzWebViewSheet extends StatefulWidget {
+  final String initialUrl;
+
+  const _KeepzWebViewSheet({required this.initialUrl});
+
+  @override
+  State<_KeepzWebViewSheet> createState() => _KeepzWebViewSheetState();
+}
+
+class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet> {
+  final GlobalKey _webViewKey = GlobalKey();
+  InAppWebViewController? _controller;
+  PullToRefreshController? _pullToRefreshController;
+  bool _isLoading = true;
+  bool _handledTerminalUrl = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pullToRefreshController =
+        GetPlatform.isWeb ||
+            !<TargetPlatform>{
+              TargetPlatform.iOS,
+              TargetPlatform.android,
+            }.contains(defaultTargetPlatform)
+        ? null
+        : PullToRefreshController(
+            onRefresh: () async {
+              if (defaultTargetPlatform == TargetPlatform.android) {
+                await _controller?.reload();
+              } else {
+                await _controller?.loadUrl(
+                  urlRequest: URLRequest(url: await _controller?.getUrl()),
+                );
+              }
+            },
+          );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FractionallySizedBox(
+      heightFactor: 0.92,
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(Dimensions.radiusLarge),
+          ),
+        ),
+        child: Column(
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
+              child: Row(
+                children: <Widget>[
+                  const SizedBox(width: 42),
+                  Expanded(
+                    child: Center(
+                      child: Container(
+                        width: 42,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).disabledColor.withValues(alpha: 0.35),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Stack(
+                children: <Widget>[
+                  InAppWebView(
+                    key: _webViewKey,
+                    initialUrlRequest: URLRequest(
+                      url: WebUri(widget.initialUrl),
+                    ),
+                    initialUserScripts: UnmodifiableListView<UserScript>([]),
+                    pullToRefreshController: _pullToRefreshController,
+                    initialSettings: InAppWebViewSettings(
+                      isInspectable: kDebugMode,
+                      useShouldOverrideUrlLoading: true,
+                      mediaPlaybackRequiresUserGesture: false,
+                      allowsInlineMediaPlayback: true,
+                      iframeAllow: 'camera; microphone',
+                      iframeAllowFullscreen: true,
+                    ),
+                    onWebViewCreated: (InAppWebViewController controller) {
+                      _controller = controller;
+                    },
+                    onLoadStart: (_, WebUri? url) {
+                      _handleUrl(url?.toString());
+                      if (mounted) {
+                        setState(() {
+                          _isLoading = true;
+                        });
+                      }
+                    },
+                    onLoadStop: (_, WebUri? url) {
+                      _pullToRefreshController?.endRefreshing();
+                      _handleUrl(url?.toString());
+                      if (mounted) {
+                        setState(() {
+                          _isLoading = false;
+                        });
+                      }
+                    },
+                    shouldOverrideUrlLoading:
+                        (
+                          InAppWebViewController controller,
+                          NavigationAction navigationAction,
+                        ) async {
+                          final WebUri? webUri = navigationAction.request.url;
+                          final String? terminalStatus = _terminalStatus(
+                            webUri?.toString(),
+                          );
+                          if (terminalStatus != null) {
+                            _closeWithStatus(terminalStatus);
+                            return NavigationActionPolicy.CANCEL;
+                          }
+
+                          final Uri? uri = Uri.tryParse(
+                            webUri?.toString() ?? '',
+                          );
+                          if (uri != null &&
+                              !<String>{
+                                'http',
+                                'https',
+                                'file',
+                                'chrome',
+                                'data',
+                                'javascript',
+                                'about',
+                              }.contains(uri.scheme)) {
+                            try {
+                              await launchUrl(
+                                uri,
+                                mode: LaunchMode.externalApplication,
+                              );
+                              return NavigationActionPolicy.CANCEL;
+                            } catch (_) {}
+                          }
+
+                          return NavigationActionPolicy.ALLOW;
+                        },
+                    onProgressChanged: (_, int progress) {
+                      if (progress == 100) {
+                        _pullToRefreshController?.endRefreshing();
+                      }
+                    },
+                    onConsoleMessage: (_, ConsoleMessage consoleMessage) {
+                      if (kDebugMode) {
+                        debugPrint(consoleMessage.message);
+                      }
+                    },
+                  ),
+                  if (_isLoading)
+                    Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).primaryColor,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleUrl(String? url) {
+    final String? status = _terminalStatus(url);
+    if (status != null) {
+      _closeWithStatus(status);
+    }
+  }
+
+  String? _terminalStatus(String? url) {
+    if (url == null || url.isEmpty) {
+      return null;
+    }
+
+    final Uri? uri = Uri.tryParse(url);
+    if (uri != null &&
+        uri.scheme == AppConstants.customerPaymentReturnScheme &&
+        uri.host == 'payment-return') {
+      return _normalizePaymentStatus(
+        uri.queryParameters['status'] ?? uri.queryParameters['flag'],
+      );
+    }
+
+    final String baseUrl = AppConstants.baseUrl;
+    if (url.startsWith('$baseUrl/payment-success')) {
+      return 'success';
+    }
+    if (url.startsWith('$baseUrl/payment-fail')) {
+      return 'fail';
+    }
+    if (url.startsWith('$baseUrl/payment-cancel')) {
+      return 'cancel';
+    }
+
+    return null;
+  }
+
+  String? _normalizePaymentStatus(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'success':
+      case 'paid':
+        return 'success';
+      case 'fail':
+      case 'failed':
+      case 'failure':
+        return 'fail';
+      case 'cancel':
+      case 'canceled':
+      case 'cancelled':
+        return 'cancel';
+    }
+    return null;
+  }
+
+  void _closeWithStatus(String status) {
+    if (_handledTerminalUrl) {
+      return;
+    }
+
+    _handledTerminalUrl = true;
+    Navigator.of(context).pop(status);
+  }
+}
+
+class _AmountHeader extends StatelessWidget {
+  final OrderModel orderModel;
+
+  const _AmountHeader({required this.orderModel});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+        border: Border.all(
+          color: Theme.of(context).primaryColor.withValues(alpha: 0.16),
+        ),
+      ),
+      child: Column(
+        children: <Widget>[
+          Text(
+            'გადასახდელი თანხა',
+            style: robotoMedium.copyWith(
+              color: Theme.of(context).hintColor,
+              fontSize: Dimensions.fontSizeDefault,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            PriceConverter.convertPrice(orderModel.orderAmount),
+            textDirection: TextDirection.ltr,
+            style: robotoBold.copyWith(
+              color: Theme.of(context).primaryColor,
+              fontSize: 34,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SelectedKeepzMethodCard extends StatelessWidget {
+  final KeepzPaymentOption option;
+  final bool isLoading;
+
+  const _SelectedKeepzMethodCard({
+    required this.option,
+    required this.isLoading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+        border: Border.all(
+          color: Theme.of(context).disabledColor.withValues(alpha: 0.16),
+        ),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 48,
+            height: 48,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Image.asset(
+              option.iconAsset,
+              width: 34,
+              height: 34,
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'გადახდის მეთოდი',
+                  style: robotoRegular.copyWith(
+                    color: Theme.of(context).hintColor,
+                    fontSize: Dimensions.fontSizeSmall,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  option.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: robotoSemiBold.copyWith(
+                    fontSize: Dimensions.fontSizeDefault,
+                    color: Theme.of(context).textTheme.bodyLarge!.color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isLoading)
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.4,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).primaryColor,
+                ),
+              ),
+            )
+          else
+            Icon(
+              Icons.check_circle_rounded,
+              size: 22,
+              color: Theme.of(context).primaryColor,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusCard extends StatelessWidget {
+  final String message;
+  final bool checkingStatus;
+  final VoidCallback onCheckStatus;
+
+  const _StatusCard({
+    required this.message,
+    required this.checkingStatus,
+    required this.onCheckStatus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            message,
+            style: robotoRegular.copyWith(
+              color: Theme.of(context).textTheme.bodyLarge!.color,
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: checkingStatus ? null : onCheckStatus,
+              child: checkingStatus
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('სტატუსის შემოწმება'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _KeepzIntent {
+  final String url;
+  final String action;
+
+  const _KeepzIntent({required this.url, required this.action});
+
+  factory _KeepzIntent.fromJson(Map<String, dynamic> json) {
+    return _KeepzIntent(
+      url: json['url'].toString(),
+      action: (json['action'] ?? 'bottom_sheet_webview').toString(),
+    );
+  }
+}

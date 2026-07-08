@@ -248,6 +248,14 @@ class Images {
       'assets/image/mili_support_static.svg';
   static const String manShoppingSupermarket =
       'assets/image/man_shopping_supermarket.jpg';
+  static const String keepzCredo = 'assets/image/keepz/credo.png';
+  static const String keepzBog = 'assets/image/keepz/bog.png';
+  static const String keepzTbc = 'assets/image/keepz/tbc.png';
+  static const String keepzLiberty = 'assets/image/keepz/liberty.png';
+  static const String keepzGooglePay = 'assets/image/keepz/google_pay.png';
+  static const String keepzInstallment = 'assets/image/keepz/installment.png';
+  static const String keepzCrypto = 'assets/image/keepz/crypto.png';
+  static const String keepzCard = 'assets/image/keepz/card.png';
 
   ///Svg images
   static const String referBg = 'assets/image/refer_bg.svg';

@@ -21,6 +21,7 @@ import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
+import 'package:sixam_mart/features/payment/domain/models/keepz_payment_option.dart';
 import 'package:sixam_mart/features/payment/domain/models/offline_method_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/place_order_body_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/timeslote_model.dart';
@@ -150,6 +151,11 @@ class CheckoutController extends GetxController implements GetxService {
   String? _digitalPaymentName;
   String? get digitalPaymentName => _digitalPaymentName;
 
+  String? _keepzPaymentOptionKey;
+  String? get keepzPaymentOptionKey => _keepzPaymentOptionKey;
+  KeepzPaymentOption? get selectedKeepzPaymentOption =>
+      KeepzPaymentOption.fromKey(_keepzPaymentOptionKey);
+
   bool _canShowTipsField = false;
   bool get canShowTipsField => _canShowTipsField;
 
@@ -257,6 +263,22 @@ class CheckoutController extends GetxController implements GetxService {
 
   void changeDigitalPaymentName(String name, {bool willUpdate = true}) {
     _digitalPaymentName = name;
+    if (name == 'keepz') {
+      _keepzPaymentOptionKey ??= KeepzPaymentOption.defaultOption.key;
+    } else {
+      _keepzPaymentOptionKey = null;
+    }
+    if (willUpdate) {
+      update();
+    }
+  }
+
+  void changeKeepzPaymentOption(
+    KeepzPaymentOption option, {
+    bool willUpdate = true,
+  }) {
+    _digitalPaymentName = 'keepz';
+    _keepzPaymentOptionKey = option.key;
     if (willUpdate) {
       update();
     }
@@ -343,6 +365,8 @@ class CheckoutController extends GetxController implements GetxService {
     _addressIndex = 0;
     _acceptTerms = true;
     _paymentMethodIndex = -1;
+    _digitalPaymentName = null;
+    _keepzPaymentOptionKey = null;
     _selectedDateSlot = 0;
     _selectedTimeSlot = 0;
     _orderAttachment = null;
@@ -731,6 +755,9 @@ class CheckoutController extends GetxController implements GetxService {
               guestId: userID.isNotEmpty ? userID : AuthHelper.getGuestId(),
               contactNumber: contactNumber,
               createAccount: _isCreateAccount,
+              keepzMethodKey: _digitalPaymentName == 'keepz'
+                  ? _keepzPaymentOptionKey
+                  : null,
             ),
           );
         }
@@ -823,6 +850,9 @@ class CheckoutController extends GetxController implements GetxService {
             digitalPaymentName,
             guestId: AuthHelper.getGuestId(),
             contactNumber: paymentData.contactNumber,
+            keepzMethodKey: _digitalPaymentName == 'keepz'
+                ? _keepzPaymentOptionKey
+                : null,
           ),
         );
       }

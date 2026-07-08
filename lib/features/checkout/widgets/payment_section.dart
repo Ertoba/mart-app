@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sixam_mart/common/widgets/custom_image.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/checkout/controllers/checkout_controller.dart';
+import 'package:sixam_mart/features/payment/domain/models/keepz_payment_option.dart';
 import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
@@ -173,6 +175,8 @@ class PaymentSection extends StatelessWidget {
                           ? _SelectedPaymentIcon(
                               paymentMethodIndex:
                                   checkoutController.paymentMethodIndex,
+                              keepzPaymentOption:
+                                  checkoutController.selectedKeepzPaymentOption,
                             )
                           : Icon(
                               !ResponsiveHelper.isDesktop(context)
@@ -203,7 +207,7 @@ class PaymentSection extends StatelessWidget {
                                         : checkoutController
                                                   .paymentMethodIndex ==
                                               2
-                                        ? '${'digital_payment'.tr}${checkoutController.isPartialPay ? ' (${'partial'.tr})' : ''}'
+                                        ? '${_selectedDigitalPaymentTitle(checkoutController)}${checkoutController.isPartialPay ? ' (${'partial'.tr})' : ''}'
                                         : checkoutController
                                                   .paymentMethodIndex ==
                                               3
@@ -307,6 +311,12 @@ class PaymentSection extends StatelessWidget {
   Widget _buildMobilePaymentOptions(BuildContext context) {
     final activeDigitalMethods =
         Get.find<SplashController>().configModel?.activePaymentMethodList ?? [];
+    final keepzGatewayActive = activeDigitalMethods.any(
+      (paymentMethod) => paymentMethod.getWay == 'keepz',
+    );
+    final nonKeepzDigitalMethods = activeDigitalMethods
+        .where((paymentMethod) => paymentMethod.getWay != 'keepz')
+        .toList();
     final bool canUseDigital =
         isDigitalPaymentActive && activeDigitalMethods.isNotEmpty;
     final double walletBalance =
@@ -314,65 +324,62 @@ class PaymentSection extends StatelessWidget {
     final bool canUseWallet =
         isWalletActive && AuthHelper.isLoggedIn() && walletBalance > 0;
 
-    void selectPayment(int index) {
-      if (index == 2) {
-        checkoutController.setPaymentMethod(2);
-        checkoutController.changeDigitalPaymentName(
-          activeDigitalMethods.first.getWay!,
-        );
-        return;
-      }
-
-      if (index == 1) {
-        if (checkoutController.isPartialPay) {
-          checkoutController.changePartialPayment();
-        }
-        checkoutController.setPaymentMethod(1);
-        if (walletBalance < total) {
-          checkoutController.changePartialPayment();
-        }
-        return;
-      }
-
-      checkoutController.setPaymentMethod(0);
-    }
-
     Widget paymentOption({
-      required int value,
       required String label,
       required bool enabled,
+      required bool selected,
+      required VoidCallback onTap,
+      Widget? icon,
     }) {
-      return Expanded(
-        child: InkWell(
-          onTap: enabled ? () => selectPayment(value) : null,
-          borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Radio<int>(
-                  value: value,
-                  enabled: enabled,
-                  visualDensity: VisualDensity.compact,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      return InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            children: [
+              Icon(
+                selected
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                size: 24,
+                color: selected
+                    ? Theme.of(context).primaryColor
+                    : Theme.of(context).disabledColor.withValues(alpha: 0.75),
+              ),
+              const SizedBox(width: Dimensions.paddingSizeSmall),
+              SizedBox(
+                width: 38,
+                height: 30,
+                child: Center(
+                  child:
+                      icon ??
+                      Image.asset(
+                        Images.digitalPayment,
+                        height: 24,
+                        width: 24,
+                        fit: BoxFit.contain,
+                        color: enabled
+                            ? Theme.of(context).textTheme.bodyLarge!.color
+                            : Theme.of(context).disabledColor,
+                      ),
                 ),
-                const SizedBox(width: 2),
-                Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: robotoMedium.copyWith(
-                      fontSize: Dimensions.fontSizeSmall,
-                      color: enabled
-                          ? Theme.of(context).textTheme.bodyLarge!.color
-                          : Theme.of(context).disabledColor,
-                    ),
+              ),
+              const SizedBox(width: Dimensions.paddingSizeSmall),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: robotoMedium.copyWith(
+                    fontSize: Dimensions.fontSizeDefault,
+                    color: enabled
+                        ? Theme.of(context).textTheme.bodyLarge!.color
+                        : Theme.of(context).disabledColor,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       );
@@ -380,6 +387,108 @@ class PaymentSection extends StatelessWidget {
 
     final bool hasPrimaryPayment =
         isCashOnDeliveryActive || canUseDigital || canUseWallet;
+    final List<Widget> paymentRows = <Widget>[];
+
+    void addPaymentRow(Widget row) {
+      if (paymentRows.isNotEmpty) {
+        paymentRows.add(const Divider(height: 1));
+      }
+      paymentRows.add(row);
+    }
+
+    if (isCashOnDeliveryActive) {
+      addPaymentRow(
+        paymentOption(
+          label: 'cash_on_delivery'.tr,
+          enabled: true,
+          selected: checkoutController.paymentMethodIndex == 0,
+          icon: Image.asset(
+            Images.cash,
+            width: 24,
+            height: 24,
+            fit: BoxFit.contain,
+            color: Theme.of(context).textTheme.bodyLarge!.color,
+          ),
+          onTap: () => checkoutController.setPaymentMethod(0),
+        ),
+      );
+    }
+
+    if (keepzGatewayActive) {
+      for (final KeepzPaymentOption option in KeepzPaymentOption.values) {
+        addPaymentRow(
+          paymentOption(
+            label: option.title,
+            enabled: true,
+            selected:
+                checkoutController.paymentMethodIndex == 2 &&
+                checkoutController.digitalPaymentName == 'keepz' &&
+                checkoutController.keepzPaymentOptionKey == option.key,
+            icon: Image.asset(
+              option.iconAsset,
+              width: 32,
+              height: 30,
+              fit: BoxFit.contain,
+            ),
+            onTap: () {
+              checkoutController.setPaymentMethod(2, isUpdate: false);
+              checkoutController.changeKeepzPaymentOption(option);
+            },
+          ),
+        );
+      }
+    }
+
+    for (final paymentMethod in nonKeepzDigitalMethods) {
+      addPaymentRow(
+        paymentOption(
+          label: paymentMethod.getWayTitle ?? 'digital_payment'.tr,
+          enabled: true,
+          selected:
+              checkoutController.paymentMethodIndex == 2 &&
+              checkoutController.digitalPaymentName == paymentMethod.getWay,
+          icon: paymentMethod.getWayImageFullUrl != null
+              ? CustomImage(
+                  image: paymentMethod.getWayImageFullUrl!,
+                  height: 22,
+                  fit: BoxFit.contain,
+                )
+              : null,
+          onTap: () {
+            checkoutController.setPaymentMethod(2, isUpdate: false);
+            checkoutController.changeDigitalPaymentName(paymentMethod.getWay!);
+          },
+        ),
+      );
+    }
+
+    if (canUseWallet) {
+      addPaymentRow(
+        paymentOption(
+          label: 'wallet_payment'.tr,
+          enabled: true,
+          selected:
+              checkoutController.paymentMethodIndex == 1 ||
+              checkoutController.isPartialPay,
+          icon: Image.asset(
+            Images.wallet,
+            width: 24,
+            height: 24,
+            fit: BoxFit.contain,
+            color: Theme.of(context).textTheme.bodyLarge!.color,
+          ),
+          onTap: () {
+            if (checkoutController.isPartialPay) {
+              checkoutController.changePartialPayment();
+            }
+            checkoutController.setPaymentMethod(1);
+            if (walletBalance < total) {
+              checkoutController.changePartialPayment();
+            }
+          },
+        ),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -398,58 +507,20 @@ class PaymentSection extends StatelessWidget {
         ),
         const SizedBox(height: Dimensions.paddingSizeSmall),
         if (hasPrimaryPayment)
-          RadioGroup<int>(
-            groupValue: checkoutController.paymentMethodIndex,
-            onChanged: (int? selected) {
-              if (selected != null) selectPayment(selected);
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: Dimensions.paddingSizeExtraSmall,
-                vertical: Dimensions.paddingSizeExtraSmall,
-              ),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-                border: Border.all(
-                  color: Theme.of(context).primaryColor.withValues(alpha: 0.55),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      if (isCashOnDeliveryActive)
-                        paymentOption(
-                          value: 0,
-                          label: 'cash_on_delivery'.tr,
-                          enabled: true,
-                        ),
-                      if (canUseDigital)
-                        paymentOption(
-                          value: 2,
-                          label: 'digital_payment'.tr,
-                          enabled: true,
-                        ),
-                    ],
-                  ),
-                  if (canUseWallet) ...[
-                    const Divider(height: 1),
-                    Row(
-                      children: [
-                        paymentOption(
-                          value: 1,
-                          label: 'wallet_payment'.tr,
-                          enabled: true,
-                        ),
-                        const Spacer(),
-                      ],
-                    ),
-                  ],
-                ],
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: Dimensions.paddingSizeSmall,
+              vertical: Dimensions.paddingSizeExtraSmall,
+            ),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+              border: Border.all(
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.55),
               ),
             ),
+            child: Column(children: paymentRows),
           )
         else
           Text(
@@ -484,15 +555,37 @@ class PaymentSection extends StatelessWidget {
       ],
     );
   }
+
+  String _selectedDigitalPaymentTitle(CheckoutController checkoutController) {
+    if (checkoutController.digitalPaymentName == 'keepz') {
+      return checkoutController.selectedKeepzPaymentOption?.title ??
+          'digital_payment'.tr;
+    }
+
+    return 'digital_payment'.tr;
+  }
 }
 
 class _SelectedPaymentIcon extends StatelessWidget {
   final int paymentMethodIndex;
+  final KeepzPaymentOption? keepzPaymentOption;
 
-  const _SelectedPaymentIcon({required this.paymentMethodIndex});
+  const _SelectedPaymentIcon({
+    required this.paymentMethodIndex,
+    this.keepzPaymentOption,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (paymentMethodIndex == 2 && keepzPaymentOption != null) {
+      return Image.asset(
+        keepzPaymentOption!.iconAsset,
+        width: 26,
+        height: 22,
+        fit: BoxFit.contain,
+      );
+    }
+
     if (paymentMethodIndex == 2) {
       return const _VisaMastercardIcon();
     }

@@ -58,8 +58,8 @@ class KeepzPaymentOption {
   static const KeepzPaymentOption card = KeepzPaymentOption(
     key: 'card',
     title: 'საბანკო ბარათი',
-    flow: 'card',
-    provider: 'DEFAULT',
+    flow: 'hosted',
+    provider: '',
     iconAsset: Images.keepzCard,
   );
 
@@ -88,7 +88,6 @@ class KeepzPaymentOption {
     tbc,
     liberty,
     card,
-    installment,
     crypto,
   ];
 

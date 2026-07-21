@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:sixam_mart/common/widgets/custom_image.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/checkout/controllers/checkout_controller.dart';
 import 'package:sixam_mart/features/payment/domain/models/keepz_payment_option.dart';
-import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
-import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
@@ -311,18 +308,11 @@ class PaymentSection extends StatelessWidget {
   Widget _buildMobilePaymentOptions(BuildContext context) {
     final activeDigitalMethods =
         Get.find<SplashController>().configModel?.activePaymentMethodList ?? [];
-    final keepzGatewayActive = activeDigitalMethods.any(
-      (paymentMethod) => paymentMethod.getWay == 'keepz',
-    );
-    final nonKeepzDigitalMethods = activeDigitalMethods
-        .where((paymentMethod) => paymentMethod.getWay != 'keepz')
-        .toList();
-    final bool canUseDigital =
-        isDigitalPaymentActive && activeDigitalMethods.isNotEmpty;
-    final double walletBalance =
-        Get.find<ProfileController>().userInfoModel?.walletBalance ?? 0;
-    final bool canUseWallet =
-        isWalletActive && AuthHelper.isLoggedIn() && walletBalance > 0;
+    final bool keepzGatewayActive =
+        isDigitalPaymentActive &&
+        activeDigitalMethods.any(
+          (paymentMethod) => paymentMethod.getWay == 'keepz',
+        );
 
     Widget paymentOption({
       required String label,
@@ -385,8 +375,7 @@ class PaymentSection extends StatelessWidget {
       );
     }
 
-    final bool hasPrimaryPayment =
-        isCashOnDeliveryActive || canUseDigital || canUseWallet;
+    final bool hasPrimaryPayment = isCashOnDeliveryActive || keepzGatewayActive;
     final List<Widget> paymentRows = <Widget>[];
 
     void addPaymentRow(Widget row) {
@@ -415,76 +404,24 @@ class PaymentSection extends StatelessWidget {
     }
 
     if (keepzGatewayActive) {
-      for (final KeepzPaymentOption option in KeepzPaymentOption.values) {
-        addPaymentRow(
-          paymentOption(
-            label: option.title,
-            enabled: true,
-            selected:
-                checkoutController.paymentMethodIndex == 2 &&
-                checkoutController.digitalPaymentName == 'keepz' &&
-                checkoutController.keepzPaymentOptionKey == option.key,
-            icon: Image.asset(
-              option.iconAsset,
-              width: 32,
-              height: 30,
-              fit: BoxFit.contain,
-            ),
-            onTap: () {
-              checkoutController.setPaymentMethod(2, isUpdate: false);
-              checkoutController.changeKeepzPaymentOption(option);
-            },
-          ),
-        );
-      }
-    }
-
-    for (final paymentMethod in nonKeepzDigitalMethods) {
+      final KeepzPaymentOption option = KeepzPaymentOption.defaultOption;
       addPaymentRow(
         paymentOption(
-          label: paymentMethod.getWayTitle ?? 'digital_payment'.tr,
+          label: 'digital_payment'.tr,
           enabled: true,
           selected:
               checkoutController.paymentMethodIndex == 2 &&
-              checkoutController.digitalPaymentName == paymentMethod.getWay,
-          icon: paymentMethod.getWayImageFullUrl != null
-              ? CustomImage(
-                  image: paymentMethod.getWayImageFullUrl!,
-                  height: 22,
-                  fit: BoxFit.contain,
-                )
-              : null,
-          onTap: () {
-            checkoutController.setPaymentMethod(2, isUpdate: false);
-            checkoutController.changeDigitalPaymentName(paymentMethod.getWay!);
-          },
-        ),
-      );
-    }
-
-    if (canUseWallet) {
-      addPaymentRow(
-        paymentOption(
-          label: 'wallet_payment'.tr,
-          enabled: true,
-          selected:
-              checkoutController.paymentMethodIndex == 1 ||
-              checkoutController.isPartialPay,
+              checkoutController.digitalPaymentName == 'keepz' &&
+              checkoutController.keepzPaymentOptionKey == option.key,
           icon: Image.asset(
-            Images.wallet,
-            width: 24,
-            height: 24,
+            option.iconAsset,
+            width: 32,
+            height: 30,
             fit: BoxFit.contain,
-            color: Theme.of(context).textTheme.bodyLarge!.color,
           ),
           onTap: () {
-            if (checkoutController.isPartialPay) {
-              checkoutController.changePartialPayment();
-            }
-            checkoutController.setPaymentMethod(1);
-            if (walletBalance < total) {
-              checkoutController.changePartialPayment();
-            }
+            checkoutController.setPaymentMethod(2, isUpdate: false);
+            checkoutController.changeKeepzPaymentOption(option);
           },
         ),
       );
@@ -529,29 +466,6 @@ class PaymentSection extends StatelessWidget {
               color: Theme.of(context).colorScheme.error,
             ),
           ),
-        if (isOfflinePaymentActive) ...[
-          const SizedBox(height: Dimensions.paddingSizeSmall),
-          InkWell(
-            onTap: () {
-              Get.bottomSheet(
-                PaymentMethodBottomSheet(
-                  isCashOnDeliveryActive: false,
-                  isDigitalPaymentActive: false,
-                  totalPrice: total,
-                  isOfflinePaymentActive: true,
-                ),
-                backgroundColor: Colors.transparent,
-                isScrollControlled: true,
-              );
-            },
-            child: Text(
-              'offline_payment'.tr,
-              style: robotoMedium.copyWith(
-                color: Theme.of(context).primaryColor,
-              ),
-            ),
-          ),
-        ],
       ],
     );
   }

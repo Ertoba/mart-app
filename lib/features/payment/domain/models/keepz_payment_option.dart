@@ -57,9 +57,9 @@ class KeepzPaymentOption {
 
   static const KeepzPaymentOption card = KeepzPaymentOption(
     key: 'card',
-    title: 'საბანკო ბარათი',
-    flow: 'card',
-    provider: 'BOG',
+    title: 'ბარათით გადახდა',
+    flow: 'hosted',
+    provider: '',
     iconAsset: Images.keepzCard,
   );
 
@@ -82,14 +82,7 @@ class KeepzPaymentOption {
 
   static const KeepzPaymentOption defaultOption = card;
 
-  static const List<KeepzPaymentOption> values = <KeepzPaymentOption>[
-    credo,
-    bankOfGeorgia,
-    tbc,
-    liberty,
-    card,
-    crypto,
-  ];
+  static const List<KeepzPaymentOption> values = <KeepzPaymentOption>[card];
 
   static KeepzPaymentOption? fromKey(String? key) {
     if (key == null || key.isEmpty || key == 'null') {

@@ -75,6 +75,8 @@ class KeepzPaymentLauncher {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       ignoreSafeArea: false,
+      isDismissible: false,
+      enableDrag: false,
     );
 
     if (status != null) {
@@ -436,7 +438,14 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
   @override
   Widget build(BuildContext context) {
     if (_hostedUrl != null) {
-      return _KeepzWebViewSheet(initialUrl: _hostedUrl!);
+      return _KeepzWebViewSheet(
+        initialUrl: _hostedUrl!,
+        resolvePaymentStatus: () =>
+            KeepzPaymentLauncher._readClosedOrderPaymentStatus(
+              orderId: widget.orderModel.id.toString(),
+              contactNumber: widget.contactNumber,
+            ),
+      );
     }
 
     return _KeepzLoadingSheet(
@@ -703,8 +712,17 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
+      isDismissible: false,
+      enableDrag: false,
       builder: (BuildContext context) {
-        return _KeepzWebViewSheet(initialUrl: url);
+        return _KeepzWebViewSheet(
+          initialUrl: url,
+          resolvePaymentStatus: () =>
+              KeepzPaymentLauncher._readClosedOrderPaymentStatus(
+                orderId: widget.orderModel.id.toString(),
+                contactNumber: widget.contactNumber,
+              ),
+        );
       },
     );
 
@@ -1225,23 +1243,32 @@ class _KeepzLoadingSheet extends StatelessWidget {
 
 class _KeepzWebViewSheet extends StatefulWidget {
   final String initialUrl;
+  final Future<String?> Function()? resolvePaymentStatus;
 
-  const _KeepzWebViewSheet({required this.initialUrl});
+  const _KeepzWebViewSheet({
+    required this.initialUrl,
+    this.resolvePaymentStatus,
+  });
 
   @override
   State<_KeepzWebViewSheet> createState() => _KeepzWebViewSheetState();
 }
 
-class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet> {
+class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet>
+    with WidgetsBindingObserver {
   final GlobalKey _webViewKey = GlobalKey();
   InAppWebViewController? _controller;
   PullToRefreshController? _pullToRefreshController;
   bool _isLoading = true;
   bool _handledTerminalUrl = false;
+  bool _externalAppOpened = false;
+  bool _checkingReturnStatus = false;
+  String? _loadError;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pullToRefreshController =
         GetPlatform.isWeb ||
             !<TargetPlatform>{
@@ -1263,9 +1290,22 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet> {
   }
 
   @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _externalAppOpened) {
+      unawaited(_resolvePaymentAfterExternalReturn());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FractionallySizedBox(
-      heightFactor: 0.92,
+      heightFactor: 0.96,
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
@@ -1277,26 +1317,32 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet> {
         child: Column(
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
+              padding: const EdgeInsets.fromLTRB(16, 10, 6, 8),
               child: Row(
                 children: <Widget>[
-                  const SizedBox(width: 42),
+                  Icon(
+                    Icons.lock_outline_rounded,
+                    size: 20,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: Center(
-                      child: Container(
-                        width: 42,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).disabledColor.withValues(alpha: 0.35),
-                          borderRadius: BorderRadius.circular(99),
-                        ),
+                    child: Text(
+                      'გადახდა',
+                      style: robotoBold.copyWith(
+                        fontSize: Dimensions.fontSizeDefault,
                       ),
                     ),
                   ),
+                  if (_checkingReturnStatus)
+                    const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
+                    tooltip: 'დახურვა',
                     icon: const Icon(Icons.close_rounded),
                   ),
                 ],
@@ -1317,6 +1363,10 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet> {
                       useShouldOverrideUrlLoading: true,
                       mediaPlaybackRequiresUserGesture: false,
                       allowsInlineMediaPlayback: true,
+                      useWideViewPort: true,
+                      verticalScrollBarEnabled: true,
+                      horizontalScrollBarEnabled: false,
+                      supportZoom: false,
                       iframeAllow: 'camera; microphone',
                       iframeAllowFullscreen: true,
                     ),
@@ -1328,6 +1378,7 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet> {
                       if (mounted) {
                         setState(() {
                           _isLoading = true;
+                          _loadError = null;
                         });
                       }
                     },
@@ -1367,17 +1418,52 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet> {
                                 'javascript',
                                 'about',
                               }.contains(uri.scheme)) {
+                            bool launched = false;
                             try {
-                              await launchUrl(
+                              launched = await launchUrl(
                                 uri,
                                 mode: LaunchMode.externalApplication,
                               );
-                              return NavigationActionPolicy.CANCEL;
+                              if (launched) {
+                                _externalAppOpened = true;
+                              }
                             } catch (_) {}
+
+                            if (!launched) {
+                              final Uri? fallback = _intentBrowserFallback(uri);
+                              if (fallback != null) {
+                                await controller.loadUrl(
+                                  urlRequest: URLRequest(
+                                    url: WebUri(fallback.toString()),
+                                  ),
+                                );
+                              } else if (mounted) {
+                                showCustomSnackBar(
+                                  'შესაბამისი აპლიკაცია ვერ გაიხსნა',
+                                );
+                              }
+                            }
+
+                            return NavigationActionPolicy.CANCEL;
                           }
 
                           return NavigationActionPolicy.ALLOW;
                         },
+                    onUpdateVisitedHistory: (_, WebUri? url, __) {
+                      _handleUrl(url?.toString());
+                    },
+                    onReceivedError: (_, request, error) {
+                      if (request.isForMainFrame == true) {
+                        _setLoadError('გადახდის გვერდი ვერ ჩაიტვირთა');
+                      }
+                    },
+                    onReceivedHttpError: (_, request, errorResponse) {
+                      if (request.isForMainFrame == true) {
+                        _setLoadError(
+                          'გადახდის გვერდმა დააბრუნა შეცდომა (${errorResponse.statusCode})',
+                        );
+                      }
+                    },
                     onProgressChanged: (_, int progress) {
                       if (progress == 100) {
                         _pullToRefreshController?.endRefreshing();
@@ -1389,11 +1475,50 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet> {
                       }
                     },
                   ),
-                  if (_isLoading)
+                  if (_isLoading && _loadError == null)
                     Center(
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
                           Theme.of(context).primaryColor,
+                        ),
+                      ),
+                    ),
+                  if (_loadError != null)
+                    Positioned.fill(
+                      child: ColoredBox(
+                        color: Theme.of(context).cardColor,
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(
+                              Dimensions.paddingSizeLarge,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Icon(
+                                  Icons.cloud_off_outlined,
+                                  size: 38,
+                                  color: Theme.of(context).hintColor,
+                                ),
+                                const SizedBox(
+                                  height: Dimensions.paddingSizeSmall,
+                                ),
+                                Text(
+                                  _loadError!,
+                                  textAlign: TextAlign.center,
+                                  style: robotoMedium,
+                                ),
+                                const SizedBox(
+                                  height: Dimensions.paddingSizeDefault,
+                                ),
+                                OutlinedButton.icon(
+                                  onPressed: _retryPageLoad,
+                                  icon: const Icon(Icons.refresh_rounded),
+                                  label: const Text('ხელახლა ცდა'),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -1413,6 +1538,84 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet> {
     }
   }
 
+  Future<void> _resolvePaymentAfterExternalReturn() async {
+    if (_checkingReturnStatus || widget.resolvePaymentStatus == null) {
+      return;
+    }
+
+    _externalAppOpened = false;
+    if (mounted) {
+      setState(() {
+        _checkingReturnStatus = true;
+      });
+    }
+
+    String? status;
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      status = await widget.resolvePaymentStatus!.call();
+    } catch (_) {
+      status = null;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _checkingReturnStatus = false;
+    });
+
+    if (status != null) {
+      _closeWithStatus(status);
+    }
+  }
+
+  Uri? _intentBrowserFallback(Uri uri) {
+    if (uri.scheme.toLowerCase() != 'intent') {
+      return null;
+    }
+
+    final RegExpMatch? match = RegExp(
+      r'S\.browser_fallback_url=([^;]+)',
+    ).firstMatch(uri.toString());
+    if (match == null) {
+      return null;
+    }
+
+    final String fallbackUrl = Uri.decodeComponent(match.group(1)!);
+    final Uri? fallback = Uri.tryParse(fallbackUrl);
+    if (fallback == null ||
+        fallback.scheme.toLowerCase() != 'https' ||
+        fallback.host.isEmpty) {
+      return null;
+    }
+
+    return fallback;
+  }
+
+  void _setLoadError(String message) {
+    _pullToRefreshController?.endRefreshing();
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = false;
+      _loadError = message;
+    });
+  }
+
+  Future<void> _retryPageLoad() async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _loadError = null;
+      });
+    }
+    await _controller?.reload();
+  }
+
   String? _terminalStatus(String? url) {
     if (url == null || url.isEmpty) {
       return null;
@@ -1427,18 +1630,31 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet> {
       );
     }
 
-    final String baseUrl = AppConstants.baseUrl;
-    if (url.startsWith('$baseUrl/payment-success')) {
-      return 'success';
-    }
-    if (url.startsWith('$baseUrl/payment-fail')) {
-      return 'fail';
-    }
-    if (url.startsWith('$baseUrl/payment-cancel')) {
-      return 'cancel';
+    final Uri? baseUri = Uri.tryParse(AppConstants.baseUrl);
+    if (uri != null && baseUri != null && _sameOrigin(uri, baseUri)) {
+      final String basePath = baseUri.path == '/'
+          ? ''
+          : baseUri.path.replaceFirst(RegExp(r'/$'), '');
+      final String path = uri.path.replaceFirst(RegExp(r'/$'), '');
+
+      if (path == '$basePath/payment-success') {
+        return 'success';
+      }
+      if (path == '$basePath/payment-fail') {
+        return 'fail';
+      }
+      if (path == '$basePath/payment-cancel') {
+        return 'cancel';
+      }
     }
 
     return null;
+  }
+
+  bool _sameOrigin(Uri first, Uri second) {
+    return first.scheme.toLowerCase() == second.scheme.toLowerCase() &&
+        first.host.toLowerCase() == second.host.toLowerCase() &&
+        first.port == second.port;
   }
 
   String? _normalizePaymentStatus(String? status) {
@@ -1523,8 +1739,16 @@ class _KeepzIntent {
   const _KeepzIntent({required this.url, required this.action});
 
   factory _KeepzIntent.fromJson(Map<String, dynamic> json) {
+    final String url = (json['url'] ?? '').toString().trim();
+    final Uri? uri = Uri.tryParse(url);
+    if (uri == null ||
+        uri.scheme.toLowerCase() != 'https' ||
+        uri.host.isEmpty) {
+      throw const FormatException('Keepz returned an invalid payment URL');
+    }
+
     return _KeepzIntent(
-      url: json['url'].toString(),
+      url: url,
       action: (json['action'] ?? 'bottom_sheet_webview').toString(),
     );
   }

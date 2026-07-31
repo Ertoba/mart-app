@@ -1,7 +1,7 @@
 name: sixam_mart
 description: A Multi-vendor Food. Grocery, eCommerce, Pharmacy & Parcel service.
 publish_to: 'none' #
-version: 3.8.7+35
+version: 3.8.8+36
 
 environment:
   sdk: ^3.10.0

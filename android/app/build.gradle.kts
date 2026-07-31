@@ -100,6 +100,7 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    implementation("androidx.datastore:datastore-preferences:1.2.1")
     implementation("com.google.firebase:firebase-messaging:23.4.1")
     implementation("com.google.android.gms:play-services-base:17.6.0")
     implementation("com.google.android.gms:play-services-wallet:19.4.0")

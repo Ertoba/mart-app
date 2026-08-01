@@ -339,7 +339,7 @@ class PaymentSection extends StatelessWidget {
               ),
               const SizedBox(width: Dimensions.paddingSizeSmall),
               SizedBox(
-                width: 38,
+                width: 52,
                 height: 30,
                 child: Center(
                   child:
@@ -413,12 +413,7 @@ class PaymentSection extends StatelessWidget {
               checkoutController.paymentMethodIndex == 2 &&
               checkoutController.digitalPaymentName == 'keepz' &&
               checkoutController.keepzPaymentOptionKey == option.key,
-          icon: Image.asset(
-            option.iconAsset,
-            width: 32,
-            height: 30,
-            fit: BoxFit.contain,
-          ),
+          icon: const _VisaMastercardIcon(),
           onTap: () {
             checkoutController.setPaymentMethod(2, isUpdate: false);
             checkoutController.changeKeepzPaymentOption(option);
@@ -492,12 +487,7 @@ class _SelectedPaymentIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (paymentMethodIndex == 2 && keepzPaymentOption != null) {
-      return Image.asset(
-        keepzPaymentOption!.iconAsset,
-        width: 26,
-        height: 22,
-        fit: BoxFit.contain,
-      );
+      return const _VisaMastercardIcon();
     }
 
     if (paymentMethodIndex == 2) {

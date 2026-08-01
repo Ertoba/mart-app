@@ -225,31 +225,7 @@ class _CustomerAuthLogo extends StatelessWidget {
               color: primaryColor.withValues(alpha: 0.13),
             ),
           ),
-          Container(
-            height: 92,
-            width: 92,
-            padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(26),
-              boxShadow: [
-                BoxShadow(
-                  color: primaryColor.withValues(alpha: 0.18),
-                  blurRadius: 22,
-                  offset: const Offset(0, 12),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.asset(
-                Images.appIconForeground,
-                color: primaryColor,
-                colorBlendMode: BlendMode.srcIn,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
+          Image.asset(Images.brandMark, height: 112, fit: BoxFit.contain),
         ],
       ),
     );

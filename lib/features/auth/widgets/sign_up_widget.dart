@@ -108,7 +108,7 @@ class SignUpWidgetState extends State<SignUpWidget> {
                                 vertical: Dimensions.paddingSizeLarge,
                               ),
                               child: Image.asset(
-                                Images.authLogo,
+                                Images.brandMark,
                                 width: 150,
                                 fit: BoxFit.contain,
                               ),

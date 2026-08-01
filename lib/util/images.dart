@@ -6,6 +6,7 @@ class Images {
   static const String logo = 'assets/image/logo.png';
   static const String splashScreen = 'assets/image/splash.png';
   static const String authLogo = 'assets/image/auth_logo.png';
+  static const String brandMark = 'assets/image/brand_mark.png';
   static const String placeholder = 'assets/image/placeholder.jpg';
   static const String notificationPlaceholder =
       'assets/image/notification_placeholder.jpg';

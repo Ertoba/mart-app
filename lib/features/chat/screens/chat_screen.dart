@@ -162,13 +162,21 @@ class _ChatScreenState extends State<ChatScreen> {
                             color: Theme.of(context).cardColor,
                           ),
                           child: ClipOval(
-                            child: CustomImage(
-                              image:
-                                  '${chatController.messageModel != null ? chatController.messageModel!.conversation!.receiver!.imageFullUrl : ''}',
-                              fit: BoxFit.cover,
-                              height: 40,
-                              width: 40,
-                            ),
+                            child: widget.notificationBody?.adminId != null
+                                ? Padding(
+                                    padding: const EdgeInsets.all(6),
+                                    child: Image.asset(
+                                      Images.brandMark,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  )
+                                : CustomImage(
+                                    image:
+                                        '${chatController.messageModel != null ? chatController.messageModel!.conversation!.receiver!.imageFullUrl : ''}',
+                                    fit: BoxFit.cover,
+                                    height: 40,
+                                    width: 40,
+                                  ),
                           ),
                         ),
                       ),

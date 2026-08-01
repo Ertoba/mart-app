@@ -12,7 +12,6 @@ import 'package:sixam_mart/common/widgets/footer_view.dart';
 import 'package:sixam_mart/common/widgets/menu_drawer.dart';
 import 'package:sixam_mart/util/styles.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
@@ -144,11 +143,39 @@ class _SupportHero extends StatelessWidget {
     return Column(
       children: [
         SizedBox(
-          height: context.height * 0.25 > 220 ? 220 : context.height * 0.25,
-          width: double.infinity,
-          child: SvgPicture.asset(
-            Images.miliSupportStatic,
-            fit: BoxFit.contain,
+          height: context.height * 0.22 > 190 ? 190 : context.height * 0.22,
+          width: 230,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 152,
+                height: 152,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: primaryColor.withValues(alpha: 0.06),
+                ),
+              ),
+              Positioned(
+                left: 14,
+                bottom: 28,
+                child: Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  size: 38,
+                  color: primaryColor.withValues(alpha: 0.12),
+                ),
+              ),
+              Positioned(
+                right: 12,
+                top: 24,
+                child: Icon(
+                  Icons.headset_mic_outlined,
+                  size: 42,
+                  color: primaryColor.withValues(alpha: 0.13),
+                ),
+              ),
+              Image.asset(Images.brandMark, height: 132, fit: BoxFit.contain),
+            ],
           ),
         ),
         const SizedBox(height: Dimensions.paddingSizeDefault),

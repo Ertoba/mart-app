@@ -64,7 +64,7 @@ class AuthDialogWidgetState extends State<AuthDialogWidget> {
                 child: Column(
                   children: [
                     Image.asset(
-                      Images.authLogo,
+                      Images.brandMark,
                       width: 150,
                       fit: BoxFit.contain,
                     ),

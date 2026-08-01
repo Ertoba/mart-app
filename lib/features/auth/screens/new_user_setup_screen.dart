@@ -125,7 +125,7 @@ class _NewUserSetupScreenState extends State<NewUserSetupScreen> {
                         : const SizedBox(),
 
                     Image.asset(
-                      Images.authLogo,
+                      Images.brandMark,
                       width: 160,
                       fit: BoxFit.contain,
                     ),

@@ -16,6 +16,7 @@ import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
+import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
 import 'package:sixam_mart/common/widgets/custom_app_bar.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
@@ -704,86 +705,16 @@ class _VerificationHero extends StatelessWidget {
               color: primaryColor.withValues(alpha: 0.06),
             ),
           ),
-          Container(
-            height: 98,
-            width: 66,
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: primaryColor.withValues(alpha: 0.38),
-                width: 4,
-              ),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  height: 12,
-                  width: 28,
-                  decoration: BoxDecoration(
-                    color: primaryColor.withValues(alpha: 0.24),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(10),
-                      bottomRight: Radius.circular(10),
-                    ),
-                  ),
-                ),
-                Icon(
-                  isEmailVerification
-                      ? Icons.mark_email_read_outlined
-                      : Icons.phone_iphone_rounded,
-                  size: 24,
-                  color: primaryColor.withValues(alpha: 0.28),
-                ),
-                Container(
-                  height: 4,
-                  width: 20,
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: primaryColor.withValues(alpha: 0.28),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          Image.asset(Images.brandMark, height: 112, fit: BoxFit.contain),
           Positioned(
-            right: 70,
-            bottom: 34,
-            child: Container(
-              height: 42,
-              width: 104,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: primaryColor,
-                borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryColor.withValues(alpha: 0.18),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.lock_outline_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                  const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                  Text(
-                    '***',
-                    style: robotoBold.copyWith(
-                      color: Colors.white,
-                      fontSize: Dimensions.fontSizeLarge,
-                    ),
-                  ),
-                ],
-              ),
+            right: 50,
+            bottom: 24,
+            child: Icon(
+              isEmailVerification
+                  ? Icons.mark_email_read_outlined
+                  : Icons.phone_iphone_rounded,
+              size: 34,
+              color: primaryColor.withValues(alpha: 0.13),
             ),
           ),
           Positioned(

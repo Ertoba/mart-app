@@ -61,8 +61,19 @@ class KeepzPaymentLauncher {
     int? createUserId,
     String? keepzMethodKey,
   }) async {
-    final String? status = await Get.bottomSheet<String>(
-      _KeepzBottomSheetFlow(
+    final BuildContext context = Get.overlayContext ?? Get.context!;
+    final String? status = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useSafeArea: true,
+      isDismissible: false,
+      enableDrag: false,
+      sheetAnimationStyle: const AnimationStyle(
+        duration: Duration(milliseconds: 320),
+        reverseDuration: Duration(milliseconds: 220),
+      ),
+      builder: (BuildContext context) => _KeepzBottomSheetFlow(
         orderModel: orderModel,
         isCashOnDelivery: isCashOnDelivery,
         paymentMethod: paymentMethod,
@@ -72,11 +83,6 @@ class KeepzPaymentLauncher {
         createUserId: createUserId,
         keepzMethodKey: keepzMethodKey,
       ),
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      ignoreSafeArea: false,
-      isDismissible: false,
-      enableDrag: false,
     );
 
     if (status != null) {
@@ -437,29 +443,37 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
 
   @override
   Widget build(BuildContext context) {
-    if (_hostedUrl != null) {
-      return _KeepzWebViewSheet(
-        initialUrl: _hostedUrl!,
-        resolvePaymentStatus: () =>
-            KeepzPaymentLauncher._readClosedOrderPaymentStatus(
-              orderId: widget.orderModel.id.toString(),
-              contactNumber: widget.contactNumber,
-            ),
-      );
-    }
-
-    return _KeepzLoadingSheet(
-      option: _selectedOption,
-      isLoading: _isLoading || _checkingStatus,
-      statusMessage: _statusMessage,
-      onRetry: () {
-        setState(() {
-          _isLoading = true;
-          _statusMessage = null;
-        });
-        unawaited(_startSelectedPayment());
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return FadeTransition(opacity: animation, child: child);
       },
-      onCheckStatus: _resolveExternalPayment,
+      child: _hostedUrl != null
+          ? _KeepzWebViewSheet(
+              key: const ValueKey<String>('keepz-webview'),
+              initialUrl: _hostedUrl!,
+              resolvePaymentStatus: () =>
+                  KeepzPaymentLauncher._readClosedOrderPaymentStatus(
+                    orderId: widget.orderModel.id.toString(),
+                    contactNumber: widget.contactNumber,
+                  ),
+            )
+          : _KeepzLoadingSheet(
+              key: const ValueKey<String>('keepz-loading'),
+              option: _selectedOption,
+              isLoading: _isLoading || _checkingStatus,
+              statusMessage: _statusMessage,
+              onRetry: () {
+                setState(() {
+                  _isLoading = true;
+                  _statusMessage = null;
+                });
+                unawaited(_startSelectedPayment());
+              },
+              onCheckStatus: _resolveExternalPayment,
+            ),
     );
   }
 }
@@ -1119,6 +1133,7 @@ class _KeepzLoadingSheet extends StatelessWidget {
   final VoidCallback onCheckStatus;
 
   const _KeepzLoadingSheet({
+    super.key,
     required this.option,
     required this.isLoading,
     required this.statusMessage,
@@ -1128,10 +1143,10 @@ class _KeepzLoadingSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
+    return FractionallySizedBox(
+      heightFactor: 0.96,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: const BorderRadius.vertical(
@@ -1139,101 +1154,121 @@ class _KeepzLoadingSheet extends StatelessWidget {
           ),
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Container(
-              width: 42,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Theme.of(context).disabledColor.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: <Widget>[
-                Container(
-                  width: 48,
-                  height: 48,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).primaryColor.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Image.asset(
-                    option.iconAsset,
-                    width: 34,
-                    height: 34,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        'გადახდის მეთოდი',
-                        style: robotoRegular.copyWith(
-                          color: Theme.of(context).hintColor,
-                          fontSize: Dimensions.fontSizeSmall,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        option.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: robotoSemiBold.copyWith(
-                          fontSize: Dimensions.fontSizeDefault,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (isLoading)
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.4,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Theme.of(context).primaryColor,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            if (statusMessage != null) ...<Widget>[
-              const SizedBox(height: Dimensions.paddingSizeDefault),
-              Text(
-                statusMessage!,
-                style: robotoRegular.copyWith(
-                  color: Theme.of(context).textTheme.bodyLarge!.color,
-                ),
-              ),
-              const SizedBox(height: Dimensions.paddingSizeDefault),
-              Row(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 6, 8),
+              child: Row(
                 children: <Widget>[
+                  Icon(
+                    Icons.lock_outline_rounded,
+                    size: 20,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: isLoading ? null : onCheckStatus,
-                      child: const Text('სტატუსის შემოწმება'),
+                    child: Text(
+                      'გადახდა',
+                      style: robotoBold.copyWith(
+                        fontSize: Dimensions.fontSizeDefault,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: Dimensions.paddingSizeSmall),
-                  Expanded(
-                    child: CustomButton(
-                      buttonText: 'ხელახლა გახსნა',
-                      isLoading: isLoading,
-                      onPressed: isLoading ? null : onRetry,
-                    ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    tooltip: 'დახურვა',
+                    icon: const Icon(Icons.close_rounded),
                   ),
                 ],
               ),
-            ],
+            ),
+            Divider(
+              height: 1,
+              color: Theme.of(context).disabledColor.withValues(alpha: 0.18),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Container(
+                      width: 72,
+                      height: 72,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Theme.of(
+                          context,
+                        ).primaryColor.withValues(alpha: 0.08),
+                      ),
+                      child: Icon(
+                        Icons.credit_card_rounded,
+                        size: 34,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      option.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: robotoSemiBold.copyWith(
+                        fontSize: Dimensions.fontSizeLarge,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    if (isLoading) ...<Widget>[
+                      SizedBox(
+                        width: 26,
+                        height: 26,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).primaryColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'გადახდის უსაფრთხო გვერდი იტვირთება',
+                        textAlign: TextAlign.center,
+                        style: robotoRegular.copyWith(
+                          color: Theme.of(context).hintColor,
+                        ),
+                      ),
+                    ],
+                    if (statusMessage != null) ...<Widget>[
+                      Text(
+                        statusMessage!,
+                        textAlign: TextAlign.center,
+                        style: robotoRegular.copyWith(
+                          color: Theme.of(context).textTheme.bodyLarge!.color,
+                        ),
+                      ),
+                      const SizedBox(height: Dimensions.paddingSizeLarge),
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: isLoading ? null : onCheckStatus,
+                              child: const Text('სტატუსის შემოწმება'),
+                            ),
+                          ),
+                          const SizedBox(width: Dimensions.paddingSizeSmall),
+                          Expanded(
+                            child: CustomButton(
+                              buttonText: 'ხელახლა გახსნა',
+                              isLoading: isLoading,
+                              onPressed: isLoading ? null : onRetry,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -1246,6 +1281,7 @@ class _KeepzWebViewSheet extends StatefulWidget {
   final Future<String?> Function()? resolvePaymentStatus;
 
   const _KeepzWebViewSheet({
+    super.key,
     required this.initialUrl,
     this.resolvePaymentStatus,
   });

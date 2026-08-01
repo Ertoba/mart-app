@@ -92,7 +92,7 @@ class SignUpScreenState extends State<SignUpScreen> {
                         : const SizedBox(),
 
                     Image.asset(
-                      Images.authLogo,
+                      Images.brandMark,
                       width: 160,
                       fit: BoxFit.contain,
                     ),

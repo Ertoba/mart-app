@@ -20,7 +20,9 @@ class TipsWidget extends StatelessWidget {
         InkWell(
           onTap: onTap as void Function()?,
           child: Container(
-            padding: ResponsiveHelper.isDesktop(context) ? EdgeInsets.zero : const EdgeInsets.symmetric(vertical:  5, horizontal: Dimensions.paddingSizeSmall),
+            width: ResponsiveHelper.isDesktop(context) ? null : 56,
+            height: ResponsiveHelper.isDesktop(context) ? null : 42,
+            padding: EdgeInsets.zero,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).cardColor,
@@ -28,7 +30,7 @@ class TipsWidget extends StatelessWidget {
               border: Border.all(color: ResponsiveHelper.isDesktop(context) ? Theme.of(context).primaryColor : Theme.of(context).cardColor),
               boxShadow: ResponsiveHelper.isDesktop(context) ? [] : const [BoxShadow(color: Colors.black12, spreadRadius: 0.5, blurRadius: 0.5)],
             ),
-            child: Column(children: [
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               Padding(
                 padding: ResponsiveHelper.isDesktop(context) ? EdgeInsets.only(
                     top: !isSuggested ? Dimensions.fontSizeSmall : Dimensions.paddingSizeExtraSmall,

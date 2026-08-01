@@ -413,7 +413,7 @@ class PaymentSection extends StatelessWidget {
               checkoutController.paymentMethodIndex == 2 &&
               checkoutController.digitalPaymentName == 'keepz' &&
               checkoutController.keepzPaymentOptionKey == option.key,
-          icon: const _VisaMastercardIcon(),
+          icon: const _VisaIcon(),
           onTap: () {
             checkoutController.setPaymentMethod(2, isUpdate: false);
             checkoutController.changeKeepzPaymentOption(option);
@@ -487,11 +487,11 @@ class _SelectedPaymentIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (paymentMethodIndex == 2 && keepzPaymentOption != null) {
-      return const _VisaMastercardIcon();
+      return const _VisaIcon();
     }
 
     if (paymentMethodIndex == 2) {
-      return const _VisaMastercardIcon();
+      return const _VisaIcon();
     }
 
     return Image.asset(
@@ -507,95 +507,28 @@ class _SelectedPaymentIcon extends StatelessWidget {
   }
 }
 
-class _VisaMastercardIcon extends StatelessWidget {
-  const _VisaMastercardIcon();
+class _VisaIcon extends StatelessWidget {
+  const _VisaIcon();
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 46,
+    return Container(
+      width: 38,
       height: 24,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            left: 0,
-            top: 3,
-            child: Container(
-              width: 30,
-              height: 18,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(3),
-                border: Border.all(
-                  color: Theme.of(
-                    context,
-                  ).disabledColor.withValues(alpha: 0.25),
-                ),
-              ),
-              child: Text(
-                'VISA',
-                style: robotoBlack.copyWith(
-                  color: const Color(0xFF1A4DB3),
-                  fontSize: 7,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 19,
-            top: 3,
-            child: Container(
-              width: 30,
-              height: 18,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(3),
-                border: Border.all(
-                  color: Theme.of(
-                    context,
-                  ).disabledColor.withValues(alpha: 0.25),
-                ),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Positioned(
-                    left: 6,
-                    child: Container(
-                      width: 11,
-                      height: 11,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFEB001B),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 6,
-                    child: Container(
-                      width: 11,
-                      height: 11,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF79E1B),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    'MC',
-                    style: robotoBlack.copyWith(
-                      color: Colors.white,
-                      fontSize: 6,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: Theme.of(context).disabledColor.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Text(
+        'VISA',
+        style: robotoBlack.copyWith(
+          color: const Color(0xFF1A4DB3),
+          fontSize: 9,
+        ),
       ),
     );
   }

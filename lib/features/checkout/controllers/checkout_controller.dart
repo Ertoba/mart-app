@@ -720,10 +720,17 @@ class CheckoutController extends GetxController implements GetxService {
     String userID,
   ) async {
     if (isSuccess) {
-      if (fromCart) {
+      final bool deferKeepzCartClear =
+          fromCart &&
+          paymentMethodIndex == 2 &&
+          _digitalPaymentName == 'keepz' &&
+          !GetPlatform.isWeb;
+      if (fromCart && !deferKeepzCartClear) {
         Get.find<CartController>().clearCartList();
       }
-      setGuestAddress(null);
+      if (!deferKeepzCartClear) {
+        setGuestAddress(null);
+      }
       if (!Get.find<OrderController>().showBottomSheet) {
         Get.find<OrderController>().showRunningOrders(canUpdate: false);
       }
@@ -745,7 +752,7 @@ class CheckoutController extends GetxController implements GetxService {
 
           html.window.open(selectedUrl, "_self");
         } else if (_digitalPaymentName == 'keepz') {
-          await KeepzPaymentLauncher.show(
+          final String? keepzStatus = await KeepzPaymentLauncher.show(
             orderModel: OrderModel(
               id: int.parse(orderID),
               orderType: orderType,
@@ -760,7 +767,15 @@ class CheckoutController extends GetxController implements GetxService {
             contactNumber: contactNumber ?? '',
             createAccount: _isCreateAccount,
             keepzMethodKey: _keepzPaymentOptionKey,
+            onPaymentSuccess: fromCart
+                ? () => Get.find<CartController>().clearCartList()
+                : null,
           );
+          if (keepzStatus == null) {
+            update();
+            return;
+          }
+          setGuestAddress(null);
         } else {
           Get.offNamed(
             RouteHelper.getPaymentRoute(

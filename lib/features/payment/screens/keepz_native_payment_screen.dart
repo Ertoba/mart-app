@@ -51,7 +51,7 @@ class KeepzNativePaymentScreen extends StatefulWidget {
 }
 
 class KeepzPaymentLauncher {
-  static Future<void> show({
+  static Future<String?> show({
     required OrderModel orderModel,
     required bool isCashOnDelivery,
     required String paymentMethod,
@@ -60,6 +60,7 @@ class KeepzPaymentLauncher {
     required bool createAccount,
     int? createUserId,
     String? keepzMethodKey,
+    Future<void> Function()? onPaymentSuccess,
   }) async {
     final BuildContext context = Get.overlayContext ?? Get.context!;
     final String? status = await showModalBottomSheet<String>(
@@ -86,6 +87,9 @@ class KeepzPaymentLauncher {
     );
 
     if (status != null) {
+      if (status == 'success' && onPaymentSuccess != null) {
+        await onPaymentSuccess();
+      }
       _navigateOrderPaymentResult(
         status: status,
         orderId: orderModel.id.toString(),
@@ -93,46 +97,8 @@ class KeepzPaymentLauncher {
         createAccount: createAccount,
         guestId: guestId,
       );
-      return;
     }
-
-    await _resolveClosedOrderPayment(
-      orderId: orderModel.id.toString(),
-      contactNumber: contactNumber,
-      createAccount: createAccount,
-      guestId: guestId,
-      navigateOnUnresolved: false,
-    );
-  }
-
-  static Future<void> _resolveClosedOrderPayment({
-    required String orderId,
-    required String contactNumber,
-    required bool createAccount,
-    required String guestId,
-    bool navigateOnUnresolved = true,
-  }) async {
-    final String? status = await _readClosedOrderPaymentStatus(
-      orderId: orderId,
-      contactNumber: contactNumber,
-    );
-
-    if (status != null) {
-      _navigateOrderPaymentResult(
-        status: status,
-        orderId: orderId,
-        contactNumber: contactNumber,
-        createAccount: createAccount,
-        guestId: guestId,
-      );
-      return;
-    }
-
-    if (navigateOnUnresolved) {
-      showCustomSnackBar(
-        'გადახდა ჯერ არ დადასტურებულა. სტატუსი მოგვიანებით გადაამოწმე.',
-      );
-    }
+    return status;
   }
 
   static Future<String?> _readClosedOrderPaymentStatus({
@@ -746,10 +712,7 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
 
     if (status != null) {
       _navigateOrderPaymentResult(status);
-      return;
     }
-
-    await _resolveClosedOrderPayment();
   }
 
   Future<String?> _requestInstallmentPersonalNumber() {

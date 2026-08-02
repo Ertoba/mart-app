@@ -8,11 +8,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:sixam_mart/api/api_client.dart';
 import 'package:sixam_mart/common/widgets/custom_button.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/checkout/widgets/payment_failed_dialog.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
-import 'package:sixam_mart/features/order/controllers/order_controller.dart';
 import 'package:sixam_mart/features/order/domain/models/order_model.dart';
 import 'package:sixam_mart/features/payment/domain/models/keepz_payment_option.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
@@ -86,6 +86,10 @@ class KeepzPaymentLauncher {
       ),
     );
 
+    if (status == 'superseded') {
+      return null;
+    }
+
     if (status != null) {
       if (status == 'success' && onPaymentSuccess != null) {
         await onPaymentSuccess();
@@ -103,40 +107,45 @@ class KeepzPaymentLauncher {
 
   static Future<String?> _readClosedOrderPaymentStatus({
     required String orderId,
-    required String contactNumber,
+    required String guestId,
   }) async {
-    final OrderController orderController = Get.find<OrderController>();
-    for (int attempt = 0; attempt < 3; attempt++) {
-      await orderController.trackOrder(
-        orderId,
-        null,
-        false,
-        contactNumber: contactNumber,
+    final ApiClient apiClient = Get.find<ApiClient>();
+    final String guestQuery = guestId.isNotEmpty
+        ? '?guest_id=${Uri.encodeQueryComponent(guestId)}'
+        : '';
+    const List<int> retryDelaysMs = <int>[0, 500, 900, 1400];
+
+    for (final int delayMs in retryDelaysMs) {
+      if (delayMs > 0) {
+        await Future<void>.delayed(Duration(milliseconds: delayMs));
+      }
+
+      final response = await apiClient.getData(
+        '/api/v1/customer/order-payment/$orderId/status$guestQuery',
+        handleError: false,
       );
-      final OrderModel? order = orderController.trackModel;
+      final dynamic body = response.body;
 
-      if (order != null && _isPaidOrder(order)) {
-        return 'success';
-      }
+      if (body is Map) {
+        final String state = body['state']?.toString().toLowerCase() ?? '';
+        final String paymentStatus =
+            body['payment_status']?.toString().toLowerCase() ?? '';
 
-      if (order != null &&
-          (order.orderStatus == 'failed' || order.orderStatus == 'canceled')) {
-        return 'fail';
-      }
+        if (state == 'paid' || paymentStatus == 'paid') {
+          return 'success';
+        }
 
-      if (attempt < 2) {
-        await Future<void>.delayed(const Duration(milliseconds: 800));
+        if (state == 'superseded') {
+          return 'superseded';
+        }
+
+        if (state == 'terminal' || state == 'ready' || state == 'absent') {
+          return 'fail';
+        }
       }
     }
 
     return null;
-  }
-
-  static bool _isPaidOrder(OrderModel order) {
-    return order.paymentStatus == 'paid' ||
-        order.paymentMethod == 'cash_on_delivery' ||
-        order.paymentMethod == 'partial_payment' ||
-        order.paymentMethod == 'wallet';
   }
 
   static void _navigateOrderPaymentResult({
@@ -148,6 +157,10 @@ class KeepzPaymentLauncher {
   }) {
     if (Get.isBottomSheetOpen == true) {
       Get.back();
+    }
+
+    if (status == 'superseded') {
+      return;
     }
 
     if (status == 'success') {
@@ -357,7 +370,7 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
     final String? status =
         await KeepzPaymentLauncher._readClosedOrderPaymentStatus(
           orderId: widget.orderModel.id.toString(),
-          contactNumber: widget.contactNumber,
+          guestId: widget.guestId,
         );
 
     if (!mounted) {
@@ -423,7 +436,7 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
               resolvePaymentStatus: () =>
                   KeepzPaymentLauncher._readClosedOrderPaymentStatus(
                     orderId: widget.orderModel.id.toString(),
-                    contactNumber: widget.contactNumber,
+                    guestId: widget.guestId,
                   ),
             )
           : _KeepzLoadingSheet(
@@ -700,7 +713,7 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
           resolvePaymentStatus: () =>
               KeepzPaymentLauncher._readClosedOrderPaymentStatus(
                 orderId: widget.orderModel.id.toString(),
-                contactNumber: widget.contactNumber,
+                guestId: widget.guestId,
               ),
         );
       },
@@ -847,50 +860,50 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
       _checkingStatus = true;
     });
 
-    final OrderController orderController = Get.find<OrderController>();
-    for (int attempt = 0; attempt < 3; attempt++) {
-      await orderController.trackOrder(
-        widget.orderModel.id.toString(),
-        null,
-        false,
-        contactNumber: widget.contactNumber,
-      );
-      final OrderModel? order = orderController.trackModel;
+    final String? status =
+        await KeepzPaymentLauncher._readClosedOrderPaymentStatus(
+          orderId: widget.orderModel.id.toString(),
+          guestId: widget.guestId,
+        );
 
-      if (order != null && _isPaidOrder(order)) {
-        _navigateOrderPaymentResult('success');
-        return;
-      }
-
-      if (order != null &&
-          (order.orderStatus == 'failed' || order.orderStatus == 'canceled')) {
-        _navigateOrderPaymentResult('fail');
-        return;
-      }
-
-      if (attempt < 2) {
-        await Future<void>.delayed(const Duration(milliseconds: 800));
-      }
+    if (!mounted) {
+      return;
     }
 
-    if (mounted) {
+    if (status == 'success' || status == 'fail') {
+      _navigateOrderPaymentResult(status!);
+      return;
+    }
+
+    if (status == 'superseded') {
       setState(() {
         _checkingStatus = false;
         _statusMessage =
-            'გადახდა ჯერ არ დადასტურებულა. საჭიროების შემთხვევაში სტატუსი ხელახლა გადაამოწმე.';
+            'გადახდის მეთოდი შეიცვალა. წინა საბანკო გადახდა აღარ არის აქტიური.';
       });
+      return;
     }
-  }
 
-  bool _isPaidOrder(OrderModel order) {
-    return order.paymentStatus == 'paid' ||
-        order.paymentMethod == 'cash_on_delivery' ||
-        order.paymentMethod == 'partial_payment' ||
-        order.paymentMethod == 'wallet';
+    setState(() {
+      _checkingStatus = false;
+      _statusMessage =
+          'გადახდა ჯერ არ დადასტურებულა. საჭიროების შემთხვევაში სტატუსი ხელახლა გადაამოწმე.';
+    });
   }
 
   void _navigateOrderPaymentResult(String status) {
     if (!Get.currentRoute.startsWith(RouteHelper.payment)) {
+      return;
+    }
+
+    if (status == 'superseded') {
+      if (mounted) {
+        setState(() {
+          _checkingStatus = false;
+          _statusMessage =
+              'გადახდის მეთოდი შეიცვალა. წინა საბანკო გადახდა აღარ არის აქტიური.';
+        });
+      }
       return;
     }
 
@@ -1448,7 +1461,7 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet>
 
                           return NavigationActionPolicy.ALLOW;
                         },
-                    onUpdateVisitedHistory: (_, WebUri? url, __) {
+                    onUpdateVisitedHistory: (_, WebUri? url, _) {
                       _handleUrl(url?.toString());
                     },
                     onReceivedError: (_, request, error) {

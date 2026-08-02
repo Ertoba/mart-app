@@ -1,0 +1,71 @@
+name: Keepz status issue trigger
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  patch:
+    if: github.event.issue.title == 'Run Keepz status hotfix now'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Execute embedded patch script
+        shell: bash
+        run: |
+          python3 <<'EXTRACT'
+          from pathlib import Path
+          import textwrap
+
+          workflow = Path('.github/workflows/keepz-status-hotfix.yml').read_text()
+          start = "          python3 <<'PY'\n"
+          end = "\n          PY\n\n      - name: Format and analyze"
+          if start not in workflow or end not in workflow:
+              raise SystemExit('Embedded patch script markers were not found')
+          script = workflow.split(start, 1)[1].split(end, 1)[0]
+          exec(compile(textwrap.dedent(script), 'keepz-status-hotfix.py', 'exec'))
+          EXTRACT
+
+      - name: Format and analyze
+        shell: bash
+        run: |
+          dart format lib/features/payment/screens/keepz_native_payment_screen.dart
+          flutter pub get
+          flutter analyze lib/features/payment/screens/keepz_native_payment_screen.dart
+          python3 <<'PY'
+          from pathlib import Path
+          text = Path('lib/features/payment/screens/keepz_native_payment_screen.dart').read_text()
+          checks = {
+              'authoritative endpoint': '/api/v1/customer/order-payment/$orderId/status' in text,
+              'no COD-is-paid rule': "order.paymentMethod == 'cash_on_delivery'" not in text,
+              'superseded handling': "status == 'superseded'" in text,
+              'ApiClient status call': 'Get.find<ApiClient>()' in text,
+          }
+          failed = [name for name, ok in checks.items() if not ok]
+          if failed:
+              raise SystemExit('Invariant checks failed: ' + ', '.join(failed))
+          PY
+
+      - name: Commit hotfix and remove temporary automation
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/keepz-status-hotfix.yml
+          git rm .github/workflows/keepz-status-issue-trigger.yml
+          git add lib/features/payment/screens/keepz_native_payment_screen.dart pubspec.yaml
+          git commit -m "Use authoritative Keepz payment status"
+          git push origin main

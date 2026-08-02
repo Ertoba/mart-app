@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:get/get_connect/connect.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +12,9 @@ import 'package:sixam_mart/features/checkout/domain/repositories/checkout_reposi
 import 'package:sixam_mart/util/app_constants.dart';
 
 class CheckoutRepository implements CheckoutRepositoryInterface {
+  static const String _checkoutIdempotencyPreference =
+      'checkout_idempotency_key';
+
   final ApiClient apiClient;
   final SharedPreferences sharedPreferences;
   CheckoutRepository({required this.apiClient, required this.sharedPreferences});
@@ -54,7 +60,57 @@ class CheckoutRepository implements CheckoutRepositoryInterface {
 
   @override
   Future<Response> placeOrder(PlaceOrderBodyModel orderBody, List<MultipartBody>? orderAttachment) async {
-    return await apiClient.postMultipartData(AppConstants.placeOrderUri, orderBody.toJson(), orderAttachment ?? [], handleError: false);
+    final String idempotencyKey = await _getOrCreateCheckoutIdempotencyKey();
+    final Map<String, String> headers = Map<String, String>.from(
+      apiClient.getHeader(),
+    )..['Idempotency-Key'] = idempotencyKey;
+
+    final Response response = await apiClient.postMultipartData(
+      AppConstants.placeOrderUri,
+      orderBody.toJson(),
+      orderAttachment ?? [],
+      headers: headers,
+      handleError: false,
+    );
+
+    final bool isTransportFailure =
+        response.statusCode == null ||
+        response.statusCode == 0 ||
+        response.statusCode == 1;
+    final bool isStillProcessing =
+        response.statusCode == 409 &&
+        response.body is Map &&
+        response.body['errors'] is List &&
+        response.body['errors'].isNotEmpty &&
+        response.body['errors'][0]['code'] == 'checkout_in_progress';
+
+    if (!isTransportFailure && !isStillProcessing) {
+      await sharedPreferences.remove(_checkoutIdempotencyPreference);
+    }
+
+    return response;
+  }
+
+  Future<String> _getOrCreateCheckoutIdempotencyKey() async {
+    final String? existing = sharedPreferences.getString(
+      _checkoutIdempotencyPreference,
+    );
+    if (existing != null && existing.isNotEmpty) {
+      return existing;
+    }
+
+    final Random random = Random.secure();
+    final List<int> bytes = List<int>.generate(
+      32,
+      (_) => random.nextInt(256),
+      growable: false,
+    );
+    final String generated = base64UrlEncode(bytes).replaceAll('=', '');
+    await sharedPreferences.setString(
+      _checkoutIdempotencyPreference,
+      generated,
+    );
+    return generated;
   }
 
   @override

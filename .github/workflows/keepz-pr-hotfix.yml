@@ -25,23 +25,7 @@ jobs:
           cache: true
 
       - name: Apply authoritative Keepz status patch
-        shell: bash
-        run: |
-          python3 <<'EXTRACT'
-          from pathlib import Path
-
-          workflow = Path('.github/workflows/keepz-status-hotfix.yml').read_text()
-          start = "          python3 <<'PY'\n"
-          end = "\n          PY\n\n      - name: Format and analyze"
-          if start not in workflow or end not in workflow:
-              raise SystemExit('Embedded patch script markers were not found')
-          raw_script = workflow.split(start, 1)[1].split(end, 1)[0]
-          script = '\n'.join(
-              line[10:] if line.startswith('          ') else line
-              for line in raw_script.splitlines()
-          )
-          exec(compile(script, 'keepz-status-hotfix.py', 'exec'))
-          EXTRACT
+        run: python3 .github/scripts/keepz_status_patch.py
 
       - name: Format and analyze
         shell: bash
@@ -74,6 +58,7 @@ jobs:
           git rm .github/workflows/keepz-status-hotfix.yml
           git rm .github/workflows/keepz-status-issue-trigger.yml
           git rm .github/workflows/keepz-pr-hotfix.yml
+          git rm .github/scripts/keepz_status_patch.py
           git add lib/features/payment/screens/keepz_native_payment_screen.dart pubspec.yaml
           git commit -m "Use authoritative Keepz payment status"
           git push origin HEAD:${{ github.head_ref }}

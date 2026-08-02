@@ -25,7 +25,10 @@ jobs:
           cache: true
 
       - name: Apply authoritative Keepz status patch
-        run: python3 .github/scripts/keepz_status_patch.py
+        shell: bash
+        run: |
+          python3 .github/scripts/keepz_status_patch.py
+          python3 .github/scripts/keepz_lint_patch.py
 
       - name: Format and analyze
         shell: bash
@@ -44,6 +47,7 @@ jobs:
               'superseded handling': "status == 'superseded'" in text,
               'ApiClient status call': 'Get.find<ApiClient>()' in text,
               'version bump': 'version: 3.8.12+40' in Path('pubspec.yaml').read_text(),
+              'clean analyzer callback': 'onUpdateVisitedHistory: (_, WebUri? url, _) {' in text,
           }
           failed = [name for name, ok in checks.items() if not ok]
           if failed:
@@ -59,6 +63,7 @@ jobs:
           git rm .github/workflows/keepz-status-issue-trigger.yml
           git rm .github/workflows/keepz-pr-hotfix.yml
           git rm .github/scripts/keepz_status_patch.py
+          git rm .github/scripts/keepz_lint_patch.py
           git add lib/features/payment/screens/keepz_native_payment_screen.dart pubspec.yaml
           git commit -m "Use authoritative Keepz payment status"
           git push origin HEAD:${{ github.head_ref }}

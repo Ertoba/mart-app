@@ -94,17 +94,12 @@ authoritative_reader = """  static Future<String?> _readClosedOrderPaymentStatus
         final String state = body['state']?.toString().toLowerCase() ?? '';
         final String paymentStatus =
             body['payment_status']?.toString().toLowerCase() ?? '';
-        final String paymentMethod =
-            body['payment_method']?.toString().toLowerCase() ?? '';
 
         if (state == 'paid' || paymentStatus == 'paid') {
           return 'success';
         }
 
-        if (state == 'superseded' ||
-            (paymentMethod.isNotEmpty &&
-                paymentMethod != 'digital_payment' &&
-                paymentMethod != 'keepz')) {
+        if (state == 'superseded') {
           return 'superseded';
         }
 
@@ -129,9 +124,9 @@ text = sub_once(
 
 call_arg = "contactNumber: widget.contactNumber,"
 call_count = text.count(call_arg)
-if call_count != 3:
+if call_count != 4:
     raise SystemExit(
-        f"authoritative status call arguments: expected 3 matches, found {call_count}"
+        f"authoritative status call arguments: expected 4 matches, found {call_count}"
     )
 text = text.replace(call_arg, "guestId: widget.guestId,")
 

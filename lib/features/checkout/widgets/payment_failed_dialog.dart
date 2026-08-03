@@ -1,6 +1,8 @@
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
+import 'package:sixam_mart/features/cart/controllers/cart_controller.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
+import 'package:sixam_mart/features/payment/services/keepz_order_payment_service.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
@@ -19,85 +21,180 @@ class PaymentFailedDialog extends StatelessWidget {
   final double? maxCodOrderAmount;
   final bool? isCashOnDelivery;
   final String guestId;
-  const PaymentFailedDialog({super.key, required this.orderID, required this.maxCodOrderAmount, required this.orderAmount, required this.orderType, required this.isCashOnDelivery, required this.guestId});
+  const PaymentFailedDialog({
+    super.key,
+    required this.orderID,
+    required this.maxCodOrderAmount,
+    required this.orderAmount,
+    required this.orderType,
+    required this.isCashOnDelivery,
+    required this.guestId,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Dimensions.radiusSmall)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+      ),
       insetPadding: const EdgeInsets.all(30),
       clipBehavior: Clip.antiAliasWithSaveLayer,
-      child: SizedBox(width: 500, child: Padding(
-        padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-
-          Padding(
-            padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
-            child: Image.asset(Images.warning, width: 70, height: 70),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge),
-            child: Text(
-              'are_you_agree_with_this_order_fail'.tr, textAlign: TextAlign.center,
-              style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeExtraLarge, color: Colors.red),
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
-            child: Text(
-              'if_you_do_not_pay'.tr,
-              style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge), textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: Dimensions.paddingSizeLarge),
-
-          GetBuilder<OrderController>(builder: (orderController) {
-            return !orderController.isLoading ? Column(children: [
-              isCashOnDelivery! ? CustomButton(
-                buttonText: 'switch_to_cash_on_delivery'.tr,
-                onPressed: () {
-                  if((((maxCodOrderAmount != null && orderAmount! < maxCodOrderAmount!) || maxCodOrderAmount == null || maxCodOrderAmount == 0) && orderType != 'parcel') || orderType == 'parcel'){
-                    orderController.switchToCOD(orderID, guestId: guestId.isNotEmpty ? guestId : null).then((success){
-                      if(success){
-                        double total = ((orderAmount! / 100) * Get.find<SplashController>().configModel!.loyaltyPointItemPurchasePoint!);
-                        if(AuthHelper.isLoggedIn()) {
-                          Get.find<AuthController>().saveEarningPoint(total.toStringAsFixed(0));
-                        }
-                        Get.offAllNamed(RouteHelper.getInitialRoute());
-                      }
-                    });
-                  }else{
-                    if(Get.isDialogOpen!) {
-                      Get.back();
-                    }
-                    showCustomSnackBar('${'you_cant_order_more_then'.tr} ${PriceConverter.convertPrice(maxCodOrderAmount)} ${'in_cash_on_delivery'.tr}');
-                  }
-                },
-                radius: Dimensions.radiusSmall, height: 40,
-              ) : const SizedBox(),
-              SizedBox(height: Get.find<SplashController>().configModel!.cashOnDelivery! ? Dimensions.paddingSizeLarge : 0),
-
-              TextButton(
-                onPressed: () {
-                  Get.find<OrderController>().cancelOrder(orderID: int.parse(orderID!), reason: 'Digital payment issue', isParcel: false, guestId: guestId.isNotEmpty ? guestId : null).then((success) {
-                    if(success){
-                      Get.offAllNamed(RouteHelper.getInitialRoute());
-                    }
-                  });
-                },
-                style: TextButton.styleFrom(
-                  backgroundColor: Theme.of(context).disabledColor.withValues(alpha: 0.3), minimumSize: const Size(Dimensions.webMaxWidth, 40), padding: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Dimensions.radiusSmall)),
-                ),
-                child: Text('cancel_order'.tr, textAlign: TextAlign.center, style: robotoBold.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color)),
+      child: SizedBox(
+        width: 500,
+        child: Padding(
+          padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
+                child: Image.asset(Images.warning, width: 70, height: 70),
               ),
-            ]) : const Center(child: CircularProgressIndicator());
-          }),
 
-        ]),
-      )),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Dimensions.paddingSizeLarge,
+                ),
+                child: Text(
+                  'are_you_agree_with_this_order_fail'.tr,
+                  textAlign: TextAlign.center,
+                  style: robotoMedium.copyWith(
+                    fontSize: Dimensions.fontSizeExtraLarge,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
+                child: Text(
+                  'if_you_do_not_pay'.tr,
+                  style: robotoMedium.copyWith(
+                    fontSize: Dimensions.fontSizeLarge,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: Dimensions.paddingSizeLarge),
+
+              GetBuilder<OrderController>(
+                builder: (orderController) {
+                  return !orderController.isLoading
+                      ? Column(
+                          children: [
+                            isCashOnDelivery!
+                                ? CustomButton(
+                                    buttonText: 'switch_to_cash_on_delivery'.tr,
+                                    onPressed: () async {
+                                      if ((((maxCodOrderAmount != null &&
+                                                      orderAmount! <
+                                                          maxCodOrderAmount!) ||
+                                                  maxCodOrderAmount == null ||
+                                                  maxCodOrderAmount == 0) &&
+                                              orderType != 'parcel') ||
+                                          orderType == 'parcel') {
+                                        final KeepzOrderActionResult result =
+                                            await KeepzOrderPaymentService.switchToCod(
+                                              orderId: orderID!,
+                                              guestId: guestId,
+                                            );
+                                        if (result.isSuccess || result.isPaid) {
+                                          Get.find<CartController>()
+                                              .clearCartList();
+                                          double total =
+                                              ((orderAmount! / 100) *
+                                              Get.find<SplashController>()
+                                                  .configModel!
+                                                  .loyaltyPointItemPurchasePoint!);
+                                          if (AuthHelper.isLoggedIn()) {
+                                            Get.find<AuthController>()
+                                                .saveEarningPoint(
+                                                  total.toStringAsFixed(0),
+                                                );
+                                          }
+                                          Get.offAllNamed(
+                                            RouteHelper.getInitialRoute(),
+                                          );
+                                        } else {
+                                          showCustomSnackBar(result.message);
+                                        }
+                                      } else {
+                                        if (Get.isDialogOpen!) {
+                                          Get.back();
+                                        }
+                                        showCustomSnackBar(
+                                          '${'you_cant_order_more_then'.tr} ${PriceConverter.convertPrice(maxCodOrderAmount)} ${'in_cash_on_delivery'.tr}',
+                                        );
+                                      }
+                                    },
+                                    radius: Dimensions.radiusSmall,
+                                    height: 40,
+                                  )
+                                : const SizedBox(),
+                            SizedBox(
+                              height:
+                                  Get.find<SplashController>()
+                                      .configModel!
+                                      .cashOnDelivery!
+                                  ? Dimensions.paddingSizeLarge
+                                  : 0,
+                            ),
+
+                            TextButton(
+                              onPressed: () {
+                                Get.find<OrderController>()
+                                    .cancelOrder(
+                                      orderID: int.parse(orderID!),
+                                      reason: 'Digital payment issue',
+                                      isParcel: false,
+                                      guestId: guestId.isNotEmpty
+                                          ? guestId
+                                          : null,
+                                    )
+                                    .then((success) {
+                                      if (success) {
+                                        Get.find<CartController>()
+                                            .clearCartList();
+                                        Get.offAllNamed(
+                                          RouteHelper.getInitialRoute(),
+                                        );
+                                      }
+                                    });
+                              },
+                              style: TextButton.styleFrom(
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).disabledColor.withValues(alpha: 0.3),
+                                minimumSize: const Size(
+                                  Dimensions.webMaxWidth,
+                                  40,
+                                ),
+                                padding: EdgeInsets.zero,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    Dimensions.radiusSmall,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                'cancel_order'.tr,
+                                textAlign: TextAlign.center,
+                                style: robotoBold.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge!.color,
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : const Center(child: CircularProgressIndicator());
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

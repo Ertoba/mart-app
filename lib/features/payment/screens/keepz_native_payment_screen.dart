@@ -15,6 +15,7 @@ import 'package:sixam_mart/features/checkout/widgets/payment_failed_dialog.dart'
 import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
 import 'package:sixam_mart/features/order/domain/models/order_model.dart';
 import 'package:sixam_mart/features/payment/domain/models/keepz_payment_option.dart';
+import 'package:sixam_mart/features/payment/services/keepz_order_payment_service.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
@@ -247,6 +248,21 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
     final KeepzPaymentOption option = _selectedOption;
 
     try {
+      final KeepzOrderActionResult preparation =
+          await KeepzOrderPaymentService.prepareRetry(
+            orderId: widget.orderModel.id.toString(),
+            guestId: widget.guestId,
+          );
+      if (preparation.isPaid) {
+        if (mounted) {
+          Navigator.of(context).pop('success');
+        }
+        return;
+      }
+      if (!preparation.isReady) {
+        throw preparation.message;
+      }
+
       final _KeepzIntent intent = await _fetchIntent(
         flow: option.flow,
         provider: option.provider,
@@ -570,6 +586,20 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
     await _openPreparingBottomSheet();
 
     try {
+      final KeepzOrderActionResult preparation =
+          await KeepzOrderPaymentService.prepareRetry(
+            orderId: widget.orderModel.id.toString(),
+            guestId: widget.guestId,
+          );
+      if (preparation.isPaid) {
+        await _closePreparingBottomSheet();
+        _navigateOrderPaymentResult('success');
+        return;
+      }
+      if (!preparation.isReady) {
+        throw preparation.message;
+      }
+
       final _KeepzIntent intent = await _fetchIntent(
         flow: flow,
         provider: provider,
@@ -1150,7 +1180,7 @@ class _KeepzLoadingSheet extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.of(context).pop('cancel'),
                     tooltip: 'დახურვა',
                     icon: const Icon(Icons.close_rounded),
                   ),
@@ -1353,7 +1383,7 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet>
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                   IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.of(context).pop('cancel'),
                     tooltip: 'დახურვა',
                     icon: const Icon(Icons.close_rounded),
                   ),

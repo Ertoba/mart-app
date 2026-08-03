@@ -1,16 +1,16 @@
 name: Keepz payment flow hardening
 
 on:
-  pull_request:
-    branches: [main]
-    types: [opened, reopened, synchronize]
+  issues:
+    types: [opened]
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   harden:
-    if: github.head_ref == 'fix/keepz-existing-order-flow'
+    if: github.event.issue.title == 'Run Keepz final payment hardening'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

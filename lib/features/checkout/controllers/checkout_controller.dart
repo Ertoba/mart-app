@@ -23,6 +23,7 @@ import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
 import 'package:sixam_mart/features/order/domain/models/order_model.dart';
 import 'package:sixam_mart/features/payment/domain/models/keepz_payment_option.dart';
+import 'package:sixam_mart/features/payment/services/keepz_order_payment_service.dart';
 import 'package:sixam_mart/features/payment/domain/models/offline_method_model.dart';
 import 'package:sixam_mart/features/payment/screens/keepz_native_payment_screen.dart';
 import 'package:sixam_mart/features/checkout/domain/models/place_order_body_model.dart';
@@ -771,7 +772,7 @@ class CheckoutController extends GetxController implements GetxService {
                 ? () => Get.find<CartController>().clearCartList()
                 : null,
           );
-          if (keepzStatus == null) {
+          if (keepzStatus != 'success') {
             update();
             return;
           }
@@ -848,10 +849,25 @@ class CheckoutController extends GetxController implements GetxService {
   ) async {
     Get.find<SplashController>().togglePaymentIncompleteBottomSheet(false);
     if (paymentMethodIndex == 0) {
-      bool isSuccess = await Get.find<OrderController>().switchToCOD(
-        paymentData.orderID,
-        guestId: paymentData.guestId,
-      );
+      bool isSuccess;
+      if (paymentData.paymentMethod == 'keepz') {
+        final KeepzOrderActionResult result =
+            await KeepzOrderPaymentService.switchToCod(
+              orderId: paymentData.orderID!,
+              guestId: paymentData.guestId ?? '',
+            );
+        isSuccess = result.isSuccess || result.isPaid;
+        if (!isSuccess) {
+          showCustomSnackBar(result.message);
+          return;
+        }
+        Get.find<CartController>().clearCartList();
+      } else {
+        isSuccess = await Get.find<OrderController>().switchToCOD(
+          paymentData.orderID,
+          guestId: paymentData.guestId,
+        );
+      }
       if (isSuccess) {
         _redirection(paymentData, fromHome);
       }
@@ -874,7 +890,7 @@ class CheckoutController extends GetxController implements GetxService {
 
         html.window.open(selectedUrl, "_self");
       } else if (_digitalPaymentName == 'keepz') {
-        await KeepzPaymentLauncher.show(
+        final String? keepzStatus = await KeepzPaymentLauncher.show(
           orderModel: OrderModel(
             id: int.parse(paymentData.orderID!),
             orderType: paymentData.orderType,
@@ -883,11 +899,16 @@ class CheckoutController extends GetxController implements GetxService {
           ),
           isCashOnDelivery: paymentData.isCashOnDeliveryActive ?? false,
           paymentMethod: digitalPaymentName ?? 'keepz',
-          guestId: AuthHelper.getGuestId(),
+          guestId: paymentData.guestId ?? AuthHelper.getGuestId(),
           contactNumber: paymentData.contactNumber ?? '',
           createAccount: false,
           keepzMethodKey: _keepzPaymentOptionKey,
+          onPaymentSuccess: () => Get.find<CartController>().clearCartList(),
         );
+        if (keepzStatus != 'success') {
+          update();
+          return;
+        }
       } else {
         Get.offNamed(
           RouteHelper.getPaymentRoute(

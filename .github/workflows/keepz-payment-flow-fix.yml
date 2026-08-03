@@ -39,8 +39,8 @@ jobs:
           checkout = Path('lib/features/checkout/controllers/checkout_controller.dart').read_text()
           failed = Path('lib/features/checkout/screens/digital_payment_failed_screen.dart').read_text()
           checks = {
-              'prepare existing order': '/prepare-retry' in service,
-              'safe COD switch': '/switch-to-cod' in service,
+              'prepare existing order': "action: 'prepare-retry'" in service,
+              'safe COD switch': "action: 'switch-to-cod'" in service,
               'close routes to failure page': "pop('cancel')" in payment,
               'preflight before Keepz intent': 'KeepzOrderPaymentService.prepareRetry' in payment,
               'retry does not recreate order': "keepzStatus != 'success'" in checkout,

@@ -3,7 +3,7 @@ name: Keepz payment flow hardening
 on:
   pull_request:
     branches: [main]
-    types: [opened]
+    types: [opened, reopened, synchronize]
 
 permissions:
   contents: write

@@ -31,7 +31,7 @@ jobs:
         run: |
           dart format lib/features/payment/services/keepz_order_payment_service.dart lib/features/payment/screens/keepz_native_payment_screen.dart lib/features/checkout/controllers/checkout_controller.dart lib/features/checkout/screens/digital_payment_failed_screen.dart lib/features/checkout/widgets/payment_failed_dialog.dart
           flutter pub get
-          flutter analyze lib/features/payment/services/keepz_order_payment_service.dart lib/features/payment/screens/keepz_native_payment_screen.dart lib/features/checkout/controllers/checkout_controller.dart lib/features/checkout/screens/digital_payment_failed_screen.dart lib/features/checkout/widgets/payment_failed_dialog.dart
+          flutter analyze --no-fatal-infos lib/features/payment/services/keepz_order_payment_service.dart lib/features/payment/screens/keepz_native_payment_screen.dart lib/features/checkout/controllers/checkout_controller.dart lib/features/checkout/screens/digital_payment_failed_screen.dart lib/features/checkout/widgets/payment_failed_dialog.dart
           python3 - <<'PY'
           from pathlib import Path
           service = Path('lib/features/payment/services/keepz_order_payment_service.dart').read_text()

@@ -1,4 +1,4 @@
-name: Keepz payment flow correction
+name: Keepz payment flow hardening
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  patch:
+  harden:
     if: github.head_ref == 'fix/keepz-existing-order-flow'
     runs-on: ubuntu-latest
     steps:
@@ -23,43 +23,88 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Patch Keepz existing-order payment flow
-        run: python3 .github/keepz_patch.py
-
-      - name: Format and analyze Keepz-only changes
+      - name: Harden async close and payment-page navigation
         shell: bash
         run: |
-          dart format lib/features/payment/services/keepz_order_payment_service.dart lib/features/payment/screens/keepz_native_payment_screen.dart lib/features/checkout/controllers/checkout_controller.dart lib/features/checkout/screens/digital_payment_failed_screen.dart lib/features/checkout/widgets/payment_failed_dialog.dart
-          flutter pub get
-          flutter analyze --no-fatal-infos lib/features/payment/services/keepz_order_payment_service.dart lib/features/payment/screens/keepz_native_payment_screen.dart lib/features/checkout/controllers/checkout_controller.dart lib/features/checkout/screens/digital_payment_failed_screen.dart lib/features/checkout/widgets/payment_failed_dialog.dart
           python3 - <<'PY'
           from pathlib import Path
-          service = Path('lib/features/payment/services/keepz_order_payment_service.dart').read_text()
-          payment = Path('lib/features/payment/screens/keepz_native_payment_screen.dart').read_text()
-          checkout = Path('lib/features/checkout/controllers/checkout_controller.dart').read_text()
-          failed = Path('lib/features/checkout/screens/digital_payment_failed_screen.dart').read_text()
-          checks = {
-              'prepare existing order': "action: 'prepare-retry'" in service,
-              'safe COD switch': "action: 'switch-to-cod'" in service,
-              'close routes to failure page': "pop('cancel')" in payment,
-              'preflight before Keepz intent': 'KeepzOrderPaymentService.prepareRetry' in payment,
-              'retry does not recreate order': "keepzStatus != 'success'" in checkout,
-              'failed page back guard': 'canPop: !_isKeepzPayment' in failed,
-              'new app version': 'version: 3.8.13+41' in Path('pubspec.yaml').read_text(),
-          }
-          bad = [name for name, ok in checks.items() if not ok]
-          if bad:
-              raise SystemExit('Invariant checks failed: ' + ', '.join(bad))
+          import re
+
+          payment_path = Path('lib/features/payment/screens/keepz_native_payment_screen.dart')
+          payment = payment_path.read_text()
+
+          paid_target = """      if (preparation.isPaid) {
+"""
+          paid_replacement = """      if (!mounted) {
+        return;
+      }
+      if (preparation.isPaid) {
+"""
+          if payment.count(paid_target) != 2:
+              raise SystemExit(f'expected 2 preparation paid checks, found {payment.count(paid_target)}')
+          payment = payment.replace(paid_target, paid_replacement)
+
+          pattern = re.compile(r"(      final _KeepzIntent intent = await _fetchIntent\(\n(?:.|\n)*?      \);\n)(\n      final bool shouldTryExternal =)")
+          payment, count = pattern.subn(r"\1\n      if (!mounted) {\n        return;\n      }\2", payment)
+          if count != 2:
+              raise SystemExit(f'expected 2 post-intent mounted guards, found {count}')
+          payment_path.write_text(payment)
+
+          failed_path = Path('lib/features/checkout/screens/digital_payment_failed_screen.dart')
+          failed = failed_path.read_text()
+          old = """  bool _isKeepzPayment = false;
+"""
+          new = """  bool _isKeepzPayment = false;
+  bool _paymentDetailsLoaded = false;
+"""
+          if failed.count(old) != 1:
+              raise SystemExit('payment-details state target mismatch')
+          failed = failed.replace(old, new, 1)
+
+          old = """      _isKeepzPayment = paymentModel?.paymentMethod == 'keepz';
+"""
+          new = """      _isKeepzPayment = paymentModel?.paymentMethod == 'keepz';
+      _paymentDetailsLoaded = true;
+"""
+          if failed.count(old) != 1:
+              raise SystemExit('payment-details completion target mismatch')
+          failed = failed.replace(old, new, 1)
+
+          old = """      canPop: !_isKeepzPayment,
+"""
+          new = """      canPop: _paymentDetailsLoaded && !_isKeepzPayment,
+"""
+          if failed.count(old) != 1:
+              raise SystemExit('payment-page back guard target mismatch')
+          failed_path.write_text(failed.replace(old, new, 1))
           PY
 
-      - name: Commit correction to the pull request branch
+      - name: Format and validate focused Keepz files
+        shell: bash
+        run: |
+          dart format lib/features/payment/screens/keepz_native_payment_screen.dart lib/features/checkout/screens/digital_payment_failed_screen.dart
+          flutter pub get
+          flutter analyze --no-fatal-infos lib/features/payment/screens/keepz_native_payment_screen.dart lib/features/checkout/screens/digital_payment_failed_screen.dart lib/features/payment/services/keepz_order_payment_service.dart
+          python3 - <<'PY'
+          from pathlib import Path
+          payment = Path('lib/features/payment/screens/keepz_native_payment_screen.dart').read_text()
+          failed = Path('lib/features/checkout/screens/digital_payment_failed_screen.dart').read_text()
+          if payment.count('if (!mounted) {') < 8:
+              raise SystemExit('missing Keepz mounted guards')
+          if 'canPop: _paymentDetailsLoaded && !_isKeepzPayment' not in failed:
+              raise SystemExit('missing payment-page navigation guard')
+          if '_paymentDetailsLoaded = true;' not in failed:
+              raise SystemExit('missing payment-details completion state')
+          PY
+
+      - name: Commit hardening and remove temporary files
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm .github/workflows/keepz-payment-flow-fix.yml
-          git rm .github/keepz_patch.py
-          git rm .github/keepz-payment-flow-trigger
-          git add lib/features/payment/services/keepz_order_payment_service.dart lib/features/payment/screens/keepz_native_payment_screen.dart lib/features/checkout/controllers/checkout_controller.dart lib/features/checkout/screens/digital_payment_failed_screen.dart lib/features/checkout/widgets/payment_failed_dialog.dart pubspec.yaml
-          git commit -m "Keep Keepz retries on the existing order"
+          git rm -f --ignore-unmatch .github/workflows/keepz-payment-flow-fix.yml
+          git rm -f --ignore-unmatch .github/workflows/keepz-review-hardening.yml
+          git rm -f --ignore-unmatch .github/keepz-review-trigger
+          git add lib/features/payment/screens/keepz_native_payment_screen.dart lib/features/checkout/screens/digital_payment_failed_screen.dart
+          git commit -m "Harden Keepz payment page lifecycle"
           git push origin HEAD:fix/keepz-existing-order-flow

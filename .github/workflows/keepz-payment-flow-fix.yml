@@ -1,0 +1,74 @@
+name: Keepz payment flow correction
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  patch:
+    if: github.event.issue.title == 'Run Keepz payment flow correction'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Patch Keepz retry and payment page flow
+        shell: bash
+        run: |
+          echo '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' | base64 -d | gzip -d > /tmp/patch_keepz.py
+          python3 /tmp/patch_keepz.py
+
+      - name: Format and analyze changed Keepz files
+        shell: bash
+        run: |
+          dart format \
+            lib/features/payment/screens/keepz_native_payment_screen.dart \
+            lib/features/checkout/controllers/checkout_controller.dart \
+            lib/features/checkout/screens/digital_payment_failed_screen.dart \
+            lib/features/checkout/widgets/payment_failed_dialog.dart
+          flutter pub get
+          flutter analyze \
+            lib/features/payment/screens/keepz_native_payment_screen.dart \
+            lib/features/checkout/controllers/checkout_controller.dart \
+            lib/features/checkout/screens/digital_payment_failed_screen.dart \
+            lib/features/checkout/widgets/payment_failed_dialog.dart
+          python3 - <<'PY'
+          from pathlib import Path
+          checks = {
+              'prepare-retry endpoint': '/prepare-retry' in Path('lib/features/payment/screens/keepz_native_payment_screen.dart').read_text(),
+              'safe COD endpoint': '/switch-to-cod' in Path('lib/features/payment/screens/keepz_native_payment_screen.dart').read_text(),
+              'Keepz close returns cancel': "pop('cancel')" in Path('lib/features/payment/screens/keepz_native_payment_screen.dart').read_text(),
+              'failed page back guard': 'canPop: !_isKeepzPayment' in Path('lib/features/checkout/screens/digital_payment_failed_screen.dart').read_text(),
+              'failed retry clears cart on success': 'onPaymentSuccess:' in Path('lib/features/checkout/controllers/checkout_controller.dart').read_text(),
+              'version 3.8.13+41': 'version: 3.8.13+41' in Path('pubspec.yaml').read_text(),
+          }
+          failed = [name for name, ok in checks.items() if not ok]
+          if failed:
+              raise SystemExit('Invariant checks failed: ' + ', '.join(failed))
+          PY
+
+      - name: Commit correction and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/keepz-payment-flow-fix.yml
+          git add \
+            lib/features/payment/screens/keepz_native_payment_screen.dart \
+            lib/features/checkout/controllers/checkout_controller.dart \
+            lib/features/checkout/screens/digital_payment_failed_screen.dart \
+            lib/features/checkout/widgets/payment_failed_dialog.dart \
+            pubspec.yaml
+          git commit -m "Keep Keepz retries on the existing order"
+          git push origin main

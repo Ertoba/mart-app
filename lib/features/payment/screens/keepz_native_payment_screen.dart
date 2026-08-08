@@ -87,22 +87,34 @@ class KeepzPaymentLauncher {
       ),
     );
 
-    if (status == 'superseded') {
+    if (status == null ||
+        status == 'superseded' ||
+        status == 'cancel' ||
+        status == 'dismissed') {
       return null;
     }
 
-    if (status != null) {
-      if (status == 'success' && onPaymentSuccess != null) {
-        await onPaymentSuccess();
-      }
-      _navigateOrderPaymentResult(
-        status: status,
-        orderId: orderModel.id.toString(),
-        contactNumber: contactNumber,
-        createAccount: createAccount,
-        guestId: guestId,
-      );
+    if (status != 'success' && status != 'fail') {
+      return null;
     }
+
+    if (status == 'fail') {
+      showCustomSnackBar(
+        'გადახდა ვერ შესრულდა. შეგიძლიათ სცადოთ სხვა გადახდის მეთოდი.',
+      );
+      return status;
+    }
+
+    if (onPaymentSuccess != null) {
+      await onPaymentSuccess();
+    }
+    _navigateOrderPaymentResult(
+      status: status,
+      orderId: orderModel.id.toString(),
+      contactNumber: contactNumber,
+      createAccount: createAccount,
+      guestId: guestId,
+    );
     return status;
   }
 
@@ -156,30 +168,20 @@ class KeepzPaymentLauncher {
     required bool createAccount,
     required String guestId,
   }) {
+    if (status != 'success') {
+      return;
+    }
+
     if (Get.isBottomSheetOpen == true) {
       Get.back();
     }
 
-    if (status == 'superseded') {
-      return;
-    }
-
-    if (status == 'success') {
-      Get.offNamed(
-        RouteHelper.getOrderSuccessRoute(
-          orderId,
-          contactNumber,
-          createAccount: createAccount,
-          guestId: guestId,
-        ),
-      );
-      return;
-    }
-
     Get.offNamed(
-      RouteHelper.getDigitalPaymentFailedScreen(
+      RouteHelper.getOrderSuccessRoute(
         orderId,
+        contactNumber,
         createAccount: createAccount,
+        guestId: guestId,
       ),
     );
   }
@@ -753,8 +755,8 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
       return;
     }
 
-    if (status != null) {
-      _navigateOrderPaymentResult(status);
+    if (status == 'success' || status == 'fail') {
+      _navigateOrderPaymentResult(status!);
     }
   }
 
@@ -946,6 +948,10 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
           guestId: widget.guestId,
         ),
       );
+      return;
+    }
+
+    if (status != 'fail') {
       return;
     }
 
@@ -1180,7 +1186,7 @@ class _KeepzLoadingSheet extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    onPressed: () => Navigator.of(context).pop('cancel'),
+                    onPressed: () => Navigator.of(context).pop(),
                     tooltip: 'დახურვა',
                     icon: const Icon(Icons.close_rounded),
                   ),
@@ -1383,7 +1389,7 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet>
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                   IconButton(
-                    onPressed: () => Navigator.of(context).pop('cancel'),
+                    onPressed: () => Navigator.of(context).pop(),
                     tooltip: 'დახურვა',
                     icon: const Icon(Icons.close_rounded),
                   ),

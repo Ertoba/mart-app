@@ -159,6 +159,8 @@ class CheckoutController extends GetxController implements GetxService {
   KeepzPaymentOption? get selectedKeepzPaymentOption =>
       KeepzPaymentOption.fromKey(_keepzPaymentOptionKey);
 
+  PaymentModel? _pendingKeepzPayment;
+
   bool _canShowTipsField = false;
   bool get canShowTipsField => _canShowTipsField;
 
@@ -559,6 +561,24 @@ class CheckoutController extends GetxController implements GetxService {
     List<XFile>? orderAttachment, {
     bool isOfflinePay = false,
   }) async {
+    final PaymentModel? pendingKeepzPayment = _pendingKeepzPayment;
+    final bool canResumePendingKeepz =
+        pendingKeepzPayment != null &&
+        !isOfflinePay &&
+        (paymentMethodIndex == 0 ||
+            (paymentMethodIndex == 2 && _digitalPaymentName == 'keepz'));
+    if (canResumePendingKeepz) {
+      _isLoading = true;
+      update();
+      try {
+        await paymentAfterDigitalCancel(pendingKeepzPayment, false);
+      } finally {
+        _isLoading = false;
+        update();
+      }
+      return pendingKeepzPayment.orderID ?? '';
+    }
+
     List<MultipartBody>? multiParts = [];
     for (XFile file in orderAttachment!) {
       multiParts.add(MultipartBody('order_attachment[]', file));
@@ -753,6 +773,24 @@ class CheckoutController extends GetxController implements GetxService {
 
           html.window.open(selectedUrl, "_self");
         } else if (_digitalPaymentName == 'keepz') {
+          final String effectiveGuestId = userID.isNotEmpty
+              ? userID
+              : AuthHelper.getGuestId();
+          _pendingKeepzPayment = PaymentModel(
+            orderID: orderID,
+            orderType: orderType,
+            orderAmount: amount,
+            maxCodOrderAmount: maximumCodOrderAmount,
+            isCashOnDeliveryActive: isCashOnDeliveryActive,
+            isDigitalPaymentActive: true,
+            guestId: effectiveGuestId,
+            contactNumber: contactNumber ?? '',
+            zoneId: zoneID,
+            paymentMethod: 'keepz',
+            userId:
+                Get.find<ProfileController>().userInfoModel?.id ??
+                int.tryParse(userID),
+          );
           final String? keepzStatus = await KeepzPaymentLauncher.show(
             orderModel: OrderModel(
               id: int.parse(orderID),
@@ -764,7 +802,7 @@ class CheckoutController extends GetxController implements GetxService {
             ),
             isCashOnDelivery: isCashOnDeliveryActive,
             paymentMethod: digitalPaymentName ?? 'keepz',
-            guestId: userID.isNotEmpty ? userID : AuthHelper.getGuestId(),
+            guestId: effectiveGuestId,
             contactNumber: contactNumber ?? '',
             createAccount: _isCreateAccount,
             keepzMethodKey: _keepzPaymentOptionKey,
@@ -776,6 +814,7 @@ class CheckoutController extends GetxController implements GetxService {
             update();
             return;
           }
+          _pendingKeepzPayment = null;
           setGuestAddress(null);
         } else {
           Get.offNamed(
@@ -861,6 +900,7 @@ class CheckoutController extends GetxController implements GetxService {
           showCustomSnackBar(result.message);
           return;
         }
+        _pendingKeepzPayment = null;
         Get.find<CartController>().clearCartList();
       } else {
         isSuccess = await Get.find<OrderController>().switchToCOD(
@@ -909,6 +949,7 @@ class CheckoutController extends GetxController implements GetxService {
           update();
           return;
         }
+        _pendingKeepzPayment = null;
       } else {
         Get.offNamed(
           RouteHelper.getPaymentRoute(

@@ -135,7 +135,9 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
     bool guestCheckoutPermission =
         AuthHelper.isGuestLoggedIn() &&
         Get.find<SplashController>().configModel!.guestCheckoutStatus!;
-    final IconData? parcelIconData = parcelIconForCategory(widget.parcelCategory.name ?? '');
+    final IconData? parcelIconData = parcelIconForCategory(
+      widget.parcelCategory.name ?? '',
+    );
 
     return Scaffold(
       appBar: CustomAppBar(title: 'parcel_request'.tr),
@@ -286,11 +288,21 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
                                               child: Row(
                                                 children: [
                                                   parcelIconData != null
-                                                      ? Icon(parcelIconData, size: 60, color: Theme.of(context).primaryColor)
+                                                      ? Icon(
+                                                          parcelIconData,
+                                                          size: 60,
+                                                          color: Theme.of(
+                                                            context,
+                                                          ).primaryColor,
+                                                        )
                                                       : ClipRRect(
-                                                          borderRadius: BorderRadius.circular(200),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                200,
+                                                              ),
                                                           child: CustomImage(
-                                                            image: '${widget.parcelCategory.imageFullUrl}',
+                                                            image:
+                                                                '${widget.parcelCategory.imageFullUrl}',
                                                             height: 60,
                                                             width: 60,
                                                           ),
@@ -1663,7 +1675,7 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
                         charge,
                         0,
                         false,
-                        false,
+                        _isCashOnDeliveryActive!,
                         forParcel: true,
                         isOfflinePay: parcelController.paymentIndex == 3,
                       );

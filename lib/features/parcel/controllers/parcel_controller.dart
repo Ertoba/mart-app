@@ -10,12 +10,17 @@ import 'package:sixam_mart/features/profile/controllers/profile_controller.dart'
 import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
+import 'package:sixam_mart/features/checkout/domain/models/payment_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/place_order_body_model.dart';
+import 'package:sixam_mart/features/order/domain/models/order_model.dart'
+    show OrderModel;
 import 'package:sixam_mart/features/parcel/domain/models/parcel_category_model.dart';
 import 'package:sixam_mart/features/parcel/domain/models/video_content_model.dart';
 import 'package:sixam_mart/features/parcel/domain/models/why_choose_model.dart';
 import 'package:sixam_mart/features/parcel/domain/services/parcel_service_interface.dart';
 import 'package:sixam_mart/features/payment/domain/models/offline_method_model.dart';
+import 'package:sixam_mart/features/payment/screens/keepz_native_payment_screen.dart';
+import 'package:sixam_mart/features/payment/services/keepz_order_payment_service.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
@@ -67,6 +72,10 @@ class ParcelController extends GetxController implements GetxService {
 
   String? _digitalPaymentName;
   String? get digitalPaymentName => _digitalPaymentName;
+
+  PaymentModel? _pendingKeepzPayment;
+  bool _pendingKeepzCreateAccount = false;
+  int? _pendingKeepzCreateUserId;
 
   WhyChooseModel? _whyChooseDetails;
   WhyChooseModel? get whyChooseDetails => _whyChooseDetails;
@@ -315,6 +324,9 @@ class ParcelController extends GetxController implements GetxService {
 
   void setPaymentIndex(int index, bool notify) {
     _paymentIndex = index;
+    if (index == -1) {
+      _clearPendingKeepzPayment();
+    }
     if (notify) {
       update();
     }
@@ -411,6 +423,48 @@ class ParcelController extends GetxController implements GetxService {
     bool forParcel = false,
     bool isOfflinePay = false,
   }) async {
+    final PaymentModel? pendingKeepzPayment = _pendingKeepzPayment;
+    final bool canResumePendingKeepz =
+        pendingKeepzPayment != null &&
+        !isOfflinePay &&
+        (_paymentIndex == 0 ||
+            (_paymentIndex == 2 && _digitalPaymentName == 'keepz'));
+    if (canResumePendingKeepz) {
+      _isLoading = true;
+      update();
+      try {
+        if (_paymentIndex == 0) {
+          final KeepzOrderActionResult result =
+              await KeepzOrderPaymentService.switchToCod(
+                orderId: pendingKeepzPayment.orderID!,
+                guestId: pendingKeepzPayment.guestId ?? '',
+              );
+          if (result.isSuccess || result.isPaid) {
+            final bool createAccount = _pendingKeepzCreateAccount;
+            _clearPendingKeepzPayment();
+            Get.find<CheckoutController>().setGuestAddress(null);
+            updateTips(-1, notify: false);
+            Get.offNamed(
+              RouteHelper.getOrderSuccessRoute(
+                pendingKeepzPayment.orderID!,
+                pendingKeepzPayment.contactNumber,
+                createAccount: createAccount,
+                guestId: pendingKeepzPayment.guestId ?? '',
+              ),
+            );
+          } else {
+            showCustomSnackBar(result.message);
+          }
+        } else {
+          await _launchKeepzPayment(pendingKeepzPayment);
+        }
+      } finally {
+        _isLoading = false;
+        update();
+      }
+      return pendingKeepzPayment.orderID ?? '';
+    }
+
     _isLoading = true;
     update();
     String orderID = '';
@@ -419,7 +473,9 @@ class ParcelController extends GetxController implements GetxService {
     if (response.statusCode == 200) {
       String? message = response.body['message'];
       orderID = response.body['order_id'].toString();
-      int createUserId = response.body['user_id'];
+      int? createUserId = int.tryParse(
+        response.body['user_id']?.toString() ?? '',
+      );
 
       if (!isOfflinePay) {
         parcelCallback(
@@ -487,10 +543,10 @@ class ParcelController extends GetxController implements GetxService {
       if (isDmTipSave) {
         Get.find<AuthController>().saveDmTipIndex(selectedTips.toString());
       }
-      Get.find<CheckoutController>().setGuestAddress(null);
       if (Get.find<ParcelController>().paymentIndex == 2) {
         if (GetPlatform.isWeb) {
           // Get.back();
+          Get.find<CheckoutController>().setGuestAddress(null);
           await Get.find<AuthController>().saveGuestNumber(contactNumber ?? '');
           String? hostname = html.window.location.hostname;
           String protocol = html.window.location.protocol;
@@ -498,7 +554,39 @@ class ParcelController extends GetxController implements GetxService {
               '${AppConstants.baseUrl}/payment-mobile?order_id=$orderID&&customer_id=${Get.find<ProfileController>().userInfoModel?.id ?? (Get.find<CheckoutController>().isCreateAccount ? createUserId : AuthHelper.getGuestId())}'
               '&payment_method=${Get.find<ParcelController>().digitalPaymentName}&payment_platform=web&&callback=$protocol//$hostname${RouteHelper.orderSuccess}?id=$orderID&status=';
           html.window.open(selectedUrl, "_self");
+        } else if (_digitalPaymentName == 'keepz') {
+          final int userId =
+              Get.find<ProfileController>().userInfoModel?.id ??
+              createUserId ??
+              0;
+          final String effectiveGuestId = createUserId != null
+              ? createUserId.toString()
+              : AuthHelper.getGuestId();
+          _pendingKeepzCreateAccount =
+              Get.find<CheckoutController>().isCreateAccount;
+          _pendingKeepzCreateUserId = createUserId;
+          _pendingKeepzPayment = PaymentModel(
+            orderID: orderID,
+            orderType: 'parcel',
+            orderAmount: orderAmount,
+            maxCodOrderAmount: maxCodAmount,
+            isCashOnDeliveryActive: isCashOnDeliveryActive,
+            isDigitalPaymentActive: true,
+            guestId: effectiveGuestId,
+            contactNumber: contactNumber ?? '',
+            zoneId: zoneID,
+            paymentMethod: 'keepz',
+            userId: userId,
+          );
+          final String? keepzStatus = await _launchKeepzPayment(
+            _pendingKeepzPayment!,
+          );
+          if (keepzStatus != 'success') {
+            update();
+            return;
+          }
         } else {
+          Get.find<CheckoutController>().setGuestAddress(null);
           Get.offNamed(
             RouteHelper.getPaymentRoute(
               orderID,
@@ -515,6 +603,7 @@ class ParcelController extends GetxController implements GetxService {
           );
         }
       } else {
+        Get.find<CheckoutController>().setGuestAddress(null);
         Get.offNamed(
           RouteHelper.getOrderSuccessRoute(
             orderID,
@@ -527,6 +616,37 @@ class ParcelController extends GetxController implements GetxService {
     } else {
       showCustomSnackBar(message);
     }
+  }
+
+  Future<String?> _launchKeepzPayment(PaymentModel paymentData) async {
+    final String? status = await KeepzPaymentLauncher.show(
+      orderModel: OrderModel(
+        id: int.parse(paymentData.orderID!),
+        orderType: 'parcel',
+        userId: paymentData.userId ?? 0,
+        orderAmount: paymentData.orderAmount,
+      ),
+      isCashOnDelivery: paymentData.isCashOnDeliveryActive ?? false,
+      paymentMethod: paymentData.paymentMethod ?? 'keepz',
+      guestId: paymentData.guestId ?? AuthHelper.getGuestId(),
+      contactNumber: paymentData.contactNumber ?? '',
+      createAccount: _pendingKeepzCreateAccount,
+      createUserId: _pendingKeepzCreateUserId,
+    );
+
+    if (status == 'success') {
+      _clearPendingKeepzPayment();
+      Get.find<CheckoutController>().setGuestAddress(null);
+      updateTips(-1, notify: false);
+    }
+    update();
+    return status;
+  }
+
+  void _clearPendingKeepzPayment() {
+    _pendingKeepzPayment = null;
+    _pendingKeepzCreateAccount = false;
+    _pendingKeepzCreateUserId = null;
   }
 
   Future<void> getParcelCancellationReasons({

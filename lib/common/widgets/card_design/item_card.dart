@@ -17,6 +17,7 @@ import 'package:sixam_mart/common/widgets/discount_tag.dart';
 import 'package:sixam_mart/common/widgets/hover/on_hover.dart';
 import 'package:sixam_mart/common/widgets/not_available_widget.dart';
 import 'package:sixam_mart/common/widgets/organic_tag.dart';
+import 'package:sixam_mart/common/widgets/verified_seller_badge.dart';
 
 class ItemCard extends StatelessWidget {
   final Item item;
@@ -126,7 +127,13 @@ class ItemCard extends StatelessWidget {
                           alignment: isPopularItem ? Alignment.center : Alignment.centerLeft,
                           child: Column(
                               crossAxisAlignment: isPopularItem ? CrossAxisAlignment.center : CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                            (isFood || isShop) ? Text(item.storeName ?? '', style: robotoRegular.copyWith(color: Theme.of(context).disabledColor), maxLines: 1, overflow: TextOverflow.ellipsis)
+                            (isFood || isShop) ? Row(mainAxisAlignment: isPopularItem ? MainAxisAlignment.center : MainAxisAlignment.start, children: [
+                              Flexible(child: Text(item.storeName ?? '', style: robotoRegular.copyWith(color: Theme.of(context).disabledColor), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              if (item.verifiedSeller == true) ...[
+                                const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                                const VerifiedSellerBadge(verified: true, size: 14),
+                              ],
+                            ])
                                 : Text(item.name ?? '', style: robotoBold, maxLines: 1, overflow: TextOverflow.ellipsis),
 
                             (isFood || isShop) ? Flexible(

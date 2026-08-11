@@ -4,6 +4,7 @@ import 'package:sixam_mart/common/widgets/add_favourite_view.dart';
 import 'package:sixam_mart/common/widgets/custom_ink_well.dart';
 import 'package:sixam_mart/common/widgets/hover/text_hover.dart';
 import 'package:sixam_mart/common/widgets/not_available_widget.dart';
+import 'package:sixam_mart/common/widgets/verified_seller_badge.dart';
 import 'package:sixam_mart/features/language/controllers/language_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
@@ -47,7 +48,13 @@ class VisitAgainCard extends StatelessWidget {
               padding: const EdgeInsets.only(top: 40, bottom: Dimensions.paddingSizeSmall),
               child: Column(crossAxisAlignment: CrossAxisAlignment.center, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
 
-                Flexible(child: Text(store.name ?? '', style: robotoBold, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                Flexible(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Flexible(child: Text(store.name ?? '', style: robotoBold, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  if (store.verifiedSeller == true) ...[
+                    const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                    const VerifiedSellerBadge(verified: true, size: 14),
+                  ],
+                ])),
 
                 if(store.ratingCount! > 0)
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [

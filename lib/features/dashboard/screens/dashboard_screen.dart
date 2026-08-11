@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:sixam_mart/common/widgets/login_suggestion_bottomsheet.dart';
 import 'package:sixam_mart/features/dashboard/widgets/payment_incomplete_bottomsheet.dart';
+import 'package:sixam_mart/features/ai_chat/screens/ai_chat_screen.dart';
 import 'package:sixam_mart/features/rental_module/common/widgets/taxi_cart_widget.dart';
 import 'package:sixam_mart/features/dashboard/widgets/store_registration_success_bottom_sheet.dart';
 import 'package:sixam_mart/features/home/controllers/home_controller.dart';
@@ -271,6 +272,27 @@ class DashboardScreenState extends State<DashboardScreen> {
                             return _screens[index];
                           },
                         ),
+
+                        if (!GetPlatform.isWeb &&
+                            !keyboardVisible &&
+                            _isLogin &&
+                            splashController.configModel?.aiChatStatus == true &&
+                            const {'food', 'grocery', 'ecommerce', 'pharmacy'}
+                                .contains(splashController.module?.moduleType))
+                          Positioned(
+                            right: Dimensions.paddingSizeDefault,
+                            bottom: 88,
+                            child: Tooltip(
+                              message: 'AI_Chat_Assistant'.tr,
+                              child: FloatingActionButton.small(
+                                heroTag: 'customer-ai-chat',
+                                onPressed: () => Get.to(() => const AiChatScreen()),
+                                backgroundColor: Theme.of(context).primaryColor,
+                                foregroundColor: Theme.of(context).cardColor,
+                                child: const Icon(Icons.auto_awesome_outlined),
+                              ),
+                            ),
+                          ),
 
                         ResponsiveHelper.isDesktop(context) || keyboardVisible
                             ? const SizedBox()

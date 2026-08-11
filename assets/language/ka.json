@@ -2344,5 +2344,16 @@
   "on_all_provider": "ყველა პროვაიდერზე!",
   "rider_info": "მხედრის ინფორმაცია",
   "no_payment_selected": "გადახდის მეთოდი არ არის არჩეული",
-  "safety_policy": "უსაფრთხოების პოლიტიკა"
+  "safety_policy": "უსაფრთხოების პოლიტიკა",
+  "please_enter_first_name": "გთხოვთ შეიყვანოთ სახელი",
+  "enter_contact_person_name": "შეიყვანეთ კონტაქტის პირის სახელი",
+  "this_field_can_not_empty": "ეს ველი არ შეიძლება ცარიელი იყოს",
+  "confirm_password_not_matched": "დადასტურების პაროლები არ ემთხვევა",
+  "is_required": "სავალდებულოა",
+  "AI_Chat_Assistant": "AI ჩატ-ასისტენტი",
+  "AI_Chat_Assistant_read_only_hint": "პასუხობს მომხმარებლის კითხვებს კალათების, შეკვეთების, ანგარიშებისა და გადახდების შეცვლის გარეშე. არასოდეს გააზიაროთ პაროლები, ბარათის მონაცემები ან ერთჯერადი კოდები.",
+  "ai_chat_disabled": "AI ჩატი ამჟამად გამორთულია.",
+  "ai_chat_daily_limit_reached": "AI ჩატის დღიური ლიმიტი ამოწურულია.",
+  "ai_chat_temporarily_unavailable": "AI ჩატი დროებით მიუწვდომელია. გთხოვთ, მოგვიანებით სცადოთ.",
+  "verified_store": "ვერიფიცირებული მაღაზია"
 }

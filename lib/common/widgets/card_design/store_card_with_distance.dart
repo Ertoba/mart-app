@@ -20,6 +20,7 @@ import 'package:sixam_mart/common/widgets/custom_image.dart';
 import 'package:sixam_mart/common/widgets/discount_tag.dart';
 import 'package:sixam_mart/common/widgets/new_tag.dart';
 import 'package:sixam_mart/common/widgets/not_available_widget.dart';
+import 'package:sixam_mart/common/widgets/verified_seller_badge.dart';
 import 'package:sixam_mart/features/store/screens/store_screen.dart';
 
 class StoreCardWithDistance extends StatelessWidget {
@@ -203,13 +204,14 @@ class StoreCardWithDistance extends StatelessWidget {
                                               Dimensions.paddingSizeExtraSmall,
                                         ),
 
-                                        Flexible(
-                                          child: Text(
-                                            store.name ?? '',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: robotoMedium,
-                                          ),
+                                        Row(
+                                          children: [
+                                            Flexible(child: Text(store.name ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: robotoMedium)),
+                                            if (store.verifiedSeller == true) ...[
+                                              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                                              const VerifiedSellerBadge(verified: true, size: 14),
+                                            ],
+                                          ],
                                         ),
                                         const SizedBox(
                                           height:
@@ -282,13 +284,14 @@ class StoreCardWithDistance extends StatelessWidget {
                                               Dimensions.paddingSizeExtraSmall,
                                         ),
 
-                                        Flexible(
-                                          child: Text(
-                                            store.name ?? '',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: robotoMedium,
-                                          ),
+                                        Row(
+                                          children: [
+                                            Flexible(child: Text(store.name ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: robotoMedium)),
+                                            if (store.verifiedSeller == true) ...[
+                                              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                                              const VerifiedSellerBadge(verified: true, size: 14),
+                                            ],
+                                          ],
                                         ),
                                         const SizedBox(
                                           height:

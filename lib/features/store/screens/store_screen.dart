@@ -28,6 +28,7 @@ import 'package:sixam_mart/common/widgets/paginated_list_view.dart';
 import 'package:sixam_mart/common/widgets/web_item_view.dart';
 import 'package:sixam_mart/common/widgets/web_item_widget.dart';
 import 'package:sixam_mart/common/widgets/web_menu_bar.dart';
+import 'package:sixam_mart/common/widgets/verified_seller_badge.dart';
 import 'package:sixam_mart/features/checkout/screens/checkout_screen.dart';
 import 'package:sixam_mart/features/store/widgets/customizable_space_bar_widget.dart';
 import 'package:sixam_mart/features/store/widgets/store_banner_widget.dart';
@@ -285,6 +286,10 @@ class _StoreScreenState extends State<StoreScreen> {
                                             currentStore.name!, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge - (scrollingRate * 3), color: Theme.of(context).textTheme.bodyMedium!.color),
                                             maxLines: 1, overflow: TextOverflow.ellipsis,
                                           )),
+                                          if (currentStore.verifiedSeller == true) ...[
+                                            const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                                            VerifiedSellerBadge(verified: true, size: 16 - (scrollingRate * 2)),
+                                          ],
                                           const SizedBox(width: Dimensions.paddingSizeSmall),
 
                                         ]),

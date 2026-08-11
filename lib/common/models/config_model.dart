@@ -123,6 +123,7 @@ class ConfigModel {
   ReferralData? dmReferralData;
   ReferralData? riderReferralData;
   int? customerRoutePreference;
+  bool? aiChatStatus;
 
   ConfigModel({
     this.businessName,
@@ -245,6 +246,7 @@ class ConfigModel {
     this.dmReferralData,
     this.riderReferralData,
     this.customerRoutePreference,
+    this.aiChatStatus,
   });
 
   ConfigModel.fromJson(Map<String, dynamic> json) {
@@ -405,6 +407,7 @@ class ConfigModel {
     dmReferralData = json['dm_referral_data'] != null ? ReferralData.fromJson(json['dm_referral_data']) : null;
     riderReferralData = json['rider_referral_data'] != null ? ReferralData.fromJson(json['rider_referral_data']) : null;
     customerRoutePreference = json['customer_route_preference'];
+    aiChatStatus = json['ai_chat_status'] == true || json['ai_chat_status']?.toString() == '1';
   }
 
   Map<String, dynamic> toJson() {
@@ -522,6 +525,7 @@ class ConfigModel {
       data['parcel_return_time_fee'] = parcelReturnTimeFee!.toJson();
     }
     data['customer_route_preference'] = customerRoutePreference;
+    data['ai_chat_status'] = aiChatStatus;
     return data;
   }
 }

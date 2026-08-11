@@ -82,6 +82,7 @@ class Store {
   String? storeBusinessModel;
   double? distance;
   String? storeOpeningTime;
+  bool? verifiedSeller;
 
   Store({
     this.id,
@@ -135,6 +136,7 @@ class Store {
     this.storeBusinessModel,
     this.distance,
     this.storeOpeningTime,
+    this.verifiedSeller,
   });
 
   Store.fromJson(Map<String, dynamic> json) {
@@ -205,6 +207,7 @@ class Store {
     storeBusinessModel = json['store_business_model'];
     distance = json['distance']?.toDouble();
     storeOpeningTime = json['current_opening_time'];
+    verifiedSeller = json['verified_seller'] == true || json['verified_seller'].toString() == '1';
   }
 
   Map<String, dynamic> toJson() {
@@ -267,6 +270,7 @@ class Store {
     }
     data['store_business_model'] = storeBusinessModel;
     data['distance'] = distance;
+    data['verified_seller'] = verifiedSeller;
     return data;
   }
 }

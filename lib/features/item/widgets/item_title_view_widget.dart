@@ -17,6 +17,7 @@ import 'package:sixam_mart/util/styles.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/common/widgets/organic_tag.dart';
 import 'package:sixam_mart/common/widgets/rating_bar.dart';
+import 'package:sixam_mart/common/widgets/verified_seller_badge.dart';
 
 class ItemTitleViewWidget extends StatelessWidget {
   final Item? item;
@@ -88,6 +89,10 @@ class ItemTitleViewWidget extends StatelessWidget {
                       style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).disabledColor),
                     ),
                   )),
+                  if (item!.verifiedSeller == true) ...[
+                    const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                    const VerifiedSellerBadge(verified: true, size: 15),
+                  ],
 
                   ResponsiveHelper.isDesktop(context) ? Container(
                     margin: const EdgeInsets.only(left: Dimensions.paddingSizeSmall),
@@ -283,10 +288,13 @@ class ItemTitleViewWidget extends StatelessWidget {
           },
           child: Padding(
             padding: const EdgeInsets.fromLTRB(0, 5, 5, 5),
-            child: Text(
-              item?.storeName ?? '',
-              style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor),
-            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Flexible(child: Text(item?.storeName ?? '', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor))),
+              if (item?.verifiedSeller == true) ...[
+                const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                const VerifiedSellerBadge(verified: true, size: 14),
+              ],
+            ]),
           ),
         ),
 

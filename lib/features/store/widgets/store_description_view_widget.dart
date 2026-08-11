@@ -13,6 +13,7 @@ import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
 import 'package:sixam_mart/common/widgets/custom_image.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
+import 'package:sixam_mart/common/widgets/verified_seller_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -66,6 +67,10 @@ class StoreDescriptionViewWidget extends StatelessWidget {
               store!.name!, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge, color: textColor),
               maxLines: 1, overflow: TextOverflow.ellipsis,
             )),
+            if (store!.verifiedSeller == true) ...[
+              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+              const VerifiedSellerBadge(verified: true),
+            ],
             const SizedBox(width: Dimensions.paddingSizeSmall),
 
             // ResponsiveHelper.isDesktop(context) ? InkWell(

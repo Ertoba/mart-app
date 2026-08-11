@@ -5,6 +5,7 @@ import 'package:sixam_mart/common/widgets/add_favourite_view.dart';
 import 'package:sixam_mart/common/widgets/custom_ink_well.dart';
 import 'package:sixam_mart/common/widgets/hover/text_hover.dart';
 import 'package:sixam_mart/common/widgets/not_available_widget.dart';
+import 'package:sixam_mart/common/widgets/verified_seller_badge.dart';
 import 'package:sixam_mart/features/language/controllers/language_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/store/controllers/store_controller.dart';
@@ -132,13 +133,21 @@ class StoreCard extends StatelessWidget {
                                   children: [
                                     SizedBox(
                                       width: 190,
-                                      child: Text(
-                                        store.name ?? '',
-                                        style: robotoMedium.copyWith(
-                                          fontSize: Dimensions.fontSizeSmall,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                      child: Row(
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              store.name ?? '',
+                                              style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          if (store.verifiedSeller == true) ...[
+                                            const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                                            const VerifiedSellerBadge(verified: true, size: 14),
+                                          ],
+                                        ],
                                       ),
                                     ),
                                     const SizedBox(

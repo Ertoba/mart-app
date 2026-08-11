@@ -20,6 +20,7 @@ import 'package:sixam_mart/common/widgets/discount_tag.dart';
 import 'package:sixam_mart/common/widgets/not_available_widget.dart';
 import 'package:sixam_mart/common/widgets/organic_tag.dart';
 import 'package:sixam_mart/common/widgets/rating_bar.dart';
+import 'package:sixam_mart/common/widgets/verified_seller_badge.dart';
 import 'package:sixam_mart/features/store/screens/store_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -149,6 +150,8 @@ class WebItemWidget extends StatelessWidget {
                                   style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeExtraSmall),
                                   maxLines: desktop ? 1 : 1, overflow: TextOverflow.ellipsis,
                                 ),
+                                if (isStore && store!.verifiedSeller == true)
+                                  const VerifiedSellerBadge(verified: true, size: 14),
                                 const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                                 (Get.find<SplashController>().configModel!.moduleConfig!.module!.vegNonVeg! && Get.find<SplashController>().configModel!.toggleVegNonVeg!)

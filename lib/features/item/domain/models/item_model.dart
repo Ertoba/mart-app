@@ -76,6 +76,7 @@ class Item {
   String? availableTimeEnds;
   int? storeId;
   String? storeName;
+  bool? verifiedSeller;
   int? zoneId;
   bool? scheduleOrder;
   double? avgRating;
@@ -118,6 +119,7 @@ class Item {
     this.availableTimeEnds,
     this.storeId,
     this.storeName,
+    this.verifiedSeller,
     this.zoneId,
     this.scheduleOrder,
     this.avgRating,
@@ -198,6 +200,7 @@ class Item {
     availableTimeEnds = json['available_time_ends'];
     storeId = json['store_id'];
     storeName = json['store_name'];
+    verifiedSeller = json['verified_seller'] == true || json['verified_seller'].toString() == '1';
     zoneId = json['zone_id'];
     scheduleOrder = json['schedule_order'];
     avgRating = json['avg_rating']?.toDouble();
@@ -254,6 +257,7 @@ class Item {
     data['available_time_ends'] = availableTimeEnds;
     data['store_id'] = storeId;
     data['store_name'] = storeName;
+    data['verified_seller'] = verifiedSeller;
     data['zone_id'] = zoneId;
     data['schedule_order'] = scheduleOrder;
     data['avg_rating'] = avgRating;

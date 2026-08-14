@@ -8,7 +8,7 @@ import 'package:sixam_mart/features/flash_sale/widgets/flash_sale_view_widget.da
 import 'package:sixam_mart/features/home/widgets/views/product_with_categories_view.dart';
 import 'package:sixam_mart/features/home/widgets/views/featured_categories_view.dart';
 import 'package:sixam_mart/features/home/widgets/views/popular_store_view.dart';
-import 'package:sixam_mart/features/home/widgets/views/item_that_you_love_view.dart';
+import 'package:sixam_mart/features/home/widgets/views/shop_item_recommendations_view.dart';
 import 'package:sixam_mart/features/home/widgets/views/just_for_you_view.dart';
 import 'package:sixam_mart/features/home/widgets/views/most_popular_item_view.dart';
 import 'package:sixam_mart/features/home/widgets/views/new_on_mart_view.dart';
@@ -49,7 +49,7 @@ class ShopHomeScreen extends StatelessWidget {
         const JustForYouView(),
         const TopOffersNearMe(),
         const FeaturedCategoriesView(),
-        const ItemThatYouLoveView(forShop: true),
+        const ShopItemRecommendationsView(),
         const NewOnMartView(isShop: true, isPharmacy: false),
         const PromotionalBannerView(),
       ],

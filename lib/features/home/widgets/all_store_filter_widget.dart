@@ -32,14 +32,14 @@ class AllStoreFilterWidget extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              ModuleHelper.storeKey.tr,
+                              ModuleHelper.storeLabel,
                               style: robotoBold.copyWith(
                                 fontSize: Dimensions.fontSizeLarge,
                               ),
                             ),
 
                             Text(
-                              '${storeController.storeModel?.totalSize ?? 0} ${ModuleHelper.storesNearYouKey.tr}',
+                              '${storeController.storeModel?.totalSize ?? 0} ${ModuleHelper.storesNearYouLabel}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: robotoRegular.copyWith(
@@ -66,14 +66,14 @@ class AllStoreFilterWidget extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              ModuleHelper.storeKey.tr,
+                              ModuleHelper.storeLabel,
                               style: robotoBold.copyWith(
                                 fontSize: Dimensions.fontSizeLarge,
                               ),
                             ),
                             Flexible(
                               child: Text(
-                                '${storeController.storeModel?.totalSize ?? 0} ${ModuleHelper.storesNearYouKey.tr}',
+                                '${storeController.storeModel?.totalSize ?? 0} ${ModuleHelper.storesNearYouLabel}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: robotoRegular.copyWith(

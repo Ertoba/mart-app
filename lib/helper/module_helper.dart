@@ -25,6 +25,11 @@ class ModuleHelper {
         false;
   }
 
+  static String get _moduleType {
+    final ModuleModel? module = getModule() ?? getCacheModule();
+    return (module?.moduleType ?? '').trim().toLowerCase();
+  }
+
   static bool get isBeerModule {
     final ModuleModel? module = getModule() ?? getCacheModule();
     final String moduleType = (module?.moduleType ?? '').trim().toLowerCase();
@@ -35,11 +40,10 @@ class ModuleHelper {
         (slug == 'ludi' || slug == 'beer' || name == 'ლუდი' || name == 'beer');
   }
 
-  static bool get isPharmacyModule {
-    final ModuleModel? module = getModule() ?? getCacheModule();
-    final String moduleType = (module?.moduleType ?? '').trim().toLowerCase();
-    return moduleType == 'pharmacy';
-  }
+  static bool get isPharmacyModule => _moduleType == 'pharmacy';
+
+  static bool get isRestaurantModule =>
+      _moduleType == 'food' && !isBeerModule && showRestaurantText;
 
   static String _localized({
     required String en,
@@ -101,17 +105,108 @@ class ModuleHelper {
   }
 
   static String get recentPurchasePrompt {
-    if (!isBeerModule) {
-      return 'get_your_recent_purchase_from_the_shop_you_recently_ordered'.tr;
+    if (isBeerModule) {
+      return _localized(
+        en: 'Order again from the bar you recently ordered from',
+        ka: 'შეიძინეთ ბარიდან, საიდანაც ბოლოს შეუკვეთეთ',
+        ru: 'Закажите снова в баре, где вы заказывали в последний раз',
+        es: 'Vuelve a pedir en el bar donde hiciste tu último pedido',
+        ar: 'اطلب مجددًا من البار الذي طلبت منه مؤخرًا',
+        bn: 'যে বার থেকে সর্বশেষ অর্ডার করেছিলেন, সেখান থেকে আবার অর্ডার করুন',
+      );
     }
-    return _localized(
-      en: 'Order again from the bar you recently ordered from',
-      ka: 'შეიძინეთ ბარიდან, საიდანაც ბოლოს შეუკვეთეთ',
-      ru: 'Закажите снова в баре, где вы заказывали в последний раз',
-      es: 'Vuelve a pedir en el bar donde hiciste tu último pedido',
-      ar: 'اطلب مجددًا من البار الذي طلبت منه مؤخرًا',
-      bn: 'যে বার থেকে সর্বশেষ অর্ডার করেছিলেন, সেখান থেকে আবার অর্ডার করুন',
-    );
+    if (isPharmacyModule) {
+      return _localized(
+        en: 'Order again from the pharmacy you recently ordered from',
+        ka: 'შეიძინეთ ისევ იმ აფთიაქში, საიდანაც ბოლოს შეუკვეთეთ',
+        ru: 'Закажите снова в аптеке, где вы заказывали в последний раз',
+        es: 'Vuelve a pedir en la farmacia donde hiciste tu último pedido',
+        ar: 'اطلب مجددًا من الصيدلية التي طلبت منها مؤخرًا',
+        bn: 'যে ফার্মেসি থেকে সর্বশেষ অর্ডার করেছিলেন, সেখান থেকে আবার অর্ডার করুন',
+      );
+    }
+    if (isRestaurantModule) {
+      return _localized(
+        en: 'Order again from the restaurant you recently ordered from',
+        ka: 'შეუკვეთეთ ისევ იმ რესტორანში, საიდანაც ბოლოს შეუკვეთეთ',
+        ru: 'Закажите снова в ресторане, где вы заказывали в последний раз',
+        es: 'Vuelve a pedir en el restaurante donde hiciste tu último pedido',
+        ar: 'اطلب مجددًا من المطعم الذي طلبت منه مؤخرًا',
+        bn: 'যে রেস্তোরাঁ থেকে সর্বশেষ অর্ডার করেছিলেন, সেখান থেকে আবার অর্ডার করুন',
+      );
+    }
+    return 'get_your_recent_purchase_from_the_shop_you_recently_ordered'.tr;
+  }
+
+  static String get itemThatYouLoveLabel {
+    if (isBeerModule) {
+      return 'item_that_you_love'.tr;
+    }
+    if ((Get.locale?.languageCode ?? '').toLowerCase() == 'ka') {
+      return 'ნივთები, რომლებიც მოგეწონებათ';
+    }
+    return 'item_that_you_love'.tr;
+  }
+
+  static String get bestStoreNearbyLabel {
+    if (isBeerModule) {
+      return 'best_bar_nearby'.tr;
+    }
+    if (isPharmacyModule) {
+      return _localized(
+        en: 'Best Pharmacies Nearby',
+        ka: 'საუკეთესო ახლომდებარე აფთიაქები',
+        ru: 'Лучшие аптеки поблизости',
+        es: 'Mejores farmacias cercanas',
+        ar: 'أفضل الصيدليات القريبة',
+        bn: 'কাছাকাছি সেরা ফার্মেসি',
+      );
+    }
+    if (isRestaurantModule) {
+      return _localized(
+        en: 'Best Restaurant Nearby',
+        ka: 'საუკეთესო ახლომდებარე რესტორანი',
+        ru: 'Лучший ресторан поблизости',
+        es: 'Mejor restaurante cercano',
+        ar: 'أفضل مطعم قريب',
+        bn: 'কাছাকাছি সেরা রেস্তোরাঁ',
+      );
+    }
+    return 'best_store_nearby'.tr;
+  }
+
+  static String get recommendedStoreLabel {
+    if (isBeerModule) {
+      return _localized(
+        en: 'Recommended Bar',
+        ka: 'რეკომენდებული ბარი',
+        ru: 'Рекомендуемый бар',
+        es: 'Bar recomendado',
+        ar: 'بار موصى به',
+        bn: 'প্রস্তাবিত বার',
+      );
+    }
+    if (isPharmacyModule) {
+      return _localized(
+        en: 'Recommended Pharmacy',
+        ka: 'რეკომენდებული აფთიაქი',
+        ru: 'Рекомендуемая аптека',
+        es: 'Farmacia recomendada',
+        ar: 'صيدلية موصى بها',
+        bn: 'প্রস্তাবিত ফার্মেসি',
+      );
+    }
+    if (isRestaurantModule) {
+      return _localized(
+        en: 'Recommended Restaurant',
+        ka: 'რეკომენდებული რესტორანი',
+        ru: 'Рекомендуемый ресторан',
+        es: 'Restaurante recomendado',
+        ar: 'مطعم موصى به',
+        bn: 'প্রস্তাবিত রেস্তোরাঁ',
+      );
+    }
+    return 'recommended_store'.tr;
   }
 
   static String get itemKey {

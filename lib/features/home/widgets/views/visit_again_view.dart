@@ -6,6 +6,7 @@ import 'package:sixam_mart/common/widgets/card_design/visit_again_card.dart';
 import 'package:sixam_mart/features/store/controllers/store_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/features/home/widgets/components/custom_triangle_shape.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
 
@@ -43,7 +44,7 @@ class _VisitAgainViewState extends State<VisitAgainView> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge),
                   child: Text(
-                    'get_your_recent_purchase_from_the_shop_you_recently_ordered'.tr,
+                    ModuleHelper.recentPurchasePrompt,
                     textAlign: TextAlign.center,
                     style: robotoRegular.copyWith(color: Theme.of(context).cardColor, fontSize: Dimensions.fontSizeSmall),
                   ),

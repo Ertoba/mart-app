@@ -68,7 +68,7 @@ class _ItemThatYouLoveViewState extends State<ItemThatYouLoveView> {
                                 ? Alignment.center
                                 : Alignment.centerLeft,
                             child: Text(
-                              'item_that_you_love'.tr,
+                              ModuleHelper.itemThatYouLoveLabel,
                               style: robotoBold.copyWith(
                                 fontSize: Dimensions.fontSizeLarge,
                               ),
@@ -230,12 +230,12 @@ class _ItemThatYouLoveShimmerViewState
           ),
           child: widget.forShop
               ? Text(
-                  'item_that_you_love'.tr,
+                  ModuleHelper.itemThatYouLoveLabel,
                   style: robotoBold.copyWith(
                     fontSize: Dimensions.fontSizeLarge,
                   ),
                 )
-              : TitleWidget(title: 'item_that_you_love'.tr),
+              : TitleWidget(title: ModuleHelper.itemThatYouLoveLabel),
         ),
 
         widget.forShop

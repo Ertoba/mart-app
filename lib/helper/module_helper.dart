@@ -238,7 +238,12 @@ class ModuleHelper {
     if (isBeerModule) {
       return 'best_bar_nearby';
     }
-    return showRestaurantText ? 'restaurants_near_you' : 'best_store_nearby';
+    if (isPharmacyModule || isRestaurantModule) {
+      // Existing callers translate this getter with `.tr`; GetX returns an
+      // unknown key unchanged, so a localized literal remains safe here.
+      return bestStoreNearbyLabel;
+    }
+    return 'best_store_nearby';
   }
 
   static String get popularStoresKey {

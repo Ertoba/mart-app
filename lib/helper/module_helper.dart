@@ -35,11 +35,83 @@ class ModuleHelper {
         (slug == 'ludi' || slug == 'beer' || name == 'ლუდი' || name == 'beer');
   }
 
+  static bool get isPharmacyModule {
+    final ModuleModel? module = getModule() ?? getCacheModule();
+    final String moduleType = (module?.moduleType ?? '').trim().toLowerCase();
+    return moduleType == 'pharmacy';
+  }
+
+  static String _localized({
+    required String en,
+    required String ka,
+    required String ru,
+    required String es,
+    required String ar,
+    required String bn,
+  }) {
+    switch ((Get.locale?.languageCode ?? 'en').toLowerCase()) {
+      case 'ka':
+        return ka;
+      case 'ru':
+        return ru;
+      case 'es':
+        return es;
+      case 'ar':
+        return ar;
+      case 'bn':
+        return bn;
+      default:
+        return en;
+    }
+  }
+
   static String get storeKey {
     if (isBeerModule) {
       return 'bar';
     }
     return showRestaurantText ? 'restaurants' : 'stores';
+  }
+
+  static String get storeLabel {
+    if (!isPharmacyModule) {
+      return storeKey.tr;
+    }
+    return _localized(
+      en: 'Pharmacies',
+      ka: 'აფთიაქები',
+      ru: 'Аптеки',
+      es: 'Farmacias',
+      ar: 'الصيدليات',
+      bn: 'ফার্মেসি',
+    );
+  }
+
+  static String get storesNearYouLabel {
+    if (!isPharmacyModule) {
+      return storesNearYouKey.tr;
+    }
+    return _localized(
+      en: 'Pharmacies near you',
+      ka: 'ახლომდებარე აფთიაქები',
+      ru: 'Аптеки поблизости',
+      es: 'Farmacias cerca de ti',
+      ar: 'صيدليات بالقرب منك',
+      bn: 'আপনার কাছাকাছি ফার্মেসি',
+    );
+  }
+
+  static String get recentPurchasePrompt {
+    if (!isBeerModule) {
+      return 'get_your_recent_purchase_from_the_shop_you_recently_ordered'.tr;
+    }
+    return _localized(
+      en: 'Order again from the bar you recently ordered from',
+      ka: 'შეიძინეთ ბარიდან, საიდანაც ბოლოს შეუკვეთეთ',
+      ru: 'Закажите снова в баре, где вы заказывали в последний раз',
+      es: 'Vuelve a pedir en el bar donde hiciste tu último pedido',
+      ar: 'اطلب مجددًا من البار الذي طلبت منه مؤخرًا',
+      bn: 'যে বার থেকে সর্বশেষ অর্ডার করেছিলেন, সেখান থেকে আবার অর্ডার করুন',
+    );
   }
 
   static String get itemKey {
@@ -68,7 +140,10 @@ class ModuleHelper {
   }
 
   static String get bestStoreNearbyKey {
-    return isBeerModule ? 'best_bar_nearby' : 'best_store_nearby';
+    if (isBeerModule) {
+      return 'best_bar_nearby';
+    }
+    return showRestaurantText ? 'restaurants_near_you' : 'best_store_nearby';
   }
 
   static String get popularStoresKey {

@@ -3,7 +3,7 @@ import 'package:sixam_mart/features/flash_sale/widgets/flash_sale_view_widget.da
 import 'package:sixam_mart/features/home/widgets/highlight_widget.dart';
 import 'package:sixam_mart/features/home/widgets/views/banner_view.dart';
 import 'package:sixam_mart/features/home/widgets/views/best_reviewed_item_view.dart';
-import 'package:sixam_mart/features/home/widgets/views/best_store_nearby_view.dart';
+import 'package:sixam_mart/features/home/widgets/views/grocery_best_store_nearby_view.dart';
 import 'package:sixam_mart/features/home/widgets/views/category_view.dart';
 import 'package:sixam_mart/features/home/widgets/views/promo_code_banner_view.dart';
 import 'package:sixam_mart/features/home/widgets/views/item_that_you_love_view.dart';
@@ -44,7 +44,7 @@ class GroceryHomeScreen extends StatelessWidget {
       const SpecialOfferView(isFood: false, isShop: false),
       const HighlightWidget(),
       const FlashSaleViewWidget(),
-      const BestStoreNearbyView(),
+      const GroceryBestStoreNearbyView(),
       const MostPopularItemView(isFood: false, isShop: false),
       const MiddleSectionBannerView(),
       const BestReviewItemView(),

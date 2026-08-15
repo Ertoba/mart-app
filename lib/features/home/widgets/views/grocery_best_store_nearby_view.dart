@@ -7,6 +7,7 @@ import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
+import 'package:sixam_mart/util/styles.dart';
 
 class GroceryBestStoreNearbyView extends StatelessWidget {
   const GroceryBestStoreNearbyView({super.key});
@@ -37,12 +38,51 @@ class GroceryBestStoreNearbyView extends StatelessWidget {
                   ),
                   child: TitleWidget(
                     title: ModuleHelper.bestStoreNearbyKey.tr,
-                    seeAllFontSize: Dimensions.fontSizeExtraSmall,
-                    onTap: () => Get.toNamed(
-                      RouteHelper.getAllStoreRoute(
-                        'popular',
-                        isNearbyStore: true,
-                      ),
+                  ),
+                ),
+                InkWell(
+                  onTap: () => Get.toNamed(
+                    RouteHelper.getAllStoreRoute(
+                      'popular',
+                      isNearbyStore: true,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: Dimensions.paddingSizeDefault,
+                      vertical: Dimensions.paddingSizeExtraSmall,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 2,
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        Transform.translate(
+                          offset: const Offset(-4, 0),
+                          child: Icon(
+                            Icons.arrow_forward,
+                            size: 18,
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        const SizedBox(
+                          width: Dimensions.paddingSizeExtraSmall,
+                        ),
+                        Text(
+                          'see_all'.tr,
+                          style: robotoMedium.copyWith(
+                            fontSize: Dimensions.fontSizeExtraSmall,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

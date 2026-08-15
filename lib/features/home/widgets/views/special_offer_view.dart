@@ -115,15 +115,17 @@ class ItemShimmerView extends StatelessWidget {
                 title: isPopularItem
                     ? ModuleHelper.popularItemsKey.tr
                     : 'special_offer'.tr,
-                image: isPopularItem
+                image: isPopularItem ? null : Images.discountOfferIcon,
+                lottieAsset: isPopularItem
                     ? ModuleHelper.isBeerModule
-                          ? null
-                          : Images.mostPopularIcon
-                    : Images.discountOfferIcon,
-                lottieAsset: isPopularItem && ModuleHelper.isBeerModule
-                    ? Images.cheersLottie
+                          ? Images.cheersLottie
+                          : Images.starLottie
                     : null,
-                iconSize: isPopularItem && ModuleHelper.isBeerModule ? 24 : 20,
+                iconSize: isPopularItem
+                    ? ModuleHelper.isBeerModule
+                          ? 24
+                          : 26
+                    : 20,
               ),
             ),
 

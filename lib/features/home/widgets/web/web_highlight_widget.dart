@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/custom_asset_image_widget.dart';
 import 'package:sixam_mart/features/home/controllers/advertisement_controller.dart';
 import 'package:sixam_mart/features/home/widgets/highlight_widget.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
@@ -83,30 +84,33 @@ class _WebHighlightWidgetState extends State<WebHighlightWidget> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'highlights_for_you'.tr,
-                                    style: robotoBold.copyWith(
-                                      fontSize: Dimensions.fontSizeLarge,
-                                      color: Get.isDarkMode
-                                          ? Colors.white
-                                          : Colors.black,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'highlights_for_you'.tr,
+                                      style: robotoBold.copyWith(
+                                        fontSize: Dimensions.fontSizeLarge,
+                                        color: Get.isDarkMode
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 5),
+                                    const SizedBox(width: 5),
 
-                                  Text(
-                                    'see_our_most_popular_store_and_item'.tr,
-                                    style: robotoRegular.copyWith(
-                                      color: Get.isDarkMode
-                                          ? Colors.white70
-                                          : Theme.of(context).hintColor,
-                                      fontSize: Dimensions.fontSizeSmall,
+                                    Text(
+                                      ModuleHelper.highlightDescriptionKey.tr,
+                                      maxLines: 2,
+                                      style: robotoRegular.copyWith(
+                                        color: Get.isDarkMode
+                                            ? Colors.white70
+                                            : Theme.of(context).hintColor,
+                                        fontSize: Dimensions.fontSizeSmall,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
 
                               SizedBox(

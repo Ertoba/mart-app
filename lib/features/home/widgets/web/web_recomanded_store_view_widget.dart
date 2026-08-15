@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
 import 'package:sixam_mart/common/widgets/hover/text_hover.dart';
-import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/store/controllers/store_controller.dart';
 import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
-import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
 import 'package:sixam_mart/common/widgets/custom_image.dart';
@@ -20,16 +18,9 @@ class WebRecommendedStoreView extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetBuilder<StoreController>(
       builder: (storeController) {
-        bool isFood =
-            Get.find<SplashController>().module != null &&
-            Get.find<SplashController>().module!.moduleType.toString() ==
-                AppConstants.food;
-        final recommendedStoreTitle = isFood
-            ? ModuleHelper.recommendedStoreKey.tr
-            : 'recommended_stores'.tr;
-        final noRecommendedStoreText = isFood
-            ? ModuleHelper.currentlyNoRecommendedStoreAvailableKey.tr
-            : 'currently_no_recommended_store_available'.tr;
+        final recommendedStoreTitle = ModuleHelper.recommendedStoreKey.tr;
+        final noRecommendedStoreText =
+            ModuleHelper.currentlyNoRecommendedStoreAvailableKey.tr;
 
         return storeController.recommendedStoreList != null
             ? Container(

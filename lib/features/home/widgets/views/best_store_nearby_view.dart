@@ -68,7 +68,7 @@ class BestStoreNearbyView extends StatelessWidget {
                                     ),
                                     child: TitleWidget(
                                       title: isPharmacy
-                                          ? 'featured_store'.tr
+                                          ? ModuleHelper.featuredStoreKey.tr
                                           : ModuleHelper.bestStoreNearbyKey.tr,
                                       seeAllFontSize:
                                           Dimensions.fontSizeExtraSmall,
@@ -685,7 +685,7 @@ class BestStoreNearbyShimmer extends StatelessWidget {
                 ),
                 child: TitleWidget(
                   title: isPharmacy
-                      ? 'featured_store'.tr
+                      ? ModuleHelper.featuredStoreKey.tr
                       : ModuleHelper.bestStoreNearbyKey.tr,
                   seeAllFontSize: Dimensions.fontSizeExtraSmall,
                 ),

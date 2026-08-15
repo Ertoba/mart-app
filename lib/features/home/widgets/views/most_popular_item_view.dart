@@ -56,7 +56,7 @@ class MostPopularItemView extends StatelessWidget {
                                     : ModuleHelper.popularItemsKey.tr,
                                 lottieAsset: ModuleHelper.isBeerModule
                                     ? Images.cheersLottie
-                                    : 'assets/json/Star.lottie',
+                                    : Images.starLottie,
                                 iconSize: ModuleHelper.isBeerModule ? 24 : 26,
                                 onTap: () => Get.toNamed(
                                   RouteHelper.getItemViewAllScreen(true, false),

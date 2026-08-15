@@ -42,6 +42,8 @@ class PopularItemView extends StatelessWidget {
                       title: isPopular
                           ? 'popular_items_nearby'.tr
                           : ModuleHelper.bestReviewedItemsKey.tr,
+                      lottieAsset: isPopular ? Images.starLottie : null,
+                      iconSize: 26,
                       onTap: () => Get.toNamed(
                         RouteHelper.getPopularItemRoute(isPopular, false),
                       ),

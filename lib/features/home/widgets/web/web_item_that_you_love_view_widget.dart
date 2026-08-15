@@ -7,6 +7,7 @@ import 'package:sixam_mart/features/item/controllers/item_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
 import 'package:sixam_mart/features/home/widgets/components/item_that_you_love_card_widget.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
@@ -38,7 +39,7 @@ class _WebItemThatYouLoveViewWidgetState extends State<WebItemThatYouLoveViewWid
 
             Padding(
               padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
-              child: Text('item_that_you_love'.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
+              child: Text(ModuleHelper.itemThatYouLoveLabel, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
             ),
 
             !isShop ? CarouselSlider.builder(
@@ -252,7 +253,7 @@ class _WebItemThatYouLoveForShopState extends State<WebItemThatYouLoveForShop> {
 
           Padding(
             padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
-            child: Text('item_that_you_love'.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
+            child: Text(ModuleHelper.itemThatYouLoveLabel, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
           ),
 
           Container(
@@ -406,7 +407,7 @@ class WebItemThatYouLoveForShopShimmer extends StatelessWidget {
 
         Padding(
           padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
-          child: Text('item_that_you_love'.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
+          child: Text(ModuleHelper.itemThatYouLoveLabel, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
         ),
 
         Shimmer(
@@ -513,7 +514,7 @@ class WebItemThatYouLoveShimmerView extends StatelessWidget {
 
         Padding(
           padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
-          child: Text('item_that_you_love'.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
+          child: Text(ModuleHelper.itemThatYouLoveLabel, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
         ),
 
         CarouselSlider.builder(

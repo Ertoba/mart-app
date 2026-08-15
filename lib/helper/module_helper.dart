@@ -45,169 +45,54 @@ class ModuleHelper {
   static bool get isRestaurantModule =>
       _moduleType == 'food' && !isBeerModule && showRestaurantText;
 
-  static String _localized({
-    required String en,
-    required String ka,
-    required String ru,
-    required String es,
-    required String ar,
-    required String bn,
-  }) {
-    switch ((Get.locale?.languageCode ?? 'en').toLowerCase()) {
-      case 'ka':
-        return ka;
-      case 'ru':
-        return ru;
-      case 'es':
-        return es;
-      case 'ar':
-        return ar;
-      case 'bn':
-        return bn;
-      default:
-        return en;
-    }
-  }
-
   static String get storeKey {
     if (isBeerModule) {
       return 'bar';
     }
+    if (isPharmacyModule) {
+      return 'pharmacies';
+    }
     return showRestaurantText ? 'restaurants' : 'stores';
   }
 
-  static String get storeLabel {
-    if (!isPharmacyModule) {
-      return storeKey.tr;
-    }
-    return _localized(
-      en: 'Pharmacies',
-      ka: 'აფთიაქები',
-      ru: 'Аптеки',
-      es: 'Farmacias',
-      ar: 'الصيدليات',
-      bn: 'ফার্মেসি',
-    );
-  }
+  static String get storeLabel => storeKey.tr;
 
-  static String get storesNearYouLabel {
-    if (!isPharmacyModule) {
-      return storesNearYouKey.tr;
-    }
-    return _localized(
-      en: 'Pharmacies near you',
-      ka: 'ახლომდებარე აფთიაქები',
-      ru: 'Аптеки поблизости',
-      es: 'Farmacias cerca de ti',
-      ar: 'صيدليات بالقرب منك',
-      bn: 'আপনার কাছাকাছি ফার্মেসি',
-    );
-  }
+  static String get storesNearYouLabel => storesNearYouKey.tr;
 
   static String get recentPurchasePrompt {
     if (isBeerModule) {
-      return _localized(
-        en: 'Order again from the bar you recently ordered from',
-        ka: 'შეიძინეთ ბარიდან, საიდანაც ბოლოს შეუკვეთეთ',
-        ru: 'Закажите снова в баре, где вы заказывали в последний раз',
-        es: 'Vuelve a pedir en el bar donde hiciste tu último pedido',
-        ar: 'اطلب مجددًا من البار الذي طلبت منه مؤخرًا',
-        bn: 'যে বার থেকে সর্বশেষ অর্ডার করেছিলেন, সেখান থেকে আবার অর্ডার করুন',
-      );
+      return 'order_again_from_last_bar'.tr;
     }
     if (isPharmacyModule) {
-      return _localized(
-        en: 'Order again from the pharmacy you recently ordered from',
-        ka: 'შეიძინეთ ისევ იმ აფთიაქში, საიდანაც ბოლოს შეუკვეთეთ',
-        ru: 'Закажите снова в аптеке, где вы заказывали в последний раз',
-        es: 'Vuelve a pedir en la farmacia donde hiciste tu último pedido',
-        ar: 'اطلب مجددًا من الصيدلية التي طلبت منها مؤخرًا',
-        bn: 'যে ফার্মেসি থেকে সর্বশেষ অর্ডার করেছিলেন, সেখান থেকে আবার অর্ডার করুন',
-      );
+      return 'order_again_from_last_pharmacy'.tr;
     }
     if (isRestaurantModule) {
-      return _localized(
-        en: 'Order again from the restaurant you recently ordered from',
-        ka: 'შეუკვეთეთ ისევ იმ რესტორანში, საიდანაც ბოლოს შეუკვეთეთ',
-        ru: 'Закажите снова в ресторане, где вы заказывали в последний раз',
-        es: 'Vuelve a pedir en el restaurante donde hiciste tu último pedido',
-        ar: 'اطلب مجددًا من المطعم الذي طلبت منه مؤخرًا',
-        bn: 'যে রেস্তোরাঁ থেকে সর্বশেষ অর্ডার করেছিলেন, সেখান থেকে আবার অর্ডার করুন',
-      );
+      return 'order_again_from_last_restaurant'.tr;
     }
     return 'get_your_recent_purchase_from_the_shop_you_recently_ordered'.tr;
   }
 
-  static String get itemThatYouLoveLabel {
-    if (isBeerModule) {
-      return 'item_that_you_love'.tr;
-    }
-    if ((Get.locale?.languageCode ?? '').toLowerCase() == 'ka') {
-      return 'ნივთები, რომლებიც მოგეწონებათ';
-    }
-    return 'item_that_you_love'.tr;
-  }
+  static String get itemThatYouLoveKey =>
+      isBeerModule ? 'beer_that_you_love' : 'item_that_you_love';
 
-  static String get bestStoreNearbyLabel {
+  static String get itemThatYouLoveLabel => itemThatYouLoveKey.tr;
+
+  static String get bestStoreNearbyLabel => bestStoreNearbyKey.tr;
+
+  static String get recommendedStoreTitleKey {
     if (isBeerModule) {
-      return 'best_bar_nearby'.tr;
+      return 'recommended_bar';
     }
     if (isPharmacyModule) {
-      return _localized(
-        en: 'Best Pharmacies Nearby',
-        ka: 'საუკეთესო ახლომდებარე აფთიაქები',
-        ru: 'Лучшие аптеки поблизости',
-        es: 'Mejores farmacias cercanas',
-        ar: 'أفضل الصيدليات القريبة',
-        bn: 'কাছাকাছি সেরা ফার্মেসি',
-      );
+      return 'recommended_pharmacy';
     }
     if (isRestaurantModule) {
-      return _localized(
-        en: 'Best Restaurant Nearby',
-        ka: 'საუკეთესო ახლომდებარე რესტორანი',
-        ru: 'Лучший ресторан поблизости',
-        es: 'Mejor restaurante cercano',
-        ar: 'أفضل مطعم قريب',
-        bn: 'কাছাকাছি সেরা রেস্তোরাঁ',
-      );
+      return 'recommended_restaurant';
     }
-    return 'best_store_nearby'.tr;
+    return 'recommended_store';
   }
 
-  static String get recommendedStoreLabel {
-    if (isBeerModule) {
-      return _localized(
-        en: 'Recommended Bar',
-        ka: 'რეკომენდებული ბარი',
-        ru: 'Рекомендуемый бар',
-        es: 'Bar recomendado',
-        ar: 'بار موصى به',
-        bn: 'প্রস্তাবিত বার',
-      );
-    }
-    if (isPharmacyModule) {
-      return _localized(
-        en: 'Recommended Pharmacy',
-        ka: 'რეკომენდებული აფთიაქი',
-        ru: 'Рекомендуемая аптека',
-        es: 'Farmacia recomendada',
-        ar: 'صيدلية موصى بها',
-        bn: 'প্রস্তাবিত ফার্মেসি',
-      );
-    }
-    if (isRestaurantModule) {
-      return _localized(
-        en: 'Recommended Restaurant',
-        ka: 'რეკომენდებული რესტორანი',
-        ru: 'Рекомендуемый ресторан',
-        es: 'Restaurante recomendado',
-        ar: 'مطعم موصى به',
-        bn: 'প্রস্তাবিত রেস্তোরাঁ',
-      );
-    }
-    return 'recommended_store'.tr;
-  }
+  static String get recommendedStoreLabel => recommendedStoreTitleKey.tr;
 
   static String get itemKey {
     return isBeerModule ? 'beer' : 'item';
@@ -220,6 +105,9 @@ class ModuleHelper {
   static String get searchHintKey {
     if (isBeerModule) {
       return 'search_beer_or_bar';
+    }
+    if (isPharmacyModule) {
+      return 'search_medicine_or_pharmacy';
     }
     return showRestaurantText
         ? 'search_food_or_restaurant'
@@ -238,10 +126,11 @@ class ModuleHelper {
     if (isBeerModule) {
       return 'best_bar_nearby';
     }
-    if (isPharmacyModule || isRestaurantModule) {
-      // Existing callers translate this getter with `.tr`; GetX returns an
-      // unknown key unchanged, so a localized literal remains safe here.
-      return bestStoreNearbyLabel;
+    if (isPharmacyModule) {
+      return 'best_pharmacy_nearby';
+    }
+    if (isRestaurantModule) {
+      return 'best_restaurant_nearby';
     }
     return 'best_store_nearby';
   }
@@ -250,6 +139,9 @@ class ModuleHelper {
     if (isBeerModule) {
       return 'popular_bars';
     }
+    if (isPharmacyModule) {
+      return 'popular_pharmacies';
+    }
     return showRestaurantText ? 'popular_restaurants' : 'popular_stores';
   }
 
@@ -257,12 +149,18 @@ class ModuleHelper {
     if (isBeerModule) {
       return 'bars_near_you';
     }
+    if (isPharmacyModule) {
+      return 'pharmacies_near_you';
+    }
     return showRestaurantText ? 'restaurants_near_you' : 'stores_near_you';
   }
 
   static String get noStoreAvailableKey {
     if (isBeerModule) {
       return 'no_bar_available';
+    }
+    if (isPharmacyModule) {
+      return 'no_pharmacy_available';
     }
     return showRestaurantText
         ? 'no_restaurant_available'
@@ -273,6 +171,9 @@ class ModuleHelper {
     if (isBeerModule) {
       return 'currently_opened_bars';
     }
+    if (isPharmacyModule) {
+      return 'currently_opened_pharmacies';
+    }
     return showRestaurantText
         ? 'currently_opened_restaurants'
         : 'currently_opened_stores';
@@ -282,12 +183,18 @@ class ModuleHelper {
     if (isBeerModule) {
       return 'discounted_bars';
     }
+    if (isPharmacyModule) {
+      return 'discounted_pharmacies';
+    }
     return showRestaurantText ? 'discounted_restaurants' : 'discounted_stores';
   }
 
   static String get recommendedStoreKey {
     if (isBeerModule) {
       return 'recommended_bars';
+    }
+    if (isPharmacyModule) {
+      return 'recommended_pharmacies';
     }
     return showRestaurantText
         ? 'recommended_restaurants'
@@ -298,8 +205,27 @@ class ModuleHelper {
     if (isBeerModule) {
       return 'currently_no_recommended_bar_available';
     }
+    if (isPharmacyModule) {
+      return 'currently_no_recommended_pharmacy_available';
+    }
     return showRestaurantText
         ? 'currently_no_recommended_restaurant_available'
         : 'currently_no_recommended_store_available';
+  }
+
+  static String get featuredStoreKey =>
+      isPharmacyModule ? 'featured_pharmacies' : 'featured_store';
+
+  static String get highlightDescriptionKey {
+    if (isBeerModule) {
+      return 'see_our_most_popular_bars_and_beer';
+    }
+    if (isPharmacyModule) {
+      return 'see_our_most_popular_pharmacies_and_items';
+    }
+    if (isRestaurantModule) {
+      return 'see_our_most_popular_restaurants_and_food';
+    }
+    return 'see_our_most_popular_store_and_item';
   }
 }

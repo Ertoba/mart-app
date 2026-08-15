@@ -112,7 +112,7 @@ class _WebBestStoreNearbyViewWidgetState
                                     vertical: Dimensions.paddingSizeSmall,
                                   ),
                                   child: TitleWidget(
-                                    title: 'featured_store'.tr,
+                                    title: ModuleHelper.featuredStoreKey.tr,
                                     onTap: () => Get.toNamed(
                                       RouteHelper.getAllStoreRoute('featured'),
                                     ),

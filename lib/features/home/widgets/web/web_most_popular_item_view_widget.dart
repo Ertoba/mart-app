@@ -107,13 +107,10 @@ class _WebMostPopularItemViewWidgetState
                                   title: isShop
                                       ? 'most_popular_products'.tr
                                       : ModuleHelper.popularItemsKey.tr,
-                                  image: ModuleHelper.isBeerModule
-                                      ? null
-                                      : Images.mostPopularIcon,
                                   lottieAsset: ModuleHelper.isBeerModule
                                       ? Images.cheersLottie
-                                      : null,
-                                  iconSize: ModuleHelper.isBeerModule ? 24 : 20,
+                                      : Images.starLottie,
+                                  iconSize: ModuleHelper.isBeerModule ? 24 : 26,
                                   onTap: () => Get.toNamed(
                                     RouteHelper.getPopularItemRoute(
                                       true,

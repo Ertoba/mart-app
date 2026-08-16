@@ -1752,5 +1752,7 @@
   "ai_chat_typing": "جارٍ إعداد الرد...",
   "attachments_after_operator": "تتوفر الصور بعد التحويل إلى موظف الدعم",
   "ai_chat_operator_requested": "طلب العميل التحدث إلى موظف الدعم.",
-  "ai_chat_handoff_context": "سياق محادثة الذكاء الاصطناعي الذي شاركه العميل:"
+  "ai_chat_handoff_context": "سياق محادثة الذكاء الاصطناعي الذي شاركه العميل:",
+  "chat_archived": "مؤرشفة",
+  "chat_archived_read_only": "تمت أرشفة هذه المحادثة بعد ساعة من آخر رسالة وأصبحت متاحة للقراءة فقط."
 }

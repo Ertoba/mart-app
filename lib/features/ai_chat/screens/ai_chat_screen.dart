@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -18,8 +19,17 @@ Future<void> showAiChatBottomSheet(BuildContext context) {
     useSafeArea: true,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.38),
-    builder: (_) =>
-        const FractionallySizedBox(heightFactor: 0.92, child: AiChatSheet()),
+    builder: (sheetContext) => AnimatedPadding(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
+      ),
+      child: const FractionallySizedBox(
+        heightFactor: 0.92,
+        child: AiChatSheet(),
+      ),
+    ),
   );
 }
 
@@ -30,7 +40,8 @@ class AiChatSheet extends StatefulWidget {
   State<AiChatSheet> createState() => _AiChatSheetState();
 }
 
-class _AiChatSheetState extends State<AiChatSheet> {
+class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
+  static const Duration _archiveAfter = Duration(hours: 1);
   static const Set<String> _knownErrors = {
     'ai_chat_disabled',
     'ai_chat_daily_limit_reached',
@@ -40,6 +51,7 @@ class _AiChatSheetState extends State<AiChatSheet> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<_AiChatConversation> _conversations = [];
+  Timer? _archiveTimer;
   bool _sending = false;
   bool _historyExpanded = false;
   bool _operatorMode = false;
@@ -68,14 +80,25 @@ class _AiChatSheetState extends State<AiChatSheet> {
   List<_AiChatMessage> get _messages =>
       _currentConversation?.messages ?? const <_AiChatMessage>[];
 
+  bool get _currentConversationIsArchived =>
+      _currentConversation?.isArchived ?? false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadHistory();
   }
 
   @override
+  void didChangeMetrics() {
+    _scrollToEnd(delay: const Duration(milliseconds: 120));
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _archiveTimer?.cancel();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -84,7 +107,9 @@ class _AiChatSheetState extends State<AiChatSheet> {
   void _loadHistory() {
     final SharedPreferences preferences = Get.find<SharedPreferences>();
     final String? raw = preferences.getString(_storageKey);
-    if (raw == null || raw.isEmpty) return;
+    if (raw == null || raw.isEmpty) {
+      return;
+    }
     try {
       final List<dynamic> decoded = jsonDecode(raw) as List<dynamic>;
       _conversations.addAll(
@@ -94,24 +119,80 @@ class _AiChatSheetState extends State<AiChatSheet> {
             .where((conversation) => conversation.messages.isNotEmpty),
       );
       _conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      _currentConversationId = _conversations.firstOrNull?.id;
+      final bool changed = _archiveExpiredConversations(DateTime.now());
+      _currentConversationId = _conversations
+          .firstWhereOrNull((conversation) => !conversation.isArchived)
+          ?.id;
+      if (changed) {
+        _saveHistory();
+      }
+      _scheduleArchiveTimer();
+      _scrollToEnd(immediate: true);
     } catch (_) {
       preferences.remove(_storageKey);
     }
   }
 
+  bool _archiveExpiredConversations(DateTime now) {
+    bool changed = false;
+    for (final conversation in _conversations) {
+      if (!conversation.isArchived &&
+          !conversation.updatedAt.add(_archiveAfter).isAfter(now)) {
+        conversation.archivedAt = conversation.updatedAt.add(_archiveAfter);
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
+  void _scheduleArchiveTimer() {
+    _archiveTimer?.cancel();
+    final DateTime now = DateTime.now();
+    final List<_AiChatConversation> active =
+        _conversations
+            .where((conversation) => !conversation.isArchived)
+            .toList()
+          ..sort((a, b) => a.updatedAt.compareTo(b.updatedAt));
+    if (active.isEmpty) {
+      return;
+    }
+
+    final Duration remaining = active.first.updatedAt
+        .add(_archiveAfter)
+        .difference(now);
+    if (remaining <= Duration.zero) {
+      _archiveAtDeadline();
+      return;
+    }
+    _archiveTimer = Timer(remaining, _archiveAtDeadline);
+  }
+
+  void _archiveAtDeadline() {
+    if (!mounted) {
+      return;
+    }
+    final bool changed = _archiveExpiredConversations(DateTime.now());
+    if (changed) {
+      setState(() {});
+      _saveHistory();
+    }
+    _scheduleArchiveTimer();
+  }
+
   _AiChatConversation _ensureConversation() {
     final _AiChatConversation? current = _currentConversation;
-    if (current != null) return current;
+    if (current != null && !current.isArchived) return current;
     final DateTime now = DateTime.now();
     final conversation = _AiChatConversation(
       id: now.microsecondsSinceEpoch.toString(),
       title: 'new_chat'.tr,
       updatedAt: now,
+      archivedAt: null,
       messages: [],
     );
     _conversations.insert(0, conversation);
     _currentConversationId = conversation.id;
+    _scheduleArchiveTimer();
     return conversation;
   }
 
@@ -131,29 +212,38 @@ class _AiChatSheetState extends State<AiChatSheet> {
       _currentConversationId = null;
       _historyExpanded = false;
     });
+    _scheduleArchiveTimer();
   }
 
   void _selectConversation(String id) {
+    final bool changed = _archiveExpiredConversations(DateTime.now());
     setState(() {
       _currentConversationId = id;
       _historyExpanded = false;
     });
-    _scrollToEnd();
+    if (changed) {
+      _saveHistory();
+    }
+    _scheduleArchiveTimer();
+    _scrollToEnd(immediate: true);
   }
 
   void _deleteConversation(String id) {
     setState(() {
       _conversations.removeWhere((conversation) => conversation.id == id);
       if (_currentConversationId == id) {
-        _currentConversationId = _conversations.firstOrNull?.id;
+        _currentConversationId = _conversations
+            .firstWhereOrNull((conversation) => !conversation.isArchived)
+            ?.id;
       }
     });
     _saveHistory();
+    _scheduleArchiveTimer();
   }
 
   Future<void> _sendMessage() async {
     final String content = _textController.text.trim();
-    if (content.isEmpty || _sending) return;
+    if (content.isEmpty || _sending || _currentConversationIsArchived) return;
 
     final _AiChatConversation conversation = _ensureConversation();
     final List<Map<String, String>> history = conversation.messages
@@ -180,6 +270,7 @@ class _AiChatSheetState extends State<AiChatSheet> {
       _sending = true;
     });
     _saveHistory();
+    _scheduleArchiveTimer();
     _scrollToEnd();
 
     final Response response = await Get.find<ApiClient>().postData(
@@ -219,17 +310,32 @@ class _AiChatSheetState extends State<AiChatSheet> {
       _sending = false;
     });
     _saveHistory();
+    _scheduleArchiveTimer();
     _scrollToEnd();
   }
 
-  void _scrollToEnd() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
+  void _scrollToEnd({bool immediate = false, Duration delay = Duration.zero}) {
+    void scroll() {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+      final double end = _scrollController.position.maxScrollExtent;
+      if (immediate) {
+        _scrollController.jumpTo(end);
+      } else {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          end,
           duration: const Duration(milliseconds: 240),
           curve: Curves.easeOut,
         );
+      }
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (delay == Duration.zero) {
+        scroll();
+      } else {
+        Future<void>.delayed(delay, scroll);
       }
     });
   }
@@ -383,11 +489,14 @@ class _AiChatSheetState extends State<AiChatSheet> {
                                   },
                                 ),
                         ),
-                        _AiComposer(
-                          controller: _textController,
-                          sending: _sending,
-                          onSend: _sendMessage,
-                        ),
+                        if (_currentConversationIsArchived)
+                          const _ArchivedConversationNotice()
+                        else
+                          _AiComposer(
+                            controller: _textController,
+                            sending: _sending,
+                            onSend: _sendMessage,
+                          ),
                       ],
                     ),
             ),
@@ -552,17 +661,35 @@ class _HistoryPanel extends StatelessWidget {
                   return ListTile(
                     dense: true,
                     selected: conversation.id == currentId,
-                    leading: const Icon(Icons.chat_bubble_outline, size: 20),
+                    leading: Icon(
+                      conversation.isArchived
+                          ? Icons.archive_outlined
+                          : Icons.chat_bubble_outline,
+                      size: 20,
+                    ),
                     title: Text(
                       conversation.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     onTap: () => onSelect(conversation.id),
-                    trailing: IconButton(
-                      tooltip: 'delete'.tr,
-                      onPressed: () => onDelete(conversation.id),
-                      icon: const Icon(Icons.delete_outline, size: 20),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (conversation.isArchived)
+                          Padding(
+                            padding: const EdgeInsetsDirectional.only(end: 4),
+                            child: Text(
+                              'chat_archived'.tr,
+                              style: Theme.of(context).textTheme.labelSmall,
+                            ),
+                          ),
+                        IconButton(
+                          tooltip: 'delete'.tr,
+                          onPressed: () => onDelete(conversation.id),
+                          icon: const Icon(Icons.delete_outline, size: 20),
+                        ),
+                      ],
                     ),
                   );
                 },
@@ -642,6 +769,41 @@ class _AiComposer extends StatelessWidget {
   }
 }
 
+class _ArchivedConversationNotice extends StatelessWidget {
+  const _ArchivedConversationNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        Dimensions.paddingSizeDefault,
+        Dimensions.paddingSizeSmall,
+        Dimensions.paddingSizeDefault,
+        Dimensions.paddingSizeSmall + MediaQuery.paddingOf(context).bottom,
+      ),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.lock_outline, color: Theme.of(context).hintColor),
+          const SizedBox(width: Dimensions.paddingSizeSmall),
+          Expanded(
+            child: Text(
+              'chat_archived_read_only'.tr,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).hintColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MessageBubble extends StatelessWidget {
   final _AiChatMessage message;
 
@@ -674,7 +836,7 @@ class _MessageBubble extends StatelessWidget {
               : Border.all(color: Theme.of(context).dividerColor),
         ),
         child: SelectableText(
-          message.content,
+          _plainTextLinks(message.content),
           style: TextStyle(
             color: isError
                 ? Theme.of(context).colorScheme.onErrorContainer
@@ -684,6 +846,13 @@ class _MessageBubble extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  String _plainTextLinks(String content) {
+    return content.replaceAllMapped(
+      RegExp(r'\[[^\]]+\]\((https?://[^\s)]+)\)'),
+      (match) => match.group(1)!,
     );
   }
 }
@@ -708,14 +877,18 @@ class _AiChatConversation {
   final String id;
   String title;
   DateTime updatedAt;
+  DateTime? archivedAt;
   final List<_AiChatMessage> messages;
 
   _AiChatConversation({
     required this.id,
     required this.title,
     required this.updatedAt,
+    required this.archivedAt,
     required this.messages,
   });
+
+  bool get isArchived => archivedAt != null;
 
   factory _AiChatConversation.fromJson(Map<String, dynamic> json) {
     final List<dynamic> rawMessages =
@@ -726,6 +899,7 @@ class _AiChatConversation {
       updatedAt:
           DateTime.tryParse(json['updated_at']?.toString() ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
+      archivedAt: DateTime.tryParse(json['archived_at']?.toString() ?? ''),
       messages: rawMessages
           .whereType<Map<String, dynamic>>()
           .map(_AiChatMessage.fromJson)
@@ -737,6 +911,7 @@ class _AiChatConversation {
     'id': id,
     'title': title,
     'updated_at': updatedAt.toIso8601String(),
+    'archived_at': archivedAt?.toIso8601String(),
     'messages': messages.map((message) => message.toJson()).toList(),
   };
 }

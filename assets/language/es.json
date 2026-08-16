@@ -1752,5 +1752,7 @@
   "ai_chat_typing": "Preparando una respuesta...",
   "attachments_after_operator": "Las fotos estarán disponibles tras la transferencia a un operador",
   "ai_chat_operator_requested": "El cliente solicitó un operador de soporte.",
-  "ai_chat_handoff_context": "Contexto del chat de IA compartido por el cliente:"
+  "ai_chat_handoff_context": "Contexto del chat de IA compartido por el cliente:",
+  "chat_archived": "Archivado",
+  "chat_archived_read_only": "Esta conversación se archivó una hora después del último mensaje y ahora es de solo lectura."
 }

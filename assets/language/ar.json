@@ -1739,5 +1739,18 @@
   "order_again_from_last_restaurant": "اطلب من المطعم الذي طلبت منه في المرة الأخيرة",
   "see_our_most_popular_bars_and_beer": "شاهد أشهر الحانات والبيرة لدينا",
   "see_our_most_popular_pharmacies_and_items": "شاهد أشهر الصيدليات والمنتجات لدينا",
-  "see_our_most_popular_restaurants_and_food": "شاهد أشهر المطاعم والأطعمة لدينا"
+  "see_our_most_popular_restaurants_and_food": "شاهد أشهر المطاعم والأطعمة لدينا",
+  "customer": "العميل",
+  "ai_chat_online": "مساعد الذكاء الاصطناعي متصل",
+  "chat_history": "سجل المحادثة",
+  "new_chat": "محادثة جديدة",
+  "no_chat_history": "لا توجد محادثات محفوظة",
+  "contact_operator": "التحدث إلى موظف الدعم",
+  "support_operator": "موظف الدعم",
+  "human_support": "دعم بشري",
+  "ai_chat_greeting": "مرحباً @name، كيف يمكنني مساعدتك؟",
+  "ai_chat_typing": "جارٍ إعداد الرد...",
+  "attachments_after_operator": "تتوفر الصور بعد التحويل إلى موظف الدعم",
+  "ai_chat_operator_requested": "طلب العميل التحدث إلى موظف الدعم.",
+  "ai_chat_handoff_context": "سياق محادثة الذكاء الاصطناعي الذي شاركه العميل:"
 }

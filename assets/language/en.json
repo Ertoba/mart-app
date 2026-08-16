@@ -2349,5 +2349,18 @@
   "order_again_from_last_restaurant": "Order from the restaurant where you last ordered",
   "see_our_most_popular_bars_and_beer": "See our most popular bars and beer",
   "see_our_most_popular_pharmacies_and_items": "See our most popular pharmacies and items",
-  "see_our_most_popular_restaurants_and_food": "See our most popular restaurants and food"
+  "see_our_most_popular_restaurants_and_food": "See our most popular restaurants and food",
+  "customer": "Customer",
+  "ai_chat_online": "AI assistant online",
+  "chat_history": "Chat history",
+  "new_chat": "New chat",
+  "no_chat_history": "No saved conversations",
+  "contact_operator": "Talk to an operator",
+  "support_operator": "Support operator",
+  "human_support": "Human support",
+  "ai_chat_greeting": "Hello, @name. How can I help?",
+  "ai_chat_typing": "Preparing a response...",
+  "attachments_after_operator": "Photos become available after transfer to an operator",
+  "ai_chat_operator_requested": "The customer requested a support operator.",
+  "ai_chat_handoff_context": "AI chat context shared by the customer:"
 }

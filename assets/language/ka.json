@@ -2377,5 +2377,18 @@
   "order_again_from_last_restaurant": "შეუკვეთეთ რესტორანში სადაც ბოლოს შეუკვეთეთ",
   "see_our_most_popular_bars_and_beer": "ნახეთ ჩვენი ყველაზე პოპულარული ბარები და ლუდი",
   "see_our_most_popular_pharmacies_and_items": "ნახეთ ჩვენი ყველაზე პოპულარული აფთიაქები და ნივთები",
-  "see_our_most_popular_restaurants_and_food": "ნახეთ ჩვენი ყველაზე პოპულარული რესტორნები და საკვები"
+  "see_our_most_popular_restaurants_and_food": "ნახეთ ჩვენი ყველაზე პოპულარული რესტორნები და საკვები",
+  "customer": "მომხმარებელი",
+  "ai_chat_online": "AI ასისტენტი ხაზზეა",
+  "chat_history": "ჩატის ისტორია",
+  "new_chat": "ახალი ჩატი",
+  "no_chat_history": "შენახული საუბრები არ არის",
+  "contact_operator": "ოპერატორთან დაკავშირება",
+  "support_operator": "მხარდაჭერის ოპერატორი",
+  "human_support": "ოპერატორის მხარდაჭერა",
+  "ai_chat_greeting": "გამარჯობა, @name. როგორ დაგეხმაროთ?",
+  "ai_chat_typing": "პასუხი მზადდება...",
+  "attachments_after_operator": "ფოტოს ატვირთვა გააქტიურდება ოპერატორთან გადასვლის შემდეგ",
+  "ai_chat_operator_requested": "მომხმარებელმა მხარდაჭერის ოპერატორთან დაკავშირება მოითხოვა.",
+  "ai_chat_handoff_context": "მომხმარებლის მიერ გაზიარებული AI ჩატის კონტექსტი:"
 }

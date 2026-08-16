@@ -34,6 +34,8 @@ class ChatScreen extends StatefulWidget {
   final int? index;
   final bool fromNotification;
   final OrderChatModel? orderChatModel;
+  final bool embedded;
+  final String? initialMessage;
   const ChatScreen({
     super.key,
     required this.notificationBody,
@@ -42,6 +44,8 @@ class ChatScreen extends StatefulWidget {
     this.index,
     this.fromNotification = false,
     this.orderChatModel,
+    this.embedded = false,
+    this.initialMessage,
   });
 
   @override
@@ -60,7 +64,7 @@ class _ChatScreenState extends State<ChatScreen> {
     initCall();
   }
 
-  void initCall() {
+  Future<void> initCall() async {
     if (AuthHelper.isLoggedIn()) {
       if (widget.orderChatModel != null) {
         Get.find<ChatController>().sendMessage(
@@ -73,13 +77,22 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
 
-      Get.find<ChatController>().getMessages(
+      await Get.find<ChatController>().getMessages(
         1,
         widget.notificationBody,
         widget.user,
         widget.conversationID,
         firstLoad: true,
       );
+
+      if (widget.initialMessage?.trim().isNotEmpty == true) {
+        await Get.find<ChatController>().sendMessage(
+          message: widget.initialMessage!.trim(),
+          notificationBody: widget.notificationBody,
+          conversationID: widget.conversationID,
+          index: widget.index,
+        );
+      }
 
       if (Get.find<ProfileController>().userInfoModel == null ||
           Get.find<ProfileController>().userInfoModel!.userInfo == null) {
@@ -114,74 +127,79 @@ class _ChatScreenState extends State<ChatScreen> {
             }
           },
           child: Scaffold(
-            endDrawer: const MenuDrawer(),
+            endDrawer: widget.embedded ? null : const MenuDrawer(),
             endDrawerEnableOpenDragGesture: false,
-            appBar: (ResponsiveHelper.isDesktop(context)
-                ? const WebMenuBar()
-                : AppBar(
-                    leading: IconButton(
-                      onPressed: () {
-                        if (widget.fromNotification) {
-                          Get.offAllNamed(RouteHelper.getInitialRoute());
-                        } else {
-                          Get.back();
-                        }
-                      },
-                      icon: const Icon(Icons.arrow_back_ios),
-                    ),
-                    title: Text(
-                      chatController.messageModel != null
-                          ? '${chatController.messageModel!.conversation!.receiver!.fName}'
-                                ' ${chatController.messageModel!.conversation!.receiver!.lName}'
-                          : 'receiver_name'.tr,
-                      style: robotoMedium.copyWith(
-                        fontSize: Dimensions.fontSizeLarge,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).textTheme.bodyLarge!.color,
-                      ),
-                    ),
-                    backgroundColor: Theme.of(context).cardColor,
-                    surfaceTintColor: Theme.of(context).cardColor,
-                    shadowColor: Theme.of(
-                      context,
-                    ).disabledColor.withValues(alpha: 0.5),
-                    elevation: 2,
-                    actions: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(50),
-                            border: Border.all(
-                              width: 1,
-                              color: Theme.of(context).primaryColor,
+            appBar: widget.embedded
+                ? null
+                : (ResponsiveHelper.isDesktop(context)
+                      ? const WebMenuBar()
+                      : AppBar(
+                          leading: IconButton(
+                            onPressed: () {
+                              if (widget.fromNotification) {
+                                Get.offAllNamed(RouteHelper.getInitialRoute());
+                              } else {
+                                Get.back();
+                              }
+                            },
+                            icon: const Icon(Icons.arrow_back_ios),
+                          ),
+                          title: Text(
+                            chatController.messageModel != null
+                                ? '${chatController.messageModel!.conversation!.receiver!.fName}'
+                                      ' ${chatController.messageModel!.conversation!.receiver!.lName}'
+                                : 'receiver_name'.tr,
+                            style: robotoMedium.copyWith(
+                              fontSize: Dimensions.fontSizeLarge,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyLarge!.color,
                             ),
-                            color: Theme.of(context).cardColor,
                           ),
-                          child: ClipOval(
-                            child: widget.notificationBody?.adminId != null
-                                ? Padding(
-                                    padding: const EdgeInsets.all(6),
-                                    child: Image.asset(
-                                      Images.brandMark,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  )
-                                : CustomImage(
-                                    image:
-                                        '${chatController.messageModel != null ? chatController.messageModel!.conversation!.receiver!.imageFullUrl : ''}',
-                                    fit: BoxFit.cover,
-                                    height: 40,
-                                    width: 40,
+                          backgroundColor: Theme.of(context).cardColor,
+                          surfaceTintColor: Theme.of(context).cardColor,
+                          shadowColor: Theme.of(
+                            context,
+                          ).disabledColor.withValues(alpha: 0.5),
+                          elevation: 2,
+                          actions: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(50),
+                                  border: Border.all(
+                                    width: 1,
+                                    color: Theme.of(context).primaryColor,
                                   ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  )),
+                                  color: Theme.of(context).cardColor,
+                                ),
+                                child: ClipOval(
+                                  child:
+                                      widget.notificationBody?.adminId != null
+                                      ? Padding(
+                                          padding: const EdgeInsets.all(6),
+                                          child: Image.asset(
+                                            Images.brandMark,
+                                            fit: BoxFit.contain,
+                                          ),
+                                        )
+                                      : CustomImage(
+                                          image:
+                                              '${chatController.messageModel != null ? chatController.messageModel!.conversation!.receiver!.imageFullUrl : ''}',
+                                          fit: BoxFit.cover,
+                                          height: 40,
+                                          width: 40,
+                                        ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )),
 
             body: isLoggedIn
                 ? ResponsiveHelper.isDesktop(context)

@@ -1739,5 +1739,18 @@
   "order_again_from_last_restaurant": "Vuelve a pedir en el restaurante donde hiciste tu último pedido",
   "see_our_most_popular_bars_and_beer": "Descubre nuestros bares y cervezas más populares",
   "see_our_most_popular_pharmacies_and_items": "Descubre nuestras farmacias y artículos más populares",
-  "see_our_most_popular_restaurants_and_food": "Descubre nuestros restaurantes y platos más populares"
+  "see_our_most_popular_restaurants_and_food": "Descubre nuestros restaurantes y platos más populares",
+  "customer": "Cliente",
+  "ai_chat_online": "Asistente de IA en línea",
+  "chat_history": "Historial del chat",
+  "new_chat": "Nuevo chat",
+  "no_chat_history": "No hay conversaciones guardadas",
+  "contact_operator": "Hablar con un operador",
+  "support_operator": "Operador de soporte",
+  "human_support": "Soporte humano",
+  "ai_chat_greeting": "Hola, @name. ¿Cómo puedo ayudarte?",
+  "ai_chat_typing": "Preparando una respuesta...",
+  "attachments_after_operator": "Las fotos estarán disponibles tras la transferencia a un operador",
+  "ai_chat_operator_requested": "El cliente solicitó un operador de soporte.",
+  "ai_chat_handoff_context": "Contexto del chat de IA compartido por el cliente:"
 }

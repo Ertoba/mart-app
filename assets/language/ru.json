@@ -2339,5 +2339,18 @@
   "order_again_from_last_restaurant": "Закажите в ресторане, где вы заказывали в последний раз",
   "see_our_most_popular_bars_and_beer": "Посмотрите наши самые популярные бары и пиво",
   "see_our_most_popular_pharmacies_and_items": "Посмотрите наши самые популярные аптеки и товары",
-  "see_our_most_popular_restaurants_and_food": "Посмотрите наши самые популярные рестораны и блюда"
+  "see_our_most_popular_restaurants_and_food": "Посмотрите наши самые популярные рестораны и блюда",
+  "customer": "Пользователь",
+  "ai_chat_online": "ИИ-ассистент онлайн",
+  "chat_history": "История чата",
+  "new_chat": "Новый чат",
+  "no_chat_history": "Сохранённых разговоров нет",
+  "contact_operator": "Связаться с оператором",
+  "support_operator": "Оператор поддержки",
+  "human_support": "Поддержка оператора",
+  "ai_chat_greeting": "Здравствуйте, @name. Чем я могу помочь?",
+  "ai_chat_typing": "Подготавливается ответ...",
+  "attachments_after_operator": "Загрузка фото станет доступна после перехода к оператору",
+  "ai_chat_operator_requested": "Пользователь запросил оператора поддержки.",
+  "ai_chat_handoff_context": "Контекст ИИ-чата, предоставленный пользователем:"
 }

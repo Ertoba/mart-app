@@ -1738,5 +1738,18 @@
   "order_again_from_last_restaurant": "যে রেস্তোরাঁ থেকে সর্বশেষ অর্ডার করেছিলেন, সেখান থেকে আবার অর্ডার করুন",
   "see_our_most_popular_bars_and_beer": "আমাদের সবচেয়ে জনপ্রিয় বার ও বিয়ার দেখুন",
   "see_our_most_popular_pharmacies_and_items": "আমাদের সবচেয়ে জনপ্রিয় ফার্মেসি ও পণ্য দেখুন",
-  "see_our_most_popular_restaurants_and_food": "আমাদের সবচেয়ে জনপ্রিয় রেস্তোরাঁ ও খাবার দেখুন"
+  "see_our_most_popular_restaurants_and_food": "আমাদের সবচেয়ে জনপ্রিয় রেস্তোরাঁ ও খাবার দেখুন",
+  "customer": "গ্রাহক",
+  "ai_chat_online": "AI সহকারী অনলাইনে",
+  "chat_history": "চ্যাটের ইতিহাস",
+  "new_chat": "নতুন চ্যাট",
+  "no_chat_history": "কোনো সংরক্ষিত কথোপকথন নেই",
+  "contact_operator": "অপারেটরের সাথে কথা বলুন",
+  "support_operator": "সহায়তা অপারেটর",
+  "human_support": "মানব সহায়তা",
+  "ai_chat_greeting": "হ্যালো, @name। কীভাবে সাহায্য করতে পারি?",
+  "ai_chat_typing": "উত্তর প্রস্তুত করা হচ্ছে...",
+  "attachments_after_operator": "অপারেটরের কাছে স্থানান্তরের পর ছবি পাঠানো যাবে",
+  "ai_chat_operator_requested": "গ্রাহক একজন সহায়তা অপারেটরের অনুরোধ করেছেন।",
+  "ai_chat_handoff_context": "গ্রাহকের শেয়ার করা AI চ্যাট প্রসঙ্গ:"
 }

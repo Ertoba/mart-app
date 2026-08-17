@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixam_mart/api/api_client.dart';
+import 'package:sixam_mart/features/ai_chat/widgets/ai_chat_result_sections.dart';
 import 'package:sixam_mart/features/chat/screens/chat_screen.dart';
 import 'package:sixam_mart/features/notification/domain/models/notification_body_model.dart';
 import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
@@ -17,6 +18,13 @@ Future<void> showAiChatBottomSheet(BuildContext context) {
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
+    showDragHandle: false,
+    clipBehavior: Clip.antiAlias,
+    constraints: const BoxConstraints(maxWidth: 720),
+    sheetAnimationStyle: const AnimationStyle(
+      duration: Duration(milliseconds: 300),
+      reverseDuration: Duration(milliseconds: 220),
+    ),
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.38),
     builder: (sheetContext) => AnimatedPadding(
@@ -26,7 +34,7 @@ Future<void> showAiChatBottomSheet(BuildContext context) {
         bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
       ),
       child: const FractionallySizedBox(
-        heightFactor: 0.92,
+        heightFactor: 0.94,
         child: AiChatSheet(),
       ),
     ),
@@ -58,11 +66,14 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
   String? _currentConversationId;
   String? _handoffTranscript;
 
-  String get _storageKey {
+  String? get _storageKey {
     final profile = Get.isRegistered<ProfileController>()
         ? Get.find<ProfileController>().userInfoModel
         : null;
-    return 'mili_ai_chat_history_${profile?.id ?? profile?.email ?? 'account'}';
+    final String identity = (profile?.id ?? profile?.email ?? '')
+        .toString()
+        .trim();
+    return identity.isEmpty ? null : 'mili_ai_chat_history_$identity';
   }
 
   String get _displayName {
@@ -106,7 +117,11 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
 
   void _loadHistory() {
     final SharedPreferences preferences = Get.find<SharedPreferences>();
-    final String? raw = preferences.getString(_storageKey);
+    final String? storageKey = _storageKey;
+    if (storageKey == null) {
+      return;
+    }
+    final String? raw = preferences.getString(storageKey);
     if (raw == null || raw.isEmpty) {
       return;
     }
@@ -129,7 +144,7 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
       _scheduleArchiveTimer();
       _scrollToEnd(immediate: true);
     } catch (_) {
-      preferences.remove(_storageKey);
+      preferences.remove(storageKey);
     }
   }
 
@@ -197,12 +212,16 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
   }
 
   void _saveHistory() {
+    final String? storageKey = _storageKey;
+    if (storageKey == null) {
+      return;
+    }
     _conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     if (_conversations.length > 20) {
       _conversations.removeRange(20, _conversations.length);
     }
     Get.find<SharedPreferences>().setString(
-      _storageKey,
+      storageKey,
       jsonEncode(_conversations.map((item) => item.toJson()).toList()),
     );
   }
@@ -282,9 +301,13 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
 
     String reply;
     String role;
+    Map<String, dynamic> metadata = const <String, dynamic>{};
     if (response.statusCode == 200 && response.body is Map) {
       reply = response.body['message']?.toString().trim() ?? '';
       role = 'assistant';
+      if (response.body['metadata'] is Map) {
+        metadata = Map<String, dynamic>.from(response.body['metadata'] as Map);
+      }
       if (reply.isEmpty) {
         reply = 'ai_chat_temporarily_unavailable'.tr;
         role = 'error';
@@ -302,7 +325,9 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
     }
 
     setState(() {
-      conversation.messages.add(_AiChatMessage(role: role, content: reply));
+      conversation.messages.add(
+        _AiChatMessage(role: role, content: reply, metadata: metadata),
+      );
       if (conversation.messages.length > 50) {
         conversation.messages.removeRange(0, conversation.messages.length - 50);
       }
@@ -312,6 +337,14 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
     _saveHistory();
     _scheduleArchiveTimer();
     _scrollToEnd();
+  }
+
+  void _askAbout(String subject) {
+    if (subject.trim().isEmpty || _sending || _currentConversationIsArchived) {
+      return;
+    }
+    _textController.text = '${'search'.tr}: ${subject.trim()}';
+    _sendMessage();
   }
 
   void _scrollToEnd({bool immediate = false, Duration delay = Duration.zero}) {
@@ -379,6 +412,7 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
             onHistory: () =>
                 setState(() => _historyExpanded = !_historyExpanded),
             onOperator: _switchToOperator,
+            onAssistant: () => setState(() => _operatorMode = false),
             onClose: () => Navigator.of(context).pop(),
           ),
           if (!_operatorMode)
@@ -418,38 +452,9 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
                       children: [
                         Expanded(
                           child: _messages.isEmpty
-                              ? Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(
-                                      Dimensions.paddingSizeLarge,
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          'ai_chat_greeting'.trParams({
-                                            'name': _displayName,
-                                          }),
-                                          textAlign: TextAlign.center,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.titleMedium,
-                                        ),
-                                        const SizedBox(
-                                          height: Dimensions.paddingSizeSmall,
-                                        ),
-                                        Text(
-                                          'AI_Chat_Assistant_read_only_hint'.tr,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            color: Theme.of(
-                                              context,
-                                            ).disabledColor,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                              ? _AiEmptyState(
+                                  displayName: _displayName,
+                                  onPrompt: _askAbout,
                                 )
                               : ListView.builder(
                                   controller: _scrollController,
@@ -485,6 +490,7 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
                                     }
                                     return _MessageBubble(
                                       message: _messages[index],
+                                      onAskAbout: _askAbout,
                                     );
                                   },
                                 ),
@@ -512,6 +518,7 @@ class _ChatHeader extends StatelessWidget {
   final bool historyExpanded;
   final VoidCallback onHistory;
   final VoidCallback onOperator;
+  final VoidCallback onAssistant;
   final VoidCallback onClose;
 
   const _ChatHeader({
@@ -519,6 +526,7 @@ class _ChatHeader extends StatelessWidget {
     required this.historyExpanded,
     required this.onHistory,
     required this.onOperator,
+    required this.onAssistant,
     required this.onClose,
   });
 
@@ -591,7 +599,12 @@ class _ChatHeader extends StatelessWidget {
               onPressed: onOperator,
               icon: const Icon(Icons.support_agent),
             ),
-          ],
+          ] else
+            IconButton(
+              tooltip: 'AI_Chat_Assistant'.tr,
+              onPressed: onAssistant,
+              icon: const Icon(Icons.auto_awesome),
+            ),
           IconButton(
             tooltip: 'close'.tr,
             onPressed: onClose,
@@ -804,10 +817,91 @@ class _ArchivedConversationNotice extends StatelessWidget {
   }
 }
 
+class _AiEmptyState extends StatelessWidget {
+  final String displayName;
+  final ValueChanged<String> onPrompt;
+
+  const _AiEmptyState({required this.displayName, required this.onPrompt});
+
+  @override
+  Widget build(BuildContext context) {
+    final Color primary = Theme.of(context).primaryColor;
+    final List<_QuickPromptData> prompts = [
+      _QuickPromptData(
+        Icons.local_fire_department_outlined,
+        'most_popular_items'.tr,
+      ),
+      _QuickPromptData(Icons.local_offer_outlined, 'discounted_items'.tr),
+      _QuickPromptData(Icons.storefront_outlined, 'popular_stores'.tr),
+      _QuickPromptData(Icons.grid_view_outlined, 'categories'.tr),
+    ];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.auto_awesome, color: primary, size: 30),
+              ),
+              const SizedBox(height: Dimensions.paddingSizeDefault),
+              Text(
+                'ai_chat_greeting'.trParams({'name': displayName}),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: Dimensions.paddingSizeSmall),
+              Text(
+                'AI_Chat_Assistant_read_only_hint'.tr,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).hintColor,
+                ),
+              ),
+              const SizedBox(height: Dimensions.paddingSizeLarge),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: Dimensions.paddingSizeSmall,
+                runSpacing: Dimensions.paddingSizeSmall,
+                children: prompts
+                    .map(
+                      (prompt) => ActionChip(
+                        avatar: Icon(prompt.icon, size: 18, color: primary),
+                        label: Text(prompt.label),
+                        onPressed: () => onPrompt(prompt.label),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickPromptData {
+  final IconData icon;
+  final String label;
+
+  const _QuickPromptData(this.icon, this.label);
+}
+
 class _MessageBubble extends StatelessWidget {
   final _AiChatMessage message;
+  final ValueChanged<String> onAskAbout;
 
-  const _MessageBubble({required this.message});
+  const _MessageBubble({required this.message, required this.onAskAbout});
 
   @override
   Widget build(BuildContext context) {
@@ -817,33 +911,50 @@ class _MessageBubble extends StatelessWidget {
       alignment: isUser
           ? AlignmentDirectional.centerEnd
           : AlignmentDirectional.centerStart,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 420),
-        margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
-        padding: const EdgeInsets.symmetric(
-          horizontal: Dimensions.paddingSizeDefault,
-          vertical: Dimensions.paddingSizeSmall,
-        ),
-        decoration: BoxDecoration(
-          color: isError
-              ? Theme.of(context).colorScheme.errorContainer
-              : isUser
-              ? Theme.of(context).primaryColor
-              : Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-          border: isUser
-              ? null
-              : Border.all(color: Theme.of(context).dividerColor),
-        ),
-        child: SelectableText(
-          _plainTextLinks(message.content),
-          style: TextStyle(
-            color: isError
-                ? Theme.of(context).colorScheme.onErrorContainer
-                : isUser
-                ? Theme.of(context).colorScheme.onPrimary
-                : Theme.of(context).textTheme.bodyMedium?.color,
-          ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 440),
+        child: Column(
+          crossAxisAlignment: isUser
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(
+                bottom: Dimensions.paddingSizeExtraSmall,
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: Dimensions.paddingSizeDefault,
+                vertical: Dimensions.paddingSizeSmall,
+              ),
+              decoration: BoxDecoration(
+                color: isError
+                    ? Theme.of(context).colorScheme.errorContainer
+                    : isUser
+                    ? Theme.of(context).primaryColor
+                    : Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+                border: isUser
+                    ? null
+                    : Border.all(color: Theme.of(context).dividerColor),
+              ),
+              child: SelectableText(
+                _plainTextLinks(message.content),
+                style: TextStyle(
+                  color: isError
+                      ? Theme.of(context).colorScheme.onErrorContainer
+                      : isUser
+                      ? Theme.of(context).colorScheme.onPrimary
+                      : Theme.of(context).textTheme.bodyMedium?.color,
+                ),
+              ),
+            ),
+            if (!isUser && !isError && message.metadata.isNotEmpty)
+              AiChatResultSections(
+                metadata: message.metadata,
+                onAskAbout: onAskAbout,
+              ),
+            const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+          ],
         ),
       ),
     );
@@ -860,17 +971,29 @@ class _MessageBubble extends StatelessWidget {
 class _AiChatMessage {
   final String role;
   final String content;
+  final Map<String, dynamic> metadata;
 
-  const _AiChatMessage({required this.role, required this.content});
+  const _AiChatMessage({
+    required this.role,
+    required this.content,
+    this.metadata = const <String, dynamic>{},
+  });
 
   factory _AiChatMessage.fromJson(Map<String, dynamic> json) {
     return _AiChatMessage(
       role: json['role']?.toString() ?? 'assistant',
       content: json['content']?.toString() ?? '',
+      metadata: json['metadata'] is Map
+          ? Map<String, dynamic>.from(json['metadata'] as Map)
+          : const <String, dynamic>{},
     );
   }
 
-  Map<String, String> toJson() => {'role': role, 'content': content};
+  Map<String, dynamic> toJson() => {
+    'role': role,
+    'content': content,
+    if (metadata.isNotEmpty) 'metadata': metadata,
+  };
 }
 
 class _AiChatConversation {

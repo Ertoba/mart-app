@@ -26,18 +26,18 @@ if text.count(old_iphone) != 1:
 widget.write_text(text.replace(old_iphone, new_iphone, 1))
 
 # Product details: 1688-style selected total. Keep the catalog/base price visible,
-# but show 0.00 in the mobile total until every required legacy variation has
-# been explicitly selected. Scoped to ecommerce (technical) only.
+# but pass/show 0.00 on both ecommerce total paths until every required legacy
+# variation has been explicitly selected. Other module types remain unchanged.
 details = Path('lib/features/item/screens/item_details_screen.dart')
 details_text = details.read_text()
 old_total = ': priceWithAddons,'
 new_total = ": (item.moduleType == 'ecommerce' && !itemController.areVariationsSelected(item)) ? 0 : priceWithAddons,"
-if details_text.count(old_total) != 1:
-    raise SystemExit(f'item details: expected one total fallback, found {details_text.count(old_total)}')
-details.write_text(details_text.replace(old_total, new_total, 1))
+if details_text.count(old_total) != 2:
+    raise SystemExit(f'item details: expected two total fallbacks, found {details_text.count(old_total)}')
+details.write_text(details_text.replace(old_total, new_total))
 
 # Quick-add bottom sheet must use the same total semantics so there is no path
-# that displays/calculates a selected total before a technical SKU is chosen.
+# that displays a selected total before a technical SKU is chosen.
 sheet = Path('lib/common/widgets/item_bottom_sheet.dart')
 sheet_text = sheet.read_text()
 anchor = 'double withAddonCost = cost! + addonsCost;'

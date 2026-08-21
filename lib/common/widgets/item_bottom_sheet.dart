@@ -939,6 +939,7 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                           discountType,
                                         );
                                     double withAddonCost = cost! + addonsCost;
+                                    final double displayTotal = (!_newVariation && item.moduleType == 'ecommerce' && !itemController.areVariationsSelected(item)) ? 0 : withAddonCost;
                                     return Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
@@ -984,7 +985,7 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                             ),
 
                                             PriceConverter.convertAnimationPrice(
-                                              withAddonCost,
+                                              displayTotal,
                                               textStyle: robotoBold.copyWith(
                                                 color: Theme.of(context)
                                                     .primaryColor,

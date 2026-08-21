@@ -221,7 +221,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                             ? DetailsWebViewWidget(
                                 cartModel: cartModel,
                                 stock: stock,
-                                priceWithAddOns: priceWithAddons,
+                                priceWithAddOns: (item.moduleType == 'ecommerce' && !itemController.areVariationsSelected(item)) ? 0 : priceWithAddons,
                                 cart: cart,
                               )
                             : Column(
@@ -553,7 +553,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                                                 .cartList[itemController
                                                                 .cartIndex],
                                                       )
-                                                    : priceWithAddons,
+                                                    : (item.moduleType == 'ecommerce' && !itemController.areVariationsSelected(item)) ? 0 : priceWithAddons,
                                               ),
                                               textDirection: TextDirection.ltr,
                                               style: robotoBold.copyWith(

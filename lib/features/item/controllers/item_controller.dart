@@ -54,6 +54,40 @@ class ItemController extends GetxController implements GetxService {
   
   List<int>? _variationIndex;
   List<int>? get variationIndex => _variationIndex;
+
+  List<bool> _variationSelectionConfirmed = [];
+
+  bool isVariationSelectionConfirmed(int index) {
+    return index >= 0 &&
+        index < _variationSelectionConfirmed.length &&
+        _variationSelectionConfirmed[index];
+  }
+
+  bool areVariationsSelected(Item? item) {
+    if (item == null ||
+        (ModuleHelper.getModuleConfig(item.moduleType).newVariation ?? false)) {
+      return true;
+    }
+    final int choiceCount = item.choiceOptions?.length ?? 0;
+    if (choiceCount == 0) {
+      return true;
+    }
+    return _variationSelectionConfirmed.length == choiceCount &&
+        _variationSelectionConfirmed.every((selected) => selected);
+  }
+
+  String? firstUnselectedVariationTitle(Item? item) {
+    if (item == null ||
+        (ModuleHelper.getModuleConfig(item.moduleType).newVariation ?? false)) {
+      return null;
+    }
+    for (int index = 0; index < (item.choiceOptions?.length ?? 0); index++) {
+      if (!isVariationSelectionConfirmed(index)) {
+        return item.choiceOptions![index].title;
+      }
+    }
+    return null;
+  }
   
   List<List<bool?>> _selectedVariations = [];
   List<List<bool?>> get selectedVariations => _selectedVariations;
@@ -648,7 +682,12 @@ class ItemController extends GetxController implements GetxService {
 
     if(_item != null) {
       initData(_item, cart);
-      setExistInCart(_item, _selectedVariations);
+      final bool newVariation = ModuleHelper.getModuleConfig(_item!.moduleType).newVariation ?? false;
+      if(newVariation || areVariationsSelected(_item) || (_item!.choiceOptions?.isEmpty ?? true)) {
+        await setExistInCart(_item, _selectedVariations);
+      } else {
+        _cartIndex = -1;
+      }
     }
 
     update();
@@ -656,6 +695,7 @@ class ItemController extends GetxController implements GetxService {
 
   void initData(Item? item, CartModel? cart) {
     _variationIndex = [];
+    _variationSelectionConfirmed = [];
     _addOnQtyList = [];
     _addOnActiveList = [];
     _selectedVariations = [];
@@ -669,7 +709,14 @@ class ItemController extends GetxController implements GetxService {
         _selectedVariations.addAll(cart.foodVariations!);
         _collapseVariation.addAll(itemServiceInterface.collapseVariation(item.foodVariations!));
       }else {
-        _variationIndex = itemServiceInterface.initializeCartVariationIndexes(cart.variation, item.choiceOptions);
+        try {
+          _variationIndex = itemServiceInterface.initializeCartVariationIndexes(cart.variation, item.choiceOptions);
+          _variationSelectionConfirmed = List<bool>.filled(item.choiceOptions?.length ?? 0, true);
+        } catch (_) {
+          _variationIndex = itemServiceInterface.initializeVariationIndexes(item.choiceOptions);
+          _variationSelectionConfirmed = List<bool>.filled(item.choiceOptions?.length ?? 0, false);
+          _cartIndex = -1;
+        }
       }
     } else {
       if(ModuleHelper.getModuleConfig(item!.moduleType).newVariation!) {
@@ -677,12 +724,11 @@ class ItemController extends GetxController implements GetxService {
         _collapseVariation.addAll(itemServiceInterface.initializeCollapseVariation(item.foodVariations));
       } else {
         _variationIndex = itemServiceInterface.initializeVariationIndexes(item.choiceOptions);
+        _variationSelectionConfirmed = List<bool>.filled(item.choiceOptions?.length ?? 0, false);
       }
       _quantity = 1;
       _addOnActiveList.addAll(itemServiceInterface.initializeAddonActiveList(item.addOns));
       _addOnQtyList.addAll(itemServiceInterface.initializeAddonQtyList(item.addOns));
-
-      setExistInCart(item, _selectedVariations, notify: true);
     }
 
   }
@@ -692,9 +738,18 @@ class ItemController extends GetxController implements GetxService {
   }
 
   Future<int> setExistInCart(Item? item, List<List<bool?>>? selectedVariations, {bool notify = false}) async {
-    String variationType = await itemServiceInterface.prepareVariationType(item!.choiceOptions, _variationIndex);
+    final bool newVariation = ModuleHelper.getModuleConfig(item!.moduleType).newVariation ?? false;
+    if(!newVariation && !areVariationsSelected(item)) {
+      _cartIndex = -1;
+      if(notify) {
+        update();
+      }
+      return _cartIndex;
+    }
 
-    if(ModuleHelper.getModuleConfig(ModuleHelper.getModule() != null ? ModuleHelper.getModule()!.moduleType : ModuleHelper.getCacheModule()!.moduleType).newVariation!) {
+    String variationType = await itemServiceInterface.prepareVariationType(item.choiceOptions, _variationIndex);
+
+    if(newVariation) {
       _cartIndex = await itemServiceInterface.isExistInCartForBottomSheet(Get.find<CartController>().cartList, item.id, null, selectedVariations);
     } else {
       _cartIndex = Get.find<CartController>().isExistInCart(item.id, variationType, false, null);
@@ -725,8 +780,15 @@ class ItemController extends GetxController implements GetxService {
 
   void setCartVariationIndex(int index, int i, Item? item) {
     _variationIndex![index] = i;
+    if(index >= 0 && index < _variationSelectionConfirmed.length) {
+      _variationSelectionConfirmed[index] = true;
+    }
     _quantity = 1;
-    setExistInCart(item, _selectedVariations);
+    if(areVariationsSelected(item)) {
+      setExistInCart(item, _selectedVariations);
+    } else {
+      _cartIndex = -1;
+    }
     update();
   }
 
@@ -748,7 +810,6 @@ class ItemController extends GetxController implements GetxService {
     //       }else{
     //         _selectedVariations[index][j] = j == i;
     //       }
-    //     }
     //   }
     // } else {
     //   if(!_selectedVariations[index][i]! && selectedVariationLength(_selectedVariations, index) >= item.foodVariations![index].max!) {

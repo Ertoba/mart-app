@@ -32,15 +32,16 @@ class VariationSelectorWidget extends StatelessWidget {
       itemBuilder: (context, index) {
         final ChoiceOptions choice = choices[index];
         final List<String> options = choice.options ?? <String>[];
-        final bool confirmed =
-            itemController.isVariationSelectionConfirmed(index);
-        final int selectedIndex = itemController.variationIndex != null &&
+        final bool confirmed = itemController.isVariationSelectionConfirmed(
+          index,
+        );
+        final int selectedIndex =
+            itemController.variationIndex != null &&
                 index < itemController.variationIndex!.length
             ? itemController.variationIndex![index]
             : 0;
-        final bool hasValidSelection = confirmed &&
-            selectedIndex >= 0 &&
-            selectedIndex < options.length;
+        final bool hasValidSelection =
+            confirmed && selectedIndex >= 0 && selectedIndex < options.length;
         final String value = hasValidSelection
             ? options[selectedIndex].trim()
             : 'select_one'.tr;
@@ -64,13 +65,12 @@ class VariationSelectorWidget extends StatelessWidget {
                 onTap: options.isEmpty
                     ? null
                     : () => _openSelector(
-                          context,
-                          attributeIndex: index,
-                          title: choice.title ?? '',
-                          options: options,
-                          selectedIndex:
-                              hasValidSelection ? selectedIndex : null,
-                        ),
+                        context,
+                        attributeIndex: index,
+                        title: choice.title ?? '',
+                        options: options,
+                        selectedIndex: hasValidSelection ? selectedIndex : null,
+                      ),
                 child: Container(
                   constraints: const BoxConstraints(minHeight: 52),
                   padding: const EdgeInsets.symmetric(
@@ -79,16 +79,15 @@ class VariationSelectorWidget extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
-                    borderRadius:
-                        BorderRadius.circular(Dimensions.radiusDefault),
+                    borderRadius: BorderRadius.circular(
+                      Dimensions.radiusDefault,
+                    ),
                     border: Border.all(
                       color: hasValidSelection
-                          ? Theme.of(context)
-                              .primaryColor
-                              .withValues(alpha: 0.55)
-                          : Theme.of(context)
-                              .disabledColor
-                              .withValues(alpha: 0.55),
+                          ? Theme.of(context).primaryColor
+                                .withValues(alpha: 0.55)
+                          : Theme.of(context).disabledColor
+                                .withValues(alpha: 0.55),
                     ),
                   ),
                   child: Row(
@@ -162,8 +161,7 @@ class _VariationOptionsSheet extends StatefulWidget {
   });
 
   @override
-  State<_VariationOptionsSheet> createState() =>
-      _VariationOptionsSheetState();
+  State<_VariationOptionsSheet> createState() => _VariationOptionsSheetState();
 }
 
 class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
@@ -186,7 +184,8 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
         .asMap()
         .entries
         .where(
-          (entry) => normalizedQuery.isEmpty ||
+          (entry) =>
+              normalizedQuery.isEmpty ||
               entry.value.toLowerCase().contains(normalizedQuery),
         )
         .toList(growable: false);
@@ -194,10 +193,10 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
     final double heightFactor = widget.options.length >= 12
         ? 0.82
         : widget.options.length >= 7
-            ? 0.72
-            : widget.options.length >= 4
-                ? 0.58
-                : 0.44;
+        ? 0.72
+        : widget.options.length >= 4
+        ? 0.58
+        : 0.44;
 
     return Padding(
       padding: EdgeInsets.only(top: media.padding.top + 8),
@@ -212,8 +211,9 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
             child: Container(
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
               ),
               child: SafeArea(
                 top: false,
@@ -224,8 +224,7 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .disabledColor
+                        color: Theme.of(context).disabledColor
                             .withValues(alpha: 0.55),
                         borderRadius: BorderRadius.circular(99),
                       ),
@@ -288,8 +287,7 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                                     )
                                   : null,
                               filled: true,
-                              fillColor: Theme.of(context)
-                                  .disabledColor
+                              fillColor: Theme.of(context).disabledColor
                                   .withValues(alpha: 0.06),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: Dimensions.paddingSizeDefault,
@@ -326,8 +324,7 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                               itemCount: visibleOptions.length,
                               separatorBuilder: (_, __) => Divider(
                                 height: 1,
-                                color: Theme.of(context)
-                                    .disabledColor
+                                color: Theme.of(context).disabledColor
                                     .withValues(alpha: 0.16),
                               ),
                               itemBuilder: (context, listIndex) {
@@ -342,17 +339,17 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                                     borderRadius: BorderRadius.circular(
                                       Dimensions.radiusSmall,
                                     ),
-                                    onTap: () => Navigator.of(context)
-                                        .pop(entry.key),
+                                    onTap: () =>
+                                        Navigator.of(context).pop(entry.key),
                                     child: ConstrainedBox(
-                                      constraints:
-                                          const BoxConstraints(minHeight: 52),
+                                      constraints: const BoxConstraints(
+                                        minHeight: 52,
+                                      ),
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal:
                                               Dimensions.paddingSizeSmall,
-                                          vertical:
-                                              Dimensions.paddingSizeSmall,
+                                          vertical: Dimensions.paddingSizeSmall,
                                         ),
                                         child: Row(
                                           children: [
@@ -367,7 +364,8 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                                               ),
                                             ),
                                             const SizedBox(
-                                              width: Dimensions.paddingSizeSmall,
+                                              width:
+                                                  Dimensions.paddingSizeSmall,
                                             ),
                                             if (selected)
                                               Icon(

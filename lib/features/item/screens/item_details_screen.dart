@@ -33,7 +33,12 @@ class ItemDetailsScreen extends StatefulWidget {
   final int itemId;
   final bool inStorePage;
   final bool isCampaign;
-  const ItemDetailsScreen({super.key, required this.itemId, required this.inStorePage, this.isCampaign = false});
+  const ItemDetailsScreen({
+    super.key,
+    required this.itemId,
+    required this.inStorePage,
+    this.isCampaign = false,
+  });
 
   @override
   State<ItemDetailsScreen> createState() => _ItemDetailsScreenState();
@@ -48,7 +53,10 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   void initState() {
     super.initState();
 
-    Get.find<ItemController>().getItemDetails(itemId: widget.itemId, isCampaign: widget.isCampaign);
+    Get.find<ItemController>().getItemDetails(
+      itemId: widget.itemId,
+      isCampaign: widget.isCampaign,
+    );
     Get.find<ItemController>().setSelect(0, false);
   }
 
@@ -57,361 +65,865 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) async {
-        if(Get.find<SplashController>().deeplinkRoute != null) {
+        if (Get.find<SplashController>().deeplinkRoute != null) {
           Get.find<SplashController>().setDeeplink(null);
           Get.offAllNamed(RouteHelper.getInitialRoute());
         }
       },
-      child: GetBuilder<CartController>(builder: (cartController) {
-        return GetBuilder<ItemController>(builder: (itemController) {
+      child: GetBuilder<CartController>(
+        builder: (cartController) {
+          return GetBuilder<ItemController>(
+            builder: (itemController) {
+              Item? item = itemController.item;
 
-          Item? item = itemController.item;
+              int? stock = 0;
+              CartModel? cartModel;
+              OnlineCart? cart;
+              double priceWithAddons = 0;
+              int? cartId = cartController.getCartId(itemController.cartIndex);
+              if (item != null && itemController.variationIndex != null) {
+                double? price = item.price;
+                Variation? variation;
+                stock = item.stock ?? 0;
 
-          int? stock = 0;
-          CartModel? cartModel;
-          OnlineCart? cart;
-          double priceWithAddons = 0;
-          int? cartId = cartController.getCartId(itemController.cartIndex);
-          if(item != null && itemController.variationIndex != null){
-            double? price = item.price;
-            Variation? variation;
-            stock = item.stock ?? 0;
+                if (itemController.areVariationsSelected(item)) {
+                  List<String> variationList = [];
+                  for (
+                    int index = 0;
+                    index < item.choiceOptions!.length;
+                    index++
+                  ) {
+                    variationList.add(
+                      item
+                          .choiceOptions![index]
+                          .options![itemController.variationIndex![index]]
+                          .replaceAll(' ', ''),
+                    );
+                  }
+                  String variationType = '';
+                  bool isFirst = true;
+                  for (var selectedVariation in variationList) {
+                    if (isFirst) {
+                      variationType = '$variationType$selectedVariation';
+                      isFirst = false;
+                    } else {
+                      variationType = '$variationType-$selectedVariation';
+                    }
+                  }
 
-            if(itemController.areVariationsSelected(item)) {
-              List<String> variationList = [];
-              for (int index = 0; index < item.choiceOptions!.length; index++) {
-                variationList.add(item.choiceOptions![index].options![itemController.variationIndex![index]].replaceAll(' ', ''));
-              }
-              String variationType = '';
-              bool isFirst = true;
-              for (var selectedVariation in variationList) {
-                if (isFirst) {
-                  variationType = '$variationType$selectedVariation';
-                  isFirst = false;
-                } else {
-                  variationType = '$variationType-$selectedVariation';
+                  for (Variation v in item.variations!) {
+                    if (v.type == variationType) {
+                      price = v.price;
+                      variation = v;
+                      stock = v.stock;
+                      break;
+                    }
+                  }
                 }
-              }
 
-              for (Variation v in item.variations!) {
-                if (v.type == variationType) {
-                  price = v.price;
-                  variation = v;
-                  stock = v.stock;
-                  break;
+                double? discount = item.discount;
+                String? discountType = item.discountType;
+                double priceWithDiscount = PriceConverter.convertWithDiscount(
+                  price,
+                  discount,
+                  discountType,
+                )!;
+                double priceWithQuantity =
+                    priceWithDiscount * itemController.quantity!;
+                double addonsCost = 0;
+                List<AddOn> addOnIdList = [];
+                List<AddOns> addOnsList = [];
+                for (int index = 0; index < item.addOns!.length; index++) {
+                  if (itemController.addOnActiveList[index]) {
+                    addonsCost =
+                        addonsCost +
+                        (item.addOns![index].price! *
+                            itemController.addOnQtyList[index]!);
+                    addOnIdList.add(
+                      AddOn(
+                        id: item.addOns![index].id,
+                        quantity: itemController.addOnQtyList[index],
+                      ),
+                    );
+                    addOnsList.add(item.addOns![index]);
+                  }
                 }
+
+                cartModel = CartModel(
+                  null,
+                  price,
+                  priceWithDiscount,
+                  variation != null ? [variation] : [],
+                  [],
+                  (price! -
+                      PriceConverter.convertWithDiscount(
+                        price,
+                        discount,
+                        discountType,
+                      )!),
+                  itemController.quantity,
+                  addOnIdList,
+                  addOnsList,
+                  item.availableDateStarts != null,
+                  stock,
+                  item,
+                  item.quantityLimit,
+                );
+
+                List<int?> listOfAddOnId = _getSelectedAddonIds(
+                  addOnIdList: addOnIdList,
+                );
+                List<int?> listOfAddOnQty = _getSelectedAddonQtnList(
+                  addOnIdList: addOnIdList,
+                );
+
+                cart = OnlineCart(
+                  cartId,
+                  widget.itemId,
+                  null,
+                  priceWithDiscount.toString(),
+                  '',
+                  variation != null ? [variation] : [],
+                  null,
+                  itemController.cartIndex != -1
+                      ? cartController
+                            .cartList[itemController.cartIndex]
+                            .quantity
+                      : itemController.quantity,
+                  listOfAddOnId,
+                  addOnsList,
+                  listOfAddOnQty,
+                  'Item',
+                );
+                priceWithAddons =
+                    priceWithQuantity +
+                    (Get.find<SplashController>()
+                            .configModel!
+                            .moduleConfig!
+                            .module!
+                            .addOn!
+                        ? addonsCost
+                        : 0);
               }
-            }
 
-            double? discount = item.discount;
-            String? discountType = item.discountType;
-            double priceWithDiscount = PriceConverter.convertWithDiscount(price, discount, discountType)!;
-            double priceWithQuantity = priceWithDiscount * itemController.quantity!;
-            double addonsCost = 0;
-            List<AddOn> addOnIdList = [];
-            List<AddOns> addOnsList = [];
-            for (int index = 0; index < item.addOns!.length; index++) {
-              if (itemController.addOnActiveList[index]) {
-                addonsCost = addonsCost + (item.addOns![index].price! * itemController.addOnQtyList[index]!);
-                addOnIdList.add(AddOn(id: item.addOns![index].id, quantity: itemController.addOnQtyList[index]));
-                addOnsList.add(item.addOns![index]);
-              }
-            }
+              return Scaffold(
+                key: _globalKey,
+                backgroundColor: Theme.of(context).cardColor,
+                endDrawer: const MenuDrawer(),
+                endDrawerEnableOpenDragGesture: false,
+                appBar: ResponsiveHelper.isDesktop(context)
+                    ? const CustomAppBar(title: '')
+                    : DetailsAppBarWidget(key: _key),
 
-            cartModel = CartModel(
-              null, price, priceWithDiscount, variation != null ? [variation] : [], [],
-              (price! - PriceConverter.convertWithDiscount(price, discount, discountType)!),
-              itemController.quantity, addOnIdList, addOnsList, item.availableDateStarts != null, stock, item,
-              item.quantityLimit,
-            );
+                body: SafeArea(
+                  child: (item != null)
+                      ? ResponsiveHelper.isDesktop(context)
+                            ? DetailsWebViewWidget(
+                                cartModel: cartModel,
+                                stock: stock,
+                                priceWithAddOns: priceWithAddons,
+                                cart: cart,
+                              )
+                            : Column(
+                                children: [
+                                  Expanded(
+                                    child: SingleChildScrollView(
+                                      padding: const EdgeInsets.all(
+                                        Dimensions.paddingSizeSmall,
+                                      ),
+                                      physics: const BouncingScrollPhysics(),
+                                      child: Center(
+                                        child: SizedBox(
+                                          width: Dimensions.webMaxWidth,
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              ItemImageViewWidget(
+                                                item: item,
+                                                isCampaign: widget.isCampaign,
+                                              ),
+                                              const SizedBox(height: 20),
 
-            List<int?> listOfAddOnId = _getSelectedAddonIds(addOnIdList: addOnIdList);
-            List<int?> listOfAddOnQty = _getSelectedAddonQtnList(addOnIdList: addOnIdList);
+                                              Builder(
+                                                builder: (context) {
+                                                  return ItemTitleViewWidget(
+                                                    item: item,
+                                                    inStorePage:
+                                                        widget.inStorePage,
+                                                    isCampaign:
+                                                        item.availableDateStarts !=
+                                                        null,
+                                                    inStock:
+                                                        (Get.find<
+                                                              SplashController
+                                                            >()
+                                                            .configModel!
+                                                            .moduleConfig!
+                                                            .module!
+                                                            .stock! &&
+                                                        stock! <= 0),
+                                                  );
+                                                },
+                                              ),
+                                              Divider(
+                                                height: 20,
+                                                thickness: 1,
+                                                color: Theme.of(context)
+                                                    .disabledColor,
+                                              ),
+                                              const SizedBox(
+                                                height:
+                                                    Dimensions.paddingSizeSmall,
+                                              ),
 
-            cart = OnlineCart(
-              cartId, widget.itemId, null, priceWithDiscount.toString(), '',
-              variation != null ? [variation] : [], null,
-              itemController.cartIndex != -1 ? cartController.cartList[itemController.cartIndex].quantity
-                : itemController.quantity, listOfAddOnId, addOnsList, listOfAddOnQty, 'Item'
-            );
-            priceWithAddons = priceWithQuantity + (Get.find<SplashController>().configModel!.moduleConfig!.module!.addOn! ? addonsCost : 0);
-          }
+                                              item.isPrescriptionRequired!
+                                                  ? Container(
+                                                      padding: const EdgeInsets.symmetric(
+                                                        horizontal: Dimensions
+                                                            .paddingSizeSmall,
+                                                        vertical: Dimensions
+                                                            .paddingSizeExtraSmall,
+                                                      ),
+                                                      margin:
+                                                          const EdgeInsets.only(
+                                                            bottom: Dimensions
+                                                                .paddingSizeSmall,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .error
+                                                            .withValues(
+                                                              alpha: 0.1,
+                                                            ),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              Dimensions
+                                                                  .radiusSmall,
+                                                            ),
+                                                      ),
+                                                      child: Text(
+                                                        '* ${'prescription_required'.tr}',
+                                                        style: robotoRegular
+                                                            .copyWith(
+                                                              fontSize: Dimensions
+                                                                  .fontSizeSmall,
+                                                              color: Theme.of(
+                                                                context,
+                                                              ).colorScheme.error,
+                                                            ),
+                                                      ),
+                                                    )
+                                                  : const SizedBox(),
 
-          return Scaffold(
-            key: _globalKey,
-            backgroundColor: Theme.of(context).cardColor,
-            endDrawer: const MenuDrawer(),endDrawerEnableOpenDragGesture: false,
-            appBar: ResponsiveHelper.isDesktop(context)? const CustomAppBar(title: '') : DetailsAppBarWidget(key: _key),
+                                              (item.description != null &&
+                                                      item
+                                                          .description!
+                                                          .isNotEmpty)
+                                                  ? Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          'description'.tr,
+                                                          style: robotoMedium,
+                                                        ),
+                                                        const SizedBox(
+                                                          height: Dimensions
+                                                              .paddingSizeExtraSmall,
+                                                        ),
+                                                        ReadMoreText.rich(
+                                                          buildMarkdownTextSpan(
+                                                            item.description!,
+                                                            robotoRegular.copyWith(
+                                                              color:
+                                                                  Theme.of(
+                                                                        context,
+                                                                      )
+                                                                      .textTheme
+                                                                      .bodyLarge!
+                                                                      .color
+                                                                      ?.withValues(
+                                                                        alpha:
+                                                                            0.7,
+                                                                      ),
+                                                            ),
+                                                          ),
+                                                          style: robotoRegular.copyWith(
+                                                            color:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .textTheme
+                                                                    .bodyLarge!
+                                                                    .color
+                                                                    ?.withValues(
+                                                                      alpha:
+                                                                          0.7,
+                                                                    ),
+                                                          ),
+                                                          trimMode:
+                                                              TrimMode.Line,
+                                                          trimLines: 3,
+                                                          colorClickableText:
+                                                              Theme.of(context)
+                                                                  .primaryColor,
+                                                          lessStyle: robotoBold
+                                                              .copyWith(
+                                                                color: Colors
+                                                                    .blueAccent,
+                                                              ),
+                                                          trimCollapsedText:
+                                                              'read_more'.tr,
+                                                          moreStyle: robotoBold
+                                                              .copyWith(
+                                                                color: Colors
+                                                                    .blueAccent,
+                                                                decoration:
+                                                                    TextDecoration
+                                                                        .underline,
+                                                              ),
+                                                          trimExpandedText:
+                                                              ' ${'show_less'.tr}',
+                                                        ),
+                                                        // Text(item.description!, style: robotoRegular),
+                                                        const SizedBox(
+                                                          height: Dimensions
+                                                              .paddingSizeLarge,
+                                                        ),
+                                                      ],
+                                                    )
+                                                  : const SizedBox(),
 
-            body: SafeArea(child: (item != null) ? ResponsiveHelper.isDesktop(context) ? DetailsWebViewWidget(
-              cartModel: cartModel, stock: stock, priceWithAddOns: priceWithAddons, cart: cart,
-            ) : Column(children: [
-              Expanded(child: SingleChildScrollView(
-                padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                physics: const BouncingScrollPhysics(),
-                child: Center(child: SizedBox(width: Dimensions.webMaxWidth, child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ItemImageViewWidget(item: item, isCampaign: widget.isCampaign),
-                      const SizedBox(height: 20),
+                                              (item.nutritionsName != null &&
+                                                      item
+                                                          .nutritionsName!
+                                                          .isNotEmpty)
+                                                  ? Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          'nutrition_details'
+                                                              .tr,
+                                                          style: robotoMedium,
+                                                        ),
+                                                        const SizedBox(
+                                                          height: Dimensions
+                                                              .paddingSizeExtraSmall,
+                                                        ),
 
-                      Builder(
-                        builder: (context) {
-                          return ItemTitleViewWidget(
-                            item: item, inStorePage: widget.inStorePage, isCampaign: item.availableDateStarts != null,
-                            inStock: (Get.find<SplashController>().configModel!.moduleConfig!.module!.stock! && stock! <= 0),
-                          );
-                        }
-                      ),
-                      Divider(height: 20, thickness: 1, color: Theme.of(context).disabledColor),
-                      const SizedBox(height: Dimensions.paddingSizeSmall),
+                                                        Wrap(
+                                                          children: List.generate(
+                                                            item
+                                                                .nutritionsName!
+                                                                .length,
+                                                            (index) {
+                                                              return Text(
+                                                                '${item.nutritionsName![index]}${item.nutritionsName!.length - 1 == index ? '.' : ', '}',
+                                                                style: robotoRegular.copyWith(
+                                                                  color: Theme.of(context)
+                                                                      .textTheme
+                                                                      .bodyLarge!
+                                                                      .color,
+                                                                ),
+                                                              );
+                                                            },
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          height: Dimensions
+                                                              .paddingSizeLarge,
+                                                        ),
+                                                      ],
+                                                    )
+                                                  : const SizedBox(),
 
-                      item.isPrescriptionRequired! ? Container(
-                        padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeExtraSmall),
-                        margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-                        ),
-                        child: Text(
-                          '* ${'prescription_required'.tr}',
-                          style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).colorScheme.error),
-                        ),
-                      ) : const SizedBox(),
+                                              (item.allergiesName != null &&
+                                                      item
+                                                          .allergiesName!
+                                                          .isNotEmpty)
+                                                  ? Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          'allergic_ingredients'
+                                                              .tr,
+                                                          style: robotoMedium,
+                                                        ),
+                                                        const SizedBox(
+                                                          height: Dimensions
+                                                              .paddingSizeExtraSmall,
+                                                        ),
 
-                      (item.description != null && item.description!.isNotEmpty) ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('description'.tr, style: robotoMedium),
-                          const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-                          ReadMoreText.rich(
-                            buildMarkdownTextSpan(
-                              item.description!,
-                              robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color?.withValues(alpha: 0.7)),
-                            ),
-                            style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color?.withValues(alpha: 0.7)),
-                            trimMode: TrimMode.Line,
-                            trimLines: 3,
-                            colorClickableText: Theme.of(context).primaryColor,
-                            lessStyle: robotoBold.copyWith(color: Colors.blueAccent),
-                            trimCollapsedText: 'read_more'.tr,
-                            moreStyle: robotoBold.copyWith(color: Colors.blueAccent, decoration: TextDecoration.underline),
-                            trimExpandedText: ' ${'show_less'.tr}',
-                          ),
-                          // Text(item.description!, style: robotoRegular),
-                          const SizedBox(height: Dimensions.paddingSizeLarge),
-                        ],
-                      ) : const SizedBox(),
+                                                        Wrap(
+                                                          children: List.generate(
+                                                            item
+                                                                .allergiesName!
+                                                                .length,
+                                                            (index) {
+                                                              return Text(
+                                                                '${item.allergiesName![index]}${item.allergiesName!.length - 1 == index ? '.' : ', '}',
+                                                                style: robotoRegular.copyWith(
+                                                                  color: Theme.of(context)
+                                                                      .textTheme
+                                                                      .bodyLarge!
+                                                                      .color,
+                                                                ),
+                                                              );
+                                                            },
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          height: Dimensions
+                                                              .paddingSizeLarge,
+                                                        ),
+                                                      ],
+                                                    )
+                                                  : const SizedBox(),
 
-                      (item.nutritionsName != null && item.nutritionsName!.isNotEmpty) ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('nutrition_details'.tr, style: robotoMedium),
-                          const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-
-                          Wrap(children: List.generate(item.nutritionsName!.length, (index) {
-                            return Text(
-                              '${item.nutritionsName![index]}${item.nutritionsName!.length-1 == index ? '.' : ', '}',
-                              style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color),
-                            );
-                          })),
-                          const SizedBox(height: Dimensions.paddingSizeLarge),
-                        ],
-                      ) : const SizedBox(),
-
-                      (item.allergiesName != null && item.allergiesName!.isNotEmpty) ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('allergic_ingredients'.tr, style: robotoMedium),
-                          const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-
-                          Wrap(children: List.generate(item.allergiesName!.length, (index) {
-                            return Text(
-                              '${item.allergiesName![index]}${item.allergiesName!.length-1 == index ? '.' : ', '}',
-                              style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color),
-                            );
-                          })),
-                          const SizedBox(height: Dimensions.paddingSizeLarge),
-                        ],
-                      ) : const SizedBox(),
-
-                      VariationSelectorWidget(
-                        item: item,
-                        itemController: itemController,
-                      ),
-
-                    ],
-                  ))),
-              )),
-
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  boxShadow: [BoxShadow(
-                    color: Colors.grey.withValues(alpha: 0.2),
-                    spreadRadius: 1,
-                    blurRadius: 7,
-                    offset: const Offset(0, -3), // changes position of shadow
-                  )],
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-                child: Column(
-                  children: [
-                    const SizedBox(height: Dimensions.paddingSizeSmall),
-
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Expanded(child: Text('total_amount'.tr, style:robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).primaryColor), overflow: TextOverflow.ellipsis, maxLines: 1)),
-
-                      Text(
-                        PriceConverter.convertPrice(itemController.cartIndex != -1
-                            ? _getItemDetailsDiscountPrice(cart: Get.find<CartController>().cartList[itemController.cartIndex])
-                            : priceWithAddons), textDirection: TextDirection.ltr,
-                        style:robotoBold.copyWith(color: Theme.of(context).primaryColor, fontSize: Dimensions.fontSizeLarge),
-                      ),
-                    ]),
-
-                    Row(
-                      children: [
-
-                        GetBuilder<CartController>(
-                            builder: (cartController) {
-                              return Row(children: [
-                                InkWell(
-                                  onTap: cartController.isLoading ? null : () {
-                                    if(itemController.cartIndex != -1) {
-                                      if(cartController.cartList[itemController.cartIndex].quantity! > 1) {
-                                        cartController.setQuantity(false, itemController.cartIndex, stock, cartController.cartList[itemController.cartIndex].quantity);
-                                      }
-                                    }else {
-                                      if(itemController.quantity! > 1) {
-                                        itemController.setQuantity(false, stock, item.quantityLimit);
-                                      }
-                                    }
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).disabledColor.withValues(alpha: 0.3),
-                                      shape: BoxShape.circle,
+                                              VariationSelectorWidget(
+                                                item: item,
+                                                itemController: itemController,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                    padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeExtraSmall),
-                                    child: Icon(Icons.remove, size: 20),
                                   ),
-                                ),
 
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-                                  child: Text(
-                                    itemController.cartIndex != -1 ? cartController.cartList[itemController.cartIndex].quantity.toString()
-                                        : itemController.quantity.toString(),
-                                    style:robotoMedium.copyWith(fontSize: Dimensions.fontSizeExtraLarge),
-                                  ),
-                                ),
-
-                                InkWell(
-                                  onTap: cartController.isLoading ? null : () => itemController.cartIndex != -1
-                                      ? cartController.setQuantity(true, itemController.cartIndex, stock, cartController.cartList[itemController.cartIndex].quantityLimit)
-                                      : itemController.setQuantity(true, stock, item.quantityLimit),
-                                  child: Container(
+                                  Container(
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context).primaryColor,
-                                      shape: BoxShape.circle,
+                                      color: Theme.of(context).cardColor,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withValues(
+                                            alpha: 0.2,
+                                          ),
+                                          spreadRadius: 1,
+                                          blurRadius: 7,
+                                          offset: const Offset(
+                                            0,
+                                            -3,
+                                          ), // changes position of shadow
+                                        ),
+                                      ],
                                     ),
-                                    padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeExtraSmall),
-                                    child: Icon(Icons.add, size: 20, color: Colors.white),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: Dimensions.paddingSizeSmall,
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        const SizedBox(
+                                          height: Dimensions.paddingSizeSmall,
+                                        ),
+
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                'total_amount'.tr,
+                                                style: robotoMedium.copyWith(
+                                                  fontSize:
+                                                      Dimensions.fontSizeLarge,
+                                                  color: Theme.of(context)
+                                                      .primaryColor,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 1,
+                                              ),
+                                            ),
+
+                                            Text(
+                                              PriceConverter.convertPrice(
+                                                itemController.cartIndex != -1
+                                                    ? _getItemDetailsDiscountPrice(
+                                                        cart:
+                                                            Get.find<
+                                                                  CartController
+                                                                >()
+                                                                .cartList[itemController
+                                                                .cartIndex],
+                                                      )
+                                                    : priceWithAddons,
+                                              ),
+                                              textDirection: TextDirection.ltr,
+                                              style: robotoBold.copyWith(
+                                                color: Theme.of(context)
+                                                    .primaryColor,
+                                                fontSize:
+                                                    Dimensions.fontSizeLarge,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+
+                                        Row(
+                                          children: [
+                                            GetBuilder<CartController>(
+                                              builder: (cartController) {
+                                                return Row(
+                                                  children: [
+                                                    InkWell(
+                                                      onTap:
+                                                          cartController
+                                                              .isLoading
+                                                          ? null
+                                                          : () {
+                                                              if (itemController
+                                                                      .cartIndex !=
+                                                                  -1) {
+                                                                if (cartController
+                                                                        .cartList[itemController
+                                                                            .cartIndex]
+                                                                        .quantity! >
+                                                                    1) {
+                                                                  cartController.setQuantity(
+                                                                    false,
+                                                                    itemController
+                                                                        .cartIndex,
+                                                                    stock,
+                                                                    cartController
+                                                                        .cartList[itemController
+                                                                            .cartIndex]
+                                                                        .quantity,
+                                                                  );
+                                                                }
+                                                              } else {
+                                                                if (itemController
+                                                                        .quantity! >
+                                                                    1) {
+                                                                  itemController
+                                                                      .setQuantity(
+                                                                        false,
+                                                                        stock,
+                                                                        item.quantityLimit,
+                                                                      );
+                                                                }
+                                                              }
+                                                            },
+                                                      child: Container(
+                                                        decoration: BoxDecoration(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .disabledColor
+                                                                  .withValues(
+                                                                    alpha: 0.3,
+                                                                  ),
+                                                          shape:
+                                                              BoxShape.circle,
+                                                        ),
+                                                        padding: EdgeInsets.symmetric(
+                                                          horizontal: Dimensions
+                                                              .paddingSizeSmall,
+                                                          vertical: Dimensions
+                                                              .paddingSizeExtraSmall,
+                                                        ),
+                                                        child: Icon(
+                                                          Icons.remove,
+                                                          size: 20,
+                                                        ),
+                                                      ),
+                                                    ),
+
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: Dimensions
+                                                                .paddingSizeSmall,
+                                                          ),
+                                                      child: Text(
+                                                        itemController
+                                                                    .cartIndex !=
+                                                                -1
+                                                            ? cartController
+                                                                  .cartList[itemController
+                                                                      .cartIndex]
+                                                                  .quantity
+                                                                  .toString()
+                                                            : itemController
+                                                                  .quantity
+                                                                  .toString(),
+                                                        style: robotoMedium.copyWith(
+                                                          fontSize: Dimensions
+                                                              .fontSizeExtraLarge,
+                                                        ),
+                                                      ),
+                                                    ),
+
+                                                    InkWell(
+                                                      onTap:
+                                                          cartController
+                                                              .isLoading
+                                                          ? null
+                                                          : () =>
+                                                                itemController
+                                                                        .cartIndex !=
+                                                                    -1
+                                                                ? cartController.setQuantity(
+                                                                    true,
+                                                                    itemController
+                                                                        .cartIndex,
+                                                                    stock,
+                                                                    cartController
+                                                                        .cartList[itemController
+                                                                            .cartIndex]
+                                                                        .quantityLimit,
+                                                                  )
+                                                                : itemController
+                                                                      .setQuantity(
+                                                                        true,
+                                                                        stock,
+                                                                        item.quantityLimit,
+                                                                      ),
+                                                      child: Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                              color: Theme.of(
+                                                                context,
+                                                              ).primaryColor,
+                                                              shape: BoxShape
+                                                                  .circle,
+                                                            ),
+                                                        padding: EdgeInsets.symmetric(
+                                                          horizontal: Dimensions
+                                                              .paddingSizeSmall,
+                                                          vertical: Dimensions
+                                                              .paddingSizeExtraSmall,
+                                                        ),
+                                                        child: Icon(
+                                                          Icons.add,
+                                                          size: 20,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            ),
+                                            const SizedBox(
+                                              width:
+                                                  Dimensions.paddingSizeSmall,
+                                            ),
+
+                                            Expanded(
+                                              child: GetBuilder<CartController>(
+                                                builder: (cartController) {
+                                                  return Container(
+                                                    width: 1170,
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                          Dimensions
+                                                              .paddingSizeSmall,
+                                                        ),
+                                                    child: CustomButton(
+                                                      isLoading: cartController
+                                                          .isLoading,
+                                                      buttonText:
+                                                          (Get.find<
+                                                                    SplashController
+                                                                  >()
+                                                                  .configModel!
+                                                                  .moduleConfig!
+                                                                  .module!
+                                                                  .stock! &&
+                                                              stock! <= 0)
+                                                          ? 'out_of_stock'.tr
+                                                          : item.availableDateStarts !=
+                                                                null
+                                                          ? 'order_now'.tr
+                                                          : itemController
+                                                                    .cartIndex !=
+                                                                -1
+                                                          ? 'update_in_cart'.tr
+                                                          : 'add_to_cart'.tr,
+                                                      onPressed:
+                                                          (!Get.find<
+                                                                    SplashController
+                                                                  >()
+                                                                  .configModel!
+                                                                  .moduleConfig!
+                                                                  .module!
+                                                                  .stock! ||
+                                                              stock! > 0)
+                                                          ? () async {
+                                                              if (!itemController
+                                                                  .areVariationsSelected(
+                                                                    item,
+                                                                  )) {
+                                                                final String?
+                                                                title = itemController
+                                                                    .firstUnselectedVariationTitle(
+                                                                      item,
+                                                                    );
+                                                                showCustomSnackBar(
+                                                                  '${'choose_a_variation_from'.tr}${title != null ? ' $title' : ''}',
+                                                                );
+                                                                return;
+                                                              }
+
+                                                              if (AddressHelper.getUserAddressFromSharedPref() ==
+                                                                  null) {
+                                                                Get.find<
+                                                                      LocationController
+                                                                    >()
+                                                                    .navigateToLocationScreen(
+                                                                      'home',
+                                                                      canRoute:
+                                                                          true,
+                                                                    );
+                                                                return;
+                                                              }
+
+                                                              if (!Get.find<
+                                                                        SplashController
+                                                                      >()
+                                                                      .configModel!
+                                                                      .moduleConfig!
+                                                                      .module!
+                                                                      .stock! ||
+                                                                  stock! > 0) {
+                                                                if (item.availableDateStarts !=
+                                                                    null) {
+                                                                  Get.toNamed(
+                                                                    RouteHelper.getCheckoutRoute(
+                                                                      'campaign',
+                                                                    ),
+                                                                    arguments: CheckoutScreen(
+                                                                      storeId:
+                                                                          null,
+                                                                      fromCart:
+                                                                          false,
+                                                                      cartList: [
+                                                                        cartModel,
+                                                                      ],
+                                                                    ),
+                                                                  );
+                                                                } else {
+                                                                  if (cartController.existAnotherStoreItem(
+                                                                    cartModel!
+                                                                        .item!
+                                                                        .storeId,
+                                                                    Get.find<
+                                                                                  SplashController
+                                                                                >()
+                                                                                .module ==
+                                                                            null
+                                                                        ? Get.find<
+                                                                                SplashController
+                                                                              >()
+                                                                              .cacheModule!
+                                                                              .id
+                                                                        : Get.find<
+                                                                                SplashController
+                                                                              >()
+                                                                              .module!
+                                                                              .id,
+                                                                  )) {
+                                                                    Get.dialog(
+                                                                      ConfirmationDialog(
+                                                                        icon: Images
+                                                                            .warning,
+                                                                        title: 'are_you_sure_to_reset'
+                                                                            .tr,
+                                                                        description:
+                                                                            Get.find<
+                                                                                  SplashController
+                                                                                >()
+                                                                                .configModel!
+                                                                                .moduleConfig!
+                                                                                .module!
+                                                                                .showRestaurantText!
+                                                                            ? 'if_you_continue'
+                                                                                  .tr
+                                                                            : 'if_you_continue_without_another_store'
+                                                                                  .tr,
+                                                                        onYesPressed: () {
+                                                                          Get.back();
+                                                                          cartController.clearCartOnline().then((
+                                                                            success,
+                                                                          ) async {
+                                                                            if (success) {
+                                                                              await cartController.addToCartOnline(
+                                                                                cart!,
+                                                                              );
+                                                                              itemController.setExistInCart(
+                                                                                item,
+                                                                                null,
+                                                                              );
+                                                                              showCartSnackBar();
+                                                                            }
+                                                                          });
+                                                                        },
+                                                                      ),
+                                                                      barrierDismissible:
+                                                                          false,
+                                                                    );
+                                                                  } else {
+                                                                    if (itemController
+                                                                            .cartIndex ==
+                                                                        -1) {
+                                                                      await cartController.addToCartOnline(cart!).then((
+                                                                        success,
+                                                                      ) {
+                                                                        if (success) {
+                                                                          itemController.setExistInCart(
+                                                                            item,
+                                                                            null,
+                                                                          );
+                                                                          showCartSnackBar();
+                                                                          _key.currentState!
+                                                                              .shake();
+                                                                        }
+                                                                      });
+                                                                    } else {
+                                                                      await cartController.updateCartOnline(cart!).then((
+                                                                        success,
+                                                                      ) {
+                                                                        if (success) {
+                                                                          showCartSnackBar();
+                                                                          _key.currentState!
+                                                                              .shake();
+                                                                        }
+                                                                      });
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          : null,
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ]);
-                            }
-                        ),
-                        const SizedBox(width: Dimensions.paddingSizeSmall),
-
-                        Expanded(
-                          child: GetBuilder<CartController>(
-                            builder: (cartController) {
-                              return Container(
-                                width: 1170,
-                                padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                                child: CustomButton(
-                                  isLoading: cartController.isLoading,
-                                  buttonText: (Get.find<SplashController>().configModel!.moduleConfig!.module!.stock! && stock! <= 0) ? 'out_of_stock'.tr
-                                      : item.availableDateStarts != null ? 'order_now'.tr : itemController.cartIndex != -1 ? 'update_in_cart'.tr : 'add_to_cart'.tr,
-                                  onPressed: (!Get.find<SplashController>().configModel!.moduleConfig!.module!.stock! || stock! > 0) ?  () async {
-
-                                    if(!itemController.areVariationsSelected(item)) {
-                                      final String? title = itemController.firstUnselectedVariationTitle(item);
-                                      showCustomSnackBar('${'choose_a_variation_from'.tr}${title != null ? ' $title' : ''}');
-                                      return;
-                                    }
-
-                                    if(AddressHelper.getUserAddressFromSharedPref() == null) {
-                                      Get.find<LocationController>().navigateToLocationScreen('home', canRoute: true);
-                                      return;
-                                    }
-
-                                    if(!Get.find<SplashController>().configModel!.moduleConfig!.module!.stock! || stock! > 0) {
-                                      if(item.availableDateStarts != null) {
-                                        Get.toNamed(RouteHelper.getCheckoutRoute('campaign'), arguments: CheckoutScreen(
-                                          storeId: null, fromCart: false, cartList: [cartModel],
-                                        ));
-                                      }else {
-                                        if (cartController.existAnotherStoreItem(cartModel!.item!.storeId, Get.find<SplashController>().module == null ? Get.find<SplashController>().cacheModule!.id : Get.find<SplashController>().module!.id)) {
-                                          Get.dialog(ConfirmationDialog(
-                                            icon: Images.warning,
-                                            title: 'are_you_sure_to_reset'.tr,
-                                            description: Get.find<SplashController>().configModel!.moduleConfig!.module!.showRestaurantText!
-                                                ? 'if_you_continue'.tr : 'if_you_continue_without_another_store'.tr,
-                                            onYesPressed: () {
-                                              Get.back();
-                                              cartController.clearCartOnline().then((success) async {
-                                                if(success) {
-                                                  await cartController.addToCartOnline(cart!);
-                                                  itemController.setExistInCart(item, null);
-                                                  showCartSnackBar();
-                                                }
-                                              });
-
-                                            },
-                                          ), barrierDismissible: false);
-                                        } else {
-                                          if(itemController.cartIndex == -1) {
-                                            await cartController.addToCartOnline(cart!).then((success) {
-                                              if(success){
-                                                itemController.setExistInCart(item, null);
-                                                showCartSnackBar();
-                                                _key.currentState!.shake();
-                                              }
-                                            });
-                                          } else {
-                                            await cartController.updateCartOnline(cart!).then((success) {
-                                              if(success) {
-                                                showCartSnackBar();
-                                                _key.currentState!.shake();
-                                              }
-                                            });
-                                          }
-
-                                        }
-                                      }
-                                    }
-                                  } : null,
-                                ),
-                              );
-                            }
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                                ],
+                              )
+                      : const Center(child: CircularProgressIndicator()),
                 ),
-              ),
-            ]) : const Center(child: CircularProgressIndicator())),
+              );
+            },
           );
-        });
-      }),
+        },
+      ),
     );
   }
 
-  List<int?> _getSelectedAddonIds({required List<AddOn> addOnIdList }) {
+  List<int?> _getSelectedAddonIds({required List<AddOn> addOnIdList}) {
     List<int?> listOfAddOnId = [];
     for (var addOn in addOnIdList) {
       listOfAddOnId.add(addOn.id);
@@ -419,7 +931,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     return listOfAddOnId;
   }
 
-  List<int?> _getSelectedAddonQtnList({required List<AddOn> addOnIdList }) {
+  List<int?> _getSelectedAddonQtnList({required List<AddOn> addOnIdList}) {
     List<int?> listOfAddOnQty = [];
     for (var addOn in addOnIdList) {
       listOfAddOnQty.add(addOn.quantity);
@@ -432,22 +944,35 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
 
     double? discount = cart.item!.discount;
     String? discountType = cart.item!.discountType;
-    String variationType = cart.variation != null && cart.variation!.isNotEmpty ? cart.variation![0].type! : '';
+    String variationType = cart.variation != null && cart.variation!.isNotEmpty
+        ? cart.variation![0].type!
+        : '';
 
-    if(cart.variation != null && cart.variation!.isNotEmpty){
+    if (cart.variation != null && cart.variation!.isNotEmpty) {
       for (Variation variation in cart.item!.variations!) {
         if (variation.type == variationType) {
-          discountedPrice = (PriceConverter.convertWithDiscount(variation.price!, discount, discountType)! * cart.quantity!);
+          discountedPrice =
+              (PriceConverter.convertWithDiscount(
+                variation.price!,
+                discount,
+                discountType,
+              )! *
+              cart.quantity!);
           break;
         }
       }
     } else {
-      discountedPrice = (PriceConverter.convertWithDiscount(cart.item!.price!, discount, discountType)! * cart.quantity!);
+      discountedPrice =
+          (PriceConverter.convertWithDiscount(
+            cart.item!.price!,
+            discount,
+            discountType,
+          )! *
+          cart.quantity!);
     }
 
     return discountedPrice;
   }
-
 }
 
 class QuantityButton extends StatelessWidget {
@@ -459,7 +984,8 @@ class QuantityButton extends StatelessWidget {
   final int cartIndex;
   final int? quantityLimit;
   final CartController cartController;
-  const QuantityButton({super.key,
+  const QuantityButton({
+    super.key,
     required this.isIncrement,
     required this.quantity,
     required this.stock,
@@ -473,40 +999,76 @@ class QuantityButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: cartController.isLoading ? null : () {
-        if(isExistInCart) {
-          if (!isIncrement && quantity! > 1) {
-            Get.find<CartController>().setQuantity(false, cartIndex, stock, quantityLimit);
-          } else if (isIncrement && quantity! > 0) {
-            if(quantity! < stock! || !Get.find<SplashController>().configModel!.moduleConfig!.module!.stock!) {
-              Get.find<CartController>().setQuantity(true, cartIndex, stock, quantityLimit);
-            }else {
-              showCustomSnackBar('out_of_stock'.tr);
-            }
-          }
-        } else {
-          if (!isIncrement && quantity! > 1) {
-            Get.find<ItemController>().setQuantity(false, stock, quantityLimit);
-          } else if (isIncrement && quantity! > 0) {
-            if(quantity! < stock! || !Get.find<SplashController>().configModel!.moduleConfig!.module!.stock!) {
-              Get.find<ItemController>().setQuantity(true, stock, quantityLimit);
-            }else {
-              showCustomSnackBar('out_of_stock'.tr);
-            }
-          }
-
-        }
-      },
+      onTap: cartController.isLoading
+          ? null
+          : () {
+              if (isExistInCart) {
+                if (!isIncrement && quantity! > 1) {
+                  Get.find<CartController>().setQuantity(
+                    false,
+                    cartIndex,
+                    stock,
+                    quantityLimit,
+                  );
+                } else if (isIncrement && quantity! > 0) {
+                  if (quantity! < stock! ||
+                      !Get.find<SplashController>()
+                          .configModel!
+                          .moduleConfig!
+                          .module!
+                          .stock!) {
+                    Get.find<CartController>().setQuantity(
+                      true,
+                      cartIndex,
+                      stock,
+                      quantityLimit,
+                    );
+                  } else {
+                    showCustomSnackBar('out_of_stock'.tr);
+                  }
+                }
+              } else {
+                if (!isIncrement && quantity! > 1) {
+                  Get.find<ItemController>().setQuantity(
+                    false,
+                    stock,
+                    quantityLimit,
+                  );
+                } else if (isIncrement && quantity! > 0) {
+                  if (quantity! < stock! ||
+                      !Get.find<SplashController>()
+                          .configModel!
+                          .moduleConfig!
+                          .module!
+                          .stock!) {
+                    Get.find<ItemController>().setQuantity(
+                      true,
+                      stock,
+                      quantityLimit,
+                    );
+                  } else {
+                    showCustomSnackBar('out_of_stock'.tr);
+                  }
+                }
+              }
+            },
       child: Container(
-        height: 30, width: 30,
+        height: 30,
+        width: 30,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: (quantity! == 1 && !isIncrement) || cartController.isLoading ? Theme.of(context).disabledColor.withValues(alpha: 0.1) : Theme.of(context).primaryColor,
+          color: (quantity! == 1 && !isIncrement) || cartController.isLoading
+              ? Theme.of(context).disabledColor.withValues(alpha: 0.1)
+              : Theme.of(context).primaryColor,
         ),
         child: Center(
           child: Icon(
             isIncrement ? Icons.add : Icons.remove,
-            color: isIncrement ? Colors.white : quantity! == 1 ? Theme.of(context).disabledColor : Colors.white,
+            color: isIncrement
+                ? Colors.white
+                : quantity! == 1
+                ? Theme.of(context).disabledColor
+                : Colors.white,
             size: isCartWidget ? 26 : 20,
           ),
         ),

@@ -1,0 +1,50 @@
+name: Finalize variation selector integration
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/finalize-variation-selector.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  validate-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Apply final customer variation patch
+        run: python3 .github/scripts/finish_variation_selector.py
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Format changed Dart files
+        run: dart format lib/features/item/controllers/item_controller.dart lib/features/item/screens/item_details_screen.dart lib/common/widgets/item_bottom_sheet.dart lib/features/item/widgets/variation_selector_widget.dart
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Analyze variation flow
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings lib/features/item/controllers/item_controller.dart lib/features/item/screens/item_details_screen.dart lib/common/widgets/item_bottom_sheet.dart lib/features/item/widgets/variation_selector_widget.dart
+
+      - name: Commit validated changes
+        shell: bash
+        run: |
+          rm -f .github/scripts/finish_variation_selector.py
+          rm -f .github/workflows/finalize-variation-selector.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "fix: complete searchable product variation flow"
+          git push origin HEAD:main

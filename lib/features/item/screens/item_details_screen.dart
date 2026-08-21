@@ -27,6 +27,7 @@ import 'package:sixam_mart/features/item/widgets/details_app_bar_widget.dart';
 import 'package:sixam_mart/features/item/widgets/details_web_view_widget.dart';
 import 'package:sixam_mart/features/item/widgets/item_image_view_widget.dart';
 import 'package:sixam_mart/features/item/widgets/item_title_view_widget.dart';
+import 'package:sixam_mart/features/item/widgets/variation_selector_widget.dart';
 
 class ItemDetailsScreen extends StatefulWidget {
   final int itemId;
@@ -72,30 +73,33 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
           double priceWithAddons = 0;
           int? cartId = cartController.getCartId(itemController.cartIndex);
           if(item != null && itemController.variationIndex != null){
-            List<String> variationList = [];
-            for (int index = 0; index < item.choiceOptions!.length; index++) {
-              variationList.add(item.choiceOptions![index].options![itemController.variationIndex![index]].replaceAll(' ', ''));
-            }
-            String variationType = '';
-            bool isFirst = true;
-            for (var variation in variationList) {
-              if (isFirst) {
-                variationType = '$variationType$variation';
-                isFirst = false;
-              } else {
-                variationType = '$variationType-$variation';
-              }
-            }
-
             double? price = item.price;
             Variation? variation;
             stock = item.stock ?? 0;
-            for (Variation v in item.variations!) {
-              if (v.type == variationType) {
-                price = v.price;
-                variation = v;
-                stock = v.stock;
-                break;
+
+            if(itemController.areVariationsSelected(item)) {
+              List<String> variationList = [];
+              for (int index = 0; index < item.choiceOptions!.length; index++) {
+                variationList.add(item.choiceOptions![index].options![itemController.variationIndex![index]].replaceAll(' ', ''));
+              }
+              String variationType = '';
+              bool isFirst = true;
+              for (var selectedVariation in variationList) {
+                if (isFirst) {
+                  variationType = '$variationType$selectedVariation';
+                  isFirst = false;
+                } else {
+                  variationType = '$variationType-$selectedVariation';
+                }
+              }
+
+              for (Variation v in item.variations!) {
+                if (v.type == variationType) {
+                  price = v.price;
+                  variation = v;
+                  stock = v.stock;
+                  break;
+                }
               }
             }
 
@@ -231,53 +235,10 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                         ],
                       ) : const SizedBox(),
 
-                      // Variation
-                      ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: item.choiceOptions!.length,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemBuilder: (context, index) {
-                          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(item.choiceOptions![index].title!, style:robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge)),
-                            const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-
-                            SizedBox(
-                              height: 35,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                  itemCount: item.choiceOptions![index].options!.length,
-                                  itemBuilder: (context, i) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(right: Dimensions.paddingSizeDefault),
-                                      child: InkWell(
-                                        onTap: () {
-                                          itemController.setCartVariationIndex(index, i, item);
-                                        },
-                                        child: Container(
-                                          alignment: Alignment.center,
-                                          padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(5),
-                                            color: itemController.variationIndex![index] != i ? Theme.of(context).cardColor : Theme.of(context).primaryColor,
-                                            border: Border.all(color: itemController.variationIndex![index] != i ? Theme.of(context).disabledColor : Theme.of(context).primaryColor, width: 1),
-                                          ),
-                                          child: Text(
-                                            item.choiceOptions![index].options![i].trim(), maxLines: 1, overflow: TextOverflow.ellipsis,
-                                            style: itemController.variationIndex![index] != i ? robotoRegular.copyWith(
-                                              color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: 0.5),
-                                            ) : robotoMedium.copyWith(color: Theme.of(context).cardColor),
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                              }),
-                            ),
-                            SizedBox(height: index != item.choiceOptions!.length-1 ? Dimensions.paddingSizeLarge : 0),
-                          ]);
-                        },
+                      VariationSelectorWidget(
+                        item: item,
+                        itemController: itemController,
                       ),
-                      item.choiceOptions!.isNotEmpty ? const SizedBox(height: Dimensions.paddingSizeLarge) : const SizedBox(),
-
 
                     ],
                   ))),
@@ -376,6 +337,12 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                       : item.availableDateStarts != null ? 'order_now'.tr : itemController.cartIndex != -1 ? 'update_in_cart'.tr : 'add_to_cart'.tr,
                                   onPressed: (!Get.find<SplashController>().configModel!.moduleConfig!.module!.stock! || stock! > 0) ?  () async {
 
+                                    if(!itemController.areVariationsSelected(item)) {
+                                      final String? title = itemController.firstUnselectedVariationTitle(item);
+                                      showCustomSnackBar('${'choose_a_variation_from'.tr}${title != null ? ' $title' : ''}');
+                                      return;
+                                    }
+
                                     if(AddressHelper.getUserAddressFromSharedPref() == null) {
                                       Get.find<LocationController>().navigateToLocationScreen('home', canRoute: true);
                                       return;
@@ -437,7 +404,6 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                   ],
                 ),
               ),
-
             ]) : const Center(child: CircularProgressIndicator())),
           );
         });

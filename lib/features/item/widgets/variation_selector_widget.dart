@@ -15,6 +15,8 @@ class VariationSelectorWidget extends StatelessWidget {
     required this.itemController,
   });
 
+  bool get _isTechnicalModule => item.moduleType == 'ecommerce';
+
   @override
   Widget build(BuildContext context) {
     final List<ChoiceOptions> choices = item.choiceOptions ?? <ChoiceOptions>[];
@@ -22,29 +24,54 @@ class VariationSelectorWidget extends StatelessWidget {
       return const SizedBox();
     }
 
+    final List<MapEntry<int, ChoiceOptions>> indexedChoices = choices
+        .asMap()
+        .entries
+        .toList(growable: false);
+    final MapEntry<int, ChoiceOptions>? modelChoice = _isTechnicalModule
+        ? _findChoice(indexedChoices, _isModelTitle)
+        : null;
+    final MapEntry<int, ChoiceOptions>? legacyBrandChoice =
+        _isTechnicalModule && modelChoice != null
+        ? _findChoice(indexedChoices, _isBrandTitle)
+        : null;
+
+    // On the technical module Brand is a model-list filter, not a shopper SKU
+    // dimension. Legacy products may still have Brand stored as a variation;
+    // keep that hidden index for cart/order compatibility and auto-select it
+    // when the shopper picks a model.
+    final List<MapEntry<int, ChoiceOptions>> visibleChoices = indexedChoices
+        .where((entry) => entry.key != legacyBrandChoice?.key)
+        .toList(growable: false);
+
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeLarge),
-      itemCount: choices.length,
+      itemCount: visibleChoices.length,
       separatorBuilder: (_, __) =>
           const SizedBox(height: Dimensions.paddingSizeDefault),
-      itemBuilder: (context, index) {
-        final ChoiceOptions choice = choices[index];
+      itemBuilder: (context, visibleIndex) {
+        final MapEntry<int, ChoiceOptions> indexedChoice =
+            visibleChoices[visibleIndex];
+        final int attributeIndex = indexedChoice.key;
+        final ChoiceOptions choice = indexedChoice.value;
         final List<String> options = choice.options ?? <String>[];
         final bool confirmed = itemController.isVariationSelectionConfirmed(
-          index,
+          attributeIndex,
         );
         final int selectedIndex =
             itemController.variationIndex != null &&
-                index < itemController.variationIndex!.length
-            ? itemController.variationIndex![index]
+                attributeIndex < itemController.variationIndex!.length
+            ? itemController.variationIndex![attributeIndex]
             : 0;
         final bool hasValidSelection =
             confirmed && selectedIndex >= 0 && selectedIndex < options.length;
         final String value = hasValidSelection
             ? options[selectedIndex].trim()
             : 'select_one'.tr;
+        final bool isTechnicalModel =
+            _isTechnicalModule && attributeIndex == modelChoice?.key;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,10 +93,14 @@ class VariationSelectorWidget extends StatelessWidget {
                     ? null
                     : () => _openSelector(
                         context,
-                        attributeIndex: index,
+                        attributeIndex: attributeIndex,
                         title: choice.title ?? '',
                         options: options,
                         selectedIndex: hasValidSelection ? selectedIndex : null,
+                        isTechnicalModel: isTechnicalModel,
+                        legacyBrandAttributeIndex: legacyBrandChoice?.key,
+                        legacyBrandOptions:
+                            legacyBrandChoice?.value.options ?? <String>[],
                       ),
                 child: Container(
                   constraints: const BoxConstraints(minHeight: 52),
@@ -127,10 +158,13 @@ class VariationSelectorWidget extends StatelessWidget {
     required String title,
     required List<String> options,
     required int? selectedIndex,
+    required bool isTechnicalModel,
+    required int? legacyBrandAttributeIndex,
+    required List<String> legacyBrandOptions,
   }) async {
     FocusManager.instance.primaryFocus?.unfocus();
 
-    final int? picked = await showModalBottomSheet<int>(
+    final _VariationPick? picked = await showModalBottomSheet<_VariationPick>(
       context: context,
       isScrollControlled: true,
       useSafeArea: false,
@@ -140,24 +174,53 @@ class VariationSelectorWidget extends StatelessWidget {
         title: title,
         options: options,
         selectedIndex: selectedIndex,
+        isTechnicalModel: isTechnicalModel,
+        legacyBrandOptions: legacyBrandOptions,
       ),
     );
 
     if (picked != null && context.mounted) {
-      itemController.setCartVariationIndex(attributeIndex, picked, item);
+      if (isTechnicalModel &&
+          legacyBrandAttributeIndex != null &&
+          picked.legacyBrandIndex != null) {
+        itemController.setCartVariationIndex(
+          legacyBrandAttributeIndex,
+          picked.legacyBrandIndex!,
+          item,
+        );
+      }
+      itemController.setCartVariationIndex(
+        attributeIndex,
+        picked.optionIndex,
+        item,
+      );
     }
   }
+}
+
+class _VariationPick {
+  final int optionIndex;
+  final int? legacyBrandIndex;
+
+  const _VariationPick({
+    required this.optionIndex,
+    this.legacyBrandIndex,
+  });
 }
 
 class _VariationOptionsSheet extends StatefulWidget {
   final String title;
   final List<String> options;
   final int? selectedIndex;
+  final bool isTechnicalModel;
+  final List<String> legacyBrandOptions;
 
   const _VariationOptionsSheet({
     required this.title,
     required this.options,
     required this.selectedIndex,
+    required this.isTechnicalModel,
+    required this.legacyBrandOptions,
   });
 
   @override
@@ -167,6 +230,7 @@ class _VariationOptionsSheet extends StatefulWidget {
 class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
+  String? _selectedBrandKey;
 
   bool get _showSearch => widget.options.length >= 7;
 
@@ -180,23 +244,47 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
   Widget build(BuildContext context) {
     final MediaQueryData media = MediaQuery.of(context);
     final String normalizedQuery = _query.trim().toLowerCase();
+    final List<String> brandKeys = widget.isTechnicalModel
+        ? _brandKeysForOptions(widget.options)
+        : <String>[];
+
     final List<MapEntry<int, String>> visibleOptions = widget.options
         .asMap()
         .entries
-        .where(
-          (entry) =>
+        .where((entry) {
+          final String? brandKey = widget.isTechnicalModel
+              ? _inferBrandKey(entry.value)
+              : null;
+          final bool brandMatches =
+              _selectedBrandKey == null || brandKey == _selectedBrandKey;
+          final bool searchMatches =
               normalizedQuery.isEmpty ||
-              entry.value.toLowerCase().contains(normalizedQuery),
-        )
+              entry.value.toLowerCase().contains(normalizedQuery) ||
+              (brandKey != null &&
+                  _brandLabel(brandKey).toLowerCase().contains(normalizedQuery));
+          return brandMatches && searchMatches;
+        })
         .toList(growable: false);
 
-    final double heightFactor = widget.options.length >= 12
+    if (widget.isTechnicalModel && _selectedBrandKey == null) {
+      visibleOptions.sort((a, b) {
+        final int brandCompare = _brandOrder(
+          _inferBrandKey(a.value),
+        ).compareTo(_brandOrder(_inferBrandKey(b.value)));
+        return brandCompare != 0 ? brandCompare : a.key.compareTo(b.key);
+      });
+    }
+
+    double heightFactor = widget.options.length >= 12
         ? 0.82
         : widget.options.length >= 7
         ? 0.72
         : widget.options.length >= 4
         ? 0.58
         : 0.44;
+    if (widget.isTechnicalModel && brandKeys.length > 1) {
+      heightFactor = (heightFactor + 0.10).clamp(0.54, 0.88);
+    }
 
     return Padding(
       padding: EdgeInsets.only(top: media.padding.top + 8),
@@ -259,6 +347,37 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                         ],
                       ),
                     ),
+                    if (widget.isTechnicalModel && brandKeys.length > 1)
+                      SizedBox(
+                        height: 48,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Dimensions.paddingSizeDefault,
+                          ),
+                          itemCount: brandKeys.length + 1,
+                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          itemBuilder: (context, index) {
+                            final String? brandKey = index == 0
+                                ? null
+                                : brandKeys[index - 1];
+                            return ChoiceChip(
+                              label: Text(
+                                brandKey == null
+                                    ? 'all'.tr
+                                    : _brandLabel(brandKey),
+                                maxLines: 1,
+                              ),
+                              selected: _selectedBrandKey == brandKey,
+                              onSelected: (_) {
+                                setState(() => _selectedBrandKey = brandKey);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    if (widget.isTechnicalModel && brandKeys.length > 1)
+                      const SizedBox(height: Dimensions.paddingSizeExtraSmall),
                     if (_showSearch)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(
@@ -312,7 +431,7 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                                 ),
                               ),
                             )
-                          : ListView.separated(
+                          : ListView.builder(
                               keyboardDismissBehavior:
                                   ScrollViewKeyboardDismissBehavior.onDrag,
                               padding: const EdgeInsets.fromLTRB(
@@ -322,63 +441,127 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                                 Dimensions.paddingSizeDefault,
                               ),
                               itemCount: visibleOptions.length,
-                              separatorBuilder: (_, __) => Divider(
-                                height: 1,
-                                color: Theme.of(context).disabledColor
-                                    .withValues(alpha: 0.16),
-                              ),
                               itemBuilder: (context, listIndex) {
                                 final MapEntry<int, String> entry =
                                     visibleOptions[listIndex];
+                                final String? brandKey = widget.isTechnicalModel
+                                    ? _inferBrandKey(entry.value)
+                                    : null;
+                                final String? previousBrandKey =
+                                    listIndex > 0 && widget.isTechnicalModel
+                                    ? _inferBrandKey(
+                                        visibleOptions[listIndex - 1].value,
+                                      )
+                                    : null;
+                                final bool showGroupHeader =
+                                    widget.isTechnicalModel &&
+                                    _selectedBrandKey == null &&
+                                    brandKey != null &&
+                                    brandKey != previousBrandKey;
                                 final bool selected =
                                     entry.key == widget.selectedIndex;
+                                final int? legacyBrandIndex =
+                                    widget.legacyBrandOptions.isEmpty
+                                    ? null
+                                    : _legacyBrandIndexForModel(
+                                        entry.value,
+                                        widget.legacyBrandOptions,
+                                      );
+                                final bool unresolvedLegacyBrand =
+                                    widget.isTechnicalModel &&
+                                    widget.legacyBrandOptions.length > 1 &&
+                                    legacyBrandIndex == null;
 
-                                return Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(
-                                      Dimensions.radiusSmall,
-                                    ),
-                                    onTap: () =>
-                                        Navigator.of(context).pop(entry.key),
-                                    child: ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        minHeight: 52,
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal:
-                                              Dimensions.paddingSizeSmall,
-                                          vertical: Dimensions.paddingSizeSmall,
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (showGroupHeader)
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          Dimensions.paddingSizeSmall,
+                                          Dimensions.paddingSizeSmall,
+                                          Dimensions.paddingSizeSmall,
+                                          Dimensions.paddingSizeExtraSmall,
                                         ),
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                entry.value.trim(),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: selected
-                                                    ? robotoMedium
-                                                    : robotoRegular,
+                                        child: Text(
+                                          _brandLabel(brandKey),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: robotoMedium.copyWith(
+                                            color: Theme.of(context).hintColor,
+                                            fontSize: Dimensions.fontSizeSmall,
+                                          ),
+                                        ),
+                                      ),
+                                    Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(
+                                          Dimensions.radiusSmall,
+                                        ),
+                                        onTap: unresolvedLegacyBrand
+                                            ? null
+                                            : () => Navigator.of(context).pop(
+                                                _VariationPick(
+                                                  optionIndex: entry.key,
+                                                  legacyBrandIndex:
+                                                      legacyBrandIndex,
+                                                ),
                                               ),
-                                            ),
-                                            const SizedBox(
-                                              width:
+                                        child: ConstrainedBox(
+                                          constraints: const BoxConstraints(
+                                            minHeight: 52,
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal:
+                                                  Dimensions.paddingSizeSmall,
+                                              vertical:
                                                   Dimensions.paddingSizeSmall,
                                             ),
-                                            if (selected)
-                                              Icon(
-                                                Icons.check_circle_rounded,
-                                                color: Theme.of(context)
-                                                    .primaryColor,
-                                                size: 22,
-                                              ),
-                                          ],
+                                            child: Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    entry.value.trim(),
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: unresolvedLegacyBrand
+                                                        ? robotoRegular.copyWith(
+                                                            color: Theme.of(
+                                                              context,
+                                                            ).disabledColor,
+                                                          )
+                                                        : selected
+                                                        ? robotoMedium
+                                                        : robotoRegular,
+                                                  ),
+                                                ),
+                                                const SizedBox(
+                                                  width: Dimensions
+                                                      .paddingSizeSmall,
+                                                ),
+                                                if (selected)
+                                                  Icon(
+                                                    Icons.check_circle_rounded,
+                                                    color: Theme.of(context)
+                                                        .primaryColor,
+                                                    size: 22,
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
+                                    if (listIndex != visibleOptions.length - 1)
+                                      Divider(
+                                        height: 1,
+                                        color: Theme.of(context).disabledColor
+                                            .withValues(alpha: 0.16),
+                                      ),
+                                  ],
                                 );
                               },
                             ),
@@ -391,5 +574,197 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
         ),
       ),
     );
+  }
+}
+
+MapEntry<int, ChoiceOptions>? _findChoice(
+  List<MapEntry<int, ChoiceOptions>> choices,
+  bool Function(String?) predicate,
+) {
+  for (final MapEntry<int, ChoiceOptions> entry in choices) {
+    if (predicate(entry.value.title)) {
+      return entry;
+    }
+  }
+  return null;
+}
+
+bool _isBrandTitle(String? value) {
+  final String normalized = _normalizeTitle(value);
+  return normalized == 'brand' ||
+      normalized == 'ბრენდი' ||
+      normalized == 'бренд';
+}
+
+bool _isModelTitle(String? value) {
+  final String normalized = _normalizeTitle(value);
+  return normalized == 'model' ||
+      normalized == 'მოდელი' ||
+      normalized == 'модель' ||
+      normalized == 'applicablemodel' ||
+      normalized == 'compatiblemodel' ||
+      normalized == 'ტელეფონისმოდელი';
+}
+
+String _normalizeTitle(String? value) {
+  return (value ?? '')
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[\s_\-./]+'), '');
+}
+
+List<String> _brandKeysForOptions(List<String> options) {
+  final Set<String> keys = <String>{};
+  for (final String option in options) {
+    final String? key = _inferBrandKey(option);
+    if (key != null) {
+      keys.add(key);
+    }
+  }
+  final List<String> result = keys.toList();
+  result.sort((a, b) => _brandOrder(a).compareTo(_brandOrder(b)));
+  return result;
+}
+
+String? _inferBrandKey(String value) {
+  final String lower = value.trim().toLowerCase();
+  final String compact = lower.replaceAll(RegExp(r'[\s_\-./]+'), '');
+
+  if (lower.contains('iphone') ||
+      lower.contains('აიფონ') ||
+      lower.contains('айфон')) {
+    return 'iphone';
+  }
+  if (lower.contains('samsung') ||
+      lower.contains('სამსუნგ') ||
+      lower.contains('самсунг') ||
+      lower.contains('galaxy') ||
+      lower.contains('გალაქსი') ||
+      lower.contains('галакси') ||
+      RegExp(r'^(a|m|s|f)\s?\d{2,3}\b').hasMatch(lower)) {
+    return 'samsung';
+  }
+  if (lower.contains('redmi') ||
+      lower.contains('რედმი') ||
+      lower.contains('редми')) {
+    return 'redmi';
+  }
+  if (lower.contains('poco') || lower.contains('პოკო')) {
+    return 'poco';
+  }
+  if (lower.contains('xiaomi') ||
+      lower.contains('შაომი') ||
+      lower.contains('сяоми')) {
+    return 'xiaomi';
+  }
+  if (lower.contains('honor') || lower.contains('ჰონორ')) {
+    return 'honor';
+  }
+  if (lower.contains('huawei') || lower.contains('ჰუავეი')) {
+    return 'huawei';
+  }
+  if (lower.contains('oppo')) {
+    return 'oppo';
+  }
+  if (lower.contains('realme')) {
+    return 'realme';
+  }
+  if (lower.contains('oneplus')) {
+    return 'oneplus';
+  }
+  if (lower.contains('pixel') || lower.contains('googlepixel')) {
+    return 'pixel';
+  }
+
+  // Common Samsung shorthand used by accessory wholesalers (A16, A55,
+  // S24, M34, F55). Keep it after explicit brand checks.
+  if (RegExp(r'^(a|m|s|f)\d{2,3}[a-z]*$').hasMatch(compact)) {
+    return 'samsung';
+  }
+  return null;
+}
+
+int? _legacyBrandIndexForModel(
+  String model,
+  List<String> legacyBrandOptions,
+) {
+  if (legacyBrandOptions.isEmpty) {
+    return null;
+  }
+  if (legacyBrandOptions.length == 1) {
+    return 0;
+  }
+
+  final String? modelKey = _inferBrandKey(model);
+  final String normalizedModel = _normalizeTitle(model);
+  for (int index = 0; index < legacyBrandOptions.length; index++) {
+    final String brand = legacyBrandOptions[index];
+    final String? brandKey = _inferBrandKey(brand);
+    if (modelKey != null && brandKey == modelKey) {
+      return index;
+    }
+    final String normalizedBrand = _normalizeTitle(brand);
+    if (normalizedBrand.isNotEmpty && normalizedModel.contains(normalizedBrand)) {
+      return index;
+    }
+  }
+  return null;
+}
+
+String _brandLabel(String key) {
+  switch (key) {
+    case 'iphone':
+      return 'iPhone';
+    case 'samsung':
+      return 'Samsung';
+    case 'redmi':
+      return 'Redmi';
+    case 'poco':
+      return 'POCO';
+    case 'xiaomi':
+      return 'Xiaomi';
+    case 'honor':
+      return 'Honor';
+    case 'huawei':
+      return 'Huawei';
+    case 'oppo':
+      return 'OPPO';
+    case 'realme':
+      return 'realme';
+    case 'oneplus':
+      return 'OnePlus';
+    case 'pixel':
+      return 'Pixel';
+    default:
+      return key;
+  }
+}
+
+int _brandOrder(String? key) {
+  switch (key) {
+    case 'iphone':
+      return 0;
+    case 'samsung':
+      return 1;
+    case 'redmi':
+      return 2;
+    case 'xiaomi':
+      return 3;
+    case 'poco':
+      return 4;
+    case 'honor':
+      return 5;
+    case 'huawei':
+      return 6;
+    case 'oppo':
+      return 7;
+    case 'realme':
+      return 8;
+    case 'oneplus':
+      return 9;
+    case 'pixel':
+      return 10;
+    default:
+      return 99;
   }
 }

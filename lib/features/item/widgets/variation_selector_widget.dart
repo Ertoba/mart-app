@@ -283,7 +283,7 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
         ? 0.58
         : 0.44;
     if (widget.isTechnicalModel && brandKeys.length > 1) {
-      heightFactor = (heightFactor + 0.10).clamp(0.54, 0.88);
+      heightFactor = (heightFactor + 0.10).clamp(0.54, 0.88).toDouble();
     }
 
     return Padding(
@@ -365,7 +365,7 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                               label: Text(
                                 brandKey == null
                                     ? 'all'.tr
-                                    : _brandLabel(brandKey),
+                                    : _brandLabel(brandKey!),
                                 maxLines: 1,
                               ),
                               selected: _selectedBrandKey == brandKey,
@@ -484,7 +484,7 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                                           Dimensions.paddingSizeExtraSmall,
                                         ),
                                         child: Text(
-                                          _brandLabel(brandKey),
+                                          _brandLabel(brandKey!),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: robotoMedium.copyWith(
@@ -632,7 +632,9 @@ String? _inferBrandKey(String value) {
 
   if (lower.contains('iphone') ||
       lower.contains('აიფონ') ||
-      lower.contains('айфон')) {
+      lower.contains('айфон') ||
+      lower.contains('apple') ||
+      RegExp(r'^(1[1-7])(pro|max|promax|plus|mini|air)?$').hasMatch(compact)) {
     return 'iphone';
   }
   if (lower.contains('samsung') ||

@@ -56,6 +56,15 @@ class ItemController extends GetxController implements GetxService {
   List<int>? get variationIndex => _variationIndex;
 
   List<bool> _variationSelectionConfirmed = [];
+  int _variationSelectionRevision = 0;
+
+  bool requiresExplicitVariationSelection(Item? item) {
+    return item != null &&
+        item.moduleType == AppConstants.ecommerce &&
+        !(ModuleHelper.getModuleConfig(item.moduleType).newVariation ??
+            false) &&
+        (item.choiceOptions?.isNotEmpty ?? false);
+  }
 
   bool isVariationSelectionConfirmed(int index) {
     return index >= 0 &&
@@ -64,8 +73,7 @@ class ItemController extends GetxController implements GetxService {
   }
 
   bool areVariationsSelected(Item? item) {
-    if (item == null ||
-        (ModuleHelper.getModuleConfig(item.moduleType).newVariation ?? false)) {
+    if (item == null || !requiresExplicitVariationSelection(item)) {
       return true;
     }
     final int choiceCount = item.choiceOptions?.length ?? 0;
@@ -77,8 +85,7 @@ class ItemController extends GetxController implements GetxService {
   }
 
   String? firstUnselectedVariationTitle(Item? item) {
-    if (item == null ||
-        (ModuleHelper.getModuleConfig(item.moduleType).newVariation ?? false)) {
+    if (item == null || !requiresExplicitVariationSelection(item)) {
       return null;
     }
     for (int index = 0; index < (item.choiceOptions?.length ?? 0); index++) {
@@ -87,6 +94,48 @@ class ItemController extends GetxController implements GetxService {
       }
     }
     return null;
+  }
+
+  String? selectedVariationType(Item? item) {
+    if (item == null ||
+        _variationIndex == null ||
+        !areVariationsSelected(item)) {
+      return null;
+    }
+
+    final List<ChoiceOptions> choices = item.choiceOptions ?? <ChoiceOptions>[];
+    if (choices.isEmpty || _variationIndex!.length < choices.length) {
+      return null;
+    }
+
+    final List<String> selected = <String>[];
+    for (int index = 0; index < choices.length; index++) {
+      final List<String> options = choices[index].options ?? <String>[];
+      final int selectedIndex = _variationIndex![index];
+      if (selectedIndex < 0 || selectedIndex >= options.length) {
+        return null;
+      }
+      selected.add(options[selectedIndex].replaceAll(' ', ''));
+    }
+    return selected.join('-');
+  }
+
+  Variation? selectedVariation(Item? item) {
+    final String? type = selectedVariationType(item);
+    if (type == null) {
+      return null;
+    }
+    for (final Variation variation in item?.variations ?? <Variation>[]) {
+      if (variation.type == type) {
+        return variation;
+      }
+    }
+    return null;
+  }
+
+  bool hasValidSelectedVariation(Item? item) {
+    return !requiresExplicitVariationSelection(item) ||
+        selectedVariation(item) != null;
   }
 
   List<List<bool?>> _selectedVariations = [];
@@ -836,6 +885,7 @@ class ItemController extends GetxController implements GetxService {
   }
 
   void initData(Item? item, CartModel? cart) {
+    _variationSelectionRevision++;
     _variationIndex = [];
     _variationSelectionConfirmed = [];
     _addOnQtyList = [];
@@ -864,10 +914,16 @@ class ItemController extends GetxController implements GetxService {
         );
       } else {
         try {
-          _variationIndex = itemServiceInterface.initializeCartVariationIndexes(
-            cart.variation,
-            item.choiceOptions,
-          );
+          final List<int> cartVariationIndexes = itemServiceInterface
+              .initializeCartVariationIndexes(
+                cart.variation,
+                item.choiceOptions,
+              );
+          if (cartVariationIndexes.length !=
+              (item.choiceOptions?.length ?? 0)) {
+            throw const FormatException('Incomplete cart variation');
+          }
+          _variationIndex = cartVariationIndexes;
           _variationSelectionConfirmed = List<bool>.filled(
             item.choiceOptions?.length ?? 0,
             true,
@@ -918,10 +974,12 @@ class ItemController extends GetxController implements GetxService {
     Item? item,
     List<List<bool?>>? selectedVariations, {
     bool notify = false,
+    int? selectionRevision,
   }) async {
     final bool newVariation =
         ModuleHelper.getModuleConfig(item!.moduleType).newVariation ?? false;
-    if (!newVariation && !areVariationsSelected(item)) {
+    if (!newVariation &&
+        (!areVariationsSelected(item) || !hasValidSelectedVariation(item))) {
       _cartIndex = -1;
       if (notify) {
         update();
@@ -934,21 +992,28 @@ class ItemController extends GetxController implements GetxService {
       _variationIndex,
     );
 
+    late final int nextCartIndex;
     if (newVariation) {
-      _cartIndex = await itemServiceInterface.isExistInCartForBottomSheet(
+      nextCartIndex = await itemServiceInterface.isExistInCartForBottomSheet(
         Get.find<CartController>().cartList,
         item.id,
         null,
         selectedVariations,
       );
     } else {
-      _cartIndex = Get.find<CartController>().isExistInCart(
+      nextCartIndex = Get.find<CartController>().isExistInCart(
         item.id,
         variationType,
         false,
         null,
       );
     }
+
+    if (selectionRevision != null &&
+        selectionRevision != _variationSelectionRevision) {
+      return _cartIndex;
+    }
+    _cartIndex = nextCartIndex;
 
     if (_cartIndex != -1) {
       _quantity = Get.find<CartController>().cartList[_cartIndex].quantity;
@@ -995,13 +1060,35 @@ class ItemController extends GetxController implements GetxService {
   }
 
   void setCartVariationIndex(int index, int i, Item? item) {
-    _variationIndex![index] = i;
-    if (index >= 0 && index < _variationSelectionConfirmed.length) {
-      _variationSelectionConfirmed[index] = true;
+    setCartVariationIndexes(<int, int>{index: i}, item);
+  }
+
+  void setCartVariationIndexes(Map<int, int> selections, Item? item) {
+    if (item == null || _variationIndex == null) {
+      return;
     }
+
+    for (final MapEntry<int, int> selection in selections.entries) {
+      final int attributeIndex = selection.key;
+      final int optionIndex = selection.value;
+      final List<ChoiceOptions> choices =
+          item.choiceOptions ?? <ChoiceOptions>[];
+      if (attributeIndex < 0 ||
+          attributeIndex >= choices.length ||
+          optionIndex < 0 ||
+          optionIndex >= (choices[attributeIndex].options?.length ?? 0)) {
+        continue;
+      }
+      _variationIndex![attributeIndex] = optionIndex;
+      if (attributeIndex < _variationSelectionConfirmed.length) {
+        _variationSelectionConfirmed[attributeIndex] = true;
+      }
+    }
+
+    final int revision = ++_variationSelectionRevision;
     _quantity = 1;
-    if (areVariationsSelected(item)) {
-      setExistInCart(item, _selectedVariations);
+    if (areVariationsSelected(item) && hasValidSelectedVariation(item)) {
+      setExistInCart(item, _selectedVariations, selectionRevision: revision);
     } else {
       _cartIndex = -1;
     }

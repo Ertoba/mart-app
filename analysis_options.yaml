@@ -9,13 +9,9 @@
 # packages, and plugins designed to encourage good coding practices.
 analyzer:
   exclude:
-    - build/**
-    - android/**
-    - ios/**
-    - web/**
-    - windows/**
-    - macos/**
-    - linux/**
+    - third_party/**/example/**
+    - third_party/**/pigeons/**
+    - third_party/**/test/**
 include: package:flutter_lints/flutter.yaml
 
 linter:

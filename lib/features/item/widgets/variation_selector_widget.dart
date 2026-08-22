@@ -19,6 +19,10 @@ class VariationSelectorWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isTechnicalModule) {
+      return const SizedBox();
+    }
+
     final List<ChoiceOptions> choices = item.choiceOptions ?? <ChoiceOptions>[];
     if (choices.isEmpty) {
       return const SizedBox();
@@ -29,11 +33,11 @@ class VariationSelectorWidget extends StatelessWidget {
         .entries
         .toList(growable: false);
     final MapEntry<int, ChoiceOptions>? modelChoice = _isTechnicalModule
-        ? _findChoice(indexedChoices, _isModelTitle)
+        ? _findChoice(indexedChoices, isTechnicalModelTitle)
         : null;
     final MapEntry<int, ChoiceOptions>? legacyBrandChoice =
         _isTechnicalModule && modelChoice != null
-        ? _findChoice(indexedChoices, _isBrandTitle)
+        ? _findChoice(indexedChoices, isTechnicalBrandTitle)
         : null;
 
     // On the technical module Brand is a model-list filter, not a shopper SKU
@@ -49,7 +53,7 @@ class VariationSelectorWidget extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeLarge),
       itemCount: visibleChoices.length,
-      separatorBuilder: (_, __) =>
+      separatorBuilder: (_, _) =>
           const SizedBox(height: Dimensions.paddingSizeDefault),
       itemBuilder: (context, visibleIndex) {
         final MapEntry<int, ChoiceOptions> indexedChoice =
@@ -115,10 +119,12 @@ class VariationSelectorWidget extends StatelessWidget {
                     ),
                     border: Border.all(
                       color: hasValidSelection
-                          ? Theme.of(context).primaryColor
-                                .withValues(alpha: 0.55)
-                          : Theme.of(context).disabledColor
-                                .withValues(alpha: 0.55),
+                          ? Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.55)
+                          : Theme.of(
+                              context,
+                            ).disabledColor.withValues(alpha: 0.55),
                     ),
                   ),
                   child: Row(
@@ -180,20 +186,15 @@ class VariationSelectorWidget extends StatelessWidget {
     );
 
     if (picked != null && context.mounted) {
+      final Map<int, int> selections = <int, int>{
+        attributeIndex: picked.optionIndex,
+      };
       if (isTechnicalModel &&
           legacyBrandAttributeIndex != null &&
           picked.legacyBrandIndex != null) {
-        itemController.setCartVariationIndex(
-          legacyBrandAttributeIndex,
-          picked.legacyBrandIndex!,
-          item,
-        );
+        selections[legacyBrandAttributeIndex] = picked.legacyBrandIndex!;
       }
-      itemController.setCartVariationIndex(
-        attributeIndex,
-        picked.optionIndex,
-        item,
-      );
+      itemController.setCartVariationIndexes(selections, item);
     }
   }
 }
@@ -202,10 +203,7 @@ class _VariationPick {
   final int optionIndex;
   final int? legacyBrandIndex;
 
-  const _VariationPick({
-    required this.optionIndex,
-    this.legacyBrandIndex,
-  });
+  const _VariationPick({required this.optionIndex, this.legacyBrandIndex});
 }
 
 class _VariationOptionsSheet extends StatefulWidget {
@@ -253,7 +251,7 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
         .entries
         .where((entry) {
           final String? brandKey = widget.isTechnicalModel
-              ? _inferBrandKey(entry.value)
+              ? inferTechnicalBrandKey(entry.value)
               : null;
           final bool brandMatches =
               _selectedBrandKey == null || brandKey == _selectedBrandKey;
@@ -261,7 +259,9 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
               normalizedQuery.isEmpty ||
               entry.value.toLowerCase().contains(normalizedQuery) ||
               (brandKey != null &&
-                  _brandLabel(brandKey).toLowerCase().contains(normalizedQuery));
+                  _brandLabel(
+                    brandKey,
+                  ).toLowerCase().contains(normalizedQuery));
           return brandMatches && searchMatches;
         })
         .toList(growable: false);
@@ -269,8 +269,8 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
     if (widget.isTechnicalModel && _selectedBrandKey == null) {
       visibleOptions.sort((a, b) {
         final int brandCompare = _brandOrder(
-          _inferBrandKey(a.value),
-        ).compareTo(_brandOrder(_inferBrandKey(b.value)));
+          inferTechnicalBrandKey(a.value),
+        ).compareTo(_brandOrder(inferTechnicalBrandKey(b.value)));
         return brandCompare != 0 ? brandCompare : a.key.compareTo(b.key);
       });
     }
@@ -312,8 +312,9 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).disabledColor
-                            .withValues(alpha: 0.55),
+                        color: Theme.of(
+                          context,
+                        ).disabledColor.withValues(alpha: 0.55),
                         borderRadius: BorderRadius.circular(99),
                       ),
                     ),
@@ -356,7 +357,7 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                             horizontal: Dimensions.paddingSizeDefault,
                           ),
                           itemCount: brandKeys.length + 1,
-                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          separatorBuilder: (_, _) => const SizedBox(width: 8),
                           itemBuilder: (context, index) {
                             final String? brandKey = index == 0
                                 ? null
@@ -365,7 +366,7 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                               label: Text(
                                 brandKey == null
                                     ? 'all'.tr
-                                    : _brandLabel(brandKey!),
+                                    : _brandLabel(brandKey),
                                 maxLines: 1,
                               ),
                               selected: _selectedBrandKey == brandKey,
@@ -406,8 +407,9 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                                     )
                                   : null,
                               filled: true,
-                              fillColor: Theme.of(context).disabledColor
-                                  .withValues(alpha: 0.06),
+                              fillColor: Theme.of(
+                                context,
+                              ).disabledColor.withValues(alpha: 0.06),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: Dimensions.paddingSizeDefault,
                               ),
@@ -445,11 +447,11 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                                 final MapEntry<int, String> entry =
                                     visibleOptions[listIndex];
                                 final String? brandKey = widget.isTechnicalModel
-                                    ? _inferBrandKey(entry.value)
+                                    ? inferTechnicalBrandKey(entry.value)
                                     : null;
                                 final String? previousBrandKey =
                                     listIndex > 0 && widget.isTechnicalModel
-                                    ? _inferBrandKey(
+                                    ? inferTechnicalBrandKey(
                                         visibleOptions[listIndex - 1].value,
                                       )
                                     : null;
@@ -463,7 +465,7 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                                 final int? legacyBrandIndex =
                                     widget.legacyBrandOptions.isEmpty
                                     ? null
-                                    : _legacyBrandIndexForModel(
+                                    : legacyBrandIndexForTechnicalModel(
                                         entry.value,
                                         widget.legacyBrandOptions,
                                       );
@@ -484,7 +486,7 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                                           Dimensions.paddingSizeExtraSmall,
                                         ),
                                         child: Text(
-                                          _brandLabel(brandKey!),
+                                          _brandLabel(brandKey),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: robotoMedium.copyWith(
@@ -528,11 +530,12 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                                                     overflow:
                                                         TextOverflow.ellipsis,
                                                     style: unresolvedLegacyBrand
-                                                        ? robotoRegular.copyWith(
-                                                            color: Theme.of(
-                                                              context,
-                                                            ).disabledColor,
-                                                          )
+                                                        ? robotoRegular
+                                                              .copyWith(
+                                                                color: Theme.of(
+                                                                  context,
+                                                                ).disabledColor,
+                                                              )
                                                         : selected
                                                         ? robotoMedium
                                                         : robotoRegular,
@@ -545,8 +548,9 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                                                 if (selected)
                                                   Icon(
                                                     Icons.check_circle_rounded,
-                                                    color: Theme.of(context)
-                                                        .primaryColor,
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).primaryColor,
                                                     size: 22,
                                                   ),
                                               ],
@@ -558,8 +562,9 @@ class _VariationOptionsSheetState extends State<_VariationOptionsSheet> {
                                     if (listIndex != visibleOptions.length - 1)
                                       Divider(
                                         height: 1,
-                                        color: Theme.of(context).disabledColor
-                                            .withValues(alpha: 0.16),
+                                        color: Theme.of(
+                                          context,
+                                        ).disabledColor.withValues(alpha: 0.16),
                                       ),
                                   ],
                                 );
@@ -589,14 +594,16 @@ MapEntry<int, ChoiceOptions>? _findChoice(
   return null;
 }
 
-bool _isBrandTitle(String? value) {
+@visibleForTesting
+bool isTechnicalBrandTitle(String? value) {
   final String normalized = _normalizeTitle(value);
   return normalized == 'brand' ||
       normalized == 'ბრენდი' ||
       normalized == 'бренд';
 }
 
-bool _isModelTitle(String? value) {
+@visibleForTesting
+bool isTechnicalModelTitle(String? value) {
   final String normalized = _normalizeTitle(value);
   return normalized == 'model' ||
       normalized == 'მოდელი' ||
@@ -607,16 +614,16 @@ bool _isModelTitle(String? value) {
 }
 
 String _normalizeTitle(String? value) {
-  return (value ?? '')
-      .trim()
-      .toLowerCase()
-      .replaceAll(RegExp(r'[\s_\-./]+'), '');
+  return (value ?? '').trim().toLowerCase().replaceAll(
+    RegExp(r'[\s_\-./]+'),
+    '',
+  );
 }
 
 List<String> _brandKeysForOptions(List<String> options) {
   final Set<String> keys = <String>{};
   for (final String option in options) {
-    final String? key = _inferBrandKey(option);
+    final String? key = inferTechnicalBrandKey(option);
     if (key != null) {
       keys.add(key);
     }
@@ -626,7 +633,8 @@ List<String> _brandKeysForOptions(List<String> options) {
   return result;
 }
 
-String? _inferBrandKey(String value) {
+@visibleForTesting
+String? inferTechnicalBrandKey(String value) {
   final String lower = value.trim().toLowerCase();
   final String compact = lower.replaceAll(RegExp(r'[\s_\-./]+'), '');
 
@@ -686,7 +694,8 @@ String? _inferBrandKey(String value) {
   return null;
 }
 
-int? _legacyBrandIndexForModel(
+@visibleForTesting
+int? legacyBrandIndexForTechnicalModel(
   String model,
   List<String> legacyBrandOptions,
 ) {
@@ -697,16 +706,17 @@ int? _legacyBrandIndexForModel(
     return 0;
   }
 
-  final String? modelKey = _inferBrandKey(model);
+  final String? modelKey = inferTechnicalBrandKey(model);
   final String normalizedModel = _normalizeTitle(model);
   for (int index = 0; index < legacyBrandOptions.length; index++) {
     final String brand = legacyBrandOptions[index];
-    final String? brandKey = _inferBrandKey(brand);
+    final String? brandKey = inferTechnicalBrandKey(brand);
     if (modelKey != null && brandKey == modelKey) {
       return index;
     }
     final String normalizedBrand = _normalizeTitle(brand);
-    if (normalizedBrand.isNotEmpty && normalizedModel.contains(normalizedBrand)) {
+    if (normalizedBrand.isNotEmpty &&
+        normalizedModel.contains(normalizedBrand)) {
       return index;
     }
   }

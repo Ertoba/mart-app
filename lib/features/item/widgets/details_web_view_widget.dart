@@ -24,6 +24,8 @@ import 'package:sixam_mart/common/widgets/footer_view.dart';
 import 'package:sixam_mart/features/checkout/screens/checkout_screen.dart';
 import 'package:sixam_mart/features/item/screens/item_details_screen.dart';
 import 'package:sixam_mart/features/item/widgets/item_title_view_widget.dart';
+import 'package:sixam_mart/features/item/widgets/variation_selector_widget.dart';
+import 'package:sixam_mart/util/app_constants.dart';
 
 class DetailsWebViewWidget extends StatefulWidget {
   final CartModel? cartModel;
@@ -243,7 +245,13 @@ class _DetailsWebViewWidgetState extends State<DetailsWebViewWidget> {
                           ) : const SizedBox(),
                           const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                          ListView.builder(
+                          itemController.item!.moduleType ==
+                                  AppConstants.ecommerce
+                              ? VariationSelectorWidget(
+                                  item: itemController.item!,
+                                  itemController: itemController,
+                                )
+                              : ListView.builder(
                             shrinkWrap: true,
                             itemCount: itemController.item!.choiceOptions!.length,
                             physics: const NeverScrollableScrollPhysics(),
@@ -335,7 +343,21 @@ class _DetailsWebViewWidgetState extends State<DetailsWebViewWidget> {
                                   isLoading: cartController.isLoading,
                                   buttonText: (Get.find<SplashController>().configModel!.moduleConfig!.module!.stock! && widget.stock! <= 0) ? 'out_of_stock'.tr
                                       : itemController.item!.availableDateStarts != null ? 'order_now'.tr : itemController.cartIndex != -1 ? 'update_in_cart'.tr : 'add_to_cart'.tr,
-                                  onPressed: (!Get.find<SplashController>().configModel!.moduleConfig!.module!.stock! || widget.stock! > 0) ?  () async {
+                                   onPressed: itemController
+                                                   .areVariationsSelected(
+                                                     itemController.item,
+                                                   ) &&
+                                               itemController
+                                                   .hasValidSelectedVariation(
+                                                     itemController.item,
+                                                   ) &&
+                                               (!Get.find<SplashController>()
+                                                       .configModel!
+                                                       .moduleConfig!
+                                                       .module!
+                                                       .stock! ||
+                                                   widget.stock! > 0)
+                                           ? () async {
                                     if(AddressHelper.getUserAddressFromSharedPref() == null) {
                                       Get.dialog(ZoneWarningDialog(
                                         title: 'insert_delivery_location'.tr, description: 'please_insert_delivery_location'.tr,
@@ -464,7 +486,21 @@ class _DetailsWebViewWidgetState extends State<DetailsWebViewWidget> {
                              isLoading: cartController.isLoading,
                              buttonText: (Get.find<SplashController>().configModel!.moduleConfig!.module!.stock! && widget.stock! <= 0) ? 'out_of_stock'.tr
                                  : itemController.item!.availableDateStarts != null ? 'order_now'.tr : itemController.cartIndex != -1 ? 'update_in_cart'.tr : 'add_to_cart'.tr,
-                             onPressed: (!Get.find<SplashController>().configModel!.moduleConfig!.module!.stock! || widget.stock! > 0) ?  () async {
+                              onPressed: itemController
+                                              .areVariationsSelected(
+                                                itemController.item,
+                                              ) &&
+                                          itemController
+                                              .hasValidSelectedVariation(
+                                                itemController.item,
+                                              ) &&
+                                          (!Get.find<SplashController>()
+                                                  .configModel!
+                                                  .moduleConfig!
+                                                  .module!
+                                                  .stock! ||
+                                              widget.stock! > 0)
+                                      ? () async {
                                if(AddressHelper.getUserAddressFromSharedPref() == null) {
                                  Get.dialog(ZoneWarningDialog(
                                    title: 'insert_delivery_location'.tr, description: 'please_insert_delivery_location'.tr,

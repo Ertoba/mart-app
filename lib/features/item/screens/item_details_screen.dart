@@ -13,6 +13,7 @@ import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
+import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
@@ -119,6 +120,10 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                       break;
                     }
                   }
+                  if (itemController.requiresExplicitVariationSelection(item) &&
+                      variation == null) {
+                    stock = 0;
+                  }
                 }
 
                 double? discount = item.discount;
@@ -221,7 +226,16 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                             ? DetailsWebViewWidget(
                                 cartModel: cartModel,
                                 stock: stock,
-                                priceWithAddOns: (item.moduleType == 'ecommerce' && !itemController.areVariationsSelected(item)) ? 0 : priceWithAddons,
+                                priceWithAddOns:
+                                    itemController
+                                            .requiresExplicitVariationSelection(
+                                              item,
+                                            ) &&
+                                        !itemController.areVariationsSelected(
+                                          item,
+                                        )
+                                    ? 0
+                                    : priceWithAddons,
                                 cart: cart,
                               )
                             : Column(
@@ -269,8 +283,9 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                               Divider(
                                                 height: 20,
                                                 thickness: 1,
-                                                color: Theme.of(context)
-                                                    .disabledColor,
+                                                color: Theme.of(
+                                                  context,
+                                                ).disabledColor,
                                               ),
                                               const SizedBox(
                                                 height:
@@ -368,8 +383,9 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                                               TrimMode.Line,
                                                           trimLines: 3,
                                                           colorClickableText:
-                                                              Theme.of(context)
-                                                                  .primaryColor,
+                                                              Theme.of(
+                                                                context,
+                                                              ).primaryColor,
                                                           lessStyle: robotoBold
                                                               .copyWith(
                                                                 color: Colors
@@ -487,10 +503,18 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                                     )
                                                   : const SizedBox(),
 
-                                              VariationSelectorWidget(
-                                                item: item,
-                                                itemController: itemController,
-                                              ),
+                                              item.moduleType ==
+                                                      AppConstants.ecommerce
+                                                  ? VariationSelectorWidget(
+                                                      item: item,
+                                                      itemController:
+                                                          itemController,
+                                                    )
+                                                  : _LegacyItemDetailsVariationSelector(
+                                                      item: item,
+                                                      itemController:
+                                                          itemController,
+                                                    ),
                                             ],
                                           ),
                                         ),
@@ -534,8 +558,9 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                                 style: robotoMedium.copyWith(
                                                   fontSize:
                                                       Dimensions.fontSizeLarge,
-                                                  color: Theme.of(context)
-                                                      .primaryColor,
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).primaryColor,
                                                 ),
                                                 overflow: TextOverflow.ellipsis,
                                                 maxLines: 1,
@@ -553,12 +578,22 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                                                 .cartList[itemController
                                                                 .cartIndex],
                                                       )
-                                                    : (item.moduleType == 'ecommerce' && !itemController.areVariationsSelected(item)) ? 0 : priceWithAddons,
+                                                    : itemController
+                                                              .requiresExplicitVariationSelection(
+                                                                item,
+                                                              ) &&
+                                                          !itemController
+                                                              .areVariationsSelected(
+                                                                item,
+                                                              )
+                                                    ? 0
+                                                    : priceWithAddons,
                                               ),
                                               textDirection: TextDirection.ltr,
                                               style: robotoBold.copyWith(
-                                                color: Theme.of(context)
-                                                    .primaryColor,
+                                                color: Theme.of(
+                                                  context,
+                                                ).primaryColor,
                                                 fontSize:
                                                     Dimensions.fontSizeLarge,
                                               ),
@@ -747,14 +782,22 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                                           ? 'update_in_cart'.tr
                                                           : 'add_to_cart'.tr,
                                                       onPressed:
-                                                          (!Get.find<
-                                                                    SplashController
-                                                                  >()
-                                                                  .configModel!
-                                                                  .moduleConfig!
-                                                                  .module!
-                                                                  .stock! ||
-                                                              stock! > 0)
+                                                          itemController
+                                                                  .areVariationsSelected(
+                                                                    item,
+                                                                  ) &&
+                                                              itemController
+                                                                  .hasValidSelectedVariation(
+                                                                    item,
+                                                                  ) &&
+                                                              (!Get.find<
+                                                                        SplashController
+                                                                      >()
+                                                                      .configModel!
+                                                                      .moduleConfig!
+                                                                      .module!
+                                                                      .stock! ||
+                                                                  stock! > 0)
                                                           ? () async {
                                                               if (!itemController
                                                                   .areVariationsSelected(
@@ -767,6 +810,17 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                                                     );
                                                                 showCustomSnackBar(
                                                                   '${'choose_a_variation_from'.tr}${title != null ? ' $title' : ''}',
+                                                                );
+                                                                return;
+                                                              }
+
+                                                              if (!itemController
+                                                                  .hasValidSelectedVariation(
+                                                                    item,
+                                                                  )) {
+                                                                showCustomSnackBar(
+                                                                  'no_variation_is_available'
+                                                                      .tr,
                                                                 );
                                                                 return;
                                                               }
@@ -843,10 +897,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                                                                 .moduleConfig!
                                                                                 .module!
                                                                                 .showRestaurantText!
-                                                                            ? 'if_you_continue'
-                                                                                  .tr
-                                                                            : 'if_you_continue_without_another_store'
-                                                                                  .tr,
+                                                                            ? 'if_you_continue'.tr
+                                                                            : 'if_you_continue_without_another_store'.tr,
                                                                         onYesPressed: () {
                                                                           Get.back();
                                                                           cartController.clearCartOnline().then((
@@ -972,6 +1024,99 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     }
 
     return discountedPrice;
+  }
+}
+
+class _LegacyItemDetailsVariationSelector extends StatelessWidget {
+  final Item item;
+  final ItemController itemController;
+
+  const _LegacyItemDetailsVariationSelector({
+    required this.item,
+    required this.itemController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: item.choiceOptions?.length ?? 0,
+      physics: const NeverScrollableScrollPhysics(),
+      itemBuilder: (context, index) {
+        final ChoiceOptions choice = item.choiceOptions![index];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              choice.title ?? '',
+              style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge),
+            ),
+            const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+            SizedBox(
+              height: 35,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: choice.options?.length ?? 0,
+                itemBuilder: (context, optionIndex) {
+                  final bool selected =
+                      itemController.variationIndex![index] == optionIndex;
+                  return Padding(
+                    padding: const EdgeInsets.only(
+                      right: Dimensions.paddingSizeDefault,
+                    ),
+                    child: InkWell(
+                      onTap: () => itemController.setCartVariationIndex(
+                        index,
+                        optionIndex,
+                        item,
+                      ),
+                      child: Container(
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Dimensions.paddingSizeSmall,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5),
+                          color: selected
+                              ? Theme.of(context).primaryColor
+                              : Theme.of(context).cardColor,
+                          border: Border.all(
+                            color: selected
+                                ? Theme.of(context).primaryColor
+                                : Theme.of(context).disabledColor,
+                          ),
+                        ),
+                        child: Text(
+                          choice.options![optionIndex].trim(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: selected
+                              ? robotoMedium.copyWith(
+                                  color: Theme.of(context).cardColor,
+                                )
+                              : robotoRegular.copyWith(
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge!
+                                      .color!
+                                      .withValues(alpha: 0.5),
+                                ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            SizedBox(
+              height: index != (item.choiceOptions!.length - 1)
+                  ? Dimensions.paddingSizeLarge
+                  : 0,
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 

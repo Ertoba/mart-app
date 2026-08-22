@@ -18,6 +18,7 @@ import 'package:sixam_mart/helper/date_converter.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
+import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
@@ -109,6 +110,7 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
           double? endingPrice;
           if (item!.choiceOptions!.isNotEmpty &&
               item.foodVariations!.isEmpty &&
+              item.variations!.isNotEmpty &&
               !_newVariation) {
             List<double?> priceList = [];
             for (var variation in item.variations!) {
@@ -178,6 +180,10 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                 stock = variations.stock;
                 break;
               }
+            }
+            if (itemController.requiresExplicitVariationSelection(item) &&
+                variation == null) {
+              stock = 0;
             }
           }
 
@@ -355,8 +361,9 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                                   style: robotoRegular.copyWith(
                                                     fontSize: Dimensions
                                                         .fontSizeSmall,
-                                                    color: Theme.of(context)
-                                                        .primaryColor,
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).primaryColor,
                                                   ),
                                                 ),
                                               ),
@@ -828,7 +835,13 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                               (price > priceWithDiscount) &&
                                               (discountType == 'percent'),
                                         )
-                                      : VariationSelectorWidget(
+                                      : item.moduleType ==
+                                            AppConstants.ecommerce
+                                      ? VariationSelectorWidget(
+                                          item: item,
+                                          itemController: itemController,
+                                        )
+                                      : VariationView(
                                           item: item,
                                           itemController: itemController,
                                         ),
@@ -880,8 +893,9 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                               Text(
                                                 'not_available_now'.tr,
                                                 style: robotoMedium.copyWith(
-                                                  color: Theme.of(context)
-                                                      .primaryColor,
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).primaryColor,
                                                   fontSize:
                                                       Dimensions.fontSizeLarge,
                                                 ),
@@ -939,7 +953,15 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                           discountType,
                                         );
                                     double withAddonCost = cost! + addonsCost;
-                                    final double displayTotal = (!_newVariation && item.moduleType == 'ecommerce' && !itemController.areVariationsSelected(item)) ? 0 : withAddonCost;
+                                    final double displayTotal =
+                                        itemController
+                                                .requiresExplicitVariationSelection(
+                                                  item,
+                                                ) &&
+                                            !itemController
+                                                .areVariationsSelected(item)
+                                        ? 0
+                                        : withAddonCost;
                                     return Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
@@ -949,8 +971,9 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                           style: robotoMedium.copyWith(
                                             fontSize:
                                                 Dimensions.fontSizeDefault,
-                                            color: Theme.of(context)
-                                                .primaryColor,
+                                            color: Theme.of(
+                                              context,
+                                            ).primaryColor,
                                           ),
                                         ),
                                         const SizedBox(
@@ -987,8 +1010,9 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                             PriceConverter.convertAnimationPrice(
                                               displayTotal,
                                               textStyle: robotoBold.copyWith(
-                                                color: Theme.of(context)
-                                                    .primaryColor,
+                                                color: Theme.of(
+                                                  context,
+                                                ).primaryColor,
                                               ),
                                             ),
                                           ],
@@ -1054,9 +1078,9 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                                   ResponsiveHelper.isDesktop(
                                                     context,
                                                   )
-                                                  ? MediaQuery.of(context)
-                                                            .size
-                                                            .width /
+                                                  ? MediaQuery.of(
+                                                          context,
+                                                        ).size.width /
                                                         2.0
                                                   : null,
                                               isLoading:
@@ -1078,12 +1102,22 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                                   ? 'update_in_cart'.tr
                                                   : 'add_to_cart'.tr,
                                               onPressed:
-                                                  (Get.find<SplashController>()
-                                                          .configModel!
-                                                          .moduleConfig!
-                                                          .module!
-                                                          .stock! &&
-                                                      stock! <= 0)
+                                                  !itemController
+                                                          .areVariationsSelected(
+                                                            item,
+                                                          ) ||
+                                                      !itemController
+                                                          .hasValidSelectedVariation(
+                                                            item,
+                                                          ) ||
+                                                      (Get.find<
+                                                                SplashController
+                                                              >()
+                                                              .configModel!
+                                                              .moduleConfig!
+                                                              .module!
+                                                              .stock! &&
+                                                          stock! <= 0)
                                                   ? null
                                                   : () async {
                                                       String? invalid;
@@ -1100,6 +1134,18 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                                             );
                                                         showCustomSnackBar(
                                                           '${'choose_a_variation_from'.tr}${title != null ? ' $title' : ''}',
+                                                          getXSnackBar: true,
+                                                        );
+                                                        return;
+                                                      }
+
+                                                      if (!itemController
+                                                          .hasValidSelectedVariation(
+                                                            item,
+                                                          )) {
+                                                        showCustomSnackBar(
+                                                          'no_variation_is_available'
+                                                              .tr,
                                                           getXSnackBar: true,
                                                         );
                                                         return;
@@ -1341,8 +1387,9 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                                               ConfirmationDialog(
                                                                 icon: Images
                                                                     .warning,
-                                                                title: 'are_you_sure_to_reset'
-                                                                    .tr,
+                                                                title:
+                                                                    'are_you_sure_to_reset'
+                                                                        .tr,
                                                                 description:
                                                                     Get.find<
                                                                           SplashController
@@ -1357,20 +1404,24 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                                                           .tr,
                                                                 onYesPressed: () {
                                                                   Get.back();
-                                                                  Get.find<CartController>().clearCartOnline().then((
-                                                                    success,
-                                                                  ) async {
-                                                                    if (success) {
-                                                                      await Get.find<
-                                                                            CartController
-                                                                          >()
-                                                                          .addToCartOnline(
-                                                                            onlineCart,
-                                                                          );
-                                                                      Get.back();
-                                                                      //showCartSnackBar();
-                                                                    }
-                                                                  });
+                                                                  Get.find<
+                                                                        CartController
+                                                                      >()
+                                                                      .clearCartOnline()
+                                                                      .then((
+                                                                        success,
+                                                                      ) async {
+                                                                        if (success) {
+                                                                          await Get.find<
+                                                                                CartController
+                                                                              >()
+                                                                              .addToCartOnline(
+                                                                                onlineCart,
+                                                                              );
+                                                                          Get.back();
+                                                                          //showCartSnackBar();
+                                                                        }
+                                                                      });
                                                                 },
                                                               ),
                                                               barrierDismissible:
@@ -1443,8 +1494,9 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).primaryColor
-                                .withValues(alpha: 0.3),
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.3),
                             blurRadius: 5,
                           ),
                         ],
@@ -1664,9 +1716,9 @@ class AddonView extends StatelessWidget {
                                                     .addOnQtyList[index]! >
                                                 1)
                                             ? Theme.of(context).primaryColor
-                                            : Theme.of(context)
-                                                  .colorScheme
-                                                  .error,
+                                            : Theme.of(
+                                                context,
+                                              ).colorScheme.error,
                                       ),
                                     ),
                                   ),
@@ -1702,6 +1754,101 @@ class AddonView extends StatelessWidget {
         ),
         const SizedBox(height: Dimensions.paddingSizeExtraSmall),
       ],
+    );
+  }
+}
+
+class VariationView extends StatelessWidget {
+  final Item? item;
+  final ItemController itemController;
+
+  const VariationView({
+    super.key,
+    required this.item,
+    required this.itemController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: item?.choiceOptions?.length ?? 0,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.only(
+        bottom: item!.choiceOptions!.isNotEmpty
+            ? Dimensions.paddingSizeLarge
+            : 0,
+      ),
+      itemBuilder: (context, index) {
+        final ChoiceOptions choice = item!.choiceOptions![index];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(choice.title ?? '', style: robotoMedium),
+            const SizedBox(height: Dimensions.paddingSizeSmall),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                color: Theme.of(context).cardColor,
+              ),
+              padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+              child: ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                itemCount: choice.options?.length ?? 0,
+                itemBuilder: (context, optionIndex) {
+                  return Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: Dimensions.paddingSizeExtraSmall,
+                    ),
+                    child: InkWell(
+                      onTap: () => itemController.setCartVariationIndex(
+                        index,
+                        optionIndex,
+                        item,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              choice.options![optionIndex].trim(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: robotoRegular,
+                            ),
+                          ),
+                          const SizedBox(width: Dimensions.paddingSizeSmall),
+                          RadioGroup<int>(
+                            groupValue: itemController.variationIndex![index],
+                            onChanged: (_) =>
+                                itemController.setCartVariationIndex(
+                                  index,
+                                  optionIndex,
+                                  item,
+                                ),
+                            child: Radio<int>(
+                              value: optionIndex,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              activeColor: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            SizedBox(
+              height: index != item!.choiceOptions!.length - 1
+                  ? Dimensions.paddingSizeLarge
+                  : 0,
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -1786,10 +1933,12 @@ class NewVariationView extends StatelessWidget {
                                             ? item!.foodVariations![index].min!
                                             : 1) >
                                         selectedCount
-                                ? Theme.of(context).colorScheme.error
-                                      .withValues(alpha: 0.1)
-                                : Theme.of(context).disabledColor
-                                      .withValues(alpha: 0.1),
+                                ? Theme.of(
+                                    context,
+                                  ).colorScheme.error.withValues(alpha: 0.1)
+                                : Theme.of(
+                                    context,
+                                  ).disabledColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(
                               Dimensions.radiusSmall,
                             ),
@@ -1924,8 +2073,9 @@ class NewVariationView extends StatelessWidget {
                                           ? Checkbox(
                                               value: itemController
                                                   .selectedVariations[index][i],
-                                              activeColor: Theme.of(context)
-                                                  .primaryColor,
+                                              activeColor: Theme.of(
+                                                context,
+                                              ).primaryColor,
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(
@@ -1947,8 +2097,9 @@ class NewVariationView extends StatelessWidget {
                                                   ),
                                               side: BorderSide(
                                                 width: 2,
-                                                color: Theme.of(context)
-                                                    .hintColor,
+                                                color: Theme.of(
+                                                  context,
+                                                ).hintColor,
                                               ),
                                             )
                                           : RadioGroup(
@@ -1965,8 +2116,9 @@ class NewVariationView extends StatelessWidget {
                                               },
                                               child: Radio(
                                                 value: i,
-                                                activeColor: Theme.of(context)
-                                                    .primaryColor,
+                                                activeColor: Theme.of(
+                                                  context,
+                                                ).primaryColor,
                                                 toggleable: false,
                                                 visualDensity:
                                                     const VisualDensity(
@@ -1989,8 +2141,9 @@ class NewVariationView extends StatelessWidget {
                                                 .selectedVariations[index][i]!
                                             ? robotoMedium
                                             : robotoRegular.copyWith(
-                                                color: Theme.of(context)
-                                                    .hintColor,
+                                                color: Theme.of(
+                                                  context,
+                                                ).hintColor,
                                               ),
                                       ),
                                     ],
@@ -2007,8 +2160,9 @@ class NewVariationView extends StatelessWidget {
                                           style: robotoRegular.copyWith(
                                             fontSize:
                                                 Dimensions.fontSizeExtraSmall,
-                                            color: Theme.of(context)
-                                                .disabledColor,
+                                            color: Theme.of(
+                                              context,
+                                            ).disabledColor,
                                             decoration:
                                                 TextDecoration.lineThrough,
                                           ),
@@ -2035,8 +2189,9 @@ class NewVariationView extends StatelessWidget {
                                         : robotoRegular.copyWith(
                                             fontSize:
                                                 Dimensions.fontSizeExtraSmall,
-                                            color: Theme.of(context)
-                                                .disabledColor,
+                                            color: Theme.of(
+                                              context,
+                                            ).disabledColor,
                                           ),
                                   ),
                                 ],

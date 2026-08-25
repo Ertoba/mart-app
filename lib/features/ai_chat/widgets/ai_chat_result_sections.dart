@@ -6,11 +6,15 @@ import 'package:sixam_mart/util/dimensions.dart';
 class AiChatResultSections extends StatelessWidget {
   final Map<String, dynamic> metadata;
   final ValueChanged<String> onAskAbout;
+  final ValueChanged<Map<String, dynamic>> onOpenProduct;
+  final ValueChanged<Map<String, dynamic>> onOpenStore;
 
   const AiChatResultSections({
     super.key,
     required this.metadata,
     required this.onAskAbout,
+    required this.onOpenProduct,
+    required this.onOpenStore,
   });
 
   @override
@@ -21,6 +25,7 @@ class AiChatResultSections extends StatelessWidget {
     final Map<String, dynamic> currency = metadata['currency'] is Map
         ? Map<String, dynamic>.from(metadata['currency'] as Map)
         : const <String, dynamic>{};
+    final bool isPriceComparison = metadata['comparison'] is Map;
 
     if (products.isEmpty && stores.isEmpty && categories.isEmpty) {
       return const SizedBox.shrink();
@@ -31,15 +36,18 @@ class AiChatResultSections extends StatelessWidget {
       children: [
         if (products.isNotEmpty)
           _ResultSection(
-            title: 'items'.tr,
+            title: isPriceComparison ? 'price_comparison'.tr : 'items'.tr,
             icon: Icons.shopping_bag_outlined,
             height: 176,
             itemCount: products.length,
-            itemBuilder: (context, index) => _ProductResultCard(
-              product: products[index],
-              currency: currency,
-              onTap: () =>
-                  onAskAbout(products[index]['name']?.toString() ?? ''),
+            itemBuilder: (context, index) => _AnimatedResultEntry(
+              index: index,
+              child: _ProductResultCard(
+                product: products[index],
+                currency: currency,
+                comparisonRank: isPriceComparison ? index + 1 : null,
+                onTap: () => onOpenProduct(products[index]),
+              ),
             ),
           ),
         if (stores.isNotEmpty)
@@ -48,10 +56,13 @@ class AiChatResultSections extends StatelessWidget {
             icon: Icons.storefront_outlined,
             height: 148,
             itemCount: stores.length,
-            itemBuilder: (context, index) => _StoreResultCard(
-              store: stores[index],
-              currency: currency,
-              onTap: () => onAskAbout(stores[index]['name']?.toString() ?? ''),
+            itemBuilder: (context, index) => _AnimatedResultEntry(
+              index: index,
+              child: _StoreResultCard(
+                store: stores[index],
+                currency: currency,
+                onTap: () => onOpenStore(stores[index]),
+              ),
             ),
           ),
         if (categories.isNotEmpty) ...[
@@ -118,6 +129,8 @@ class _ResultSection extends StatelessWidget {
           height: height,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsetsDirectional.only(end: 12),
             itemCount: itemCount,
             separatorBuilder: (_, _) =>
                 const SizedBox(width: Dimensions.paddingSizeSmall),
@@ -126,6 +139,30 @@ class _ResultSection extends StatelessWidget {
         ),
         const SizedBox(height: Dimensions.paddingSizeSmall),
       ],
+    );
+  }
+}
+
+class _AnimatedResultEntry extends StatelessWidget {
+  final int index;
+  final Widget child;
+
+  const _AnimatedResultEntry({required this.index, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: Duration(milliseconds: 220 + (index.clamp(0, 5).toInt() * 35)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(12 * (1 - value), 0),
+          child: child,
+        ),
+      ),
+      child: child,
     );
   }
 }
@@ -158,11 +195,13 @@ class _ProductResultCard extends StatelessWidget {
   final Map<String, dynamic> product;
   final Map<String, dynamic> currency;
   final VoidCallback onTap;
+  final int? comparisonRank;
 
   const _ProductResultCard({
     required this.product,
     required this.currency,
     required this.onTap,
+    this.comparisonRank,
   });
 
   @override
@@ -206,6 +245,17 @@ class _ProductResultCard extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         const SizedBox(height: 3),
+                        if (comparisonRank != null)
+                          Text(
+                            '#$comparisonRank ${comparisonRank == 1 ? 'lowest_price'.tr : 'price_comparison'.tr}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: Theme.of(context).primaryColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
                         Text(
                           product['store_name']?.toString() ?? '',
                           maxLines: 1,
@@ -226,8 +276,16 @@ class _ProductResultCard extends StatelessWidget {
                               _number(product['rating']).toStringAsFixed(1),
                               style: Theme.of(context).textTheme.labelMedium,
                             ),
-                            const Spacer(),
-                            _StockPill(inStock: inStock),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Align(
+                                alignment: AlignmentDirectional.centerEnd,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: _StockPill(inStock: inStock),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 5),
@@ -255,6 +313,12 @@ class _ProductResultCard extends StatelessWidget {
                                 ),
                               ),
                             ],
+                            const Spacer(),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 18,
+                              color: Theme.of(context).primaryColor,
+                            ),
                           ],
                         ),
                       ],

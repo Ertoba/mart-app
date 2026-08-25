@@ -10,6 +10,8 @@ import 'package:sixam_mart/features/ai_chat/widgets/ai_chat_result_sections.dart
 import 'package:sixam_mart/features/chat/screens/chat_screen.dart';
 import 'package:sixam_mart/features/notification/domain/models/notification_body_model.dart';
 import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
+import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 
@@ -347,6 +349,39 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
     _sendMessage();
   }
 
+  Future<void> _openProduct(Map<String, dynamic> product) async {
+    final int? itemId = int.tryParse(product['id']?.toString() ?? '');
+    if (itemId == null) return;
+    final String name = product['name']?.toString() ?? '';
+    final String slug = product['slug']?.toString() ?? '';
+    final bool isRestaurant =
+        ModuleHelper.getModuleConfig(
+          ModuleHelper.getModule()?.moduleType,
+        ).showRestaurantText ??
+        false;
+
+    Navigator.of(context).pop();
+    await Future<void>.delayed(const Duration(milliseconds: 220));
+    Get.toNamed(
+      RouteHelper.getItemDetailsRoute(itemId, isRestaurant, name, slug: slug),
+    );
+  }
+
+  Future<void> _openStore(Map<String, dynamic> store) async {
+    final int? storeId = int.tryParse(store['id']?.toString() ?? '');
+    if (storeId == null) return;
+
+    Navigator.of(context).pop();
+    await Future<void>.delayed(const Duration(milliseconds: 220));
+    Get.toNamed(
+      RouteHelper.getStoreRoute(
+        id: storeId,
+        page: 'store',
+        slug: store['slug']?.toString() ?? '',
+      ),
+    );
+  }
+
   void _scrollToEnd({bool immediate = false, Duration delay = Duration.zero}) {
     void scroll() {
       if (!mounted || !_scrollController.hasClients) {
@@ -489,8 +524,13 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
                                       );
                                     }
                                     return _MessageBubble(
+                                      key: ValueKey(
+                                        '${_currentConversationId ?? 'new'}-$index-${_messages[index].role}',
+                                      ),
                                       message: _messages[index],
                                       onAskAbout: _askAbout,
+                                      onOpenProduct: _openProduct,
+                                      onOpenStore: _openStore,
                                     );
                                   },
                                 ),
@@ -900,61 +940,83 @@ class _QuickPromptData {
 class _MessageBubble extends StatelessWidget {
   final _AiChatMessage message;
   final ValueChanged<String> onAskAbout;
+  final ValueChanged<Map<String, dynamic>> onOpenProduct;
+  final ValueChanged<Map<String, dynamic>> onOpenStore;
 
-  const _MessageBubble({required this.message, required this.onAskAbout});
+  const _MessageBubble({
+    super.key,
+    required this.message,
+    required this.onAskAbout,
+    required this.onOpenProduct,
+    required this.onOpenStore,
+  });
 
   @override
   Widget build(BuildContext context) {
     final bool isUser = message.role == 'user';
     final bool isError = message.role == 'error';
-    return Align(
-      alignment: isUser
-          ? AlignmentDirectional.centerEnd
-          : AlignmentDirectional.centerStart,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 440),
-        child: Column(
-          crossAxisAlignment: isUser
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(
-                bottom: Dimensions.paddingSizeExtraSmall,
-              ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: Dimensions.paddingSizeDefault,
-                vertical: Dimensions.paddingSizeSmall,
-              ),
-              decoration: BoxDecoration(
-                color: isError
-                    ? Theme.of(context).colorScheme.errorContainer
-                    : isUser
-                    ? Theme.of(context).primaryColor
-                    : Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                border: isUser
-                    ? null
-                    : Border.all(color: Theme.of(context).dividerColor),
-              ),
-              child: SelectableText(
-                _plainTextLinks(message.content),
-                style: TextStyle(
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 10 * (1 - value)),
+          child: child,
+        ),
+      ),
+      child: Align(
+        alignment: isUser
+            ? AlignmentDirectional.centerEnd
+            : AlignmentDirectional.centerStart,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Column(
+            crossAxisAlignment: isUser
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(
+                  bottom: Dimensions.paddingSizeExtraSmall,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Dimensions.paddingSizeDefault,
+                  vertical: Dimensions.paddingSizeSmall,
+                ),
+                decoration: BoxDecoration(
                   color: isError
-                      ? Theme.of(context).colorScheme.onErrorContainer
+                      ? Theme.of(context).colorScheme.errorContainer
                       : isUser
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Theme.of(context).textTheme.bodyMedium?.color,
+                      ? Theme.of(context).primaryColor
+                      : Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+                  border: isUser
+                      ? null
+                      : Border.all(color: Theme.of(context).dividerColor),
+                ),
+                child: SelectableText(
+                  _plainTextLinks(message.content),
+                  style: TextStyle(
+                    color: isError
+                        ? Theme.of(context).colorScheme.onErrorContainer
+                        : isUser
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
                 ),
               ),
-            ),
-            if (!isUser && !isError && message.metadata.isNotEmpty)
-              AiChatResultSections(
-                metadata: message.metadata,
-                onAskAbout: onAskAbout,
-              ),
-            const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-          ],
+              if (!isUser && !isError && message.metadata.isNotEmpty)
+                AiChatResultSections(
+                  metadata: message.metadata,
+                  onAskAbout: onAskAbout,
+                  onOpenProduct: onOpenProduct,
+                  onOpenStore: onOpenStore,
+                ),
+              const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+            ],
+          ),
         ),
       ),
     );

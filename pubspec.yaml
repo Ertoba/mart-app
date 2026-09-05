@@ -1,7 +1,7 @@
 name: sixam_mart
 description: A Multi-vendor Food. Grocery, eCommerce, Pharmacy & Parcel service.
 publish_to: 'none' #
-version: 3.8.22+50
+version: 3.8.23+51
 
 environment:
   sdk: ^3.10.0
@@ -124,6 +124,12 @@ flutter:
     - assets/json/
 
   fonts:
+    - family: MiliAuthGeorgian
+      fonts:
+        - asset: assets/font/mili-auth-georgian-regular.ttf
+          weight: 400
+        - asset: assets/font/mili-auth-georgian-bold.ttf
+          weight: 700
     - family: Roboto
       fonts:
         - asset: assets/font/Roboto-Regular.ttf

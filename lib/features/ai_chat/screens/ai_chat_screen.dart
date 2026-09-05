@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixam_mart/api/api_client.dart';
 import 'package:sixam_mart/features/ai_chat/widgets/ai_chat_result_sections.dart';
+import 'package:sixam_mart/features/ai_chat/widgets/ai_chat_visuals.dart';
 import 'package:sixam_mart/features/chat/screens/chat_screen.dart';
 import 'package:sixam_mart/features/notification/domain/models/notification_body_model.dart';
 import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
@@ -23,14 +24,14 @@ Future<void> showAiChatBottomSheet(BuildContext context) {
     showDragHandle: false,
     clipBehavior: Clip.antiAlias,
     constraints: const BoxConstraints(maxWidth: 720),
-    sheetAnimationStyle: const AnimationStyle(
-      duration: Duration(milliseconds: 300),
-      reverseDuration: Duration(milliseconds: 220),
+    sheetAnimationStyle: AnimationStyle(
+      duration: aiChatDuration(context, 300),
+      reverseDuration: aiChatDuration(context),
     ),
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.38),
     builder: (sheetContext) => AnimatedPadding(
-      duration: const Duration(milliseconds: 220),
+      duration: aiChatDuration(context),
       curve: Curves.easeOutCubic,
       padding: EdgeInsets.only(
         bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
@@ -62,7 +63,9 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   final List<_AiChatConversation> _conversations = [];
   Timer? _archiveTimer;
+  Timer? _scrollTimer;
   bool _sending = false;
+  bool _showLatest = false;
   bool _historyExpanded = false;
   bool _operatorMode = false;
   String? _currentConversationId;
@@ -100,18 +103,28 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _scrollController.addListener(_trackScrollPosition);
     _loadHistory();
   }
 
   @override
   void didChangeMetrics() {
-    _scrollToEnd(delay: const Duration(milliseconds: 120));
+    if (!_showLatest) _scrollToEnd(delay: const Duration(milliseconds: 120));
+  }
+
+  void _trackScrollPosition() {
+    if (!_scrollController.hasClients) return;
+    final awayFromLatest = _scrollController.position.extentAfter > 80;
+    if (awayFromLatest != _showLatest && mounted) {
+      setState(() => _showLatest = awayFromLatest);
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _archiveTimer?.cancel();
+    _scrollTimer?.cancel();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -232,6 +245,8 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
     setState(() {
       _currentConversationId = null;
       _historyExpanded = false;
+      _showLatest = false;
+      _textController.clear();
     });
     _scheduleArchiveTimer();
   }
@@ -338,7 +353,7 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
     });
     _saveHistory();
     _scheduleArchiveTimer();
-    _scrollToEnd();
+    if (!_showLatest) _scrollToEnd();
   }
 
   void _askAbout(String subject) {
@@ -388,22 +403,24 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
         return;
       }
       final double end = _scrollController.position.maxScrollExtent;
-      if (immediate) {
+      if (immediate || MediaQuery.disableAnimationsOf(context)) {
         _scrollController.jumpTo(end);
       } else {
         _scrollController.animateTo(
           end,
-          duration: const Duration(milliseconds: 240),
+          duration: aiChatDuration(context, 240),
           curve: Curves.easeOut,
         );
       }
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _scrollTimer?.cancel();
       if (delay == Duration.zero) {
         scroll();
       } else {
-        Future<void>.delayed(delay, scroll);
+        _scrollTimer = Timer(delay, scroll);
       }
     });
   }
@@ -432,139 +449,137 @@ class _AiChatSheetState extends State<AiChatSheet> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final Color primary = Theme.of(context).primaryColor;
-    return Material(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(Dimensions.radiusExtraLarge),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          _ChatHeader(
-            operatorMode: _operatorMode,
-            historyExpanded: _historyExpanded,
-            onHistory: () =>
-                setState(() => _historyExpanded = !_historyExpanded),
-            onOperator: _switchToOperator,
-            onAssistant: () => setState(() => _operatorMode = false),
-            onClose: () => Navigator.of(context).pop(),
-          ),
-          if (!_operatorMode)
-            AnimatedSize(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeInOut,
-              child: !_historyExpanded
-                  ? const SizedBox(width: double.infinity)
-                  : _HistoryPanel(
-                      conversations: _conversations,
-                      currentId: _currentConversationId,
-                      onNew: _newConversation,
-                      onSelect: _selectConversation,
-                      onDelete: _deleteConversation,
-                    ),
-            ),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 240),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              child: _operatorMode
-                  ? ChatScreen(
-                      key: const ValueKey('operator-chat'),
-                      notificationBody: NotificationBodyModel(
-                        type: 'admin',
-                        notificationType: NotificationType.message,
-                        adminId: 0,
-                        receiverType: 'admin',
-                      ),
-                      user: null,
-                      embedded: true,
-                      initialMessage: _handoffTranscript,
-                    )
-                  : Column(
-                      key: const ValueKey('ai-chat'),
-                      children: [
-                        Expanded(
-                          child: _messages.isEmpty
-                              ? _AiEmptyState(
-                                  displayName: _displayName,
-                                  onPrompt: _askAbout,
-                                )
-                              : ListView.builder(
-                                  controller: _scrollController,
-                                  padding: const EdgeInsets.all(
-                                    Dimensions.paddingSizeDefault,
-                                  ),
-                                  itemCount:
-                                      _messages.length + (_sending ? 1 : 0),
-                                  itemBuilder: (context, index) {
-                                    if (index == _messages.length) {
-                                      return Padding(
-                                        padding: const EdgeInsets.only(
-                                          top: Dimensions.paddingSizeSmall,
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: primary,
-                                              ),
-                                            ),
-                                            const SizedBox(
-                                              width:
-                                                  Dimensions.paddingSizeSmall,
-                                            ),
-                                            Text('ai_chat_typing'.tr),
-                                          ],
-                                        ),
-                                      );
-                                    }
-                                    return _MessageBubble(
-                                      key: ValueKey(
-                                        '${_currentConversationId ?? 'new'}-$index-${_messages[index].role}',
-                                      ),
-                                      message: _messages[index],
-                                      onAskAbout: _askAbout,
-                                      onOpenProduct: _openProduct,
-                                      onOpenStore: _openStore,
-                                    );
-                                  },
-                                ),
-                        ),
-                        if (_currentConversationIsArchived)
-                          const _ArchivedConversationNotice()
-                        else
-                          _AiComposer(
-                            controller: _textController,
-                            sending: _sending,
-                            onSend: _sendMessage,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact =
+            constraints.maxHeight < 520 ||
+            MediaQuery.textScalerOf(context).scale(14) > 21;
+        return Material(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              _ChatHeader(
+                compact: compact,
+                operatorMode: _operatorMode,
+                historyExpanded: _historyExpanded,
+                onHistory: () =>
+                    setState(() => _historyExpanded = !_historyExpanded),
+                onNew: _sending ? null : _newConversation,
+                onOperator: _switchToOperator,
+                onAssistant: () => setState(() => _operatorMode = false),
+                onClose: () => Navigator.of(context).pop(),
+              ),
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: aiChatDuration(context, 240),
+                  switchInCurve: Curves.easeOut,
+                  switchOutCurve: Curves.easeIn,
+                  child: _operatorMode
+                      ? ChatScreen(
+                          key: const ValueKey('operator-chat'),
+                          notificationBody: NotificationBodyModel(
+                            type: 'admin',
+                            notificationType: NotificationType.message,
+                            adminId: 0,
+                            receiverType: 'admin',
                           ),
-                      ],
-                    ),
-            ),
+                          user: null,
+                          embedded: true,
+                          initialMessage: _handoffTranscript,
+                        )
+                      : _historyExpanded
+                      ? _HistoryPanel(
+                          key: const ValueKey('ai-history'),
+                          conversations: _conversations,
+                          currentId: _currentConversationId,
+                          onNew: _newConversation,
+                          onSelect: _selectConversation,
+                          onDelete: _deleteConversation,
+                        )
+                      : Column(
+                          key: const ValueKey('ai-chat'),
+                          children: [
+                            Expanded(
+                              child: _messages.isEmpty
+                                  ? _AiEmptyState(
+                                      displayName: _displayName,
+                                      onPrompt: _askAbout,
+                                    )
+                                  : ListView.builder(
+                                      controller: _scrollController,
+                                      keyboardDismissBehavior:
+                                          ScrollViewKeyboardDismissBehavior
+                                              .onDrag,
+                                      padding: const EdgeInsets.all(
+                                        Dimensions.paddingSizeDefault,
+                                      ),
+                                      itemCount:
+                                          _messages.length + (_sending ? 1 : 0),
+                                      itemBuilder: (context, index) {
+                                        if (index == _messages.length) {
+                                          return const AiChatTypingIndicator();
+                                        }
+                                        return _MessageBubble(
+                                          key: ValueKey(
+                                            '${_currentConversationId ?? 'new'}-$index-${_messages[index].role}',
+                                          ),
+                                          message: _messages[index],
+                                          onAskAbout: _askAbout,
+                                          onOpenProduct: _openProduct,
+                                          onOpenStore: _openStore,
+                                        );
+                                      },
+                                    ),
+                            ),
+                            if (_showLatest && _messages.isNotEmpty)
+                              TextButton.icon(
+                                onPressed: () => _scrollToEnd(),
+                                icon: const Icon(
+                                  Icons.arrow_downward_rounded,
+                                  size: 18,
+                                ),
+                                label: Text('ai_chat_ui_latest'.tr),
+                              ),
+                            if (_currentConversationIsArchived)
+                              _ArchivedConversationNotice(
+                                onNew: _newConversation,
+                              )
+                            else
+                              _AiComposer(
+                                compact: compact,
+                                controller: _textController,
+                                sending: _sending,
+                                onSend: _sendMessage,
+                              ),
+                          ],
+                        ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
 class _ChatHeader extends StatelessWidget {
+  final bool compact;
   final bool operatorMode;
   final bool historyExpanded;
   final VoidCallback onHistory;
+  final VoidCallback? onNew;
   final VoidCallback onOperator;
   final VoidCallback onAssistant;
   final VoidCallback onClose;
-
   const _ChatHeader({
+    required this.compact,
     required this.operatorMode,
     required this.historyExpanded,
     required this.onHistory,
+    required this.onNew,
     required this.onOperator,
     required this.onAssistant,
     required this.onClose,
@@ -572,83 +587,170 @@ class _ChatHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color primary = Theme.of(context).primaryColor;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-        Dimensions.paddingSizeSmall,
-        Dimensions.paddingSizeSmall,
-        Dimensions.paddingSizeSmall,
-        Dimensions.paddingSizeSmall,
-      ),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        border: Border(
-          bottom: BorderSide(color: Theme.of(context).dividerColor),
-        ),
-      ),
-      child: Row(
-        children: [
-          if (operatorMode)
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.support_agent, color: primary),
-            )
-          else
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.auto_awesome, color: primary),
-            ),
-          const SizedBox(width: Dimensions.paddingSizeSmall),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    final theme = Theme.of(context);
+    if (compact) {
+      return Container(
+        color: theme.cardColor,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
               children: [
-                Text(
-                  operatorMode ? 'support_operator'.tr : 'AI_Chat_Assistant'.tr,
-                  style: Theme.of(context).textTheme.titleMedium,
+                if (operatorMode)
+                  Icon(
+                    Icons.support_agent_rounded,
+                    color: theme.primaryColor,
+                    size: 32,
+                  )
+                else
+                  const AiChatMark(size: 32),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    operatorMode
+                        ? 'support_operator'.tr
+                        : 'AI_Chat_Assistant'.tr,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall,
+                  ),
                 ),
-                Text(
-                  operatorMode ? 'human_support'.tr : 'ai_chat_online'.tr,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: primary),
+                IconButton(
+                  tooltip: 'close'.tr,
+                  onPressed: onClose,
+                  icon: const Icon(Icons.close_rounded),
                 ),
               ],
             ),
-          ),
-          if (!operatorMode) ...[
-            IconButton(
-              tooltip: 'chat_history'.tr,
-              onPressed: onHistory,
-              icon: Icon(
-                historyExpanded ? Icons.history_toggle_off : Icons.history,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                if (!operatorMode) ...[
+                  IconButton(
+                    tooltip: 'new_chat'.tr,
+                    onPressed: onNew,
+                    icon: const Icon(Icons.add_comment_outlined),
+                  ),
+                  IconButton(
+                    tooltip: 'chat_history'.tr,
+                    onPressed: onHistory,
+                    icon: const Icon(Icons.history_rounded),
+                  ),
+                  IconButton(
+                    tooltip: 'contact_operator'.tr,
+                    onPressed: onOperator,
+                    icon: const Icon(Icons.support_agent_rounded),
+                  ),
+                ] else
+                  IconButton(
+                    tooltip: 'AI_Chat_Assistant'.tr,
+                    onPressed: onAssistant,
+                    icon: const Icon(Icons.auto_awesome_rounded),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        border: Border(bottom: BorderSide(color: aiChatBorder(context))),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 10, 12, 8),
+      child: Column(
+        children: [
+          ExcludeSemantics(
+            child: Container(
+              width: 32,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: aiChatBorder(context),
+                borderRadius: BorderRadius.circular(4),
               ),
             ),
-            IconButton(
-              tooltip: 'contact_operator'.tr,
-              onPressed: onOperator,
-              icon: const Icon(Icons.support_agent),
+          ),
+          Row(
+            children: [
+              if (operatorMode)
+                CircleAvatar(
+                  backgroundColor: theme.primaryColor.withValues(alpha: .1),
+                  child: Icon(
+                    Icons.support_agent_rounded,
+                    color: theme.primaryColor,
+                  ),
+                )
+              else
+                const AiChatMark(),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      operatorMode
+                          ? 'support_operator'.tr
+                          : 'AI_Chat_Assistant'.tr,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      operatorMode
+                          ? 'human_support'.tr
+                          : 'ai_chat_ui_subtitle'.tr,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: aiChatMuted(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'close'.tr,
+                onPressed: onClose,
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                if (!operatorMode) ...[
+                  TextButton.icon(
+                    onPressed: onNew,
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: Text('new_chat'.tr),
+                  ),
+                  TextButton.icon(
+                    onPressed: onHistory,
+                    style: TextButton.styleFrom(
+                      backgroundColor: historyExpanded
+                          ? theme.primaryColor.withValues(alpha: .08)
+                          : null,
+                    ),
+                    icon: const Icon(Icons.history_rounded, size: 18),
+                    label: Text('ai_chat_ui_history'.tr),
+                  ),
+                  TextButton.icon(
+                    onPressed: onOperator,
+                    icon: const Icon(Icons.support_agent_rounded, size: 18),
+                    label: Text('ai_chat_ui_support'.tr),
+                  ),
+                ] else
+                  TextButton.icon(
+                    onPressed: onAssistant,
+                    icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                    label: Text('AI_Chat_Assistant'.tr),
+                  ),
+              ],
             ),
-          ] else
-            IconButton(
-              tooltip: 'AI_Chat_Assistant'.tr,
-              onPressed: onAssistant,
-              icon: const Icon(Icons.auto_awesome),
-            ),
-          IconButton(
-            tooltip: 'close'.tr,
-            onPressed: onClose,
-            icon: const Icon(Icons.close),
           ),
         ],
       ),
@@ -664,6 +766,7 @@ class _HistoryPanel extends StatelessWidget {
   final ValueChanged<String> onDelete;
 
   const _HistoryPanel({
+    super.key,
     required this.conversations,
     required this.currentId,
     required this.onNew,
@@ -672,94 +775,67 @@ class _HistoryPanel extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(maxHeight: 210),
-      width: double.infinity,
-      color: Theme.of(context).cardColor,
-      padding: const EdgeInsets.fromLTRB(
-        Dimensions.paddingSizeDefault,
-        Dimensions.paddingSizeSmall,
-        Dimensions.paddingSizeDefault,
-        Dimensions.paddingSizeSmall,
-      ),
-      child: Column(
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.all(16),
+    children: [
+      Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'chat_history'.tr,
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-              ),
-              TextButton.icon(
-                onPressed: onNew,
-                icon: const Icon(Icons.add, size: 18),
-                label: Text('new_chat'.tr),
-              ),
-            ],
+          Text(
+            'chat_history'.tr,
+            style: Theme.of(context).textTheme.titleSmall,
           ),
-          if (conversations.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-              child: Text('no_chat_history'.tr),
-            )
-          else
-            Flexible(
-              child: ListView.builder(
-                itemCount: conversations.length,
-                itemBuilder: (context, index) {
-                  final conversation = conversations[index];
-                  return ListTile(
-                    dense: true,
-                    selected: conversation.id == currentId,
-                    leading: Icon(
-                      conversation.isArchived
-                          ? Icons.archive_outlined
-                          : Icons.chat_bubble_outline,
-                      size: 20,
-                    ),
-                    title: Text(
-                      conversation.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    onTap: () => onSelect(conversation.id),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (conversation.isArchived)
-                          Padding(
-                            padding: const EdgeInsetsDirectional.only(end: 4),
-                            child: Text(
-                              'chat_archived'.tr,
-                              style: Theme.of(context).textTheme.labelSmall,
-                            ),
-                          ),
-                        IconButton(
-                          tooltip: 'delete'.tr,
-                          onPressed: () => onDelete(conversation.id),
-                          icon: const Icon(Icons.delete_outline, size: 20),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
+          TextButton.icon(
+            onPressed: onNew,
+            icon: const Icon(Icons.add, size: 18),
+            label: Text('new_chat'.tr),
+          ),
         ],
       ),
-    );
-  }
+      if (conversations.isEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Text('no_chat_history'.tr),
+        )
+      else
+        ...conversations.map(
+          (conversation) => ListTile(
+            selected: conversation.id == currentId,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            leading: Icon(
+              conversation.isArchived
+                  ? Icons.archive_outlined
+                  : Icons.chat_bubble_outline,
+              size: 20,
+            ),
+            title: Text(
+              conversation.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: conversation.isArchived ? Text('chat_archived'.tr) : null,
+            onTap: () => onSelect(conversation.id),
+            trailing: IconButton(
+              tooltip: 'delete'.tr,
+              onPressed: () => onDelete(conversation.id),
+              icon: const Icon(Icons.delete_outline, size: 20),
+            ),
+          ),
+        ),
+    ],
+  );
 }
 
 class _AiComposer extends StatelessWidget {
+  final bool compact;
   final TextEditingController controller;
   final bool sending;
   final VoidCallback onSend;
-
   const _AiComposer({
+    required this.compact,
     required this.controller,
     required this.sending,
     required this.onSend,
@@ -767,55 +843,84 @@ class _AiComposer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: EdgeInsets.fromLTRB(
-        Dimensions.paddingSizeSmall,
-        Dimensions.paddingSizeSmall,
-        Dimensions.paddingSizeSmall,
-        Dimensions.paddingSizeSmall + MediaQuery.paddingOf(context).bottom,
+        16,
+        12,
+        16,
+        10 + MediaQuery.paddingOf(context).bottom,
       ),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+        color: theme.cardColor,
+        border: Border(top: BorderSide(color: aiChatBorder(context))),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Tooltip(
-            message: 'attachments_after_operator'.tr,
-            child: const IconButton(
-              onPressed: null,
-              icon: Icon(Icons.attach_file),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: aiChatBorder(context)),
             ),
-          ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              enabled: !sending,
-              minLines: 1,
-              maxLines: 4,
-              textInputAction: TextInputAction.send,
-              inputFormatters: [LengthLimitingTextInputFormatter(1000)],
-              decoration: InputDecoration(
-                hintText: 'type_here'.tr,
-                filled: true,
-                fillColor: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                  borderSide: BorderSide.none,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    minLines: 1,
+                    maxLines: compact ? 2 : 4,
+                    textInputAction: TextInputAction.send,
+                    onEditingComplete: () {},
+                    inputFormatters: [LengthLimitingTextInputFormatter(1000)],
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                    decoration: InputDecoration(
+                      hintText: 'ai_chat_ui_placeholder'.tr,
+                      hintMaxLines: 2,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                    ),
+                    onSubmitted: (_) {
+                      if (!sending) onSend();
+                    },
+                  ),
                 ),
-              ),
-              onSubmitted: (_) => onSend(),
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: controller,
+                  builder: (context, value, _) => IconButton.filled(
+                    tooltip: 'send'.tr,
+                    onPressed: sending || value.text.trim().isEmpty
+                        ? null
+                        : onSend,
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      minHeight: 48,
+                    ),
+                    icon: const Icon(Icons.arrow_upward_rounded),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-          IconButton.filled(
-            tooltip: 'send'.tr,
-            onPressed: sending ? null : onSend,
-            icon: const Icon(Icons.arrow_upward),
-          ),
+          if (!compact) ...[
+            const SizedBox(height: 8),
+            Text(
+              'ai_chat_ui_footer'.tr,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: aiChatMuted(context),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -823,104 +928,174 @@ class _AiComposer extends StatelessWidget {
 }
 
 class _ArchivedConversationNotice extends StatelessWidget {
-  const _ArchivedConversationNotice();
-
+  final VoidCallback onNew;
+  const _ArchivedConversationNotice({required this.onNew});
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-        Dimensions.paddingSizeDefault,
-        Dimensions.paddingSizeSmall,
-        Dimensions.paddingSizeDefault,
-        Dimensions.paddingSizeSmall + MediaQuery.paddingOf(context).bottom,
-      ),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
-      ),
+  Widget build(BuildContext context) => SafeArea(
+    top: false,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Icon(Icons.lock_outline, color: Theme.of(context).hintColor),
-          const SizedBox(width: Dimensions.paddingSizeSmall),
+          const Icon(Icons.inventory_2_outlined, size: 20),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               'chat_archived_read_only'.tr,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).hintColor,
-              ),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
+          ),
+          IconButton(
+            tooltip: 'new_chat'.tr,
+            onPressed: onNew,
+            icon: const Icon(Icons.add_comment_outlined),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _AiEmptyState extends StatelessWidget {
   final String displayName;
   final ValueChanged<String> onPrompt;
-
   const _AiEmptyState({required this.displayName, required this.onPrompt});
 
   @override
   Widget build(BuildContext context) {
-    final Color primary = Theme.of(context).primaryColor;
-    final List<_QuickPromptData> prompts = [
-      _QuickPromptData(
-        Icons.local_fire_department_outlined,
+    final theme = Theme.of(context);
+    final prompts = [
+      (
+        Icons.trending_up_rounded,
         'most_popular_items'.tr,
+        'ai_chat_ui_popular_hint'.tr,
       ),
-      _QuickPromptData(Icons.local_offer_outlined, 'discounted_items'.tr),
-      _QuickPromptData(Icons.storefront_outlined, 'popular_stores'.tr),
-      _QuickPromptData(Icons.grid_view_outlined, 'categories'.tr),
+      (
+        Icons.local_offer_outlined,
+        'discounted_items'.tr,
+        'ai_chat_ui_deals_hint'.tr,
+      ),
+      (
+        Icons.storefront_outlined,
+        'popular_stores'.tr,
+        'ai_chat_ui_stores_hint'.tr,
+      ),
+      (
+        Icons.grid_view_rounded,
+        'categories'.tr,
+        'ai_chat_ui_categories_hint'.tr,
+      ),
     ];
-
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
+      padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.auto_awesome, color: primary, size: 30),
-              ),
-              const SizedBox(height: Dimensions.paddingSizeDefault),
+              const AiChatMark(size: 60),
+              const SizedBox(height: 20),
               Text(
                 'ai_chat_greeting'.trParams({'name': displayName}),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: Dimensions.paddingSizeSmall),
-              Text(
-                'AI_Chat_Assistant_read_only_hint'.tr,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).hintColor,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  height: 1.35,
                 ),
               ),
-              const SizedBox(height: Dimensions.paddingSizeLarge),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: Dimensions.paddingSizeSmall,
-                runSpacing: Dimensions.paddingSizeSmall,
-                children: prompts
-                    .map(
-                      (prompt) => ActionChip(
-                        avatar: Icon(prompt.icon, size: 18, color: primary),
-                        label: Text(prompt.label),
-                        onPressed: () => onPrompt(prompt.label),
-                      ),
-                    )
-                    .toList(),
+              const SizedBox(height: 10),
+              Text(
+                'ai_chat_ui_intro'.tr,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  height: 1.6,
+                  color: aiChatMuted(context),
+                ),
+              ),
+              const SizedBox(height: 24),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final columns =
+                      constraints.maxWidth >= 420 &&
+                          MediaQuery.textScalerOf(context).scale(14) < 20
+                      ? 2
+                      : 1;
+                  return Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: prompts
+                        .map(
+                          (prompt) => SizedBox(
+                            width:
+                                (constraints.maxWidth - (columns - 1) * 10) /
+                                columns,
+                            child: Material(
+                              color: theme.cardColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                side: BorderSide(color: aiChatBorder(context)),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                onTap: () => onPrompt(prompt.$2),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 38,
+                                        height: 38,
+                                        decoration: BoxDecoration(
+                                          color: theme.primaryColor.withValues(
+                                            alpha: .08,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          prompt.$1,
+                                          color: theme.primaryColor,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              prompt.$2,
+                                              style: theme.textTheme.labelLarge
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              prompt.$3,
+                                              style: theme.textTheme.bodySmall
+                                                  ?.copyWith(height: 1.4),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 16,
+                                        color: theme.primaryColor,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  );
+                },
               ),
             ],
           ),
@@ -928,13 +1103,6 @@ class _AiEmptyState extends StatelessWidget {
       ),
     );
   }
-}
-
-class _QuickPromptData {
-  final IconData icon;
-  final String label;
-
-  const _QuickPromptData(this.icon, this.label);
 }
 
 class _MessageBubble extends StatelessWidget {
@@ -957,7 +1125,7 @@ class _MessageBubble extends StatelessWidget {
     final bool isError = message.role == 'error';
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 220),
+      duration: aiChatDuration(context),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) => Opacity(
         opacity: value,
@@ -991,14 +1159,20 @@ class _MessageBubble extends StatelessWidget {
                       : isUser
                       ? Theme.of(context).primaryColor
                       : Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+                  borderRadius: BorderRadiusDirectional.only(
+                    topStart: const Radius.circular(18),
+                    topEnd: const Radius.circular(18),
+                    bottomStart: Radius.circular(isUser ? 18 : 4),
+                    bottomEnd: Radius.circular(isUser ? 4 : 18),
+                  ),
                   border: isUser
                       ? null
-                      : Border.all(color: Theme.of(context).dividerColor),
+                      : Border.all(color: aiChatBorder(context)),
                 ),
                 child: SelectableText(
                   _plainTextLinks(message.content),
                   style: TextStyle(
+                    height: 1.6,
                     color: isError
                         ? Theme.of(context).colorScheme.onErrorContainer
                         : isUser

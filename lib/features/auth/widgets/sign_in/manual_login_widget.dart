@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/custom_button.dart';
+import 'package:sixam_mart/features/auth/widgets/mili_auth_ui.dart';
 import 'package:sixam_mart/common/widgets/custom_ink_well.dart';
 import 'package:sixam_mart/common/widgets/custom_text_field.dart';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
@@ -11,7 +12,6 @@ import 'package:sixam_mart/features/verification/screens/forget_pass_screen.dart
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/helper/validate_check.dart';
-import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
@@ -42,9 +42,6 @@ class ManualLoginWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     bool isDesktop = ResponsiveHelper.isDesktop(context);
-    final String otpSwitchText = Get.locale?.languageCode == 'ka'
-        ? 'ერთჯერადი კოდით'
-        : 'otp'.tr;
     return GetBuilder<AuthController>(
       builder: (authController) {
         if (isDesktop) {
@@ -52,26 +49,25 @@ class ManualLoginWidget extends StatelessWidget {
         }
 
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            _LoginHeader(),
-            const SizedBox(height: Dimensions.paddingSizeExtraOverLarge),
-
-            CustomTextField(
+            MiliAuthIntro(
+              title: 'auth_ui_title'.tr,
+              subtitle: 'auth_ui_manual_subtitle'.tr,
+            ),
+            MiliAuthField(
               onCountryChanged: (countryCode) =>
                   authController.countryDialCode = countryCode.dialCode!,
               countryDialCode: authController.isNumberLogin
                   ? authController.countryDialCode
                   : null,
-              labelText: 'email_or_phone'.tr,
-              titleText: 'enter_email_or_phone'.tr,
+              label: 'email_or_phone'.tr,
+              hint: 'enter_email_or_phone'.tr,
               controller: phoneController,
               focusNode: phoneFocus,
               nextFocus: passwordFocus,
               inputType: TextInputType.emailAddress,
-              prefixImage: authController.isNumberLogin
-                  ? null
-                  : Images.emailWithPhoneIcon,
               onChanged: (String text) {
                 final numberRegExp = RegExp(r'^[+]?[0-9]+$');
                 final notNumberRegExp = RegExp(r'[^0-9+]');
@@ -119,170 +115,50 @@ class ManualLoginWidget extends StatelessWidget {
               },
             ),
 
-            const SizedBox(height: Dimensions.paddingSizeExtraLarge),
-
-            CustomTextField(
-              titleText: '8_character'.tr,
+            const SizedBox(height: 18),
+            MiliAuthField(
+              label: 'password'.tr,
+              hint: 'enter_password'.tr,
               controller: passwordController,
               focusNode: passwordFocus,
               inputAction: TextInputAction.done,
               inputType: TextInputType.visiblePassword,
-              prefixIcon: Icons.lock,
               isPassword: true,
-              onSubmit: (text) => (GetPlatform.isWeb) ? onWebSubmit : null,
-              labelText: 'password'.tr,
-              required: true,
+              onSubmit: (_) {
+                if (!authController.isLoading) onClickLoginButton();
+              },
               validator: (value) => ValidateCheck.validateEmptyText(
                 value,
-                "please_enter_password".tr,
+                'please_enter_password'.tr,
               ),
             ),
-            SizedBox(
-              height: ResponsiveHelper.isDesktop(context)
-                  ? Dimensions.paddingSizeDefault
-                  : Dimensions.paddingSizeExtraSmall,
+            MiliAuthOptions(
+              remember: authController.isActiveRememberMe,
+              onRemember: authController.toggleRememberMe,
+              onForgot: () => Get.toNamed(RouteHelper.getForgotPassRoute()),
             ),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: InkWell(
-                    onTap: () => authController.toggleRememberMe(),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: Checkbox(
-                            side: BorderSide(color: Theme.of(context).hintColor),
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                            activeColor: Theme.of(context).primaryColor,
-                            value: authController.isActiveRememberMe,
-                            onChanged: (bool? isChecked) =>
-                                authController.toggleRememberMe(),
-                          ),
-                        ),
-                        const SizedBox(width: Dimensions.paddingSizeSmall),
-
-                        Flexible(child: Text('remember_me'.tr, style: robotoRegular, overflow: TextOverflow.ellipsis)),
-                      ],
-                    ),
-                  ),
-                ),
-
-                TextButton(
-                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                  onPressed: () {
-                    Get.toNamed(RouteHelper.getForgotPassRoute());
-                  },
-                  child: Text(
-                    '${'forgot_password'.tr}?',
-                    style: robotoRegular.copyWith(
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: Dimensions.paddingSizeSmall),
-
-            // const ConditionCheckBoxWidget(forSignUp: true),
-            // const SizedBox(height: Dimensions.paddingSizeExtraLarge),
-            CustomButton(
-              height: isDesktop ? 50 : null,
-              width: isDesktop ? 250 : null,
-              buttonText: 'login'.tr,
-              radius: isDesktop
-                  ? Dimensions.radiusSmall
-                  : Dimensions.radiusDefault,
-              isBold: isDesktop ? false : true,
-              isLoading: authController.isLoading,
+            MiliAuthSubmit(
+              loading: authController.isLoading,
+              label: 'login'.tr,
               onPressed: onClickLoginButton,
             ),
-            const SizedBox(height: Dimensions.paddingSizeLarge),
-
-            SizedBox(height: isDesktop ? Dimensions.paddingSizeLarge : 0),
-
-            onOtpViewClick != null
-                ? Column(
-                    children: [
-                      Text(
-                        'or'.tr,
-                        style: robotoRegular.copyWith(
-                          color: Theme.of(context).disabledColor,
-                        ),
-                      ),
-                      const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'sign_in_with'.tr,
-                            style: robotoRegular.copyWith(
-                              color: Theme.of(context).disabledColor,
-                            ),
-                          ),
-                          const SizedBox(
-                            width: Dimensions.paddingSizeExtraSmall,
-                          ),
-
-                          InkWell(
-                            onTap: onOtpViewClick,
-                            child: Text(
-                              otpSwitchText,
-                              style: robotoRegular.copyWith(
-                                color: Theme.of(context).primaryColor,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  )
-                : const SizedBox(),
-
-            socialEnable
-                ? SocialLoginWidget(
-                    onlySocialLogin: false,
-                    backFromThis: backFromThis,
-                  )
-                : const SizedBox(),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'do_not_have_account'.tr,
-                  style: robotoRegular.copyWith(
-                    color: Theme.of(context).hintColor,
-                  ),
-                ),
-
-                InkWell(
-                  onTap: authController.isLoading
-                      ? null
-                      : () {
-                          Get.toNamed(RouteHelper.getSignUpRoute());
-                        },
-                  child: Padding(
-                    padding: const EdgeInsets.all(
-                      Dimensions.paddingSizeExtraSmall,
-                    ),
-                    child: Text(
-                      'sign_up'.tr,
-                      style: robotoMedium.copyWith(
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            if (onOtpViewClick != null)
+              MiliAuthSecondary(
+                label: 'auth_ui_use_code'.tr,
+                icon: Icons.sms_outlined,
+                onPressed: onOtpViewClick,
+              ),
+            if (socialEnable)
+              SocialLoginWidget(
+                onlySocialLogin: false,
+                backFromThis: backFromThis,
+              ),
+            MiliAuthSecondary(
+              label: 'sign_up'.tr,
+              description: 'do_not_have_account'.tr,
+              onPressed: authController.isLoading
+                  ? null
+                  : () => Get.toNamed(RouteHelper.getSignUpRoute()),
             ),
           ],
         );
@@ -409,11 +285,15 @@ class ManualLoginWidget extends StatelessWidget {
                             ),
                             const SizedBox(width: Dimensions.paddingSizeSmall),
 
-                            Flexible(child: Text(
-                              'remember_me'.tr,
-                              style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
-                              overflow: TextOverflow.ellipsis,
-                            )),
+                            Flexible(
+                              child: Text(
+                                'remember_me'.tr,
+                                style: robotoRegular.copyWith(
+                                  fontSize: Dimensions.fontSizeSmall,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -680,35 +560,9 @@ class ManualLoginWidget extends StatelessWidget {
 
 class _LoginHeader extends StatelessWidget {
   const _LoginHeader();
-
   @override
-  Widget build(BuildContext context) {
-    final bool isGeorgian = Get.locale?.languageCode == 'ka';
-    final String title = isGeorgian ? 'გამარჯობა!' : 'Hello!';
-    final String subtitle = isGeorgian
-        ? 'მზად ხარ გახსნა ${AppConstants.appName}?'
-        : 'Ready to open Portal?';
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: robotoBold.copyWith(fontSize: Dimensions.fontSizeExtraLarge),
-        ),
-        const SizedBox(height: Dimensions.paddingSizeSmall),
-        Text(
-          subtitle,
-          textAlign: TextAlign.center,
-          style: robotoRegular.copyWith(
-            fontSize: Dimensions.fontSizeDefault,
-            color: Theme.of(
-              context,
-            ).textTheme.bodyLarge!.color!.withValues(alpha: 0.7),
-          ),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => MiliAuthIntro(
+    title: 'auth_ui_title'.tr,
+    subtitle: 'auth_ui_manual_subtitle'.tr,
+  );
 }

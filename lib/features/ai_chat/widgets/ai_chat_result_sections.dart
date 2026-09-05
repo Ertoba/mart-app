@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/custom_image.dart';
 import 'package:sixam_mart/util/dimensions.dart';
+import 'package:sixam_mart/features/ai_chat/widgets/ai_chat_visuals.dart';
 
 class AiChatResultSections extends StatelessWidget {
   final Map<String, dynamic> metadata;
@@ -125,16 +126,25 @@ class _ResultSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionHeading(title: title, icon: icon),
-        SizedBox(
-          height: height,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsetsDirectional.only(end: 12),
-            itemCount: itemCount,
-            separatorBuilder: (_, _) =>
-                const SizedBox(width: Dimensions.paddingSizeSmall),
-            itemBuilder: itemBuilder,
+        // Let the tallest card determine the row height, including scaled text.
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsetsDirectional.only(end: 12),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: height),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var index = 0; index < itemCount; index++) ...[
+                    if (index > 0)
+                      const SizedBox(width: Dimensions.paddingSizeSmall),
+                    itemBuilder(context, index),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
         const SizedBox(height: Dimensions.paddingSizeSmall),
@@ -153,7 +163,7 @@ class _AnimatedResultEntry extends StatelessWidget {
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: 1),
-      duration: Duration(milliseconds: 220 + (index.clamp(0, 5).toInt() * 35)),
+      duration: aiChatDuration(context, 220 + (index.clamp(0, 5).toInt() * 35)),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) => Opacity(
         opacity: value,
@@ -184,7 +194,9 @@ class _SectionHeading extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: Theme.of(context).primaryColor),
           const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-          Text(title, style: Theme.of(context).textTheme.titleSmall),
+          Expanded(
+            child: Text(title, style: Theme.of(context).textTheme.titleSmall),
+          ),
         ],
       ),
     );
@@ -217,7 +229,10 @@ class _ProductResultCard extends StatelessWidget {
       label: product['name']?.toString() ?? 'item'.tr,
       child: Material(
         color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: aiChatBorder(context)),
+        ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
@@ -261,7 +276,7 @@ class _ProductResultCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: Theme.of(context).hintColor),
+                              ?.copyWith(color: aiChatMuted(context)),
                         ),
                         const Spacer(),
                         Row(
@@ -291,29 +306,37 @@ class _ProductResultCard extends StatelessWidget {
                         const SizedBox(height: 5),
                         Row(
                           children: [
-                            Text(
-                              _formatMoney(discountedPrice, currency),
-                              style: Theme.of(context).textTheme.titleSmall
-                                  ?.copyWith(
-                                    color: Theme.of(context).primaryColor,
+                            Expanded(
+                              child: Wrap(
+                                spacing: 6,
+                                runSpacing: 2,
+                                crossAxisAlignment: WrapCrossAlignment.end,
+                                children: [
+                                  Text(
+                                    _formatMoney(discountedPrice, currency),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(
+                                          color: Theme.of(context).primaryColor,
+                                        ),
                                   ),
-                            ),
-                            if (hasDiscount) ...[
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  _formatMoney(price, currency),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.labelSmall
-                                      ?.copyWith(
-                                        color: Theme.of(context).hintColor,
-                                        decoration: TextDecoration.lineThrough,
-                                      ),
-                                ),
+                                  if (hasDiscount)
+                                    Text(
+                                      _formatMoney(price, currency),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(
+                                            color: aiChatMuted(context),
+                                            decoration:
+                                                TextDecoration.lineThrough,
+                                          ),
+                                    ),
+                                ],
                               ),
-                            ],
-                            const Spacer(),
+                            ),
+                            const SizedBox(width: 6),
                             Icon(
                               Icons.arrow_forward_rounded,
                               size: 18,
@@ -352,7 +375,10 @@ class _StoreResultCard extends StatelessWidget {
       label: store['name']?.toString() ?? 'store'.tr,
       child: Material(
         color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: aiChatBorder(context)),
+        ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
@@ -395,7 +421,7 @@ class _StoreResultCard extends StatelessWidget {
                               Icon(
                                 Icons.schedule,
                                 size: 15,
-                                color: Theme.of(context).hintColor,
+                                color: aiChatMuted(context),
                               ),
                               const SizedBox(width: 3),
                               Expanded(
@@ -477,10 +503,7 @@ class _ResultImage extends StatelessWidget {
               width: size,
               height: size,
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Icon(
-                Icons.image_outlined,
-                color: Theme.of(context).hintColor,
-              ),
+              child: Icon(Icons.image_outlined, color: aiChatMuted(context)),
             )
           : CustomImage(image: image, width: size, height: size),
     );

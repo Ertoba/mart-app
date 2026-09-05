@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:country_code_picker/country_code_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/models/config_model.dart';
@@ -110,6 +109,7 @@ class _SignInViewState extends State<SignInView> {
     _passwordController.text = authController.getUserPassword();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       bool isOtpActive = _isOtpViewActive(
         splashController.configModel!.centralizeLoginSetup!,
         authController,
@@ -131,14 +131,15 @@ class _SignInViewState extends State<SignInView> {
         countryCode: _countryDialCode != "" ? _countryDialCode : null,
       );
     });
+  }
 
-    if (!kIsWeb) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 800), () {
-          FocusScope.of(Get.context!).requestFocus(_phoneFocus);
-        });
-      });
-    }
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _phoneFocus.dispose();
+    _passwordFocus.dispose();
+    super.dispose();
   }
 
   @override

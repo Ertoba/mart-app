@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
 import 'package:sixam_mart/features/auth/widgets/sign_in/sign_in_view.dart';
+import 'package:sixam_mart/features/auth/widgets/mili_auth_ui.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
@@ -120,113 +121,27 @@ class SignInScreenState extends State<SignInScreen> {
         endDrawerEnableOpenDragGesture: false,
 
         body: SafeArea(
-          child: Align(
-            alignment: Alignment.center,
-            child: Container(
-              width: context.width > 700 ? 500 : context.width,
-              padding: context.width > 700
-                  ? const EdgeInsets.all(50)
-                  : const EdgeInsets.symmetric(
-                      horizontal: Dimensions.paddingSizeExtraLarge,
-                    ),
-              margin: context.width > 700
-                  ? const EdgeInsets.all(50)
-                  : EdgeInsets.zero,
-              decoration: context.width > 700
-                  ? BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(
-                        Dimensions.radiusSmall,
-                      ),
-                      boxShadow: ResponsiveHelper.isDesktop(context)
-                          ? null
-                          : const [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 5,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                    )
-                  : null,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    ResponsiveHelper.isDesktop(context)
-                        ? Align(
-                            alignment: Alignment.topRight,
-                            child: IconButton(
-                              onPressed: () => Get.back(),
-                              icon: const Icon(Icons.clear),
-                            ),
-                          )
-                        : const SizedBox(),
-
-                    const _CustomerAuthLogo(),
-                    const SizedBox(height: Dimensions.paddingSizeExtremeLarge),
-
-                    SignInView(
-                      exitFromApp: widget.exitFromApp,
-                      backFromThis: widget.backFromThis,
-                      fromResetPassword: widget.fromResetPassword,
-                      isOtpViewEnable: (v) {},
-                    ),
-                  ],
+          child: MiliAuthLayout(
+            logoAsset: Images.brandMark,
+            children: [
+              if (ResponsiveHelper.isDesktop(context))
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: IconButton(
+                    tooltip: 'close'.tr,
+                    onPressed: () => Get.back(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
                 ),
+              SignInView(
+                exitFromApp: widget.exitFromApp,
+                backFromThis: widget.backFromThis,
+                fromResetPassword: widget.fromResetPassword,
+                isOtpViewEnable: (v) {},
               ),
-            ),
+            ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _CustomerAuthLogo extends StatelessWidget {
-  const _CustomerAuthLogo();
-
-  @override
-  Widget build(BuildContext context) {
-    final Color primaryColor = Theme.of(context).primaryColor;
-
-    return SizedBox(
-      height: 142,
-      width: 190,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned(
-            top: 6,
-            child: Container(
-              height: 126,
-              width: 126,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: primaryColor.withValues(alpha: 0.07),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 16,
-            bottom: 18,
-            child: Icon(
-              Icons.shopping_bag_outlined,
-              size: 42,
-              color: primaryColor.withValues(alpha: 0.12),
-            ),
-          ),
-          Positioned(
-            right: 12,
-            top: 28,
-            child: Icon(
-              Icons.location_on_outlined,
-              size: 38,
-              color: primaryColor.withValues(alpha: 0.13),
-            ),
-          ),
-          Image.asset(Images.brandMark, height: 112, fit: BoxFit.contain),
-        ],
       ),
     );
   }

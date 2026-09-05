@@ -1,8 +1,11 @@
+import 'package:sixam_mart/util/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 
 ThemeData light({Color color = const Color(0xFF039D55)}) => ThemeData(
   fontFamily: AppConstants.fontFamily,
+  fontFamilyFallback: MiliTypography.fallback,
+  textTheme: MiliTypography.textTheme,
   primaryColor: color,
   secondaryHeaderColor: const Color(0xFF10B981),
   disabledColor: const Color(0xFF9F9F9F),

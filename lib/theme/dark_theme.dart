@@ -1,8 +1,10 @@
+import 'package:sixam_mart/util/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 
 ThemeData dark({Color color = const Color(0xFF039D55)}) => ThemeData(
   fontFamily: AppConstants.fontFamily,
+  fontFamilyFallback: MiliTypography.fallback,
   primaryColor: color,
   secondaryHeaderColor: const Color(0xFF10B981),
   disabledColor: const Color(0xffa2a7ad),
@@ -10,7 +12,9 @@ ThemeData dark({Color color = const Color(0xFF039D55)}) => ThemeData(
   hintColor: const Color(0xFFbebebe),
   cardColor: const Color(0xFF30313C),
   shadowColor: Colors.white.withValues(alpha: 0.03),
-  textTheme: const TextTheme(bodyMedium: TextStyle(color: Colors.white70)),
+  textTheme: MiliTypography.textTheme.merge(
+    const TextTheme(bodyMedium: TextStyle(color: Colors.white70)),
+  ),
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(foregroundColor: color),
   ),

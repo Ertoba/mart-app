@@ -1,3 +1,4 @@
+import 'package:sixam_mart/util/typography.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/features/language/controllers/language_controller.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
@@ -34,32 +35,39 @@ class TitleWidget extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Text(
-              title,
-              style: robotoBold.copyWith(
-                fontSize: ResponsiveHelper.isDesktop(context)
-                    ? (titleFontSize ?? Dimensions.fontSizeLarge)
-                    : (titleFontSize ?? Dimensions.fontSizeLarge),
+        Expanded(
+          child: Row(
+            children: [
+              Flexible(
+                child: Text(
+                  title.toUpperCase(),
+                  semanticsLabel: title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: MiliTypography.heading.copyWith(
+                    fontSize: ResponsiveHelper.isDesktop(context)
+                        ? (titleFontSize ?? Dimensions.fontSizeLarge)
+                        : (titleFontSize ?? Dimensions.fontSizeLarge),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: Dimensions.paddingSizeSmall),
+              const SizedBox(width: Dimensions.paddingSizeSmall),
 
-            lottieAsset != null
-                ? Lottie.asset(
-                    lottieAsset!,
-                    height: iconSize,
-                    width: iconSize,
-                    fit: BoxFit.contain,
-                    decoder: lottieAsset!.toLowerCase().endsWith('.lottie')
-                        ? _decodeDotLottie
-                        : null,
-                  )
-                : image != null
-                ? Image.asset(image!, height: iconSize, width: iconSize)
-                : const SizedBox(),
-          ],
+              lottieAsset != null
+                  ? Lottie.asset(
+                      lottieAsset!,
+                      height: iconSize,
+                      width: iconSize,
+                      fit: BoxFit.contain,
+                      decoder: lottieAsset!.toLowerCase().endsWith('.lottie')
+                          ? _decodeDotLottie
+                          : null,
+                    )
+                  : image != null
+                  ? Image.asset(image!, height: iconSize, width: iconSize)
+                  : const SizedBox(),
+            ],
+          ),
         ),
         (onTap != null)
             ? InkWell(

@@ -1,3 +1,4 @@
+import 'package:sixam_mart/util/typography.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/models/choose_us_model.dart';
 import 'package:sixam_mart/features/language/domain/models/language_model.dart';
@@ -22,7 +23,7 @@ class AppConstants {
     return '${'new_on'.tr} $appName';
   }
 
-  static const String fontFamily = 'Roboto';
+  static const String fontFamily = MiliTypography.bodyFamily;
   static const bool payInWevView = false;
   static const int balanceInputLen = 10;
   static const String webHostedUrl = 'https://mili.ge';

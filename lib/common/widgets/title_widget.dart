@@ -31,6 +31,8 @@ class TitleWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool ltr = Get.find<LocalizationController>().isLtr;
+    final bool isCompactPhone = !ResponsiveHelper.isDesktop(context) && MediaQuery.sizeOf(context).width < 430;
+    final double resolvedTitleFontSize = titleFontSize ?? (isCompactPhone ? Dimensions.fontSizeDefault : Dimensions.fontSizeLarge);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -45,9 +47,8 @@ class TitleWidget extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: MiliTypography.heading.copyWith(
-                    fontSize: ResponsiveHelper.isDesktop(context)
-                        ? (titleFontSize ?? Dimensions.fontSizeLarge)
-                        : (titleFontSize ?? Dimensions.fontSizeLarge),
+                    fontSize: resolvedTitleFontSize,
+                    height: 1.2,
                   ),
                 ),
               ),
@@ -81,8 +82,11 @@ class TitleWidget extends StatelessWidget {
                   ),
                   child: Text(
                     'see_all'.tr,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: robotoMedium.copyWith(
                       fontSize: (seeAllFontSize ?? Dimensions.fontSizeSmall),
+                      height: 1.2,
                       color: Theme.of(context).primaryColor,
                       decoration: seeAllUnderline
                           ? TextDecoration.underline

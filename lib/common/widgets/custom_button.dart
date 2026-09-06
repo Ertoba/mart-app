@@ -44,15 +44,18 @@ class CustomButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final ButtonStyle flatButtonStyle = TextButton.styleFrom(
       backgroundColor: onPressed == null
-          ? Color(0xff93A2AE)
+          ? const Color(0xff93A2AE)
           : transparent
           ? Colors.transparent
           : color ?? Theme.of(context).primaryColor,
       minimumSize: Size(
-        width != null ? width! : Dimensions.webMaxWidth,
-        height != null ? height! : 50,
+        width ?? Dimensions.webMaxWidth,
+        height ?? 50,
       ),
-      padding: EdgeInsets.zero,
+      padding: const EdgeInsets.symmetric(
+        horizontal: Dimensions.paddingSizeDefault,
+        vertical: Dimensions.paddingSizeExtraSmall,
+      ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(radius),
         side: isBorder
@@ -67,79 +70,65 @@ class CustomButton extends StatelessWidget {
       child: SizedBox(
         width: width ?? Dimensions.webMaxWidth,
         child: Padding(
-          padding: margin == null ? const EdgeInsets.all(0) : margin!,
+          padding: margin ?? EdgeInsets.zero,
           child: TextButton(
             onPressed: isLoading ? null : onPressed as void Function()?,
             style: flatButtonStyle,
             child: isLoading
-                ? Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox(
-                          height: 15,
-                          width: 15,
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                            strokeWidth: 2,
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(
+                        height: 15,
+                        width: 15,
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          strokeWidth: 2,
+                        ),
+                      ),
+                      const SizedBox(width: Dimensions.paddingSizeSmall),
+                      Flexible(
+                        child: Text(
+                          'loading'.tr,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: robotoMedium.copyWith(
+                            color: Colors.white,
+                            height: 1.2,
                           ),
                         ),
-                        const SizedBox(width: Dimensions.paddingSizeSmall),
-
-                        Text(
-                          'loading'.tr,
-                          style: robotoMedium.copyWith(color: Colors.white),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   )
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      icon != null
-                          ? Padding(
-                              padding: const EdgeInsets.only(
-                                right: Dimensions.paddingSizeExtraSmall,
-                              ),
-                              child: Icon(
-                                icon,
-                                color: transparent
-                                    ? Theme.of(context).primaryColor
-                                    : Theme.of(context).cardColor,
-                              ),
-                            )
-                          : const SizedBox(),
+                      if (icon != null) ...[
+                        Icon(
+                          icon,
+                          color: iconColor ??
+                              (transparent
+                                  ? Theme.of(context).primaryColor
+                                  : Theme.of(context).cardColor),
+                        ),
+                        const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                      ],
                       Flexible(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            buttonText,
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            style: (textStyle != null)
-                                ? textStyle
-                                : isBold
-                                ? robotoBold.copyWith(
-                                    color:
-                                        textColor ??
+                        child: Text(
+                          buttonText,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: (textStyle ??
+                                  (isBold ? robotoBold : robotoRegular).copyWith(
+                                    color: textColor ??
                                         (transparent
                                             ? Theme.of(context).primaryColor
                                             : Colors.white),
-                                    fontSize:
-                                        fontSize ?? Dimensions.fontSizeLarge,
-                                  )
-                                : robotoRegular.copyWith(
-                                    color:
-                                        textColor ??
-                                        (transparent
-                                            ? Theme.of(context).primaryColor
-                                            : Colors.white),
-                                    fontSize:
-                                        fontSize ?? Dimensions.fontSizeLarge,
-                                  ),
-                          ),
+                                    fontSize: fontSize ?? Dimensions.fontSizeLarge,
+                                  ))
+                              .copyWith(height: textStyle?.height ?? 1.2),
                         ),
                       ),
                     ],

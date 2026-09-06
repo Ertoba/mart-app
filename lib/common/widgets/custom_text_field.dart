@@ -97,27 +97,55 @@ class CustomTextFieldState extends State<CustomTextField> {
   @override
   void initState() {
     super.initState();
-    widget.focusNode?.addListener(() {
+    widget.focusNode?.addListener(_handleFocusChange);
+  }
+
+  @override
+  void dispose() {
+    widget.focusNode?.removeListener(_handleFocusChange);
+    super.dispose();
+  }
+
+  void _handleFocusChange() {
+    if (mounted) {
       setState(() {});
-    });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool hasText = widget.controller?.text.isNotEmpty ?? false;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
-        widget.showTitle ? Text(widget.titleText, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)) : const SizedBox(),
-        SizedBox(height: widget.showTitle ? ResponsiveHelper.isDesktop(context) ? Dimensions.paddingSizeDefault : Dimensions.paddingSizeExtraSmall : 0),
-
+        if (widget.showTitle)
+          Text(
+            widget.titleText,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: robotoRegular.copyWith(
+              fontSize: Dimensions.fontSizeSmall,
+              height: 1.25,
+            ),
+          ),
+        SizedBox(
+          height: widget.showTitle
+              ? ResponsiveHelper.isDesktop(context)
+                  ? Dimensions.paddingSizeDefault
+                  : Dimensions.paddingSizeExtraSmall
+              : 0,
+        ),
         TextFormField(
           maxLines: widget.maxLines,
           controller: widget.controller,
           focusNode: widget.focusNode,
           textAlign: widget.textAlign,
           validator: widget.validator,
-          style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeLarge),
+          style: robotoRegular.copyWith(
+            fontSize: Dimensions.fontSizeLarge,
+            height: 1.25,
+          ),
           textInputAction: widget.inputAction,
           keyboardType: widget.isAmount ? TextInputType.number : widget.inputType,
           cursorColor: Theme.of(context).primaryColor,
@@ -126,113 +154,239 @@ class CustomTextFieldState extends State<CustomTextField> {
           enabled: widget.isEnabled,
           autofocus: false,
           obscureText: widget.isPassword ? _obscureText : false,
-          inputFormatters: widget.inputType == TextInputType.phone ? <TextInputFormatter>[FilteringTextInputFormatter.allow(RegExp('[0-9]'))]
-              : widget.isAmount ? [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))] : widget.isNumber ? [FilteringTextInputFormatter.allow(RegExp(r'\d'))] : null,
+          inputFormatters: widget.inputType == TextInputType.phone
+              ? <TextInputFormatter>[
+                  FilteringTextInputFormatter.allow(RegExp('[0-9]')),
+                ]
+              : widget.isAmount
+                  ? [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))]
+                  : widget.isNumber
+                      ? [FilteringTextInputFormatter.allow(RegExp(r'\d'))]
+                      : null,
           decoration: InputDecoration(
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-              borderSide: BorderSide(style: widget.showBorder ? BorderStyle.solid : BorderStyle.none, width: ResponsiveHelper.isDesktop(context) ? 0.7 : 0.3, color: Theme.of(context).disabledColor),
+              borderSide: BorderSide(
+                style: widget.showBorder ? BorderStyle.solid : BorderStyle.none,
+                width: ResponsiveHelper.isDesktop(context) ? 0.7 : 0.3,
+                color: Theme.of(context).disabledColor,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-              borderSide: BorderSide(style: widget.showBorder ? BorderStyle.solid : BorderStyle.none, width: 1, color: Theme.of(context).primaryColor),
+              borderSide: BorderSide(
+                style: widget.showBorder ? BorderStyle.solid : BorderStyle.none,
+                width: 1,
+                color: Theme.of(context).primaryColor,
+              ),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-              borderSide: BorderSide(style: widget.showBorder ? BorderStyle.solid : BorderStyle.none, width: 0.3, color: Theme.of(context).primaryColor),
+              borderSide: BorderSide(
+                style: widget.showBorder ? BorderStyle.solid : BorderStyle.none,
+                width: 0.3,
+                color: Theme.of(context).primaryColor,
+              ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-              borderSide: BorderSide(style: widget.showBorder ? BorderStyle.solid : BorderStyle.none, color: Theme.of(context).colorScheme.error),
+              borderSide: BorderSide(
+                style: widget.showBorder ? BorderStyle.solid : BorderStyle.none,
+                color: Theme.of(context).colorScheme.error,
+              ),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-              borderSide: BorderSide(style: widget.showBorder ? BorderStyle.solid : BorderStyle.none, color: Theme.of(context).colorScheme.error),
+              borderSide: BorderSide(
+                style: widget.showBorder ? BorderStyle.solid : BorderStyle.none,
+                color: Theme.of(context).colorScheme.error,
+              ),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-              borderSide: BorderSide(style: widget.showBorder ? BorderStyle.solid : BorderStyle.none, color: Theme.of(context).disabledColor.withValues(alpha: 0.2)),
+              borderSide: BorderSide(
+                style: widget.showBorder ? BorderStyle.solid : BorderStyle.none,
+                color: Theme.of(context).disabledColor.withValues(alpha: 0.2),
+              ),
             ),
             isDense: true,
-            hintText: widget.hintText.isEmpty || !ResponsiveHelper.isDesktop(context) ? widget.titleText : widget.hintText,
+            hintText: widget.hintText.isEmpty || !ResponsiveHelper.isDesktop(context)
+                ? widget.titleText
+                : widget.hintText,
             fillColor: Theme.of(context).cardColor,
-            hintStyle: robotoRegular.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).hintColor),
+            hintStyle: robotoRegular.copyWith(
+              fontSize: Dimensions.fontSizeLarge,
+              color: Theme.of(context).hintColor,
+              height: 1.25,
+            ),
             filled: true,
-
-            labelStyle : widget.showLabelText ? robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).hintColor) : null,
-            errorStyle: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
-
-            label: widget.showLabelText ? Text.rich(TextSpan(children: [
-
-              TextSpan(
-                text: widget.labelText ?? '',
-                style: robotoRegular.copyWith(
-                  fontSize: widget.labelTextSize ?? Dimensions.fontSizeLarge,
-                  color: ((widget.focusNode?.hasFocus == true || widget.controller!.text.isNotEmpty ) &&  widget.isEnabled) ? Theme.of(context).textTheme.bodyLarge?.color :  Theme.of(context).hintColor.withValues(alpha: .75),
-                ),
-              ),
-
-              if(widget.required && widget.labelText != null)
-                TextSpan(text : ' *', style: robotoRegular.copyWith(color: Theme.of(context).colorScheme.error, fontSize: Dimensions.fontSizeLarge)),
-
-              if(widget.isEnabled == false)
-                TextSpan(text: widget.fromUpdateProfile ? ' (${'non_changeable'.tr})' : ' (${'non_changeable'.tr})', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).colorScheme.error)),
-
-            ])) : null,
-
-            prefixIcon: (widget.isPhone || widget.countryDialCode != null) ? SizedBox(width: 95, child: Row(children: [
-              Container(
-                width: 85, height: 40,
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(Dimensions.radiusSmall),
-                    bottomLeft: Radius.circular(Dimensions.radiusSmall),
-                  ),
-                ),
-                margin: const EdgeInsets.only(right: 0),
-                padding: const EdgeInsets.only(left: 5),
-                child: Center(
-                  child: CodePickerWidget(
-                    flagWidth: 25,
-                    padding: EdgeInsets.zero,
-                    onChanged: widget.onCountryChanged,
-                    initialSelection: widget.countryDialCode,
-                    favorite: [widget.countryDialCode ?? ''],
-                    enabled: Get.find<SplashController>().configModel?.countryPickerStatus,
-                    dialogBackgroundColor: Theme.of(context).cardColor,
-                    textStyle: robotoRegular.copyWith(
-                      fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyMedium!.color,
+            labelStyle: widget.showLabelText
+                ? robotoRegular.copyWith(
+                    fontSize: Dimensions.fontSizeDefault,
+                    color: Theme.of(context).hintColor,
+                    height: 1.2,
+                  )
+                : null,
+            errorStyle: robotoRegular.copyWith(
+              fontSize: Dimensions.fontSizeSmall,
+              height: 1.25,
+            ),
+            label: widget.showLabelText
+                ? Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: widget.labelText ?? '',
+                          style: robotoRegular.copyWith(
+                            fontSize:
+                                widget.labelTextSize ?? Dimensions.fontSizeLarge,
+                            color: ((widget.focusNode?.hasFocus == true || hasText) &&
+                                    widget.isEnabled)
+                                ? Theme.of(context).textTheme.bodyLarge?.color
+                                : Theme.of(context)
+                                    .hintColor
+                                    .withValues(alpha: .75),
+                          ),
+                        ),
+                        if (widget.required && widget.labelText != null)
+                          TextSpan(
+                            text: ' *',
+                            style: robotoRegular.copyWith(
+                              color: Theme.of(context).colorScheme.error,
+                              fontSize: Dimensions.fontSizeLarge,
+                            ),
+                          ),
+                        if (!widget.isEnabled)
+                          TextSpan(
+                            text: ' (${'non_changeable'.tr})',
+                            style: robotoRegular.copyWith(
+                              fontSize: Dimensions.fontSizeLarge,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                      ],
                     ),
-                  ),
-                ),
-              ),
-
-              Container(
-                height: 20, width: 2,
-                color: Theme.of(context).disabledColor,
-              )
-            ]),
-            ) : widget.prefixImage != null && widget.prefixIcon == null ? Padding(
-              padding: EdgeInsets.all(ResponsiveHelper.isDesktop(context) ? Dimensions.paddingSizeSmall : Dimensions.paddingSizeDefault),
-              child: CustomAssetImageWidget(widget.prefixImage!, height: 10, width: 10, fit: BoxFit.cover, color: widget.focusNode?.hasFocus == true ? Theme.of(context).primaryColor : Theme.of(context).hintColor.withValues(alpha: 0.7)),
-            ) : widget.prefixImage == null && widget.prefixIcon != null ? Icon(widget.prefixIcon, size: widget.iconSize, color: widget.focusNode?.hasFocus == true ? Theme.of(context).primaryColor : Theme.of(context).hintColor.withValues(alpha: 0.7)) : null,
-
-            suffixIcon: widget.isPassword ? IconButton(
-              icon: Icon(_obscureText ? Icons.visibility_off : Icons.visibility, color: Theme.of(context).hintColor.withValues(alpha: 0.3)),
-              onPressed: _toggle,
-            ) : widget.suffixImage != null ? InkWell(
-              onTap: widget.suffixOnPressed, child: Padding(
-                padding: EdgeInsets.all(ResponsiveHelper.isDesktop(context) ? Dimensions.paddingSizeSmall : Dimensions.paddingSizeDefault),
-                child: Image.asset(widget.suffixImage!, height: 10, width: 10, fit: BoxFit.cover),
-            )) : widget.suffixChild,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  )
+                : null,
+            prefixIcon: (widget.isPhone || widget.countryDialCode != null)
+                ? SizedBox(
+                    width: 95,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 85,
+                          height: 40,
+                          decoration: const BoxDecoration(
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(Dimensions.radiusSmall),
+                              bottomLeft: Radius.circular(Dimensions.radiusSmall),
+                            ),
+                          ),
+                          padding: const EdgeInsets.only(left: 5),
+                          child: Center(
+                            child: CodePickerWidget(
+                              flagWidth: 25,
+                              padding: EdgeInsets.zero,
+                              onChanged: widget.onCountryChanged,
+                              initialSelection: widget.countryDialCode,
+                              favorite: widget.countryDialCode?.isNotEmpty == true
+                                  ? [widget.countryDialCode!]
+                                  : const [],
+                              enabled: Get.find<SplashController>()
+                                  .configModel
+                                  ?.countryPickerStatus,
+                              dialogBackgroundColor: Theme.of(context).cardColor,
+                              textStyle: robotoRegular.copyWith(
+                                fontSize: Dimensions.fontSizeDefault,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium!
+                                    .color,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          height: 20,
+                          width: 2,
+                          color: Theme.of(context).disabledColor,
+                        ),
+                      ],
+                    ),
+                  )
+                : widget.prefixImage != null && widget.prefixIcon == null
+                    ? Padding(
+                        padding: EdgeInsets.all(
+                          ResponsiveHelper.isDesktop(context)
+                              ? Dimensions.paddingSizeSmall
+                              : Dimensions.paddingSizeDefault,
+                        ),
+                        child: CustomAssetImageWidget(
+                          widget.prefixImage!,
+                          height: 10,
+                          width: 10,
+                          fit: BoxFit.cover,
+                          color: widget.focusNode?.hasFocus == true
+                              ? Theme.of(context).primaryColor
+                              : Theme.of(context)
+                                  .hintColor
+                                  .withValues(alpha: 0.7),
+                        ),
+                      )
+                    : widget.prefixIcon != null
+                        ? Icon(
+                            widget.prefixIcon,
+                            size: widget.iconSize,
+                            color: widget.focusNode?.hasFocus == true
+                                ? Theme.of(context).primaryColor
+                                : Theme.of(context)
+                                    .hintColor
+                                    .withValues(alpha: 0.7),
+                          )
+                        : null,
+            suffixIcon: widget.isPassword
+                ? IconButton(
+                    icon: Icon(
+                      _obscureText ? Icons.visibility_off : Icons.visibility,
+                      color: Theme.of(context).hintColor.withValues(alpha: 0.3),
+                    ),
+                    onPressed: _toggle,
+                  )
+                : widget.suffixImage != null
+                    ? InkWell(
+                        onTap: widget.suffixOnPressed,
+                        child: Padding(
+                          padding: EdgeInsets.all(
+                            ResponsiveHelper.isDesktop(context)
+                                ? Dimensions.paddingSizeSmall
+                                : Dimensions.paddingSizeDefault,
+                          ),
+                          child: Image.asset(
+                            widget.suffixImage!,
+                            height: 10,
+                            width: 10,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      )
+                    : widget.suffixChild,
           ),
-          onFieldSubmitted: (text) => widget.nextFocus != null ? FocusScope.of(context).requestFocus(widget.nextFocus)
-              : widget.onSubmit != null ? widget.onSubmit!(text) : null,
+          onFieldSubmitted: (text) => widget.nextFocus != null
+              ? FocusScope.of(context).requestFocus(widget.nextFocus)
+              : widget.onSubmit != null
+                  ? widget.onSubmit!(text)
+                  : null,
           onChanged: widget.onChanged as void Function(String)?,
         ),
-
-        widget.divider ? const Padding(padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge), child: Divider()) : const SizedBox(),
-
+        if (widget.divider)
+          const Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: Dimensions.paddingSizeLarge,
+            ),
+            child: Divider(),
+          ),
       ],
     );
   }

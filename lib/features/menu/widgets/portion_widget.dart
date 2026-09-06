@@ -24,6 +24,8 @@ class PortionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isCompactPhone = MediaQuery.sizeOf(context).width < 430;
+
     return InkWell(
       onTap: onTap ?? () => Get.toNamed(route),
       child: Container(
@@ -55,8 +57,11 @@ class PortionWidget extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: robotoRegular.copyWith(
-                      fontSize: Dimensions.fontSizeDefault,
+                      fontSize: isCompactPhone ? Dimensions.fontSizeSmall : Dimensions.fontSizeDefault,
+                      height: 1.2,
                       color: Theme.of(
                         context,
                       ).textTheme.bodyLarge!.color!.withValues(alpha: 0.6),
@@ -78,8 +83,11 @@ class PortionWidget extends StatelessWidget {
                         ),
                         child: Text(
                           suffix!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: robotoRegular.copyWith(
                             fontSize: Dimensions.fontSizeSmall,
+                            height: 1.2,
                             color: Colors.white,
                           ),
                           textDirection: TextDirection.ltr,

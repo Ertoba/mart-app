@@ -162,14 +162,14 @@ class _MyAppState extends State<MyApp> {
             return GetBuilder<SplashController>(
               builder: (splashController) {
                 if (GetPlatform.isWeb && splashController.configModel == null) {
-                  return const Directionality(
+                  return Directionality(
                     textDirection: TextDirection.ltr,
                     child: ColoredBox(
                       color: Colors.white,
                       child: Center(
                         child: Semantics(
                           label: 'Loading',
-                          child: SizedBox(
+                          child: const SizedBox(
                             width: 32,
                             height: 32,
                             child: CircularProgressIndicator(strokeWidth: 3),

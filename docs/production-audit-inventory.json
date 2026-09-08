@@ -1,0 +1,1833 @@
+{
+  "inventory": {
+    "source_files": 785,
+    "screens_pages": 87,
+    "widgets_components": 357,
+    "forms": 43,
+    "buttons": 558,
+    "dialogs_sheets": 267,
+    "loaders": 281,
+    "animations": 86,
+    "safe_area": 56,
+    "scaffold": 79,
+    "text_overflow": 272,
+    "expanded_flexible": 731,
+    "uppercase_calls": 19,
+    "print_calls": 126,
+    "hardcoded_font_sizes": 70,
+    "fixed_width_height_literals": 2223
+  },
+  "files": [
+    "lib/api/api_checker.dart",
+    "lib/api/api_client.dart",
+    "lib/api/local_client.dart",
+    "lib/common/controllers/theme_controller.dart",
+    "lib/common/enums/data_source_enum.dart",
+    "lib/common/enums/enums.dart",
+    "lib/common/models/choose_us_model.dart",
+    "lib/common/models/config_model.dart",
+    "lib/common/models/error_response.dart",
+    "lib/common/models/module_model.dart",
+    "lib/common/models/response_model.dart",
+    "lib/common/models/transaction_model.dart",
+    "lib/common/models/translation.dart",
+    "lib/common/widgets/add_favourite_view.dart",
+    "lib/common/widgets/address_widget.dart",
+    "lib/common/widgets/card_design/item_card.dart",
+    "lib/common/widgets/card_design/store_card.dart",
+    "lib/common/widgets/card_design/store_card_with_distance.dart",
+    "lib/common/widgets/card_design/visit_again_card.dart",
+    "lib/common/widgets/cart_count_view.dart",
+    "lib/common/widgets/cart_snackbar.dart",
+    "lib/common/widgets/cart_widget.dart",
+    "lib/common/widgets/code_picker_widget.dart",
+    "lib/common/widgets/confirmation_dialog.dart",
+    "lib/common/widgets/corner_banner/banner.dart",
+    "lib/common/widgets/corner_banner/corner_discount_tag.dart",
+    "lib/common/widgets/corner_banner/positioned_banner.dart",
+    "lib/common/widgets/coustom_toast.dart",
+    "lib/common/widgets/custom_app_bar.dart",
+    "lib/common/widgets/custom_asset_image_widget.dart",
+    "lib/common/widgets/custom_bottom_sheet_widget.dart",
+    "lib/common/widgets/custom_button.dart",
+    "lib/common/widgets/custom_card.dart",
+    "lib/common/widgets/custom_debounce_widget.dart",
+    "lib/common/widgets/custom_dialog.dart",
+    "lib/common/widgets/custom_divider.dart",
+    "lib/common/widgets/custom_drop_down_button.dart",
+    "lib/common/widgets/custom_dropdown.dart",
+    "lib/common/widgets/custom_favourite_widget.dart",
+    "lib/common/widgets/custom_floating_action_button.dart",
+    "lib/common/widgets/custom_image.dart",
+    "lib/common/widgets/custom_ink_well.dart",
+    "lib/common/widgets/custom_loader.dart",
+    "lib/common/widgets/custom_popup_menu_button.dart",
+    "lib/common/widgets/custom_snackbar.dart",
+    "lib/common/widgets/custom_text_field.dart",
+    "lib/common/widgets/custom_tool_tip_widget.dart",
+    "lib/common/widgets/demo_reset_dialog_widget.dart",
+    "lib/common/widgets/discount_tag.dart",
+    "lib/common/widgets/footer_view.dart",
+    "lib/common/widgets/history_item_widget.dart",
+    "lib/common/widgets/hover/on_hover.dart",
+    "lib/common/widgets/hover/text_hover.dart",
+    "lib/common/widgets/image_picker_widget.dart",
+    "lib/common/widgets/image_viewer_screen.dart",
+    "lib/common/widgets/item_bottom_sheet.dart",
+    "lib/common/widgets/item_bottom_sheet_shimmer.dart",
+    "lib/common/widgets/item_shimmer.dart",
+    "lib/common/widgets/item_view.dart",
+    "lib/common/widgets/item_widget.dart",
+    "lib/common/widgets/login_suggestion_bottomsheet.dart",
+    "lib/common/widgets/markdown_text_span.dart",
+    "lib/common/widgets/menu_drawer.dart",
+    "lib/common/widgets/module_icon_image.dart",
+    "lib/common/widgets/my_text_field.dart",
+    "lib/common/widgets/new_tag.dart",
+    "lib/common/widgets/no_data_screen.dart",
+    "lib/common/widgets/no_internet_screen.dart",
+    "lib/common/widgets/not_available_widget.dart",
+    "lib/common/widgets/not_found.dart",
+    "lib/common/widgets/not_logged_in_screen.dart",
+    "lib/common/widgets/organic_tag.dart",
+    "lib/common/widgets/paginated_list_view.dart",
+    "lib/common/widgets/payment_complete_dialog.dart",
+    "lib/common/widgets/quantity_button.dart",
+    "lib/common/widgets/rating_bar.dart",
+    "lib/common/widgets/readmore_widget.dart",
+    "lib/common/widgets/ripple_button.dart",
+    "lib/common/widgets/taxi_make_payment_bottomsheet.dart",
+    "lib/common/widgets/text_field_shadow.dart",
+    "lib/common/widgets/text_field_title.dart",
+    "lib/common/widgets/title_widget.dart",
+    "lib/common/widgets/veg_filter_widget.dart",
+    "lib/common/widgets/verified_seller_badge.dart",
+    "lib/common/widgets/web_constrained_box.dart",
+    "lib/common/widgets/web_item_view.dart",
+    "lib/common/widgets/web_item_widget.dart",
+    "lib/common/widgets/web_menu_bar.dart",
+    "lib/common/widgets/web_page_title_widget.dart",
+    "lib/common/widgets/web_search_field.dart",
+    "lib/common/widgets/zone_warning_dialog.dart",
+    "lib/features/address/controllers/address_controller.dart",
+    "lib/features/address/domain/models/address_model.dart",
+    "lib/features/address/domain/repositories/address_repository.dart",
+    "lib/features/address/domain/repositories/address_repository_interface.dart",
+    "lib/features/address/domain/services/address_service.dart",
+    "lib/features/address/domain/services/address_service_interface.dart",
+    "lib/features/address/screens/add_address_screen.dart",
+    "lib/features/address/screens/address_screen.dart",
+    "lib/features/address/widgets/address_confirmation_dialogue.dart",
+    "lib/features/ai_chat/screens/ai_chat_screen.dart",
+    "lib/features/ai_chat/widgets/ai_chat_floating_button.dart",
+    "lib/features/ai_chat/widgets/ai_chat_result_sections.dart",
+    "lib/features/ai_chat/widgets/ai_chat_visuals.dart",
+    "lib/features/auth/controllers/auth_controller.dart",
+    "lib/features/auth/controllers/deliveryman_registration_controller.dart",
+    "lib/features/auth/controllers/store_registration_controller.dart",
+    "lib/features/auth/domain/enum/centralize_login_enum.dart",
+    "lib/features/auth/domain/models/auth_response_model.dart",
+    "lib/features/auth/domain/models/delivery_man_body.dart",
+    "lib/features/auth/domain/models/delivery_man_vehicles_model.dart",
+    "lib/features/auth/domain/models/signup_body_model.dart",
+    "lib/features/auth/domain/models/social_log_in_body.dart",
+    "lib/features/auth/domain/models/store_body_model.dart",
+    "lib/features/auth/domain/reposotories/auth_repository.dart",
+    "lib/features/auth/domain/reposotories/auth_repository_interface.dart",
+    "lib/features/auth/domain/reposotories/deliveryman_registration_repository.dart",
+    "lib/features/auth/domain/reposotories/deliveryman_registration_repository_interface.dart",
+    "lib/features/auth/domain/reposotories/store_registration_repository.dart",
+    "lib/features/auth/domain/reposotories/store_registration_repository_interface.dart",
+    "lib/features/auth/domain/services/auth_service.dart",
+    "lib/features/auth/domain/services/auth_service_interface.dart",
+    "lib/features/auth/domain/services/deliveryman_registration_service.dart",
+    "lib/features/auth/domain/services/deliveryman_registration_service_interface.dart",
+    "lib/features/auth/domain/services/store_registration_service.dart",
+    "lib/features/auth/domain/services/store_registration_service_interface.dart",
+    "lib/features/auth/screens/delivery_man_registration_screen.dart",
+    "lib/features/auth/screens/new_user_setup_screen.dart",
+    "lib/features/auth/screens/rider_registration_screen.dart",
+    "lib/features/auth/screens/sign_in_screen.dart",
+    "lib/features/auth/screens/sign_up_screen.dart",
+    "lib/features/auth/screens/store_registration_screen.dart",
+    "lib/features/auth/widgets/auth_dialog_widget.dart",
+    "lib/features/auth/widgets/business/base_card_widget.dart",
+    "lib/features/auth/widgets/business/web_business_plan_widget.dart",
+    "lib/features/auth/widgets/condition_check_box_widget.dart",
+    "lib/features/auth/widgets/custom_time_picker_widget.dart",
+    "lib/features/auth/widgets/guest_button_widget.dart",
+    "lib/features/auth/widgets/mili_auth_ui.dart",
+    "lib/features/auth/widgets/min_max_time_picker_widget.dart",
+    "lib/features/auth/widgets/module_view_widget.dart",
+    "lib/features/auth/widgets/pass_view_widget.dart",
+    "lib/features/auth/widgets/pickup_zone_widget.dart",
+    "lib/features/auth/widgets/select_location_view_widget.dart",
+    "lib/features/auth/widgets/sign_in/existing_user_bottom_sheet.dart",
+    "lib/features/auth/widgets/sign_in/manual_login_widget.dart",
+    "lib/features/auth/widgets/sign_in/otp_login_widget.dart",
+    "lib/features/auth/widgets/sign_in/sign_in_view.dart",
+    "lib/features/auth/widgets/sign_up_widget.dart",
+    "lib/features/auth/widgets/social_login_widget.dart",
+    "lib/features/auth/widgets/vendor_info_widget.dart",
+    "lib/features/auth/widgets/web_registration_stepper_widget.dart",
+    "lib/features/auth/widgets/zone_selection_widget.dart",
+    "lib/features/banner/controllers/banner_controller.dart",
+    "lib/features/banner/domain/models/banner_model.dart",
+    "lib/features/banner/domain/models/others_banner_model.dart",
+    "lib/features/banner/domain/models/promotional_banner_model.dart",
+    "lib/features/banner/domain/repositories/banner_repository.dart",
+    "lib/features/banner/domain/repositories/banner_repository_interface.dart",
+    "lib/features/banner/domain/services/banner_service.dart",
+    "lib/features/banner/domain/services/banner_service_interface.dart",
+    "lib/features/brands/controllers/brands_controller.dart",
+    "lib/features/brands/domain/models/brands_model.dart",
+    "lib/features/brands/domain/repositories/brands_repository.dart",
+    "lib/features/brands/domain/repositories/brands_repository_interface.dart",
+    "lib/features/brands/domain/services/brands_service.dart",
+    "lib/features/brands/domain/services/brands_service_interface.dart",
+    "lib/features/brands/screens/brands_product_screen.dart",
+    "lib/features/brands/screens/brands_screen.dart",
+    "lib/features/brands/widgets/brands_view_shimmer_widget.dart",
+    "lib/features/business/controllers/business_controller.dart",
+    "lib/features/business/domain/models/business_plan_body.dart",
+    "lib/features/business/domain/models/package_model.dart",
+    "lib/features/business/domain/repositories/business_repo.dart",
+    "lib/features/business/domain/repositories/business_repo_interface.dart",
+    "lib/features/business/domain/services/business_service.dart",
+    "lib/features/business/domain/services/business_service_interface.dart",
+    "lib/features/business/screens/subscription_payment_screen.dart",
+    "lib/features/business/screens/subscription_success_or_failed_screen.dart",
+    "lib/features/business/widgets/base_card_widget.dart",
+    "lib/features/business/widgets/business_payment_method_bottom_sheet_widget.dart",
+    "lib/features/business/widgets/curve_clipper_widget.dart",
+    "lib/features/business/widgets/package_card_widget.dart",
+    "lib/features/business/widgets/package_widget.dart",
+    "lib/features/business/widgets/payment_cart_widget.dart",
+    "lib/features/business/widgets/success_widget.dart",
+    "lib/features/business/widgets/web_business_plan_widget.dart",
+    "lib/features/cart/controllers/cart_controller.dart",
+    "lib/features/cart/domain/models/cart_model.dart",
+    "lib/features/cart/domain/models/online_cart_model.dart",
+    "lib/features/cart/domain/repositories/cart_repository.dart",
+    "lib/features/cart/domain/repositories/cart_repository_interface.dart",
+    "lib/features/cart/domain/services/cart_service.dart",
+    "lib/features/cart/domain/services/cart_service_interface.dart",
+    "lib/features/cart/screens/cart_screen.dart",
+    "lib/features/cart/widgets/cart_item_widget.dart",
+    "lib/features/cart/widgets/delivery_option_button_widget.dart",
+    "lib/features/cart/widgets/extra_packaging_widget.dart",
+    "lib/features/cart/widgets/not_available_bottom_sheet_widget.dart",
+    "lib/features/cart/widgets/web_cart_items_widget.dart",
+    "lib/features/cart/widgets/web_suggested_item_view_widget.dart",
+    "lib/features/category/controllers/category_controller.dart",
+    "lib/features/category/domain/models/category_model.dart",
+    "lib/features/category/domain/reposotories/category_repository.dart",
+    "lib/features/category/domain/reposotories/category_repository_interface.dart",
+    "lib/features/category/domain/services/category_service.dart",
+    "lib/features/category/domain/services/category_service_interface.dart",
+    "lib/features/category/screens/category_item_screen.dart",
+    "lib/features/category/screens/category_screen.dart",
+    "lib/features/chat/controllers/chat_controller.dart",
+    "lib/features/chat/domain/models/chat_model.dart",
+    "lib/features/chat/domain/models/conversation_model.dart",
+    "lib/features/chat/domain/models/order_chat_model.dart",
+    "lib/features/chat/domain/repositories/chat_repository.dart",
+    "lib/features/chat/domain/repositories/chat_repository_interface.dart",
+    "lib/features/chat/domain/services/chat_service.dart",
+    "lib/features/chat/domain/services/chat_service_interface.dart",
+    "lib/features/chat/enums/user_type_enum.dart",
+    "lib/features/chat/screens/chat_screen.dart",
+    "lib/features/chat/screens/conversation_screen.dart",
+    "lib/features/chat/widgets/chat_serach_field_widget.dart",
+    "lib/features/chat/widgets/chatting_shimmer.dart",
+    "lib/features/chat/widgets/image_dialog_widget.dart",
+    "lib/features/chat/widgets/image_file_view_widget.dart",
+    "lib/features/chat/widgets/image_preview_widget.dart",
+    "lib/features/chat/widgets/message_bubble_shimmer.dart",
+    "lib/features/chat/widgets/message_bubble_widget.dart",
+    "lib/features/chat/widgets/web_chat_view_widget.dart",
+    "lib/features/chat/widgets/web_conversation_list_view_widget.dart",
+    "lib/features/checkout/controllers/checkout_controller.dart",
+    "lib/features/checkout/domain/models/distance_model.dart",
+    "lib/features/checkout/domain/models/payment_model.dart",
+    "lib/features/checkout/domain/models/place_order_body_model.dart",
+    "lib/features/checkout/domain/models/surge_price_model.dart",
+    "lib/features/checkout/domain/models/timeslote_model.dart",
+    "lib/features/checkout/domain/repositories/checkout_repository.dart",
+    "lib/features/checkout/domain/repositories/checkout_repository_interface.dart",
+    "lib/features/checkout/domain/services/checkout_service.dart",
+    "lib/features/checkout/domain/services/checkout_service_interface.dart",
+    "lib/features/checkout/screens/checkout_screen.dart",
+    "lib/features/checkout/screens/digital_payment_failed_screen.dart",
+    "lib/features/checkout/screens/order_successful_screen.dart",
+    "lib/features/checkout/widgets/address_bottom_sheet.dart",
+    "lib/features/checkout/widgets/bottom_section.dart",
+    "lib/features/checkout/widgets/checkout_screen_shimmer_view.dart",
+    "lib/features/checkout/widgets/condition_check_box.dart",
+    "lib/features/checkout/widgets/congratulation_dialogue.dart",
+    "lib/features/checkout/widgets/coupon_bottom_sheet.dart",
+    "lib/features/checkout/widgets/coupon_section.dart",
+    "lib/features/checkout/widgets/custom_card.dart",
+    "lib/features/checkout/widgets/delivery_instraction_bottom_sheet_widget.dart",
+    "lib/features/checkout/widgets/delivery_instruction_view.dart",
+    "lib/features/checkout/widgets/delivery_section.dart",
+    "lib/features/checkout/widgets/deliveryman_tips_section.dart",
+    "lib/features/checkout/widgets/details_custom_card.dart",
+    "lib/features/checkout/widgets/extra_discount_view_widget.dart",
+    "lib/features/checkout/widgets/guest_create_account.dart",
+    "lib/features/checkout/widgets/guest_delivery_address.dart",
+    "lib/features/checkout/widgets/note_prescription_section.dart",
+    "lib/features/checkout/widgets/offline_success_dialog.dart",
+    "lib/features/checkout/widgets/order_successfull_dialog.dart",
+    "lib/features/checkout/widgets/partial_pay_dialog_widget.dart",
+    "lib/features/checkout/widgets/partial_pay_view.dart",
+    "lib/features/checkout/widgets/payment_button.dart",
+    "lib/features/checkout/widgets/payment_button_new.dart",
+    "lib/features/checkout/widgets/payment_failed_dialog.dart",
+    "lib/features/checkout/widgets/payment_method_bottom_sheet.dart",
+    "lib/features/checkout/widgets/payment_section.dart",
+    "lib/features/checkout/widgets/prescription_image_picker_widget.dart",
+    "lib/features/checkout/widgets/prescription_view_dialog_widget.dart",
+    "lib/features/checkout/widgets/slot_widget.dart",
+    "lib/features/checkout/widgets/time_slot_bottom_sheet.dart",
+    "lib/features/checkout/widgets/time_slot_section.dart",
+    "lib/features/checkout/widgets/tips_widget.dart",
+    "lib/features/checkout/widgets/top_section.dart",
+    "lib/features/checkout/widgets/web_delivery_instruction_view.dart",
+    "lib/features/coupon/controllers/coupon_controller.dart",
+    "lib/features/coupon/domain/models/coupon_model.dart",
+    "lib/features/coupon/domain/repositories/coupon_repository.dart",
+    "lib/features/coupon/domain/repositories/coupon_repository_interface.dart",
+    "lib/features/coupon/domain/services/coupon_service.dart",
+    "lib/features/coupon/domain/services/coupon_service_interface.dart",
+    "lib/features/coupon/screens/coupon_screen.dart",
+    "lib/features/coupon/widgets/coupon_card_widget.dart",
+    "lib/features/dashboard/screens/dashboard_screen.dart",
+    "lib/features/dashboard/widgets/address_bottom_sheet_widget.dart",
+    "lib/features/dashboard/widgets/bottom_nav_item_widget.dart",
+    "lib/features/dashboard/widgets/parcel_bottom_sheet_widget.dart",
+    "lib/features/dashboard/widgets/payment_incomplete_bottomsheet.dart",
+    "lib/features/dashboard/widgets/running_order_view_widget.dart",
+    "lib/features/dashboard/widgets/store_registration_success_bottom_sheet.dart",
+    "lib/features/favourite/controllers/favourite_controller.dart",
+    "lib/features/favourite/domain/repositories/favourite_repository.dart",
+    "lib/features/favourite/domain/repositories/favourite_repository_interface.dart",
+    "lib/features/favourite/domain/services/favourite_service.dart",
+    "lib/features/favourite/domain/services/favourite_service_interface.dart",
+    "lib/features/favourite/screens/favourite_screen.dart",
+    "lib/features/favourite/widgets/fav_item_view_widget.dart",
+    "lib/features/flash_sale/controllers/flash_sale_controller.dart",
+    "lib/features/flash_sale/domain/models/flash_sale_model.dart",
+    "lib/features/flash_sale/domain/models/product_flash_sale.dart",
+    "lib/features/flash_sale/domain/repositories/flash_sale_repository.dart",
+    "lib/features/flash_sale/domain/repositories/flash_sale_repository_interface.dart",
+    "lib/features/flash_sale/domain/services/flash_sale_service.dart",
+    "lib/features/flash_sale/domain/services/flash_sale_service_interface.dart",
+    "lib/features/flash_sale/screens/flash_sale_details_screen.dart",
+    "lib/features/flash_sale/widgets/flash_product_card_widget.dart",
+    "lib/features/flash_sale/widgets/flash_sale_timer_view_widget.dart",
+    "lib/features/flash_sale/widgets/flash_sale_view_widget.dart",
+    "lib/features/flash_sale/widgets/timer_widget.dart",
+    "lib/features/home/controllers/advertisement_controller.dart",
+    "lib/features/home/controllers/home_controller.dart",
+    "lib/features/home/domain/models/advertisement_model.dart",
+    "lib/features/home/domain/models/cashback_model.dart",
+    "lib/features/home/domain/repositories/advertisement_repository.dart",
+    "lib/features/home/domain/repositories/advertisement_repository_interface.dart",
+    "lib/features/home/domain/repositories/home_repository.dart",
+    "lib/features/home/domain/repositories/home_repository_interface.dart",
+    "lib/features/home/domain/services/advertisement_service.dart",
+    "lib/features/home/domain/services/advertisement_service_interface.dart",
+    "lib/features/home/domain/services/home_service.dart",
+    "lib/features/home/domain/services/home_service_interface.dart",
+    "lib/features/home/screens/home_screen.dart",
+    "lib/features/home/screens/modules/food_home_screen.dart",
+    "lib/features/home/screens/modules/grocery_home_screen.dart",
+    "lib/features/home/screens/modules/pharmacy_home_screen.dart",
+    "lib/features/home/screens/modules/shop_home_screen.dart",
+    "lib/features/home/screens/web_new_home_screen.dart",
+    "lib/features/home/widgets/all_store_filter_widget.dart",
+    "lib/features/home/widgets/bad_weather_widget.dart",
+    "lib/features/home/widgets/banner_view.dart",
+    "lib/features/home/widgets/brands_view_widget.dart",
+    "lib/features/home/widgets/cash_back_dialog_widget.dart",
+    "lib/features/home/widgets/cashback_dialog_widget.dart",
+    "lib/features/home/widgets/cashback_logo_widget.dart",
+    "lib/features/home/widgets/category_pop_up.dart",
+    "lib/features/home/widgets/category_view.dart",
+    "lib/features/home/widgets/components/circle_list_view_widget.dart",
+    "lib/features/home/widgets/components/custom_circle_list_view_package.dart",
+    "lib/features/home/widgets/components/custom_triangle_shape.dart",
+    "lib/features/home/widgets/components/flash_sale_card_widget.dart",
+    "lib/features/home/widgets/components/item_that_you_love_card_widget.dart",
+    "lib/features/home/widgets/components/popular_store_card_widget.dart",
+    "lib/features/home/widgets/components/review_item_card_widget.dart",
+    "lib/features/home/widgets/components/scaled_list.dart",
+    "lib/features/home/widgets/cookies_view.dart",
+    "lib/features/home/widgets/filter_view.dart",
+    "lib/features/home/widgets/highlight_widget.dart",
+    "lib/features/home/widgets/item_campaign_view.dart",
+    "lib/features/home/widgets/module_view.dart",
+    "lib/features/home/widgets/popular_item_view.dart",
+    "lib/features/home/widgets/popular_store_view.dart",
+    "lib/features/home/widgets/product_with_categories_view.dart",
+    "lib/features/home/widgets/refer_bottom_sheet_widget.dart",
+    "lib/features/home/widgets/store_filter_button_widget.dart",
+    "lib/features/home/widgets/views/banner_view.dart",
+    "lib/features/home/widgets/views/best_review_product_view.dart",
+    "lib/features/home/widgets/views/best_reviewed_item_view.dart",
+    "lib/features/home/widgets/views/best_store_nearby_view.dart",
+    "lib/features/home/widgets/views/category_view.dart",
+    "lib/features/home/widgets/views/common_condition_view.dart",
+    "lib/features/home/widgets/views/featured_categories_view.dart",
+    "lib/features/home/widgets/views/grocery_best_store_nearby_view.dart",
+    "lib/features/home/widgets/views/item_that_you_love_view.dart",
+    "lib/features/home/widgets/views/just_for_you_view.dart",
+    "lib/features/home/widgets/views/middle_section_banner_view.dart",
+    "lib/features/home/widgets/views/most_popular_item_view.dart",
+    "lib/features/home/widgets/views/new_on_mart_view.dart",
+    "lib/features/home/widgets/views/popular_store_view.dart",
+    "lib/features/home/widgets/views/product_with_categories_view.dart",
+    "lib/features/home/widgets/views/promo_code_banner_view.dart",
+    "lib/features/home/widgets/views/promotional_banner_view.dart",
+    "lib/features/home/widgets/views/recommended_store_view.dart",
+    "lib/features/home/widgets/views/shop_item_recommendations_view.dart",
+    "lib/features/home/widgets/views/special_offer_view.dart",
+    "lib/features/home/widgets/views/store_wise_banner_view.dart",
+    "lib/features/home/widgets/views/top_offers_near_me.dart",
+    "lib/features/home/widgets/views/visit_again_view.dart",
+    "lib/features/home/widgets/web/middle_section_multiple_banner_view_widget.dart",
+    "lib/features/home/widgets/web/module_widget.dart",
+    "lib/features/home/widgets/web/web_banner_section_widget.dart",
+    "lib/features/home/widgets/web/web_basic_medicine_nearby_view_widget.dart",
+    "lib/features/home/widgets/web/web_best_review_item_view_widget.dart",
+    "lib/features/home/widgets/web/web_best_store_nearby_view_widget.dart",
+    "lib/features/home/widgets/web/web_brands_view_widget.dart",
+    "lib/features/home/widgets/web/web_category_view_widget.dart",
+    "lib/features/home/widgets/web/web_common_condition_view_widget.dart",
+    "lib/features/home/widgets/web/web_coupon_banner_view_widget.dart",
+    "lib/features/home/widgets/web/web_featured_categories_view_widget.dart",
+    "lib/features/home/widgets/web/web_flash_sale_view_widget.dart",
+    "lib/features/home/widgets/web/web_highlight_widget.dart",
+    "lib/features/home/widgets/web/web_item_that_you_love_view_widget.dart",
+    "lib/features/home/widgets/web/web_just_for_you_view_widget.dart",
+    "lib/features/home/widgets/web/web_most_popular_item_banner_view_widget.dart",
+    "lib/features/home/widgets/web/web_most_popular_item_view_widget.dart",
+    "lib/features/home/widgets/web/web_new_banner_view_widget.dart",
+    "lib/features/home/widgets/web/web_new_on_mart_view_widget.dart",
+    "lib/features/home/widgets/web/web_new_on_view_widget.dart",
+    "lib/features/home/widgets/web/web_populer_store_view_widget.dart",
+    "lib/features/home/widgets/web/web_promotional_banner_view_widget.dart",
+    "lib/features/home/widgets/web/web_recomanded_store_view_widget.dart",
+    "lib/features/home/widgets/web/web_special_offer_view_widget.dart",
+    "lib/features/home/widgets/web/web_store_shimmer_widget.dart",
+    "lib/features/home/widgets/web/web_top_offers_near_me.dart",
+    "lib/features/home/widgets/web/web_visit_again_view_widget.dart",
+    "lib/features/home/widgets/web/widgets/arrow_icon_button.dart",
+    "lib/features/home/widgets/web/widgets/medicine_item_card.dart",
+    "lib/features/home/widgets/web/widgets/sorting_text_button.dart",
+    "lib/features/home/widgets/web/widgets/store_card_widget.dart",
+    "lib/features/home/widgets/web/widgets/store_sorting_button.dart",
+    "lib/features/html/controllers/html_controller.dart",
+    "lib/features/html/domain/repositories/html_repository.dart",
+    "lib/features/html/domain/repositories/html_repository_interface.dart",
+    "lib/features/html/domain/services/html_service.dart",
+    "lib/features/html/domain/services/html_service_interface.dart",
+    "lib/features/html/screens/html_viewer_screen.dart",
+    "lib/features/interest/screens/interest_screen.dart",
+    "lib/features/item/controllers/campaign_controller.dart",
+    "lib/features/item/controllers/item_controller.dart",
+    "lib/features/item/domain/models/basic_campaign_model.dart",
+    "lib/features/item/domain/models/basic_medicine_model.dart",
+    "lib/features/item/domain/models/common_condition_model.dart",
+    "lib/features/item/domain/models/item_model.dart",
+    "lib/features/item/domain/repositories/campaign_repository.dart",
+    "lib/features/item/domain/repositories/campaign_repository_interface.dart",
+    "lib/features/item/domain/repositories/item_repository.dart",
+    "lib/features/item/domain/repositories/item_repository_interface.dart",
+    "lib/features/item/domain/services/campaign_service.dart",
+    "lib/features/item/domain/services/campaign_service_interface.dart",
+    "lib/features/item/domain/services/item_service.dart",
+    "lib/features/item/domain/services/item_service_interface.dart",
+    "lib/features/item/screens/item_campaign_screen.dart",
+    "lib/features/item/screens/item_details_screen.dart",
+    "lib/features/item/screens/item_view_all_screen.dart",
+    "lib/features/item/screens/popular_item_screen.dart",
+    "lib/features/item/widgets/details_app_bar_widget.dart",
+    "lib/features/item/widgets/details_web_view_widget.dart",
+    "lib/features/item/widgets/item_image_view_widget.dart",
+    "lib/features/item/widgets/item_title_view_widget.dart",
+    "lib/features/item/widgets/item_view_all_filter_bottom_sheet.dart",
+    "lib/features/item/widgets/item_view_all_sort_bottom_sheet.dart",
+    "lib/features/item/widgets/variation_selector_widget.dart",
+    "lib/features/language/controllers/language_controller.dart",
+    "lib/features/language/domain/models/language_model.dart",
+    "lib/features/language/domain/repository/language_repository.dart",
+    "lib/features/language/domain/repository/language_repository_interface.dart",
+    "lib/features/language/domain/service/language_service.dart",
+    "lib/features/language/domain/service/language_service_interface.dart",
+    "lib/features/language/screens/language_screen.dart",
+    "lib/features/language/screens/web_language_screen.dart",
+    "lib/features/language/widgets/language_bottom_sheet_widget.dart",
+    "lib/features/language/widgets/language_card_widget.dart",
+    "lib/features/location/controllers/location_controller.dart",
+    "lib/features/location/domain/models/prediction_model.dart",
+    "lib/features/location/domain/models/zone_data_model.dart",
+    "lib/features/location/domain/models/zone_model.dart",
+    "lib/features/location/domain/models/zone_response_model.dart",
+    "lib/features/location/domain/repositories/location_repository.dart",
+    "lib/features/location/domain/repositories/location_repository_interface.dart",
+    "lib/features/location/domain/services/location_service.dart",
+    "lib/features/location/domain/services/location_service_interface.dart",
+    "lib/features/location/screens/access_location_screen.dart",
+    "lib/features/location/screens/map_screen.dart",
+    "lib/features/location/screens/pick_map_screen.dart",
+    "lib/features/location/screens/web_landing_page.dart",
+    "lib/features/location/widgets/animated_map_icon_extended.dart",
+    "lib/features/location/widgets/animated_map_icon_minimized.dart",
+    "lib/features/location/widgets/dynamic_text_color.dart",
+    "lib/features/location/widgets/landing_card_widget.dart",
+    "lib/features/location/widgets/location_search_dialog_widget.dart",
+    "lib/features/location/widgets/module_dialog_widget.dart",
+    "lib/features/location/widgets/permission_dialog_widget.dart",
+    "lib/features/location/widgets/registration_card_widget.dart",
+    "lib/features/location/widgets/serach_location_widget.dart",
+    "lib/features/location/widgets/web_landing_page_shimmer_widget.dart",
+    "lib/features/loyalty/controllers/loyalty_controller.dart",
+    "lib/features/loyalty/domain/repositories/loyalty_repository.dart",
+    "lib/features/loyalty/domain/repositories/loyalty_repository_interface.dart",
+    "lib/features/loyalty/domain/services/loyalty_service.dart",
+    "lib/features/loyalty/domain/services/loyalty_service_interface.dart",
+    "lib/features/loyalty/screens/loyalty_screen.dart",
+    "lib/features/loyalty/widgets/loyalty_bottom_sheet_widget.dart",
+    "lib/features/loyalty/widgets/loyalty_card_widget.dart",
+    "lib/features/loyalty/widgets/loyalty_history_widget.dart",
+    "lib/features/menu/domain/models/menu_model.dart",
+    "lib/features/menu/screens/menu_screen.dart",
+    "lib/features/menu/widgets/menu_button_widget.dart",
+    "lib/features/menu/widgets/portion_widget.dart",
+    "lib/features/notification/controllers/notification_controller.dart",
+    "lib/features/notification/domain/models/notification_body_model.dart",
+    "lib/features/notification/domain/models/notification_model.dart",
+    "lib/features/notification/domain/repository/notification_repository.dart",
+    "lib/features/notification/domain/repository/notification_repository_interface.dart",
+    "lib/features/notification/domain/service/notification_service.dart",
+    "lib/features/notification/domain/service/notification_service_interface.dart",
+    "lib/features/notification/screens/notification_screen.dart",
+    "lib/features/notification/widgets/notifiation_popup_dialog_widget.dart",
+    "lib/features/notification/widgets/notification_bottom_sheet.dart",
+    "lib/features/notification/widgets/notification_dialog_widget.dart",
+    "lib/features/onboard/controllers/onboard_controller.dart",
+    "lib/features/onboard/domain/models/onboarding_model.dart",
+    "lib/features/onboard/domain/repository/onboard_repository.dart",
+    "lib/features/onboard/domain/repository/onboard_repository_interface.dart",
+    "lib/features/onboard/domain/service/onboard_service.dart",
+    "lib/features/onboard/domain/service/onboard_service_interface.dart",
+    "lib/features/onboard/screens/onboarding_screen.dart",
+    "lib/features/online_payment/controllers/online_payment_controller.dart",
+    "lib/features/online_payment/domain/repositories/online_payment_repo.dart",
+    "lib/features/online_payment/domain/repositories/online_payment_repo_interface.dart",
+    "lib/features/online_payment/domain/services/online_payment_service.dart",
+    "lib/features/online_payment/domain/services/online_payment_service_interface.dart",
+    "lib/features/order/controllers/order_controller.dart",
+    "lib/features/order/domain/models/order_cancellation_body.dart",
+    "lib/features/order/domain/models/order_details_model.dart",
+    "lib/features/order/domain/models/order_model.dart",
+    "lib/features/order/domain/models/refund_model.dart",
+    "lib/features/order/domain/models/support_model.dart",
+    "lib/features/order/domain/repositories/order_repository.dart",
+    "lib/features/order/domain/repositories/order_repository_interface.dart",
+    "lib/features/order/domain/services/order_service.dart",
+    "lib/features/order/domain/services/order_service_interface.dart",
+    "lib/features/order/screens/guest_track_order_screen.dart",
+    "lib/features/order/screens/order_details_screen.dart",
+    "lib/features/order/screens/order_screen.dart",
+    "lib/features/order/screens/order_tracking_screen.dart",
+    "lib/features/order/screens/refund_request_screen.dart",
+    "lib/features/order/widgets/address_details_widget.dart",
+    "lib/features/order/widgets/cancellation_dialogue_widget.dart",
+    "lib/features/order/widgets/custom_stepper_widget.dart",
+    "lib/features/order/widgets/delivery_details_widget.dart",
+    "lib/features/order/widgets/guest_custom_stepper_widget.dart",
+    "lib/features/order/widgets/guest_track_order_input_view_widget.dart",
+    "lib/features/order/widgets/order_banner_view_widget.dart",
+    "lib/features/order/widgets/order_calcuation_widget.dart",
+    "lib/features/order/widgets/order_info_widget.dart",
+    "lib/features/order/widgets/order_item_widget.dart",
+    "lib/features/order/widgets/order_shimmer_widget.dart",
+    "lib/features/order/widgets/order_view_widget.dart",
+    "lib/features/order/widgets/parcel_cancelation/cancellation_reason_bottom_sheet.dart",
+    "lib/features/order/widgets/parcel_cancelation/slider_button_widget.dart",
+    "lib/features/order/widgets/support_reason_bottom_sheet.dart",
+    "lib/features/order/widgets/track_details_view_widget.dart",
+    "lib/features/order/widgets/tracking_stepper_widget.dart",
+    "lib/features/order/widgets/traking_map_widget.dart",
+    "lib/features/parcel/controllers/parcel_controller.dart",
+    "lib/features/parcel/domain/models/parcel_cancellation_reasons_model.dart",
+    "lib/features/parcel/domain/models/parcel_category_model.dart",
+    "lib/features/parcel/domain/models/parcel_instruction_model.dart",
+    "lib/features/parcel/domain/models/video_content_model.dart",
+    "lib/features/parcel/domain/models/why_choose_model.dart",
+    "lib/features/parcel/domain/repositories/parcel_repository.dart",
+    "lib/features/parcel/domain/repositories/parcel_repository_interface.dart",
+    "lib/features/parcel/domain/services/parcel_service.dart",
+    "lib/features/parcel/domain/services/parcel_service_interface.dart",
+    "lib/features/parcel/screens/parcel_category_screen.dart",
+    "lib/features/parcel/screens/parcel_location_screen.dart",
+    "lib/features/parcel/screens/parcel_request_screen.dart",
+    "lib/features/parcel/widgets/address_dialog_widget.dart",
+    "lib/features/parcel/widgets/card_widget.dart",
+    "lib/features/parcel/widgets/custom_icon_layout.dart",
+    "lib/features/parcel/widgets/custom_vertical_dotted_line.dart",
+    "lib/features/parcel/widgets/deliver_item_card_widget.dart",
+    "lib/features/parcel/widgets/delivery_instruction_bottom_sheet_widget.dart",
+    "lib/features/parcel/widgets/details_widget.dart",
+    "lib/features/parcel/widgets/from_to_address_card.dart",
+    "lib/features/parcel/widgets/get_service_video_widget.dart",
+    "lib/features/parcel/widgets/parcel_app_bar_widget.dart",
+    "lib/features/parcel/widgets/parcel_payment_method_bottom_sheet.dart",
+    "lib/features/parcel/widgets/parcel_view_widget.dart",
+    "lib/features/parcel/widgets/receiver_details_botton_sheet_widget.dart",
+    "lib/features/parcel/widgets/receiver_view_widget.dart",
+    "lib/features/parcel/widgets/saved_address_bottom_sheet.dart",
+    "lib/features/parcel/widgets/sevice_info_list_widget.dart",
+    "lib/features/payment/controllers/payment_controller.dart",
+    "lib/features/payment/domain/models/keepz_payment_option.dart",
+    "lib/features/payment/domain/models/offline_method_model.dart",
+    "lib/features/payment/domain/repositories/payement_repository.dart",
+    "lib/features/payment/domain/repositories/payment_repository_interface.dart",
+    "lib/features/payment/domain/services/payment_service.dart",
+    "lib/features/payment/domain/services/payment_service_interface.dart",
+    "lib/features/payment/screens/flitt_mobile_payment_screen.dart",
+    "lib/features/payment/screens/keepz_native_payment_screen.dart",
+    "lib/features/payment/screens/offline_payment_screen.dart",
+    "lib/features/payment/screens/payment_screen.dart",
+    "lib/features/payment/screens/payment_webview_screen.dart",
+    "lib/features/payment/services/keepz_order_payment_service.dart",
+    "lib/features/payment/widgets/offline_info_edit_dialog_widget.dart",
+    "lib/features/payment/widgets/offline_payment_button.dart",
+    "lib/features/profile/controllers/profile_controller.dart",
+    "lib/features/profile/domain/models/update_profile_response_model.dart",
+    "lib/features/profile/domain/models/update_user_model.dart",
+    "lib/features/profile/domain/models/userinfo_model.dart",
+    "lib/features/profile/domain/repositories/profile_repository.dart",
+    "lib/features/profile/domain/repositories/profile_repository_interface.dart",
+    "lib/features/profile/domain/services/profile_service.dart",
+    "lib/features/profile/domain/services/profile_service_interface.dart",
+    "lib/features/profile/screens/profile_screen.dart",
+    "lib/features/profile/screens/setting_page.dart",
+    "lib/features/profile/screens/update_profile_screen.dart",
+    "lib/features/profile/widgets/notification_status_change_bottom_sheet.dart",
+    "lib/features/profile/widgets/profile_bg_widget.dart",
+    "lib/features/profile/widgets/profile_button_widget.dart",
+    "lib/features/profile/widgets/profile_card_widget.dart",
+    "lib/features/profile/widgets/web_profile_widget.dart",
+    "lib/features/refer_and_earn/screens/refer_and_earn_screen.dart",
+    "lib/features/refer_and_earn/widgets/bottom_sheet_view_widget.dart",
+    "lib/features/refer_and_earn/widgets/bottomsheet_for_mobile.dart",
+    "lib/features/rental_module/common/models/taxi_stub_models.dart",
+    "lib/features/rental_module/common/widgets/taxi_cart_widget.dart",
+    "lib/features/rental_module/controller/taxi_location_controller.dart",
+    "lib/features/rental_module/domain/repository/taxi_repository.dart",
+    "lib/features/rental_module/domain/repository/taxi_repository_interface.dart",
+    "lib/features/rental_module/domain/services/taxi_location_service.dart",
+    "lib/features/rental_module/domain/services/taxi_location_service_interface.dart",
+    "lib/features/rental_module/home/controllers/taxi_home_controller.dart",
+    "lib/features/rental_module/home/domain/repositories/taxi_home_repository.dart",
+    "lib/features/rental_module/home/domain/repositories/taxi_home_repository_interface.dart",
+    "lib/features/rental_module/home/domain/services/taxi_home_service.dart",
+    "lib/features/rental_module/home/domain/services/taxi_home_service_interface.dart",
+    "lib/features/rental_module/home/screens/taxi_home_screen.dart",
+    "lib/features/rental_module/rental_cart_screen/controllers/taxi_cart_controller.dart",
+    "lib/features/rental_module/rental_cart_screen/domain/repository/taxi_cart_repository.dart",
+    "lib/features/rental_module/rental_cart_screen/domain/repository/taxi_cart_repository_interface.dart",
+    "lib/features/rental_module/rental_cart_screen/domain/services/taxi_cart_service.dart",
+    "lib/features/rental_module/rental_cart_screen/domain/services/taxi_cart_service_interface.dart",
+    "lib/features/rental_module/rental_cart_screen/taxi_cart_screen.dart",
+    "lib/features/rental_module/rental_favourite/controllers/taxi_favourite_controller.dart",
+    "lib/features/rental_module/rental_favourite/domain/repositories/taxi_favourite_repository.dart",
+    "lib/features/rental_module/rental_favourite/domain/repositories/taxi_favourite_repository_interface.dart",
+    "lib/features/rental_module/rental_favourite/domain/services/taxi_favourite_service.dart",
+    "lib/features/rental_module/rental_favourite/domain/services/taxi_favourite_service_interface.dart",
+    "lib/features/rental_module/rental_favourite/screens/vehicle_favourite_screen.dart",
+    "lib/features/rental_module/rental_location_screen/controller/taxi_location_controller.dart",
+    "lib/features/rental_module/rental_location_screen/domain/repository/taxi_repository.dart",
+    "lib/features/rental_module/rental_location_screen/domain/repository/taxi_repository_interface.dart",
+    "lib/features/rental_module/rental_location_screen/domain/services/taxi_location_service.dart",
+    "lib/features/rental_module/rental_location_screen/domain/services/taxi_location_service_interface.dart",
+    "lib/features/rental_module/rental_order/controllers/taxi_order_controller.dart",
+    "lib/features/rental_module/rental_order/domain/repository/taxi_order_repository.dart",
+    "lib/features/rental_module/rental_order/domain/repository/taxi_order_repository_interface.dart",
+    "lib/features/rental_module/rental_order/domain/services/taxi_order_service.dart",
+    "lib/features/rental_module/rental_order/domain/services/taxi_order_service_interface.dart",
+    "lib/features/rental_module/rental_order/screens/taxi_order_details_screen.dart",
+    "lib/features/rental_module/rental_order/screens/taxi_order_screen.dart",
+    "lib/features/rental_module/rental_order/widgets/trip_order_view_widget.dart",
+    "lib/features/rental_module/vendor/controllers/taxi_vendor_controller.dart",
+    "lib/features/rental_module/vendor/domain/repositories/taxi_vendor_repository.dart",
+    "lib/features/rental_module/vendor/domain/repositories/taxi_vendor_repository_interface.dart",
+    "lib/features/rental_module/vendor/domain/services/taxi_vendor_service.dart",
+    "lib/features/rental_module/vendor/domain/services/taxi_vendor_service_interface.dart",
+    "lib/features/review/controllers/review_controller.dart",
+    "lib/features/review/domain/models/review_body_model.dart",
+    "lib/features/review/domain/models/review_model.dart",
+    "lib/features/review/domain/repositories/review_repository.dart",
+    "lib/features/review/domain/repositories/review_repository_interface.dart",
+    "lib/features/review/domain/services/review_service.dart",
+    "lib/features/review/domain/services/review_service_interface.dart",
+    "lib/features/review/screens/rate_review_screen.dart",
+    "lib/features/review/screens/review_screen.dart",
+    "lib/features/review/widgets/deliver_man_review_widget.dart",
+    "lib/features/review/widgets/delivery_man_widget.dart",
+    "lib/features/review/widgets/item_review_widget.dart",
+    "lib/features/review/widgets/rating_progress_widget.dart",
+    "lib/features/review/widgets/rating_widget.dart",
+    "lib/features/review/widgets/review_dialog_widget.dart",
+    "lib/features/review/widgets/review_list_widget.dart",
+    "lib/features/review/widgets/review_widget.dart",
+    "lib/features/review/widgets/total_rating_review_view_widget.dart",
+    "lib/features/search/controllers/search_controller.dart",
+    "lib/features/search/domain/models/popular_categories_model.dart",
+    "lib/features/search/domain/models/search_suggestion_model.dart",
+    "lib/features/search/domain/repositories/search_repository.dart",
+    "lib/features/search/domain/repositories/search_repository_interface.dart",
+    "lib/features/search/domain/services/search_service.dart",
+    "lib/features/search/domain/services/search_service_interface.dart",
+    "lib/features/search/screens/search_screen.dart",
+    "lib/features/search/widgets/custom_check_box_widget.dart",
+    "lib/features/search/widgets/filter_widget.dart",
+    "lib/features/search/widgets/item_view_widget.dart",
+    "lib/features/search/widgets/search_field_widget.dart",
+    "lib/features/search/widgets/search_result_widget.dart",
+    "lib/features/search/widgets/voice_search_bottom_sheet.dart",
+    "lib/features/splash/controllers/splash_controller.dart",
+    "lib/features/splash/domain/models/deep_link_body.dart",
+    "lib/features/splash/domain/models/landing_model.dart",
+    "lib/features/splash/domain/repositories/splash_repository.dart",
+    "lib/features/splash/domain/repositories/splash_repository_interface.dart",
+    "lib/features/splash/domain/services/splash_service.dart",
+    "lib/features/splash/domain/services/splash_service_interface.dart",
+    "lib/features/splash/screens/splash_screen.dart",
+    "lib/features/store/controllers/store_controller.dart",
+    "lib/features/store/domain/models/cart_suggested_item_model.dart",
+    "lib/features/store/domain/models/recommended_product_model.dart",
+    "lib/features/store/domain/models/store_banner_model.dart",
+    "lib/features/store/domain/models/store_model.dart",
+    "lib/features/store/domain/repositories/store_repository.dart",
+    "lib/features/store/domain/repositories/store_repository_interface.dart",
+    "lib/features/store/domain/services/store_service.dart",
+    "lib/features/store/domain/services/store_service_interface.dart",
+    "lib/features/store/screens/all_store_screen.dart",
+    "lib/features/store/screens/campaign_screen.dart",
+    "lib/features/store/screens/store_item_search_screen.dart",
+    "lib/features/store/screens/store_screen.dart",
+    "lib/features/store/widgets/bottom_cart_widget.dart",
+    "lib/features/store/widgets/camera_button_sheet_widget.dart",
+    "lib/features/store/widgets/customizable_space_bar_widget.dart",
+    "lib/features/store/widgets/filter_widget.dart",
+    "lib/features/store/widgets/store_banner_widget.dart",
+    "lib/features/store/widgets/store_description_view_widget.dart",
+    "lib/features/store/widgets/store_details_screen_shimmer_widget.dart",
+    "lib/features/support/screens/support_screen.dart",
+    "lib/features/support/widgets/support_button_widget.dart",
+    "lib/features/support/widgets/web_help_support_widget.dart",
+    "lib/features/update/screens/update_screen.dart",
+    "lib/features/verification/controllers/verification_controller.dart",
+    "lib/features/verification/domein/enum/verification_type_enum.dart",
+    "lib/features/verification/domein/models/verification_data_model.dart",
+    "lib/features/verification/domein/reposotories/verification_repository.dart",
+    "lib/features/verification/domein/reposotories/verification_repository_interface.dart",
+    "lib/features/verification/domein/services/verification_service.dart",
+    "lib/features/verification/domein/services/verification_service_interface.dart",
+    "lib/features/verification/screens/forget_pass_screen.dart",
+    "lib/features/verification/screens/new_pass_screen.dart",
+    "lib/features/verification/screens/verification_screen.dart",
+    "lib/features/wallet/controllers/wallet_controller.dart",
+    "lib/features/wallet/domain/models/fund_bonus_model.dart",
+    "lib/features/wallet/domain/models/wallet_filter_body_model.dart",
+    "lib/features/wallet/domain/repositories/wallet_repository.dart",
+    "lib/features/wallet/domain/repositories/wallet_repository_interface.dart",
+    "lib/features/wallet/domain/services/wallet_service.dart",
+    "lib/features/wallet/domain/services/wallet_service_interface.dart",
+    "lib/features/wallet/screens/wallet_screen.dart",
+    "lib/features/wallet/widgets/add_fund_dialogue_widget.dart",
+    "lib/features/wallet/widgets/bonus_banner_widget.dart",
+    "lib/features/wallet/widgets/fund_payment_dialog_widget.dart",
+    "lib/features/wallet/widgets/wallet_card_widget.dart",
+    "lib/features/wallet/widgets/wallet_history_widget.dart",
+    "lib/features/wallet/widgets/web_bonus_banner_widget.dart",
+    "lib/helper/address_helper.dart",
+    "lib/helper/auth_helper.dart",
+    "lib/helper/centralize_login_helper.dart",
+    "lib/helper/color_converter.dart",
+    "lib/helper/currency_text_input_formatter.dart",
+    "lib/helper/custom_validator.dart",
+    "lib/helper/date_converter.dart",
+    "lib/helper/db_helper.dart",
+    "lib/helper/file_type_helper.dart",
+    "lib/helper/form_validation.dart",
+    "lib/helper/get_di.dart",
+    "lib/helper/header_helper.dart",
+    "lib/helper/help_me.dart",
+    "lib/helper/link_converter_helper.dart",
+    "lib/helper/marker_helper.dart",
+    "lib/helper/module_helper.dart",
+    "lib/helper/module_type.dart",
+    "lib/helper/network_info.dart",
+    "lib/helper/notification_helper.dart",
+    "lib/helper/phone_verification_helper.dart",
+    "lib/helper/price_converter.dart",
+    "lib/helper/pusher_helper.dart",
+    "lib/helper/responsive_helper.dart",
+    "lib/helper/route_helper.dart",
+    "lib/helper/route_polyline_helper.dart",
+    "lib/helper/scroll_helper.dart",
+    "lib/helper/server_message_translator.dart",
+    "lib/helper/shallow_route_helper.dart",
+    "lib/helper/splash_route_helper.dart",
+    "lib/helper/string_extension.dart",
+    "lib/helper/taxi_helper.dart",
+    "lib/helper/validate_check.dart",
+    "lib/helper/voice_permission_handler.dart",
+    "lib/interfaces/repository_interface.dart",
+    "lib/local/cache_response.dart",
+    "lib/local/cache_response.g.dart",
+    "lib/main.dart",
+    "lib/theme/dark_theme.dart",
+    "lib/theme/light_theme.dart",
+    "lib/util/app_constants.dart",
+    "lib/util/dimensions.dart",
+    "lib/util/gaps.dart",
+    "lib/util/html_type.dart",
+    "lib/util/images.dart",
+    "lib/util/messages.dart",
+    "lib/util/styles.dart",
+    "lib/util/typography.dart"
+  ],
+  "high_risk_files": [
+    {
+      "file": "lib/features/checkout/controllers/checkout_controller.dart",
+      "score": 18,
+      "signals": [
+        "print:5",
+        "fixed_dimension:4"
+      ]
+    },
+    {
+      "file": "lib/features/store/screens/store_screen.dart",
+      "score": 18,
+      "signals": [
+        "print:2",
+        "fixed_dimension:6",
+        "stack_positioned:4"
+      ]
+    },
+    {
+      "file": "lib/features/location/screens/web_landing_page.dart",
+      "score": 17,
+      "signals": [
+        "print:1",
+        "hardcoded_font:1",
+        "fixed_dimension:11",
+        "stack_positioned:3"
+      ]
+    },
+    {
+      "file": "lib/features/address/screens/add_address_screen.dart",
+      "score": 15,
+      "signals": [
+        "fixed_dimension:10",
+        "stack_positioned:6"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/highlight_widget.dart",
+      "score": 15,
+      "signals": [
+        "fixed_dimension:7",
+        "stack_positioned:7"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/views/best_store_nearby_view.dart",
+      "score": 15,
+      "signals": [
+        "fixed_dimension:6",
+        "stack_positioned:13"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_best_review_item_view_widget.dart",
+      "score": 15,
+      "signals": [
+        "fixed_dimension:7",
+        "stack_positioned:7"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_item_that_you_love_view_widget.dart",
+      "score": 15,
+      "signals": [
+        "fixed_dimension:14",
+        "stack_positioned:18"
+      ]
+    },
+    {
+      "file": "lib/features/profile/screens/update_profile_screen.dart",
+      "score": 15,
+      "signals": [
+        "fixed_dimension:6",
+        "stack_positioned:13"
+      ]
+    },
+    {
+      "file": "lib/features/profile/widgets/profile_bg_widget.dart",
+      "score": 15,
+      "signals": [
+        "fixed_dimension:6",
+        "stack_positioned:6"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/views/best_reviewed_item_view.dart",
+      "score": 14,
+      "signals": [
+        "fixed_dimension:6",
+        "stack_positioned:4"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_special_offer_view_widget.dart",
+      "score": 14,
+      "signals": [
+        "fixed_dimension:5",
+        "stack_positioned:4"
+      ]
+    },
+    {
+      "file": "lib/features/auth/screens/store_registration_screen.dart",
+      "score": 13,
+      "signals": [
+        "print:1",
+        "fixed_dimension:3",
+        "stack_positioned:20"
+      ]
+    },
+    {
+      "file": "lib/features/location/widgets/web_landing_page_shimmer_widget.dart",
+      "score": 13,
+      "signals": [
+        "fixed_dimension:7",
+        "stack_positioned:3"
+      ]
+    },
+    {
+      "file": "lib/features/profile/screens/profile_screen.dart",
+      "score": 13,
+      "signals": [
+        "fixed_dimension:4",
+        "stack_positioned:5"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/components/circle_list_view_widget.dart",
+      "score": 12,
+      "signals": [
+        "print:1",
+        "fixed_dimension:8"
+      ]
+    },
+    {
+      "file": "lib/features/location/controllers/location_controller.dart",
+      "score": 12,
+      "signals": [
+        "print:8",
+        "fixed_dimension:1"
+      ]
+    },
+    {
+      "file": "lib/features/parcel/screens/parcel_category_screen.dart",
+      "score": 12,
+      "signals": [
+        "print:1",
+        "fixed_dimension:4",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_new_on_view_widget.dart",
+      "score": 11,
+      "signals": [
+        "fixed_dimension:3",
+        "stack_positioned:8"
+      ]
+    },
+    {
+      "file": "lib/features/location/screens/access_location_screen.dart",
+      "score": 11,
+      "signals": [
+        "uppercase:1",
+        "fixed_dimension:8"
+      ]
+    },
+    {
+      "file": "lib/features/location/screens/pick_map_screen.dart",
+      "score": 11,
+      "signals": [
+        "print:2",
+        "fixed_dimension:1",
+        "stack_positioned:6"
+      ]
+    },
+    {
+      "file": "lib/features/payment/screens/payment_screen.dart",
+      "score": 11,
+      "signals": [
+        "print:13",
+        "stack_positioned:1"
+      ]
+    },
+    {
+      "file": "lib/features/store/widgets/store_details_screen_shimmer_widget.dart",
+      "score": 11,
+      "signals": [
+        "fixed_dimension:13",
+        "stack_positioned:1"
+      ]
+    },
+    {
+      "file": "lib/api/api_client.dart",
+      "score": 10,
+      "signals": [
+        "print:9"
+      ]
+    },
+    {
+      "file": "lib/common/widgets/no_data_screen.dart",
+      "score": 10,
+      "signals": [
+        "hardcoded_font:1",
+        "fixed_dimension:4"
+      ]
+    },
+    {
+      "file": "lib/features/chat/widgets/chatting_shimmer.dart",
+      "score": 10,
+      "signals": [
+        "fixed_dimension:7"
+      ]
+    },
+    {
+      "file": "lib/features/checkout/screens/checkout_screen.dart",
+      "score": 10,
+      "signals": [
+        "print:14"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/popular_store_view.dart",
+      "score": 10,
+      "signals": [
+        "fixed_dimension:4",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/views/special_offer_view.dart",
+      "score": 10,
+      "signals": [
+        "fixed_dimension:5"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_visit_again_view_widget.dart",
+      "score": 10,
+      "signals": [
+        "fixed_dimension:3",
+        "stack_positioned:4"
+      ]
+    },
+    {
+      "file": "lib/features/item/screens/item_view_all_screen.dart",
+      "score": 10,
+      "signals": [
+        "fixed_dimension:3",
+        "stack_positioned:4"
+      ]
+    },
+    {
+      "file": "lib/helper/link_converter_helper.dart",
+      "score": 10,
+      "signals": [
+        "print:10"
+      ]
+    },
+    {
+      "file": "lib/helper/phone_verification_helper.dart",
+      "score": 10,
+      "signals": [
+        "print:5"
+      ]
+    },
+    {
+      "file": "lib/helper/route_helper.dart",
+      "score": 10,
+      "signals": [
+        "print:17"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/components/review_item_card_widget.dart",
+      "score": 9,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:6"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/views/category_view.dart",
+      "score": 9,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:7"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/views/item_that_you_love_view.dart",
+      "score": 9,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:6"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_best_store_nearby_view_widget.dart",
+      "score": 9,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:6"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_new_on_mart_view_widget.dart",
+      "score": 9,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:5"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_top_offers_near_me.dart",
+      "score": 9,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:6"
+      ]
+    },
+    {
+      "file": "lib/features/item/widgets/details_web_view_widget.dart",
+      "score": 9,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:5"
+      ]
+    },
+    {
+      "file": "lib/features/wallet/widgets/web_bonus_banner_widget.dart",
+      "score": 9,
+      "signals": [
+        "fixed_dimension:3",
+        "stack_positioned:3"
+      ]
+    },
+    {
+      "file": "lib/features/chat/widgets/web_chat_view_widget.dart",
+      "score": 8,
+      "signals": [
+        "fixed_dimension:3",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/features/dashboard/widgets/address_bottom_sheet_widget.dart",
+      "score": 8,
+      "signals": [
+        "fixed_dimension:4"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_basic_medicine_nearby_view_widget.dart",
+      "score": 8,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:4"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_highlight_widget.dart",
+      "score": 8,
+      "signals": [
+        "fixed_dimension:3",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/features/location/domain/services/location_service.dart",
+      "score": 8,
+      "signals": [
+        "print:1",
+        "fixed_dimension:3"
+      ]
+    },
+    {
+      "file": "lib/features/store/screens/campaign_screen.dart",
+      "score": 8,
+      "signals": [
+        "fixed_dimension:4"
+      ]
+    },
+    {
+      "file": "lib/common/widgets/card_design/item_card.dart",
+      "score": 7,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:7"
+      ]
+    },
+    {
+      "file": "lib/common/widgets/item_view.dart",
+      "score": 7,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:5"
+      ]
+    },
+    {
+      "file": "lib/features/auth/widgets/select_location_view_widget.dart",
+      "score": 7,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:8"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/popular_item_view.dart",
+      "score": 7,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:3"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_category_view_widget.dart",
+      "score": 7,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:9"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_common_condition_view_widget.dart",
+      "score": 7,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:6"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_populer_store_view_widget.dart",
+      "score": 7,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:5"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/widgets/store_card_widget.dart",
+      "score": 7,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:3"
+      ]
+    },
+    {
+      "file": "lib/features/location/widgets/registration_card_widget.dart",
+      "score": 7,
+      "signals": [
+        "fixed_dimension:3",
+        "stack_positioned:1"
+      ]
+    },
+    {
+      "file": "lib/features/search/widgets/voice_search_bottom_sheet.dart",
+      "score": 7,
+      "signals": [
+        "hardcoded_font:1",
+        "fixed_dimension:1",
+        "stack_positioned:3"
+      ]
+    },
+    {
+      "file": "lib/features/support/screens/support_screen.dart",
+      "score": 7,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:3"
+      ]
+    },
+    {
+      "file": "lib/api/local_client.dart",
+      "score": 6,
+      "signals": [
+        "print:3"
+      ]
+    },
+    {
+      "file": "lib/common/widgets/card_design/visit_again_card.dart",
+      "score": 6,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:4"
+      ]
+    },
+    {
+      "file": "lib/common/widgets/no_internet_screen.dart",
+      "score": 6,
+      "signals": [
+        "hardcoded_font:1",
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/common/widgets/web_menu_bar.dart",
+      "score": 6,
+      "signals": [
+        "print:1",
+        "fixed_dimension:1",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/common/widgets/zone_warning_dialog.dart",
+      "score": 6,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/features/category/screens/category_item_screen.dart",
+      "score": 6,
+      "signals": [
+        "print:2",
+        "fixed_dimension:1"
+      ]
+    },
+    {
+      "file": "lib/features/chat/screens/chat_screen.dart",
+      "score": 6,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:4"
+      ]
+    },
+    {
+      "file": "lib/features/checkout/widgets/order_successfull_dialog.dart",
+      "score": 6,
+      "signals": [
+        "fixed_dimension:3"
+      ]
+    },
+    {
+      "file": "lib/features/home/screens/web_new_home_screen.dart",
+      "score": 6,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/category_view.dart",
+      "score": 6,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/views/new_on_mart_view.dart",
+      "score": 6,
+      "signals": [
+        "fixed_dimension:3"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/views/visit_again_view.dart",
+      "score": 6,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:4"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_promotional_banner_view_widget.dart",
+      "score": 6,
+      "signals": [
+        "fixed_dimension:3"
+      ]
+    },
+    {
+      "file": "lib/features/parcel/widgets/parcel_view_widget.dart",
+      "score": 6,
+      "signals": [
+        "print:1",
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/parcel/widgets/saved_address_bottom_sheet.dart",
+      "score": 6,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/features/refer_and_earn/screens/refer_and_earn_screen.dart",
+      "score": 6,
+      "signals": [
+        "print:1",
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/wallet/widgets/wallet_card_widget.dart",
+      "score": 6,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/helper/notification_helper.dart",
+      "score": 6,
+      "signals": [
+        "print:3"
+      ]
+    },
+    {
+      "file": "lib/common/widgets/card_design/store_card.dart",
+      "score": 5,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:3"
+      ]
+    },
+    {
+      "file": "lib/common/widgets/card_design/store_card_with_distance.dart",
+      "score": 5,
+      "signals": [
+        "stack_positioned:6"
+      ]
+    },
+    {
+      "file": "lib/common/widgets/code_picker_widget.dart",
+      "score": 5,
+      "signals": [
+        "uppercase:13"
+      ]
+    },
+    {
+      "file": "lib/common/widgets/item_bottom_sheet.dart",
+      "score": 5,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:3"
+      ]
+    },
+    {
+      "file": "lib/features/auth/screens/delivery_man_registration_screen.dart",
+      "score": 5,
+      "signals": [
+        "stack_positioned:9"
+      ]
+    },
+    {
+      "file": "lib/features/auth/screens/rider_registration_screen.dart",
+      "score": 5,
+      "signals": [
+        "stack_positioned:9"
+      ]
+    },
+    {
+      "file": "lib/features/business/widgets/package_card_widget.dart",
+      "score": 5,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:3"
+      ]
+    },
+    {
+      "file": "lib/features/cart/widgets/web_suggested_item_view_widget.dart",
+      "score": 5,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:3"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/views/shop_item_recommendations_view.dart",
+      "score": 5,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:3"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_featured_categories_view_widget.dart",
+      "score": 5,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:3"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_most_popular_item_view_widget.dart",
+      "score": 5,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:3"
+      ]
+    },
+    {
+      "file": "lib/features/item/screens/popular_item_screen.dart",
+      "score": 5,
+      "signals": [
+        "stack_positioned:5"
+      ]
+    },
+    {
+      "file": "lib/features/item/widgets/item_image_view_widget.dart",
+      "score": 5,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:3"
+      ]
+    },
+    {
+      "file": "lib/features/order/widgets/traking_map_widget.dart",
+      "score": 5,
+      "signals": [
+        "fixed_dimension:2",
+        "stack_positioned:1"
+      ]
+    },
+    {
+      "file": "lib/features/verification/screens/verification_screen.dart",
+      "score": 5,
+      "signals": [
+        "stack_positioned:12"
+      ]
+    },
+    {
+      "file": "lib/main.dart",
+      "score": 5,
+      "signals": [
+        "print:2",
+        "stack_positioned:1"
+      ]
+    },
+    {
+      "file": "lib/common/widgets/footer_view.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/common/widgets/item_widget.dart",
+      "score": 4,
+      "signals": [
+        "stack_positioned:4"
+      ]
+    },
+    {
+      "file": "lib/common/widgets/menu_drawer.dart",
+      "score": 4,
+      "signals": [
+        "hardcoded_font:1",
+        "fixed_dimension:1"
+      ]
+    },
+    {
+      "file": "lib/common/widgets/web_item_widget.dart",
+      "score": 4,
+      "signals": [
+        "stack_positioned:4"
+      ]
+    },
+    {
+      "file": "lib/features/ai_chat/widgets/ai_chat_result_sections.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/auth/widgets/business/web_business_plan_widget.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/auth/widgets/custom_time_picker_widget.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/auth/widgets/sign_in/existing_user_bottom_sheet.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/auth/widgets/sign_in/manual_login_widget.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/business/widgets/web_business_plan_widget.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/chat/widgets/message_bubble_widget.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/checkout/screens/digital_payment_failed_screen.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/features/checkout/widgets/checkout_screen_shimmer_view.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/checkout/widgets/congratulation_dialogue.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/features/checkout/widgets/guest_delivery_address.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/checkout/widgets/payment_method_bottom_sheet.dart",
+      "score": 4,
+      "signals": [
+        "hardcoded_font:1",
+        "fixed_dimension:1"
+      ]
+    },
+    {
+      "file": "lib/features/checkout/widgets/prescription_image_picker_widget.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/features/dashboard/widgets/parcel_bottom_sheet_widget.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/features/dashboard/widgets/payment_incomplete_bottomsheet.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/features/flash_sale/widgets/flash_product_card_widget.dart",
+      "score": 4,
+      "signals": [
+        "stack_positioned:4"
+      ]
+    },
+    {
+      "file": "lib/features/home/screens/home_screen.dart",
+      "score": 4,
+      "signals": [
+        "print:1",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/category_pop_up.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/module_view.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/product_with_categories_view.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_just_for_you_view_widget.dart",
+      "score": 4,
+      "signals": [
+        "stack_positioned:4"
+      ]
+    },
+    {
+      "file": "lib/features/home/widgets/web/web_store_shimmer_widget.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/language/screens/language_screen.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/language/screens/web_language_screen.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/location/widgets/module_dialog_widget.dart",
+      "score": 4,
+      "signals": [
+        "hardcoded_font:1",
+        "fixed_dimension:1"
+      ]
+    },
+    {
+      "file": "lib/features/notification/widgets/notifiation_popup_dialog_widget.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/order/screens/order_tracking_screen.dart",
+      "score": 4,
+      "signals": [
+        "stack_positioned:4"
+      ]
+    },
+    {
+      "file": "lib/features/order/widgets/cancellation_dialogue_widget.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/order/widgets/support_reason_bottom_sheet.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:1",
+        "stack_positioned:2"
+      ]
+    },
+    {
+      "file": "lib/features/parcel/widgets/parcel_payment_method_bottom_sheet.dart",
+      "score": 4,
+      "signals": [
+        "hardcoded_font:1",
+        "fixed_dimension:1"
+      ]
+    },
+    {
+      "file": "lib/features/parcel/widgets/receiver_view_widget.dart",
+      "score": 4,
+      "signals": [
+        "fixed_dimension:2"
+      ]
+    },
+    {
+      "file": "lib/features/review/widgets/rating_widget.dart",
+      "score": 4,
+      "signals": [
+        "hardcoded_font:2"
+      ]
+    },
+    {
+      "file": "lib/features/splash/screens/splash_screen.dart",
+      "score": 4,
+      "signals": [
+        "print:2"
+      ]
+    },
+    {
+      "file": "lib/helper/network_info.dart",
+      "score": 4,
+      "signals": [
+        "print:2"
+      ]
+    },
+    {
+      "file": "lib/helper/validate_check.dart",
+      "score": 4,
+      "signals": [
+        "print:2"
+      ]
+    },
+    {
+      "file": "lib/helper/voice_permission_handler.dart",
+      "score": 4,
+      "signals": [
+        "hardcoded_font:1",
+        "fixed_dimension:1"
+      ]
+    }
+  ]
+}

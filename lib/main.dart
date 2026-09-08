@@ -108,7 +108,6 @@ class _MyAppState extends State<MyApp> {
   void _initAppLinks() async {
     _appLinks = AppLinks();
 
-    // Listen for any subsequent incoming links
     _appLinks.uriLinkStream.listen(
       (Uri? uri) {
         if (uri != null) {
@@ -156,84 +155,90 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    final reduceMotion = WidgetsBinding.instance.platformDispatcher
+        .accessibilityFeatures.disableAnimations;
     return GetBuilder<ThemeController>(
       builder: (themeController) {
         return GetBuilder<LocalizationController>(
           builder: (localizeController) {
             return GetBuilder<SplashController>(
               builder: (splashController) {
-                return (GetPlatform.isWeb &&
-                        splashController.configModel == null)
-                    ? const SizedBox()
-                    : GetMaterialApp(
-                        title: AppConstants.appName,
-                        debugShowCheckedModeBanner: false,
-                        navigatorKey: Get.key,
-                        scrollBehavior: const MaterialScrollBehavior().copyWith(
-                          dragDevices: {
-                            PointerDeviceKind.mouse,
-                            PointerDeviceKind.touch,
-                          },
+                if (GetPlatform.isWeb && splashController.configModel == null) {
+                  return Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: ColoredBox(
+                      color: Colors.white,
+                      child: Center(
+                        child: Semantics(
+                          label: 'Loading',
+                          child: const SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: CircularProgressIndicator(strokeWidth: 3),
+                          ),
                         ),
-                        theme: themeController.darkTheme ? dark() : light(),
-                        locale: localizeController.locale,
-                        translations: Messages(languages: widget.languages),
-                        fallbackLocale: Locale(
-                          AppConstants.languages[0].languageCode!,
-                          AppConstants.languages[0].countryCode,
-                        ),
-                        initialRoute: _initialRoute,
-                        getPages: RouteHelper.routes,
-                        defaultTransition: GetPlatform.isWeb
-                            ? Transition.fadeIn
-                            : Transition.topLevel,
-                        transitionDuration: const Duration(milliseconds: 700),
-                        builder: (BuildContext context, widget) {
-                          return MediaQuery(
-                            data: MediaQuery.of(
-                              context,
-                            ).copyWith(textScaler: const TextScaler.linear(1)),
-                            child: Material(
-                              child: SafeArea(
-                                top: false,
-                                bottom: GetPlatform.isAndroid,
-                                child: Stack(
-                                  children: [
-                                    widget!,
+                      ),
+                    ),
+                  );
+                }
 
-                                    GetBuilder<SplashController>(
-                                      builder: (splashController) {
-                                        if (!splashController
-                                                .savedCookiesData &&
-                                            !splashController
-                                                .getAcceptCookiesStatus(
-                                                  splashController
-                                                              .configModel !=
-                                                          null
-                                                      ? splashController
-                                                            .configModel!
-                                                            .cookiesText!
-                                                      : '',
-                                                )) {
-                                          return ResponsiveHelper.isWeb()
-                                              ? const Align(
-                                                  alignment:
-                                                      Alignment.bottomCenter,
-                                                  child: CookiesView(),
-                                                )
-                                              : const SizedBox();
-                                        } else {
-                                          return const SizedBox();
-                                        }
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
+                return GetMaterialApp(
+                  title: AppConstants.appName,
+                  debugShowCheckedModeBanner: false,
+                  navigatorKey: Get.key,
+                  scrollBehavior: const MaterialScrollBehavior().copyWith(
+                    dragDevices: {
+                      PointerDeviceKind.mouse,
+                      PointerDeviceKind.touch,
+                    },
+                  ),
+                  theme: themeController.darkTheme ? dark() : light(),
+                  locale: localizeController.locale,
+                  translations: Messages(languages: widget.languages),
+                  fallbackLocale: Locale(
+                    AppConstants.languages[0].languageCode!,
+                    AppConstants.languages[0].countryCode,
+                  ),
+                  initialRoute: _initialRoute,
+                  getPages: RouteHelper.routes,
+                  defaultTransition: reduceMotion ? Transition.noTransition : GetPlatform.isWeb
+                      ? Transition.fadeIn
+                      : Transition.topLevel,
+                  transitionDuration: reduceMotion ? Duration.zero : const Duration(milliseconds: 250),
+                  builder: (BuildContext context, widget) {
+                    return Material(
+                      child: SafeArea(
+                        top: false,
+                        bottom: true,
+                        child: Stack(
+                          children: [
+                            widget!,
+                            GetBuilder<SplashController>(
+                              builder: (splashController) {
+                                if (!splashController.savedCookiesData &&
+                                    !splashController.getAcceptCookiesStatus(
+                                      splashController.configModel != null
+                                          ? splashController
+                                                .configModel!
+                                                .cookiesText!
+                                          : '',
+                                    )) {
+                                  return ResponsiveHelper.isWeb()
+                                      ? const Align(
+                                          alignment: Alignment.bottomCenter,
+                                          child: CookiesView(),
+                                        )
+                                      : const SizedBox();
+                                }
+                                return const SizedBox();
+                              },
                             ),
-                          );
-                        },
-                      );
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
               },
             );
           },

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
+import 'package:sixam_mart/common/widgets/navigation_safe_area.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:app_links/app_links.dart';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
@@ -207,9 +208,7 @@ class _MyAppState extends State<MyApp> {
                   transitionDuration: reduceMotion ? Duration.zero : const Duration(milliseconds: 250),
                   builder: (BuildContext context, widget) {
                     return Material(
-                      child: SafeArea(
-                        top: false,
-                        bottom: true,
+                      child: AppSafeArea(
                         child: Stack(
                           children: [
                             widget!,

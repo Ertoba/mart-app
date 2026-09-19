@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:sixam_mart/common/widgets/navigation_safe_area.dart';
 import 'package:expandable_bottom_sheet/expandable_bottom_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -287,7 +288,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                             }.contains(splashController.module?.moduleType))
                           Positioned(
                             right: Dimensions.paddingSizeDefault,
-                            bottom: 88,
+                            bottom: 88 + MediaQuery.paddingOf(context).bottom,
                             child: AiChatFloatingButton(
                               onTap: () => showAiChatBottomSheet(context),
                             ),
@@ -341,9 +342,8 @@ class DashboardScreenState extends State<DashboardScreen> {
                                       OrderScreen(index: isTaxi ? 1 : 0),
                                       const MenuScreen(),
                                     ];
-                                    return Container(
+                                    return BottomNavigationSurface(
                                       width: size.width,
-                                      height: GetPlatform.isIOS ? 80 : 65,
                                       decoration: BoxDecoration(
                                         color: Theme.of(context).cardColor,
                                         borderRadius:
@@ -492,7 +492,6 @@ class DashboardScreenState extends State<DashboardScreen> {
                                               : Center(
                                                   child: SizedBox(
                                                     width: size.width,
-                                                    height: 80,
                                                     child: Row(
                                                       mainAxisAlignment:
                                                           MainAxisAlignment
@@ -538,10 +537,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                                                           onTap: () =>
                                                               _setPage(1),
                                                         ),
-                                                        Container(
-                                                          width:
-                                                              size.width * 0.2,
-                                                        ),
+                                                        const Expanded(child: SizedBox()),
                                                         BottomNavItemWidget(
                                                           title: isTaxi
                                                               ? 'trips'.tr

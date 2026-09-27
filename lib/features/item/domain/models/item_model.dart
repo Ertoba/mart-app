@@ -242,9 +242,9 @@ class Item {
         choiceOptions!.add(ChoiceOptions.fromJson(v));
       });
     }
-    price = json['price'].toDouble();
+    price = (json['price'] as num?)?.toDouble() ?? 0;
     tax = json['tax']?.toDouble();
-    discount = json['discount'].toDouble();
+    discount = (json['discount'] as num?)?.toDouble() ?? 0;
     discountType = json['discount_type'];
     availableTimeStarts = json['available_time_starts'];
     availableTimeEnds = json['available_time_ends'];
@@ -410,7 +410,7 @@ class AddOns {
   AddOns.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     name = json['name'];
-    price = json['price'].toDouble();
+    price = (json['price'] as num?)?.toDouble() ?? 0;
   }
 
   Map<String, dynamic> toJson() {

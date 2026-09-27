@@ -181,6 +181,7 @@ class CartRepository implements CartRepositoryInterface<OnlineCart> {
     Response response = await apiClient.getData(
       '${AppConstants.getAllCartsUri}${!AuthHelper.isLoggedIn() ? '?guest_id=${AuthHelper.getGuestId()}' : ''}',
       headers: ModuleHelper.getModule()?.id == null ? header : null,
+      handleError: false,
     );
     if(response.statusCode == 200) {
       allCarts = [];

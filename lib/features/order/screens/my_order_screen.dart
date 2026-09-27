@@ -932,7 +932,10 @@ class _OrderItemCard extends StatelessWidget {
                 const SizedBox(height: Dimensions.paddingSizeSmall),
                 Row(
                   children: [
-                    ImagePreviewWidget(image: ((orderModel.itemsPreview != null && orderModel.itemsPreview!.isNotEmpty) ? orderModel.itemsPreview : null)?.first.imageFullUrl ?? '', extraCount: (orderModel.itemCount)! - 1),
+                    ImagePreviewWidget(
+                      image: ((orderModel.itemsPreview != null && orderModel.itemsPreview!.isNotEmpty) ? orderModel.itemsPreview : null)?.first.imageFullUrl ?? '',
+                      extraCount: ((orderModel.itemCount ?? orderModel.itemsPreview?.length ?? 1) - 1).clamp(0, 999),
+                    ),
                     const SizedBox(width: Dimensions.paddingSizeSmall),
 
                     Expanded(child: Column(
@@ -955,7 +958,7 @@ class _OrderItemCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         if(orderModel.parcelCategory != null) Text(
-                          DateConverter.dateTimeStringToTime(orderModel.createdAt!),
+                          DateConverter.dateTimeStringToTime(orderModel.createdAt ?? ''),
                           style: robotoRegular.copyWith(
                             fontSize: Dimensions.fontSizeExtraSmall,
                             color: Theme.of(context).disabledColor,

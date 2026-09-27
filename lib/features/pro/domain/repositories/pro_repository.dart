@@ -15,7 +15,7 @@ class ProRepository implements ProRepositoryInterface {
   @override
   Future<ProPlanModel?> getProPlans() async {
     ProPlanModel? model;
-    Response response = await apiClient.getData(AppConstants.proPlansUri);
+    Response response = await apiClient.getData(AppConstants.proPlansUri, handleError: false);
     if (response.statusCode == 200) {
       model = ProPlanModel.fromJson(response.body);
     }
@@ -25,7 +25,7 @@ class ProRepository implements ProRepositoryInterface {
   @override
   Future<List<ProFaqModel>?> getProFaqs() async {
     List<ProFaqModel>? faqs;
-    Response response = await apiClient.getData(AppConstants.proFaqsUri);
+    Response response = await apiClient.getData(AppConstants.proFaqsUri, handleError: false);
     if (response.statusCode == 200 && response.body['faqs'] != null) {
       faqs = [];
       response.body['faqs'].forEach((faq) {
@@ -42,6 +42,7 @@ class ProRepository implements ProRepositoryInterface {
       moduleType != null && moduleType.isNotEmpty
           ? '${AppConstants.proActiveOfferUri}?module_type=$moduleType'
           : AppConstants.proActiveOfferUri,
+      handleError: false,
     );
     if (response.statusCode == 200) {
       model = ProActiveOfferModel.fromJson(response.body);

@@ -59,7 +59,7 @@ class HomeRepository implements HomeRepositoryInterface {
 
   @override
   Future<TopOfferModel?> getTopOffer() async {
-    final Response response = await apiClient.getData(AppConstants.topOfferUri);
+    final Response response = await apiClient.getData(AppConstants.topOfferUri, handleError: false);
     if(response.statusCode == 200 && response.body is Map<String, dynamic>) {
       return TopOfferModel.fromJson(response.body);
     }

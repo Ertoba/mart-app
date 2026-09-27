@@ -127,7 +127,7 @@ class OrderRepository implements OrderRepositoryInterface {
     }
 
     final String uri = storeId != null ? '${AppConstants.lastOrdersUri}?store_id=$storeId' : AppConstants.lastOrdersUri;
-    final Response response = await apiClient.getData(uri, headers: header);
+    final Response response = await apiClient.getData(uri, headers: header, handleError: false);
     if(response.statusCode == 200 && response.body is List) {
       log("---------+> ${header} ${response.body.map((e)=>e['module_id'])}");
       return (response.body as List).whereType<Map<String, dynamic>>().map(LastOrderModel.fromJson).toList();

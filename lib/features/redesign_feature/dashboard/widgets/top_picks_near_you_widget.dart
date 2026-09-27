@@ -53,12 +53,14 @@ class TopPicksNearYouWidget extends StatelessWidget {
                   const SizedBox(width: Dimensions.paddingSizeSmall),
                 ],
 
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TitleWidget(title: title),
-                    if(subTitle != null) Text(subTitle!, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor),)
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TitleWidget(title: title),
+                      if(subTitle != null) Text(subTitle!, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor),)
+                    ],
+                  ),
                 ),
             ]),
           ),

@@ -14,6 +14,7 @@ class OfferRepository implements OfferRepositoryInterface {
     final Response response = await apiClient.getData(
       '${AppConstants.offerItemsUri}?search=$search&limit=$limit&offset=$offset',
       headers: _headersWithModule(moduleId),
+      handleError: false,
     );
     if (response.statusCode == 200) {
       return NewItemListResponse.fromJson(response.body);
@@ -26,6 +27,7 @@ class OfferRepository implements OfferRepositoryInterface {
     final Response response = await apiClient.getData(
       '${AppConstants.offerStoresUri}?search=$search&limit=$limit&offset=$offset',
       headers: _headersWithModule(moduleId),
+      handleError: false,
     );
     if (response.statusCode == 200) {
       return StoreModel.fromJson(response.body);
@@ -38,6 +40,7 @@ class OfferRepository implements OfferRepositoryInterface {
     final Response response = await apiClient.getData(
       AppConstants.exclusiveDealsUri,
       headers: _headersWithModule(moduleId),
+      handleError: false,
     );
     if (response.statusCode == 200) {
       return StoreModel.fromJson(response.body).stores;

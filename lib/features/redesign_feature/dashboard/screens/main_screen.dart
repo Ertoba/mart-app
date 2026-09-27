@@ -203,7 +203,7 @@ class _MainScreenState extends State<MainScreen> with AutomaticKeepAliveClientMi
     final SplashController splashController = Get.find<SplashController>();
     splashController.setRefreshing(true);
 
-    final String label = selectedModule.label.toLowerCase();
+    final String label = (selectedModule.moduleType ?? selectedModule.label).toLowerCase();
     if (label == 'rideshare') {
       await RideHomeScreen.loadData();
     } else if (label == 'rental') {
@@ -316,7 +316,7 @@ class _MainScreenState extends State<MainScreen> with AutomaticKeepAliveClientMi
         // Resolve to the single module right away so HomeNewScreen never flashes
         // for a frame before the post-frame selection lands. Uses the same label
         // mapping as the indexed path, so the render switch resolves identically.
-        if (selectedModule.label.toLowerCase() == 'home') {
+        if ((selectedModule.moduleType ?? selectedModule.label).toLowerCase() == 'home') {
           final singleModule = splashController.moduleList![0];
           final String moduleType = singleModule.moduleType?.toString() ?? '';
           selectedModule = ModuleModel(label: _moduleLabel(singleModule.moduleName, moduleType), moduleType: moduleType);
@@ -331,8 +331,9 @@ class _MainScreenState extends State<MainScreen> with AutomaticKeepAliveClientMi
         }
       }
 
-      final bool isHomeModule = selectedModule.label.toLowerCase() == 'home';
-      final bool isParcelModule = selectedModule.label.toLowerCase() == 'parcel';
+      final String selectedModuleType = (selectedModule.moduleType ?? selectedModule.label).toLowerCase();
+      final bool isHomeModule = selectedModuleType == 'home';
+      final bool isParcelModule = selectedModuleType == 'parcel';
       final bool showPinnedSearch = _isSearchPinned;
       final bool showPinnedExploreRestaurantFilter = !isHomeModule && _isSearchPinned && _isExploreRestaurantFilterPinned;
 
@@ -393,15 +394,15 @@ class _MainScreenState extends State<MainScreen> with AutomaticKeepAliveClientMi
                     SliverToBoxAdapter(child: TopHeaderWidget(key: _topHeaderKey, isHomeModule: isHomeModule, isParcelModule: isParcelModule, showModuleTabs: !isSingleModule)),
 
                     // module view
-                    if(selectedModule.label.toLowerCase() == 'home') HomeNewScreen(searchHeaderKey: _searchHeaderKey, isSearchPinned: _isSearchPinned),
-                    if(selectedModule.label.toLowerCase() == 'grocery') GroceryModuleScreen(searchHeaderKey: _searchHeaderKey, exploreRestaurantKey: _exploreRestaurantFilterKey, scrollController: _scrollController, isSearchPinned: _isSearchPinned,),
-                    if(selectedModule.label.toLowerCase() == 'pharmacy') PharmacyModuleScreen(searchHeaderKey: _searchHeaderKey, exploreRestaurantKey: _exploreRestaurantFilterKey, scrollController: _scrollController, isSearchPinned: _isSearchPinned,),
-                    if(selectedModule.label.toLowerCase() == 'shop') ShopModuleScreen(searchHeaderKey: _searchHeaderKey, exploreRestaurantKey: _exploreRestaurantFilterKey, scrollController: _scrollController, isSearchPinned: _isSearchPinned,),
-                    if(selectedModule.label.toLowerCase() == 'food') FoodModuleScreen(searchHeaderKey: _searchHeaderKey, exploreRestaurantKey: _exploreRestaurantFilterKey, scrollController: _scrollController, isSearchPinned: _isSearchPinned,),
-                    if(selectedModule.label.toLowerCase() == 'parcel') ParcelModuleScreen(searchHeaderKey: _searchHeaderKey, exploreRestaurantKey: _exploreRestaurantFilterKey,),
-                    if(selectedModule.label.toLowerCase() == 'rental') RentalModuleScreen(searchHeaderKey: _searchHeaderKey, exploreRestaurantKey: _exploreRestaurantFilterKey,),
-                    if(selectedModule.label.toLowerCase() == 'rideshare') const RideHomeScreen(),
-                    if(selectedModule.label.toLowerCase() == 'service') ServiceScreen(scrollController: _scrollController),
+                    if(selectedModuleType == 'home') HomeNewScreen(searchHeaderKey: _searchHeaderKey, isSearchPinned: _isSearchPinned),
+                    if(selectedModuleType == 'grocery') GroceryModuleScreen(searchHeaderKey: _searchHeaderKey, exploreRestaurantKey: _exploreRestaurantFilterKey, scrollController: _scrollController, isSearchPinned: _isSearchPinned,),
+                    if(selectedModuleType == 'pharmacy') PharmacyModuleScreen(searchHeaderKey: _searchHeaderKey, exploreRestaurantKey: _exploreRestaurantFilterKey, scrollController: _scrollController, isSearchPinned: _isSearchPinned,),
+                    if(selectedModuleType == 'ecommerce' || selectedModuleType == 'shop') ShopModuleScreen(searchHeaderKey: _searchHeaderKey, exploreRestaurantKey: _exploreRestaurantFilterKey, scrollController: _scrollController, isSearchPinned: _isSearchPinned,),
+                    if(selectedModuleType == 'food') FoodModuleScreen(searchHeaderKey: _searchHeaderKey, exploreRestaurantKey: _exploreRestaurantFilterKey, scrollController: _scrollController, isSearchPinned: _isSearchPinned,),
+                    if(selectedModuleType == 'parcel') ParcelModuleScreen(searchHeaderKey: _searchHeaderKey, exploreRestaurantKey: _exploreRestaurantFilterKey,),
+                    if(selectedModuleType == 'rental') RentalModuleScreen(searchHeaderKey: _searchHeaderKey, exploreRestaurantKey: _exploreRestaurantFilterKey,),
+                    if(selectedModuleType == 'rideshare' || selectedModuleType == 'ride') const RideHomeScreen(),
+                    if(selectedModuleType == 'service') ServiceScreen(scrollController: _scrollController),
                   ],
                 ),
               ),
@@ -430,7 +431,7 @@ class _MainScreenState extends State<MainScreen> with AutomaticKeepAliveClientMi
                   child: FoodModuleExploreRestaurantFilterHeaderWidget(showBottomDivider: true),
                 ),
 
-              if(selectedModule.label.toLowerCase() == 'rideshare')
+              if(selectedModuleType == 'rideshare' || selectedModuleType == 'ride')
                 GetBuilder<RideController>(builder: (rideController) =>
                 rideController.tripDetails != null || rideController.rideDetails != null
                     ? const Positioned(

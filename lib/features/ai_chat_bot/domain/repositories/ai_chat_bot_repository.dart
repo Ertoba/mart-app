@@ -17,6 +17,7 @@ class AiChatBotRepository implements AiChatBotRepositoryInterface {
     AiChatConversationModel? conversationModel;
     Response response = await apiClient.getData(
       '${AppConstants.aiChatConversationListUri}?limit=$limit&offset=$offset$_guestIdQuerySuffix',
+      handleError: false,
     );
     if (response.statusCode == 200) {
       conversationModel = AiChatConversationModel.fromJson(response.body);
@@ -29,6 +30,7 @@ class AiChatBotRepository implements AiChatBotRepositoryInterface {
     AiChatMessageModel? messageModel;
     Response response = await apiClient.getData(
       '${AppConstants.aiChatMessagesUri}?conversation_id=$conversationId&limit=$limit&offset=$offset$_guestIdQuerySuffix',
+      handleError: false,
     );
     if (response.statusCode == 200) {
       messageModel = AiChatMessageModel.fromJson(response.body);

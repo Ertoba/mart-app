@@ -295,6 +295,7 @@ class OnlineCart {
   List<int?>? _addOnQtys;
   String? _model;
   String? _itemType;
+  int? _reelId;
 
   OnlineCart(
     int? cartId,
@@ -309,7 +310,7 @@ class OnlineCart {
     List<AddOns>? addOns,
     List<int?> addOnQtys,
     String model,
-    {String? itemType}){
+    {String? itemType, int? reelId}){
     _cartId = cartId;
     _itemId = itemId;
     _itemCampaignId = itemCampaignId;
@@ -323,6 +324,7 @@ class OnlineCart {
     _addOnQtys = addOnQtys;
     _model = model;
     _itemType = itemType;
+    _reelId = reelId;
   }
 
   int? get cartId => _cartId;
@@ -337,6 +339,7 @@ class OnlineCart {
   List<int?>? get addOnQtys => _addOnQtys;
   String? get model => _model;
   String? get itemType => _itemType;
+  int? get reelId => _reelId;
 
   OnlineCart.fromJson(Map<String, dynamic> json) {
     _cartId = json['cart_id'];
@@ -368,6 +371,7 @@ class OnlineCart {
     if (json['item_type'] != null && json['item_type'] != 'null') {
       _itemType = json['item_type'];
     }
+    _reelId = json['reel_id'];
   }
 
   Map<String, dynamic> toJson() {
@@ -391,6 +395,9 @@ class OnlineCart {
     data['model'] = _model;
     if (_itemType != null) {
       data['item_type'] = _itemType;
+    }
+    if (_reelId != null) {
+      data['reel_id'] = _reelId;
     }
     return data;
   }

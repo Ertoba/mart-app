@@ -8,7 +8,8 @@ class RatingBar extends StatelessWidget {
   final double? rating;
   final double size;
   final int? ratingCount;
-  const RatingBar({super.key, required this.rating, required this.ratingCount, this.size = 18});
+  final bool showRatingText;
+  const RatingBar({super.key, required this.rating, required this.ratingCount, this.size = 18, this.showRatingText = true});
 
   @override
   Widget build(BuildContext context) {
@@ -30,8 +31,8 @@ class RatingBar extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(0, 4, 0, 0),
           child: Row(
             children: [
-              Text(rating?.toStringAsFixed(1)??'0', style: robotoRegular.copyWith(fontSize: size*0.8, color: Theme.of(context).textTheme.bodyLarge?.color), textDirection: TextDirection.ltr),
-              Text(' ($ratingCount)', style: robotoRegular.copyWith(fontSize: size*0.8, color: Theme.of(context).disabledColor), textDirection: TextDirection.ltr),
+              if (showRatingText) Text(rating?.toStringAsFixed(1)??'0', style: robotoRegular.copyWith(fontSize: size*0.8, color: Theme.of(context).textTheme.bodyLarge?.color), textDirection: TextDirection.ltr),
+              if (showRatingText) Text(' ($ratingCount)', style: robotoRegular.copyWith(fontSize: size*0.8, color: Theme.of(context).disabledColor), textDirection: TextDirection.ltr),
             ],
           ),
         ),

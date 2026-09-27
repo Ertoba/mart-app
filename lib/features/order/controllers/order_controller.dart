@@ -185,7 +185,7 @@ class OrderController extends GetxController implements GetxService {
       final bool hasAdded = response.addedCount != null && response.addedCount! > 0;
       if(hasAdded) {
         await Get.find<CartController>().getAllCarts();
-        Get.toNamed(RouteHelper.getGlobalCartRoute(initialModuleId: Get.find<SplashController>().getCacheModule()));
+        Get.toNamed(RouteHelper.getGlobalCartRoute(initialModuleId: Get.find<SplashController>().getCacheModule()?.id));
       }
     }
   }
@@ -320,7 +320,7 @@ class OrderController extends GetxController implements GetxService {
     }
   }
 
-  Future<void> getRunningOrders(int offset, {bool isUpdate = false}) =>
+  Future<void> getRunningOrders(int offset, {bool isUpdate = false, bool fromDashboard = false}) =>
       getOrders(OrderListType.running, offset, isUpdate: isUpdate);
 
   Future<void> getHistoryOrders(int offset, {bool isUpdate = false}) =>

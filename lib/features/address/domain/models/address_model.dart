@@ -9,6 +9,7 @@ class AddressModel {
   String? latitude;
   String? longitude;
   int? zoneId;
+  int? rideZoneId;
   List<int>? zoneIds;
   String? method;
   String? contactPersonName;
@@ -28,6 +29,7 @@ class AddressModel {
     this.latitude,
     this.longitude,
     this.zoneId,
+    this.rideZoneId,
     this.zoneIds,
     this.method,
     this.contactPersonName,
@@ -48,6 +50,7 @@ class AddressModel {
     latitude = json['latitude'].toString();
     longitude = json['longitude'].toString();
     zoneId = (json['zone_id'] != null && json['zone_id'] != 'null') ? int.parse(json['zone_id'].toString()) : null;
+    rideZoneId = (json['ride_zone_id'] != null && json['ride_zone_id'] != 'null') ? int.parse(json['ride_zone_id'].toString()) : null;
     zoneIds = json['zone_ids']?.cast<int>();
     method = json['_method'];
     contactPersonName = json['contact_person_name'];
@@ -76,6 +79,7 @@ class AddressModel {
     data['latitude'] = latitude;
     data['longitude'] = longitude;
     data['zone_id'] = zoneId;
+    data['ride_zone_id'] = rideZoneId;
     data['zone_ids'] = zoneIds;
     data['_method'] = method;
     data['contact_person_name'] = contactPersonName;

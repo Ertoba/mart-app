@@ -1,5 +1,6 @@
 import 'package:get/get_connect/http/src/response/response.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixam_mart/api/api_client.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_model.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
@@ -9,8 +10,9 @@ import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 
 class LocationRepository implements LocationRepositoryInterface {
   final ApiClient apiClient;
+  final SharedPreferences sharedPreferences;
 
-  LocationRepository({required this.apiClient});
+  LocationRepository({required this.apiClient, required this.sharedPreferences});
 
   @override
   Future<String> getAddressFromGeocode(LatLng latLng) async {
@@ -99,5 +101,20 @@ class LocationRepository implements LocationRepositoryInterface {
   @override
   Future update(Map<String, dynamic> body, int? id) {
     throw UnimplementedError();
+  }
+
+  @override
+  String? getUserAddress() {
+    return sharedPreferences.getString(AppConstants.userAddress);
+  }
+
+  @override
+  String? getRecentDeliveryAddresses() {
+    return sharedPreferences.getString(AppConstants.recentDeliveryAddresses);
+  }
+
+  @override
+  Future<void> saveRecentDeliveryAddresses(String addresses) async {
+    await sharedPreferences.setString(AppConstants.recentDeliveryAddresses, addresses);
   }
 }

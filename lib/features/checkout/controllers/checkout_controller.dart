@@ -1,10 +1,14 @@
 import 'package:country_code_picker/country_code_picker.dart';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:phone_numbers_parser/phone_numbers_parser.dart';
 import 'package:sixam_mart/api/api_checker.dart';
 import 'package:sixam_mart/features/cart/controllers/cart_controller.dart';
@@ -28,12 +32,15 @@ import 'package:sixam_mart/features/payment/domain/models/offline_method_model.d
 import 'package:sixam_mart/features/payment/screens/keepz_native_payment_screen.dart';
 import 'package:sixam_mart/features/checkout/domain/models/place_order_body_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/timeslote_model.dart';
+import 'package:sixam_mart/features/checkout/domain/models/saved_prescription_model.dart';
+import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
 import 'package:sixam_mart/features/checkout/domain/services/checkout_service_interface.dart';
 import 'package:sixam_mart/features/checkout/widgets/order_successfull_dialog.dart';
 import 'package:sixam_mart/features/checkout/widgets/partial_pay_dialog_widget.dart';
 import 'package:sixam_mart/features/home/screens/home_screen.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/date_converter.dart';
+import 'package:sixam_mart/helper/file_validation_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
@@ -41,6 +48,8 @@ import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:universal_html/html.dart' as html;
 
 class CheckoutController extends GetxController implements GetxService {
+  static const int maxPrescriptionFileCount = 5;
+  static const int maxPrescriptionSaveBatchCount = 5;
   final CheckoutServiceInterface checkoutServiceInterface;
   CheckoutController({required this.checkoutServiceInterface});
 
@@ -140,6 +149,227 @@ class CheckoutController extends GetxController implements GetxService {
 
   List<XFile> _pickedPrescriptions = [];
   List<XFile> get pickedPrescriptions => _pickedPrescriptions;
+  List<String?> _pickedPrescriptionSavedImageNames = <String?>[];
+  List<String?> get pickedPrescriptionSavedImageNames => _pickedPrescriptionSavedImageNames;
+  List<bool> _pickedPrescriptionFromMediaLibrary = <bool>[];
+  List<bool> get pickedPrescriptionFromMediaLibrary => _pickedPrescriptionFromMediaLibrary;
+  List<SavedPrescriptionModel>? _savedPrescriptions;
+  List<SavedPrescriptionModel>? get savedPrescriptions => _savedPrescriptions;
+  bool _isSavedPrescriptionLoading = false;
+  bool get isSavedPrescriptionLoading => _isSavedPrescriptionLoading;
+  bool _isSavedPrescriptionDeleting = false;
+  bool get isSavedPrescriptionDeleting => _isSavedPrescriptionDeleting;
+  String? _savedPrescriptionErrorMessage;
+  String? get savedPrescriptionErrorMessage => _savedPrescriptionErrorMessage;
+  int _prescriptionUploadingCount = 0;
+  int get prescriptionUploadingCount => _prescriptionUploadingCount;
+  bool _isPrescriptionUploading = false;
+  bool get isPrescriptionUploading => _isPrescriptionUploading;
+  String? _saverDeliveryType = 'standard';
+  String? get saverDeliveryType => _saverDeliveryType;
+  ZoneData? _saverZoneData;
+  ZoneData? get saverZoneData => _saverZoneData;
+  Modules? _saverModule;
+  Modules? get saverModule => _saverModule;
+
+  DeliveryOptions? get selectedSaverDeliveryOption => _saverModule?.deliveryOptions?.firstWhereOrNull((o) => o.deliveryType == _saverDeliveryType);
+  double getSaverDeliveryChargeAdjustment({DeliveryOptions? deliveryOption}) => (deliveryOption?.extraCharge ?? 0) - (deliveryOption?.reduceCharge ?? 0);
+  void setSaverDeliveryType(String type) { _saverDeliveryType = type; update(); }
+
+  Future<List<XFile>?> pickMultiplePrescriptionImages({int? maxSelectable}) async {
+    final int limit = (maxSelectable ?? maxPrescriptionSaveBatchCount)
+        .clamp(1, maxPrescriptionSaveBatchCount);
+    final List<XFile> files = limit == 1
+        ? await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 100).then((file) => file == null ? <XFile>[] : <XFile>[file])
+        : await ImagePicker().pickMultiImage(limit: limit, imageQuality: 100);
+    if (files.isEmpty) return files;
+
+    final FileValidationHelper validator = FileValidationHelper();
+    final List<XFile> validFiles = <XFile>[];
+    for (final XFile file in files) {
+      if (await validator.isFileUnder2MB(file)) {
+        validFiles.add(file);
+      }
+    }
+    if (validFiles.length != files.length) {
+      showCustomSnackBar('max_file_size_2mb'.tr);
+    }
+    return validFiles;
+  }
+
+  Future<void> addPrescriptionImages(List<XFile> files, {bool isAutoSaved = false, List<String?>? savedImageNames, List<bool>? mediaLibraryFlags}) async {
+    if (files.isEmpty) return;
+    final List<String?> incomingNames = savedImageNames != null && savedImageNames.length == files.length
+        ? List<String?>.from(savedImageNames)
+        : List<String?>.filled(files.length, null);
+    final List<bool> incomingFlags = mediaLibraryFlags != null && mediaLibraryFlags.length == files.length
+        ? List<bool>.from(mediaLibraryFlags)
+        : List<bool>.filled(files.length, false);
+
+    final int available = maxPrescriptionFileCount - _pickedPrescriptions.length;
+    if (available <= 0) {
+      showCustomSnackBar('you_have_reached_your_maximum_limit'.tr);
+      return;
+    }
+
+    final Set<String> existing = <String>{};
+    for (int index = 0; index < _pickedPrescriptions.length; index++) {
+      final String savedName = index < _pickedPrescriptionSavedImageNames.length
+          ? _pickedPrescriptionSavedImageNames[index]?.trim() ?? ''
+          : '';
+      existing.add(savedName.isNotEmpty ? 'saved:$savedName' : await _prescriptionKey(_pickedPrescriptions[index]));
+    }
+
+    final List<XFile> acceptedFiles = <XFile>[];
+    final List<String?> acceptedNames = <String?>[];
+    final List<bool> acceptedFlags = <bool>[];
+    for (int index = 0; index < files.length && acceptedFiles.length < available; index++) {
+      final String savedName = incomingNames[index]?.trim() ?? '';
+      final String key = savedName.isNotEmpty ? 'saved:$savedName' : await _prescriptionKey(files[index]);
+      if (existing.add(key)) {
+        acceptedFiles.add(files[index]);
+        acceptedNames.add(savedName.isEmpty ? null : savedName);
+        acceptedFlags.add(incomingFlags[index]);
+      }
+    }
+    if (acceptedFiles.isEmpty) {
+      showCustomSnackBar('This prescription image is already added.');
+      return;
+    }
+
+    if (isAutoSaved) {
+      final List<int> uploadIndexes = <int>[];
+      for (int index = 0; index < acceptedFiles.length; index++) {
+        if ((acceptedNames[index]?.isEmpty ?? true) && !acceptedFlags[index]) {
+          uploadIndexes.add(index);
+        }
+      }
+      if (uploadIndexes.isNotEmpty) {
+        _isPrescriptionUploading = true;
+        _prescriptionUploadingCount = uploadIndexes.length;
+        update();
+        final List<String> storedNames = await _saveToMediaLibrary(uploadIndexes.map((index) => acceptedFiles[index]).toList());
+        for (int index = 0; index < uploadIndexes.length && index < storedNames.length; index++) {
+          acceptedNames[uploadIndexes[index]] = storedNames[index];
+        }
+        _isPrescriptionUploading = false;
+        _prescriptionUploadingCount = 0;
+      }
+    }
+
+    _pickedPrescriptions.addAll(acceptedFiles);
+    _pickedPrescriptionSavedImageNames.addAll(acceptedNames);
+    _pickedPrescriptionFromMediaLibrary.addAll(acceptedFlags);
+    update();
+  }
+
+  Future<void> updatePrescriptionImages(List<XFile> files, {bool isAutoSaved = false, List<String?>? savedImageNames, List<bool>? mediaLibraryFlags}) async {
+    _pickedPrescriptions = <XFile>[];
+    _pickedPrescriptionSavedImageNames = <String?>[];
+    _pickedPrescriptionFromMediaLibrary = <bool>[];
+    await addPrescriptionImages(files, isAutoSaved: isAutoSaved, savedImageNames: savedImageNames, mediaLibraryFlags: mediaLibraryFlags);
+  }
+
+  Future<void> getSavedPrescriptionImages({bool reload = false}) async {
+    if (_isSavedPrescriptionLoading || (!reload && _savedPrescriptions != null)) return;
+    _isSavedPrescriptionLoading = true;
+    _savedPrescriptionErrorMessage = null;
+    if (reload) _savedPrescriptions = null;
+    update();
+    final List<SavedPrescriptionModel>? savedFiles = await checkoutServiceInterface.getSavedPrescriptionImages();
+    if (savedFiles != null) {
+      _savedPrescriptions = savedFiles;
+    } else {
+      _savedPrescriptions ??= <SavedPrescriptionModel>[];
+      _savedPrescriptionErrorMessage = 'unable_to_load_data'.tr;
+    }
+    _isSavedPrescriptionLoading = false;
+    update();
+  }
+
+  Future<bool> clearAllSavedPrescriptionImages() async {
+    if (_isSavedPrescriptionDeleting || _savedPrescriptions == null || _savedPrescriptions!.isEmpty) return false;
+    _isSavedPrescriptionDeleting = true;
+    update();
+    final Response response = await checkoutServiceInterface.deleteSavedPrescriptionImages();
+    _isSavedPrescriptionDeleting = false;
+    if (response.statusCode == 200) {
+      _savedPrescriptions!.clear();
+      update();
+      return true;
+    }
+    showCustomSnackBar(response.body?['message'] ?? response.statusText);
+    update();
+    return false;
+  }
+
+  Future<List<String>> _saveToMediaLibrary(List<XFile> files) async {
+    if (files.isEmpty) return <String>[];
+    final Set<String> before = (_savedPrescriptions ?? <SavedPrescriptionModel>[])
+        .map((file) => file.fileName?.trim() ?? '')
+        .where((name) => name.isNotEmpty)
+        .toSet();
+    final List<MultipartBody> uploads = files.map((file) => MultipartBody('saved_images[]', file)).toList();
+    final Response response = await checkoutServiceInterface.storeSavedPrescriptionImages(uploads);
+    if (response.statusCode != 200) {
+      showCustomSnackBar(response.body?['message'] ?? response.statusText);
+      return <String>[];
+    }
+    await getSavedPrescriptionImages(reload: true);
+    return (_savedPrescriptions ?? <SavedPrescriptionModel>[])
+        .map((file) => file.fileName?.trim() ?? '')
+        .where((name) => name.isNotEmpty && !before.contains(name))
+        .toList();
+  }
+
+  Future<String> _prescriptionKey(XFile file) async {
+    final String name = file.name.isNotEmpty ? file.name : path.basename(file.path);
+    return '${name.toLowerCase()}:${await file.length()}';
+  }
+
+  List<String> getSelectedSavedPrescriptionNames(List<int> indexes) {
+    if (_savedPrescriptions == null) return <String>[];
+    return indexes
+        .where((index) => index >= 0 && index < _savedPrescriptions!.length)
+        .map((index) => _savedPrescriptions![index].fileName?.trim() ?? '')
+        .where((name) => name.isNotEmpty)
+        .toList();
+  }
+
+  Future<List<XFile>> getSelectedSavedPrescriptionFiles(List<int> indexes) async {
+    if (_savedPrescriptions == null) return <XFile>[];
+    final List<XFile> files = <XFile>[];
+    for (final int index in indexes) {
+      if (index < 0 || index >= _savedPrescriptions!.length) continue;
+      final XFile? file = await _downloadSavedPrescriptionFile(_savedPrescriptions![index]);
+      if (file != null) files.add(file);
+    }
+    return files;
+  }
+
+  Future<XFile?> _downloadSavedPrescriptionFile(SavedPrescriptionModel savedPrescription) async {
+    final String imageUrl = savedPrescription.imageFullUrl ?? '';
+    if (imageUrl.isEmpty) return null;
+    final String fileName = savedPrescription.fileName?.trim().isNotEmpty == true
+        ? savedPrescription.fileName!.trim()
+        : 'saved_prescription_${DateTime.now().millisecondsSinceEpoch}${path.extension(imageUrl)}';
+    final String requestUrl = kIsWeb && imageUrl.startsWith('http')
+        ? '${AppConstants.baseUrl}/image-proxy?url=${Uri.encodeComponent(imageUrl)}'
+        : imageUrl;
+    try {
+      final http.Response response = await http.get(Uri.parse(requestUrl));
+      if (response.statusCode != 200) return null;
+      if (kIsWeb) {
+        return XFile.fromData(response.bodyBytes, name: fileName, mimeType: 'image/jpeg');
+      }
+      final Directory directory = await getTemporaryDirectory();
+      final File file = File(path.join(directory.path, '${DateTime.now().millisecondsSinceEpoch}_$fileName'));
+      await file.writeAsBytes(response.bodyBytes, flush: true);
+      return XFile(file.path);
+    } catch (_) {
+      return null;
+    }
+  }
 
   double? _extraCharge;
   double? get extraCharge => _extraCharge;
@@ -431,21 +661,32 @@ class CheckoutController extends GetxController implements GetxService {
     required bool isCamera,
   }) async {
     if (isRemove) {
-      _pickedPrescriptions = [];
+      _pickedPrescriptions = <XFile>[];
+      _pickedPrescriptionSavedImageNames = <String?>[];
+      _pickedPrescriptionFromMediaLibrary = <bool>[];
+      update();
     } else {
-      XFile? xFile = await ImagePicker().pickImage(
+      final XFile? xFile = await ImagePicker().pickImage(
         source: isCamera ? ImageSource.camera : ImageSource.gallery,
         imageQuality: 50,
       );
-      if (xFile != null) {
-        _pickedPrescriptions.add(xFile);
+      if (xFile != null && await FileValidationHelper().isFileUnder2MB(xFile)) {
+        await addPrescriptionImages(<XFile>[xFile]);
+      } else if (xFile != null) {
+        showCustomSnackBar('max_file_size_2mb'.tr);
       }
-      update();
     }
   }
 
   void removePrescriptionImage(int index) {
+    if (index < 0 || index >= _pickedPrescriptions.length) return;
     _pickedPrescriptions.removeAt(index);
+    if (index < _pickedPrescriptionSavedImageNames.length) {
+      _pickedPrescriptionSavedImageNames.removeAt(index);
+    }
+    if (index < _pickedPrescriptionFromMediaLibrary.length) {
+      _pickedPrescriptionFromMediaLibrary.removeAt(index);
+    }
     update();
   }
 
@@ -587,9 +828,18 @@ class CheckoutController extends GetxController implements GetxService {
       return pendingKeepzPayment.orderID ?? '';
     }
 
-    List<MultipartBody>? multiParts = [];
-    for (XFile file in orderAttachment!) {
-      multiParts.add(MultipartBody('order_attachment[]', file));
+    final List<MultipartBody> multiParts = <MultipartBody>[];
+    final List<String> savedImages = <String>[];
+    for (int index = 0; index < (orderAttachment?.length ?? 0); index++) {
+      final String savedName = index < _pickedPrescriptionSavedImageNames.length
+          ? _pickedPrescriptionSavedImageNames[index]?.trim() ?? ''
+          : '';
+      final bool fromLibrary = index < _pickedPrescriptionFromMediaLibrary.length && _pickedPrescriptionFromMediaLibrary[index];
+      if (fromLibrary && savedName.isNotEmpty) {
+        savedImages.add(savedName);
+      } else {
+        multiParts.add(MultipartBody('order_attachment[]', orderAttachment![index]));
+      }
     }
     _isLoading = true;
     update();
@@ -598,6 +848,7 @@ class CheckoutController extends GetxController implements GetxService {
     Response response = await checkoutServiceInterface.placeOrder(
       placeOrderBody,
       multiParts,
+      savedImages,
     );
     _isLoading = false;
     if (response.statusCode == 200) {
@@ -681,9 +932,18 @@ class CheckoutController extends GetxController implements GetxService {
     bool fromCart,
     bool isCashOnDeliveryActive,
   ) async {
-    List<MultipartBody> multiParts = [];
-    for (XFile file in orderAttachment) {
-      multiParts.add(MultipartBody('order_attachment[]', file));
+    final List<MultipartBody> multiParts = <MultipartBody>[];
+    final List<String> savedImages = <String>[];
+    for (int index = 0; index < orderAttachment.length; index++) {
+      final String savedName = index < _pickedPrescriptionSavedImageNames.length
+          ? _pickedPrescriptionSavedImageNames[index]?.trim() ?? ''
+          : '';
+      final bool fromLibrary = index < _pickedPrescriptionFromMediaLibrary.length && _pickedPrescriptionFromMediaLibrary[index];
+      if (fromLibrary && savedName.isNotEmpty) {
+        savedImages.add(savedName);
+      } else {
+        multiParts.add(MultipartBody('order_attachment[]', orderAttachment[index]));
+      }
     }
     _isLoading = true;
     update();
@@ -697,6 +957,7 @@ class CheckoutController extends GetxController implements GetxService {
       multiParts,
       dmTips,
       deliveryInstruction,
+      savedImages: savedImages,
     );
     _isLoading = false;
     if (response.statusCode == 200) {

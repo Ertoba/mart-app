@@ -27,4 +27,8 @@ class TaxiCartController extends GetxController implements GetxService {
     _cartList.clear();
     update();
   }
+
+  void setReelOrderId(int? vehicleId) {
+    // Reserved by the v4 rental flow until the rental cart persists reel attribution.
+  }
 }

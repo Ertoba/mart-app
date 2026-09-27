@@ -7,14 +7,15 @@ import 'package:sixam_mart/features/category/controllers/category_controller.dar
 import 'package:sixam_mart/features/language/controllers/language_controller.dart';
 import 'package:sixam_mart/features/location/controllers/location_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/cart_suggested_item_model.dart';
+import 'package:sixam_mart/features/store/domain/models/store_category_items_model.dart';
 import 'package:sixam_mart/features/category/domain/models/category_model.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
 import 'package:sixam_mart/features/store/domain/models/recommended_product_model.dart';
 import 'package:sixam_mart/features/store/domain/models/store_banner_model.dart';
-import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/features/review/domain/models/review_model.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
 import 'package:sixam_mart/features/checkout/controllers/checkout_controller.dart';
+import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/date_converter.dart';
 import 'package:get/get.dart';
@@ -60,6 +61,9 @@ class StoreController extends GetxController implements GetxService {
   int _categoryIndex = 0;
   int get categoryIndex => _categoryIndex;
 
+  int _categoryScrollIndex = 0;
+  int get categoryScrollIndex => _categoryScrollIndex;
+
   List<CategoryModel>? _categoryList;
   List<CategoryModel>? get categoryList => _categoryList;
 
@@ -99,6 +103,9 @@ class StoreController extends GetxController implements GetxService {
   CartSuggestItemModel? _cartSuggestItemModel;
   CartSuggestItemModel? get cartSuggestItemModel => _cartSuggestItemModel;
 
+  StoreCategoryItemsModel? _storeCategoryItemsModel;
+  StoreCategoryItemsModel? get storeCategoryItemsModel => _storeCategoryItemsModel;
+
   bool _isSearching = false;
   bool get isSearching => _isSearching;
 
@@ -107,6 +114,49 @@ class StoreController extends GetxController implements GetxService {
 
   List<Store>? _recommendedStoreList;
   List<Store>? get recommendedStoreList => _recommendedStoreList;
+
+  StoreModel? _quickDeliveryStoreList;
+  StoreModel? get quickDeliveryStoreList => _quickDeliveryStoreList;
+
+  static const int _quickDeliveryPageSize = 10;
+  int _quickDeliveryPage = 1;
+  int get quickDeliveryPage => _quickDeliveryPage;
+
+  bool _isQuickDeliveryPaginating = false;
+  bool get isQuickDeliveryPaginating => _isQuickDeliveryPaginating;
+
+  // Dedicated "express delivery" list for AllStoresScreen — kept separate from the
+  // shared _quickDeliveryStoreList so its server-side search never mutates the home
+  // quick-delivery section.
+  StoreModel? _expressDeliveryStoreList;
+  StoreModel? get expressDeliveryStoreList => _expressDeliveryStoreList;
+
+  bool _isExpressDeliveryPaginating = false;
+  bool get isExpressDeliveryPaginating => _isExpressDeliveryPaginating;
+
+  // The active express-delivery search term, reused across pagination requests.
+  String _expressDeliverySearchName = '';
+  String get expressDeliverySearchName => _expressDeliverySearchName;
+
+  StoreModel? _nearbyStoreList;
+  StoreModel? get nearbyStoreList => _nearbyStoreList;
+
+  static const int _nearbyPageSize = 10;
+  int _nearbyPage = 1;
+  int get nearbyPage => _nearbyPage;
+
+  bool _isNearbyPaginating = false;
+  bool get isNearbyPaginating => _isNearbyPaginating;
+
+  // Dedicated "top rated" list for AllStoresScreen — kept separate from the
+  // shared _storeModel/_storeType so it never affects the Explore Stores section.
+  StoreModel? _topRatedStoreList;
+  StoreModel? get topRatedStoreList => _topRatedStoreList;
+
+  static const int _topRatedPageSize = 12;
+
+  bool _isTopRatedPaginating = false;
+  bool get isTopRatedPaginating => _isTopRatedPaginating;
 
   String _topOfferFilter = '';
   String get topOfferFilter => _topOfferFilter;
@@ -131,6 +181,12 @@ class StoreController extends GetxController implements GetxService {
 
   double _upperValue = 0;
   double get upperValue => _upperValue;
+
+  double _lowerLimit = 0;
+  double get getLowerLimit => _lowerLimit;
+
+  double _upperLimit = 99999;
+  double get getUpperLimit => _upperLimit;
 
   double getRestaurantDistance(LatLng storeLatLng){
     double distance = 0;
@@ -172,11 +228,28 @@ class StoreController extends GetxController implements GetxService {
     _currentState = false;
   }
 
+  void setCategoryScrollIndex(int index) {
+    _categoryScrollIndex = index;
+    update();
+  }
+
+  void setCategoryIndexOnly(int index) {
+    _categoryIndex = index;
+    update();
+  }
+
   void showButtonAnimation(){
     Future.delayed(const Duration(seconds: 3), () {
       _currentState = true;
       update();
     });
+  }
+
+  Future<void> getStoreCategoryItems(int storeId, {bool notify = true}) async {
+    _storeCategoryItemsModel = null;
+    if (notify) update();
+    _storeCategoryItemsModel = await storeServiceInterface.getStoreCategoryItems(storeId);
+    update();
   }
 
   Future<void> getRestaurantRecommendedItemList(int? storeId, bool reload) async {
@@ -353,15 +426,18 @@ class StoreController extends GetxController implements GetxService {
   Future<void> getFeaturedStoreList({bool fromHome = false, DataSourceEnum dataSource = DataSourceEnum.local, bool notify = true}) async {
     List<Store>? stores;
     if(dataSource == DataSourceEnum.local) {
-      if (fromHome) {
+      if(fromHome) {
+        // The featured list is shared with module screens, which load it scoped to
+        // the active module. When re-entering Home, reset it first so stale module
+        // data isn't shown while the global (home) featured list reloads.
         _featuredStoreList = null;
-        if (notify) update();
+        if(notify) update();
       }
-      stores = await storeServiceInterface.getFeaturedStoreList(source: dataSource);
+      stores = await storeServiceInterface.getFeaturedStoreList(source: dataSource, fromHome: fromHome);
       _prepareFeaturedStore(stores);
-      getFeaturedStoreList(fromHome: fromHome, dataSource: DataSourceEnum.client, notify: notify);
+      getFeaturedStoreList(fromHome: fromHome, dataSource: DataSourceEnum.client);
     } else {
-      stores = await storeServiceInterface.getFeaturedStoreList(source: dataSource);
+      stores = await storeServiceInterface.getFeaturedStoreList(source: dataSource, fromHome: fromHome);
       _prepareFeaturedStore(stores);
     }
 
@@ -493,6 +569,187 @@ class StoreController extends GetxController implements GetxService {
     update();
   }
 
+  Future<void> getQuickDeliveryStoreList({bool reload = false, int? moduleId}) async {
+    if(reload) {
+      _quickDeliveryStoreList = null;
+      _quickDeliveryPage = 1;
+    }
+    final StoreModel? response = await storeServiceInterface.getQuickDeliveryStores(
+      offset: 1, limit: _quickDeliveryPageSize, moduleId: moduleId,
+    );
+    if(response != null) {
+      _quickDeliveryStoreList = response;
+      _quickDeliveryPage = 1;
+      update();
+    }
+  }
+
+  Future<void> loadMoreQuickDeliveryStores({int? moduleId}) async {
+    final StoreModel? current = _quickDeliveryStoreList;
+    if(current == null || _isQuickDeliveryPaginating) return;
+
+    final int loaded = current.stores?.length ?? 0;
+    final int total = current.totalSize ?? 0;
+    if(loaded >= total) return;
+
+    _isQuickDeliveryPaginating = true;
+    update();
+
+    final int nextOffset = (loaded ~/ _quickDeliveryPageSize) + 1;
+    final StoreModel? response = await storeServiceInterface.getQuickDeliveryStores(
+      offset: nextOffset, limit: _quickDeliveryPageSize, moduleId: moduleId,
+    );
+    if(response?.stores != null) {
+      current.stores!.addAll(response!.stores!);
+      current.offset = response.offset;
+      current.totalSize = response.totalSize;
+      _quickDeliveryPage = nextOffset;
+    }
+    _isQuickDeliveryPaginating = false;
+    update();
+  }
+
+  Future<void> getExpressDeliveryStoreList({bool reload = false, int? moduleId, String? name}) async {
+    if(name != null) _expressDeliverySearchName = name;
+    if(reload) {
+      _expressDeliveryStoreList = null;
+      update();
+    }
+    final StoreModel? response = await storeServiceInterface.getQuickDeliveryStores(
+      offset: 1, limit: _quickDeliveryPageSize, moduleId: moduleId, name: _expressDeliverySearchName,
+    );
+    if(response != null) {
+      _expressDeliveryStoreList = response;
+      update();
+    }
+  }
+
+  Future<void> loadMoreExpressDeliveryStores({int? moduleId}) async {
+    final StoreModel? current = _expressDeliveryStoreList;
+    if(current == null || _isExpressDeliveryPaginating) return;
+
+    final int loaded = current.stores?.length ?? 0;
+    final int total = current.totalSize ?? 0;
+    if(loaded >= total) return;
+
+    _isExpressDeliveryPaginating = true;
+    update();
+
+    final int nextOffset = (loaded ~/ _quickDeliveryPageSize) + 1;
+    final StoreModel? response = await storeServiceInterface.getQuickDeliveryStores(
+      offset: nextOffset, limit: _quickDeliveryPageSize, moduleId: moduleId, name: _expressDeliverySearchName,
+    );
+    if(response?.stores != null) {
+      current.stores!.addAll(response!.stores!);
+      current.offset = response.offset;
+      current.totalSize = response.totalSize;
+    }
+    _isExpressDeliveryPaginating = false;
+    update();
+  }
+
+  void clearExpressDeliveryStoreList() {
+    _expressDeliveryStoreList = null;
+    _expressDeliverySearchName = '';
+  }
+
+  // The active "nearby" search term, reused across pagination requests.
+  String _nearbySearchName = '';
+  String get nearbySearchName => _nearbySearchName;
+
+  Future<void> getNearbyStoreList({bool reload = false, int? moduleId, String? name}) async {
+    if(name != null) _nearbySearchName = name;
+    if(reload) {
+      _nearbyStoreList = null;
+      _nearbyPage = 1;
+      update();
+    }
+    final StoreModel? response = await storeServiceInterface.getNearbyStores(
+      offset: 1, limit: _nearbyPageSize, moduleId: moduleId, name: _nearbySearchName,
+    );
+    if(response != null) {
+      _nearbyStoreList = response;
+      _nearbyPage = 1;
+      update();
+    }
+  }
+
+  Future<void> loadMoreNearbyStores({int? moduleId}) async {
+    final StoreModel? current = _nearbyStoreList;
+    if(current == null || _isNearbyPaginating) return;
+
+    final int loaded = current.stores?.length ?? 0;
+    final int total = current.totalSize ?? 0;
+    if(loaded >= total) return;
+
+    _isNearbyPaginating = true;
+    update();
+
+    final int nextOffset = (loaded ~/ _nearbyPageSize) + 1;
+    final StoreModel? response = await storeServiceInterface.getNearbyStores(
+      offset: nextOffset, limit: _nearbyPageSize, moduleId: moduleId, name: _nearbySearchName,
+    );
+    if(response?.stores != null) {
+      current.stores!.addAll(response!.stores!);
+      current.offset = response.offset;
+      current.totalSize = response.totalSize;
+      _nearbyPage = nextOffset;
+    }
+    _isNearbyPaginating = false;
+    update();
+  }
+
+  // The active top-rated search term, reused across pagination requests.
+  String _topRatedSearchName = '';
+  String get topRatedSearchName => _topRatedSearchName;
+
+  Future<void> getTopRatedStoreList({bool reload = false, DataSourceEnum source = DataSourceEnum.local, String? name}) async {
+    if(name != null) _topRatedSearchName = name;
+    if(reload) {
+      _topRatedStoreList = null;
+      update();
+    }
+    // Search results are dynamic — always hit the server and skip the local-first cache.
+    final bool searching = _topRatedSearchName.isNotEmpty;
+    final DataSourceEnum effectiveSource = searching ? DataSourceEnum.client : source;
+    // Fetch with explicit types so the shared _storeType/_storeModel stay untouched.
+    final StoreModel? response = await storeServiceInterface.getStoreList(1, 'all', 'top_rated', source: effectiveSource, name: _topRatedSearchName);
+    if(response != null) {
+      _topRatedStoreList = response;
+      update();
+    }
+    if(!searching && source == DataSourceEnum.local) {
+      getTopRatedStoreList(reload: false, source: DataSourceEnum.client);
+    }
+  }
+
+  Future<void> loadMoreTopRatedStores() async {
+    final StoreModel? current = _topRatedStoreList;
+    if(current == null || _isTopRatedPaginating) return;
+
+    final int loaded = current.stores?.length ?? 0;
+    final int total = current.totalSize ?? 0;
+    if(loaded >= total) return;
+
+    _isTopRatedPaginating = true;
+    update();
+
+    final int nextOffset = (loaded ~/ _topRatedPageSize) + 1;
+    final StoreModel? response = await storeServiceInterface.getStoreList(nextOffset, 'all', 'top_rated', source: DataSourceEnum.client, name: _topRatedSearchName);
+    if(response?.stores != null) {
+      current.stores!.addAll(response!.stores!);
+      current.offset = response.offset;
+      current.totalSize = response.totalSize;
+    }
+    _isTopRatedPaginating = false;
+    update();
+  }
+
+  void clearTopRatedStoreList() {
+    _topRatedStoreList = null;
+    _topRatedSearchName = '';
+  }
+
   Future<void> getStoreItemList(int? storeID, int offset, String type, bool notify) async {
     if(offset == 1 || _storeItemModel == null) {
       _type = type;
@@ -517,7 +774,10 @@ class StoreController extends GetxController implements GetxService {
         _storeItemModel!.items!.addAll(storeItemModel.items!);
         _storeItemModel!.totalSize = storeItemModel.totalSize;
         _storeItemModel!.offset = storeItemModel.offset;
+        _storeItemModel!.minPrice = storeItemModel.minPrice;
+        _storeItemModel!.maxPrice = storeItemModel.maxPrice;
       }
+      setLowerAndUpperLimit(lower: _storeItemModel?.minPrice?.toDouble() ?? 0, upper: _storeItemModel?.maxPrice?.toDouble() ?? 99999);
     }
     update();
   }
@@ -633,15 +893,6 @@ class StoreController extends GetxController implements GetxService {
     update();
   }
 
-  void setLowerValue(double value) {
-    _lowerValue = value;
-    update();
-  }
-
-  void setUpperValue(double value) {
-    _upperValue = value;
-    update();
-  }
 
   void toggleAvailableItems() {
     _isAvailableItems = !_isAvailableItems;
@@ -663,10 +914,30 @@ class StoreController extends GetxController implements GetxService {
     update();
   }
 
-  void setLowerAndUpperValue(double lower, double upper) {
-    _lowerValue = lower;
-    _upperValue = upper;
-    update();
+  void setLowerAndUpperValue({double? lower, double? upper, bool reload = false}) {
+    if(lower != null){
+      _lowerValue = lower.clamp(getLowerLimit, getUpperLimit);
+    }
+    if(upper != null){
+      _upperValue = upper.clamp(getLowerLimit, getUpperLimit);
+    }
+    if(reload){
+      update();
+    }
+  }
+
+  void setLowerAndUpperLimit({double? lower, double? upper, bool reload = true}) {
+    if(lower != null){
+      _lowerLimit = lower;
+      _lowerValue = _lowerValue.clamp(getLowerLimit, getUpperLimit);
+    }
+    if(upper != null){
+      _upperLimit = upper;
+      _upperValue = upper;
+      _upperValue = _upperValue.clamp(getLowerLimit, getUpperLimit);
+    }
+
+    if(reload) update();
   }
 
   void resetFilter({bool isUpdate = true}) {

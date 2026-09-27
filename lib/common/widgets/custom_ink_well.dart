@@ -6,7 +6,8 @@ class CustomInkWell extends StatelessWidget {
   final Function? onTap;
   final Color? highlightColor;
   final EdgeInsetsGeometry? padding;
-  const CustomInkWell({super.key, this.radius, required this.child, required this.onTap, this.highlightColor, this.padding = const EdgeInsets.all(0)});
+  final bool enableRippleEffect;
+  const CustomInkWell({super.key, this.radius, required this.child, required this.onTap, this.highlightColor, this.padding = const EdgeInsets.all(0), this.enableRippleEffect = true});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +20,7 @@ class CustomInkWell extends StatelessWidget {
         borderRadius: BorderRadius.circular(radius ?? 0.0),
         highlightColor: highlightColor ?? Theme.of(context).hintColor.withValues(alpha: 0.2),
         hoverColor: Theme.of(context).hintColor.withValues(alpha: 0.02),
-        splashColor: Theme.of(context).hintColor.withValues(alpha: 0.5),
+        splashColor: enableRippleEffect ? Theme.of(context).hintColor.withValues(alpha: 0.5) : Colors.transparent,
         child: Padding(
           padding: padding!,
           child: child,

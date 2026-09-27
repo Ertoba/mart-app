@@ -70,7 +70,7 @@ class FilterWidget extends StatelessWidget {
                   inactiveColor: Theme.of(context).primaryColor.withValues(alpha: 0.3),
                   labels: RangeLabels(lowerValue.toString(), upperValue.toString()),
                   onChanged: (RangeValues rangeValues) {
-                    storeController.setLowerAndUpperValue(rangeValues.start, rangeValues.end);
+                    storeController.setLowerAndUpperValue(lower: rangeValues.start, upper: rangeValues.end, reload: true);
                   },
                 ),
                 const SizedBox(height: Dimensions.paddingSizeLarge),

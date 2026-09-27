@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -14,8 +16,8 @@ import 'package:sixam_mart/features/category/controllers/category_controller.dar
 import 'package:sixam_mart/features/item/controllers/item_controller.dart';
 import 'package:sixam_mart/features/location/screens/pick_map_screen.dart';
 import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
+import 'package:sixam_mart/features/ride_share_module/ride_location/controllers/search_location_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
-import 'package:sixam_mart/features/store/controllers/store_controller.dart';
 import 'package:sixam_mart/features/favourite/controllers/favourite_controller.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/features/location/domain/models/prediction_model.dart';
@@ -28,6 +30,7 @@ import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/features/location/domain/services/location_service_interface.dart';
 import 'package:sixam_mart/features/location/widgets/module_dialog_widget.dart';
 import 'package:sixam_mart/features/rental_module/rental_cart_screen/controllers/taxi_cart_controller.dart';
+import 'package:sixam_mart/features/store/controllers/store_controller.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
@@ -35,6 +38,7 @@ import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/common/widgets/custom_loader.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/helper/taxi_helper.dart';
+import 'package:sixam_mart/util/app_constants.dart';
 
 class LocationController extends GetxController implements GetxService {
   final LocationServiceInterface locationServiceInterface;
@@ -85,6 +89,8 @@ class LocationController extends GetxController implements GetxService {
 
   final List<PredictionModel> _predictionList = [];
   List<PredictionModel> get predictionList => _predictionList;
+
+  String  countryDialCode = CountryCode.fromCountryCode(Get.find<SplashController>().configModel?.country ?? "BD").dialCode!;
 
   bool _isCameraMoving = false;
   bool get isCameraMoving => _isCameraMoving;
@@ -155,7 +161,7 @@ class LocationController extends GetxController implements GetxService {
     _buttonDisabled = !responseModel.isSuccess;
 
     addressModel = AddressModel(
-      latitude: myPosition.latitude.toString(), longitude: myPosition.longitude.toString(), addressType: 'others',
+      latitude: myPosition.latitude.toString(), longitude: myPosition.longitude.toString(), addressType: 'my_location',
       zoneId: responseModel.isSuccess ? responseModel.zoneIds[0] : 0, zoneIds: responseModel.zoneIds,
       address: addressFromGeocode, zoneData: responseModel.zoneData, areaIds: responseModel.areaIds,
     );
@@ -273,8 +279,19 @@ class LocationController extends GetxController implements GetxService {
 
     getZone(address.latitude, address.longitude, false).then((response) async {
       if (response.isSuccess) {
-        Get.find<CartController>().getCartDataOnline();
-        address.zoneId = response.zoneIds[0];
+        Get.find<CartController>().getAllCarts();
+
+        if(Get.find<SplashController>().moduleList != null) {
+          for (var module in Get.find<SplashController>().moduleList!) {
+            if(module.moduleType == AppConstants.ride) {
+              ZoneResponseModel rideZoneModel = await Get.find<SearchLocationController>().getRideZone(address.latitude ?? '', address.longitude ?? '');
+              address.zoneId = rideZoneModel.zoneId != null ? int.tryParse(rideZoneModel.zoneId??'') : null;
+              address.rideZoneId = rideZoneModel.zoneId != null ? int.tryParse(rideZoneModel.zoneId??'') : null;
+              break;
+            }
+          }
+        }
+
         address.zoneIds = [];
         address.zoneIds!.addAll(response.zoneIds);
         address.zoneData = [];
@@ -319,12 +336,17 @@ class LocationController extends GetxController implements GetxService {
 
     await AddressHelper.saveUserAddressInSharedPref(address);
 
+    print('======here calling for zone check and config data: ${address.zoneIds} // ${Get.find<StoreController>().store?.zoneId} // ${Get.currentRoute.startsWith(RouteHelper.store)} // ${Get.find<SplashController>().module?.id} //');
+    print('======here calling for zone check and config data: ${Get.currentRoute.startsWith(RouteHelper.initial)}  // ${Get.find<SplashController>().module?.id} //');
+
     if(Get.currentRoute.startsWith(RouteHelper.initial) && Get.find<SplashController>().module != null) {
+      print('===aaaaaaaa=${Get.find<SplashController>().moduleList?.length}');
       List<int> moduleIds = [];
       await Get.find<SplashController>().getModules().then((v) async {
         if(v) {
           await Future.delayed(const Duration(milliseconds: 1000), () {
             Get.find<SplashController>().moduleList?.forEach((module) {
+              print('======module info: ${module.id} // ${module.moduleType}');
               moduleIds.add(module.id!);
             });
           });
@@ -368,11 +390,11 @@ class LocationController extends GetxController implements GetxService {
     }
 
     if(AuthHelper.isLoggedIn()) {
-      if(Get.find<SplashController>().module != null) {
+      if(Get.find<SplashController>().module != null && Get.find<SplashController>().module!.moduleType.toString() != AppConstants.ride) {
         await Get.find<FavouriteController>().getFavouriteList();
       } else {
         print('======config data call from location controller');
-        Get.find<SplashController>().getConfigData(canRoute: false);
+        Get.find<SplashController>().getConfigData();
       }
       Get.find<AuthController>().updateZone();
     }
@@ -405,7 +427,7 @@ class LocationController extends GetxController implements GetxService {
 
   Future<void> _handleTaxiModuleCart(AddressModel address) async{
     if(TaxiHelper.haveTaxiModule() && address.zoneIds != null && Get.find<TaxiCartController>().cartList.isNotEmpty) {
-      List<int>? providerZones = Get.find<TaxiCartController>().cartList[0].provider!.pickupZoneId??[];
+      List<int> providerZones = Get.find<TaxiCartController>().cartList[0].provider!.pickupZoneId;
 
       if(!_hasIntersection(providerZones, address.zoneIds!)) {
         showCustomSnackBar('your_cart_has_been_cleared_as_the_selected_zone_does_not_support_the_previous_pickup_point'.tr, showDuration: 10);
@@ -419,9 +441,9 @@ class LocationController extends GetxController implements GetxService {
   }
 
   // Future<void> _checkZoneFromAddress(AddressModel address) async{
-  //   if(Get.find<StoreController>().store != null && Get.currentRoute.startsWith(RouteHelper.store)
-  //       && Get.find<StoreController>().store!.zoneId != null && address.zoneIds != null
-  //       && !address.zoneIds!.contains(Get.find<StoreController>().store!.zoneId)) {
+  //   if(Get.find<StoreController>().store_new != null && Get.currentRoute.startsWith(RouteHelper.store_new)
+  //       && Get.find<StoreController>().store_new!.zoneId != null && address.zoneIds != null
+  //       && !address.zoneIds!.contains(Get.find<StoreController>().store_new!.zoneId)) {
   //     print('======not in same zone==================');
   //     Get.back();
   //     Get.dialog(ConfirmationDialog(icon: Images.warning, description: 'store_not_available_in_this_location'.tr, onYesPressed: () {
@@ -453,7 +475,7 @@ class LocationController extends GetxController implements GetxService {
     update();
     return AddressModel(
       latitude: _pickPosition.latitude.toString(), longitude: _pickPosition.longitude.toString(),
-      addressType: 'others', address: _pickAddress,
+      addressType: 'my_location', address: _pickAddress,
     );
   }
 
@@ -524,7 +546,7 @@ class LocationController extends GetxController implements GetxService {
     }else {
       // locationServiceInterface.defaultNavigation(page, mapController);
       if(ResponsiveHelper.isDesktop(Get.context)) {
-        showGeneralDialog(context: Get.context!, pageBuilder: (_,__,___) {
+        showGeneralDialog(context: Get.context!, pageBuilder: (_,_,_) {
           return SizedBox(
             height: Get.context!.height * 0.75, width: 300,
             child: PickMapScreen(
@@ -580,11 +602,11 @@ class LocationController extends GetxController implements GetxService {
   }
 
   void _onPickAddressButtonPressed(LocationController locationController, String page) {
-    if(locationController.pickPosition.latitude != 0 && (locationController.pickAddress?.isNotEmpty ?? false)) {
+    if(locationController.pickPosition.latitude != 0 && locationController.pickAddress!.isNotEmpty) {
       AddressModel address = AddressModel(
         latitude: locationController.pickPosition.latitude.toString(),
         longitude: locationController.pickPosition.longitude.toString(),
-        addressType: 'others', address: locationController.pickAddress,
+        addressType: 'my_location', address: locationController.pickAddress,
       );
       locationController.saveAddressAndNavigate(address, false, page, false, ResponsiveHelper.isDesktop(Get.context));
     } else {
@@ -601,7 +623,7 @@ class LocationController extends GetxController implements GetxService {
     ZoneResponseModel responseModel = await getZone(storePosition.latitude.toString(), storePosition.longitude.toString(), true);
     _buttonDisabled = !responseModel.isSuccess;
     AddressModel addressModel = AddressModel(
-      latitude: storePosition.latitude.toString(), longitude: storePosition.longitude.toString(), addressType: 'others',
+      latitude: storePosition.latitude.toString(), longitude: storePosition.longitude.toString(), addressType: 'my_location',
       zoneId: responseModel.isSuccess ? responseModel.zoneIds[0] : 0, zoneIds: responseModel.zoneIds,
       address: addressFromGeocode, zoneData: responseModel.zoneData, areaIds: responseModel.areaIds,
     );
@@ -628,6 +650,35 @@ class LocationController extends GetxController implements GetxService {
       return false;
     }
     return true;
+  }
+
+  AddressModel? getUserAddress() {
+    AddressModel? addressModelUser;
+    try {
+      addressModelUser = AddressModel.fromJson(jsonDecode(locationServiceInterface.getUserAddress()!));
+      //_selectedAddress = addressModelUser;
+    }catch(e){
+      return addressModelUser;
+    }
+    return addressModelUser;
+  }
+
+  // Locally cached delivery addresses (max 10, newest first) used by the
+  // pick-location "Recent" tab. Populated when an order is placed from checkout.
+  // Persistence/serialization is handled by the service + repository layer.
+  List<AddressModel> _recentAddresses = [];
+  List<AddressModel> get recentAddresses => _recentAddresses;
+
+  void loadRecentAddresses() {
+    _recentAddresses = locationServiceInterface.getRecentDeliveryAddresses();
+  }
+
+  Future<void> addRecentAddress(AddressModel address) async {
+    if (address.latitude == null || address.longitude == null || (address.address?.isEmpty ?? true)) {
+      return;
+    }
+    _recentAddresses = await locationServiceInterface.addRecentDeliveryAddress(address);
+    update();
   }
 
 }

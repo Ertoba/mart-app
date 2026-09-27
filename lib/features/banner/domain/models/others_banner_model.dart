@@ -2,7 +2,7 @@
 class ParcelOtherBannerModel {
   String? promotionalBannerUrl;
   String? promotionalBanners3Url;
-  List<Banners>? banners;
+  List<ParcelBanner>? banners;
 
   ParcelOtherBannerModel({
     this.promotionalBannerUrl,
@@ -14,9 +14,9 @@ class ParcelOtherBannerModel {
     promotionalBannerUrl = json['promotional_banner_url'];
     promotionalBanners3Url = json['promotional_banner_s3_url'];
     if (json['banners'] != null) {
-      banners = <Banners>[];
+      banners = <ParcelBanner>[];
       json['banners'].forEach((v) {
-        banners!.add(Banners.fromJson(v));
+        banners!.add(ParcelBanner.fromJson(v));
       });
     }
   }
@@ -32,7 +32,7 @@ class ParcelOtherBannerModel {
   }
 }
 
-class Banners {
+class ParcelBanner {
   int? id;
   int? moduleId;
   String? key;
@@ -42,7 +42,7 @@ class Banners {
   String? createdAt;
   String? updatedAt;
 
-  Banners({
+  ParcelBanner({
     this.id,
     this.moduleId,
     this.key,
@@ -53,7 +53,7 @@ class Banners {
     this.updatedAt,
   });
 
-  Banners.fromJson(Map<String, dynamic> json) {
+  ParcelBanner.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     moduleId = json['module_id'];
     key = json['key'];

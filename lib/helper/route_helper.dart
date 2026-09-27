@@ -285,6 +285,8 @@ class RouteHelper {
   }
 
   static String getProfileRoute() => profile;
+  static String getRedesignProfileRoute() => profile;
+  static String getPreferenceRoute() => interest;
   static String getUpdateProfileRoute() => updateProfile;
   static String getCouponRoute() => coupon;
   static String getNotificationRoute({bool? fromNotification}) =>

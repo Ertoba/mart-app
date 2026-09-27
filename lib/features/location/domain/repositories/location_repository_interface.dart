@@ -7,4 +7,7 @@ abstract class LocationRepositoryInterface implements RepositoryInterface {
   Future<String> getAddressFromGeocode(LatLng latLng);
   Future<ZoneResponseModel> getZone(String? lat, String? lng, {bool handleError = false});
   Future<Response> searchLocation(String text);
+  String? getUserAddress();
+  String? getRecentDeliveryAddresses();
+  Future<void> saveRecentDeliveryAddresses(String addresses);
 }

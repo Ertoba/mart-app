@@ -33,9 +33,11 @@ class PickMapScreen extends StatefulWidget {
   final Function(AddressModel address)? onPicked;
   final bool fromLandingPage;
   final bool fromGuestCheckout;
+  final LatLng? initialPosition;
+  final String? initialAddress;
   const PickMapScreen({super.key,
     required this.fromSignUp, required this.fromAddAddress, required this.canRoute,
-    required this.route, this.googleMapController, this.onPicked, this.fromLandingPage = false, this.fromGuestCheckout = false,
+    required this.route, this.googleMapController, this.onPicked, this.fromLandingPage = false, this.fromGuestCheckout = false, this.initialPosition, this.initialAddress,
   });
 
   @override
@@ -56,7 +58,7 @@ class _PickMapScreenState extends State<PickMapScreen> {
     if(widget.fromAddAddress) {
       Get.find<LocationController>().setPickData();
     }
-    _initialPosition = LatLng(
+    _initialPosition = widget.initialPosition ?? LatLng(
       double.parse(Get.find<SplashController>().configModel!.defaultLocation!.lat ?? '0'),
       double.parse(Get.find<SplashController>().configModel!.defaultLocation!.lng ?? '0'),
     );

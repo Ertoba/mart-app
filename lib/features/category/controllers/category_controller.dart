@@ -1,9 +1,10 @@
 import 'package:sixam_mart/common/enums/data_source_enum.dart';
 import 'package:sixam_mart/features/category/domain/models/category_model.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
-import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/features/category/domain/services/category_service_interface.dart';
+
+import '../../store/domain/models/store_model.dart';
 
 class CategoryController extends GetxController implements GetxService {
   final CategoryServiceInterface categoryServiceInterface;
@@ -219,6 +220,14 @@ class CategoryController extends GetxController implements GetxService {
   void setRestaurant(bool isRestaurant) {
     _isStore = isRestaurant;
     update();
+  }
+
+  String? getCategoryNameById(int? id) {
+    if (id == null || _categoryList == null) return null;
+    for (CategoryModel category in _categoryList!) {
+      if (category.id == id) return category.name;
+    }
+    return null;
   }
 
 }

@@ -72,15 +72,20 @@ class ApiClient extends GetxService {
 
   Map<String, String> getHeader() => _mainHeaders;
 
-  Future<Response> getData(String uri, {Map<String, dynamic>? query, Map<String, String>? headers, bool handleError = true}) async {
+  Future<Response> getData(String uri, {Map<String, dynamic>? query, Map<String, String>? headers, bool handleError = true, bool moduleScoped = false}) async {
     try {
+      final Map<String, String> requestHeaders = headers ?? _mainHeaders;
+      final String? requestModuleId = moduleScoped ? requestHeaders[AppConstants.moduleId] : null;
       if (kDebugMode) {
-        log('====> API Call: $uri\nHeader: ${headers ?? _mainHeaders}');
+        log('====> API Call: $uri\nHeader: $requestHeaders');
       }
       http.Response response = await http.get(
         Uri.parse(appBaseUrl+uri),
-        headers: headers ?? _mainHeaders,
+        headers: requestHeaders,
       ).timeout(Duration(seconds: timeoutInSeconds));
+      if (moduleScoped && requestModuleId != _mainHeaders[AppConstants.moduleId]) {
+        return const Response(statusCode: 499, statusText: 'stale module response');
+      }
       return handleResponse(response, uri, handleError);
     } catch (e) {
       if (kDebugMode) {

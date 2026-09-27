@@ -2,10 +2,13 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:get/get_connect/connect.dart';
+import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixam_mart/api/api_client.dart';
 import 'package:sixam_mart/features/checkout/domain/models/surge_price_model.dart';
+import 'package:sixam_mart/features/checkout/domain/models/saved_prescription_model.dart';
+import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/payment/domain/models/offline_method_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/place_order_body_model.dart';
 import 'package:sixam_mart/features/checkout/domain/repositories/checkout_repository_interface.dart';
@@ -59,15 +62,24 @@ class CheckoutRepository implements CheckoutRepositoryInterface {
   }
 
   @override
-  Future<Response> placeOrder(PlaceOrderBodyModel orderBody, List<MultipartBody>? orderAttachment) async {
+  Future<Response> placeOrder(PlaceOrderBodyModel orderBody, List<MultipartBody>? orderAttachment, [List<String>? savedImages]) async {
     final String idempotencyKey = await _getOrCreateCheckoutIdempotencyKey();
     final Map<String, String> headers = Map<String, String>.from(
       apiClient.getHeader(),
     )..['Idempotency-Key'] = idempotencyKey;
 
+    final Map<String, String> body = orderBody.toJson().map((key, value) => MapEntry(key, value.toString()));
+    final List<String> cleanedSavedImages = (savedImages ?? <String>[]).map((image) => image.trim()).where((image) => image.isNotEmpty).toList();
+    if (cleanedSavedImages.isNotEmpty) {
+      body['saved_images'] = jsonEncode(cleanedSavedImages);
+      for (int index = 0; index < cleanedSavedImages.length; index++) {
+        body['saved_images[$index]'] = cleanedSavedImages[index];
+      }
+    }
+
     final Response response = await apiClient.postMultipartData(
       AppConstants.placeOrderUri,
-      orderBody.toJson(),
+      body,
       orderAttachment ?? [],
       headers: headers,
       handleError: false,
@@ -115,7 +127,7 @@ class CheckoutRepository implements CheckoutRepositoryInterface {
 
   @override
   Future<Response> placePrescriptionOrder(int? storeId, double? distance, String address, String longitude, String latitude, String note,
-      List<MultipartBody> orderAttachment, String dmTips, String deliveryInstruction) async {
+      List<MultipartBody> orderAttachment, String dmTips, String deliveryInstruction, {List<String>? savedImages}) async {
 
     Map<String, String> body = {
       'store_id': storeId.toString(),
@@ -129,7 +141,40 @@ class CheckoutRepository implements CheckoutRepositoryInterface {
       'payment_method': 'cash_on_delivery',
       'order_type': 'delivery',
     };
+    final List<String> cleanedSavedImages = (savedImages ?? <String>[]).map((image) => image.trim()).where((image) => image.isNotEmpty).toList();
+    if (cleanedSavedImages.isNotEmpty) {
+      body['saved_images'] = jsonEncode(cleanedSavedImages);
+      for (int index = 0; index < cleanedSavedImages.length; index++) {
+        body['saved_images[$index]'] = cleanedSavedImages[index];
+      }
+    }
     return await apiClient.postMultipartData(AppConstants.placePrescriptionOrderUri, body, orderAttachment, handleError: false);
+  }
+
+  @override
+  Future<List<SavedPrescriptionModel>?> getSavedPrescriptionImages() async {
+    final Response response = await apiClient.getData(AppConstants.savedFilesUri, handleError: false);
+    if (response.statusCode != 200 || response.body == null || response.body['saved_files'] is! List) {
+      return null;
+    }
+    return (response.body['saved_files'] as List)
+        .whereType<Map>()
+        .map((file) => SavedPrescriptionModel.fromJson(Map<String, dynamic>.from(file)))
+        .toList();
+  }
+
+  @override
+  Future<Response> storeSavedPrescriptionImages(List<MultipartBody> images) async {
+    final Response response = await apiClient.postMultipartData(AppConstants.storeSavedFilesUri, <String, String>{}, images, handleError: false);
+    if (response.statusCode == 400 && response.statusText == 'connection_to_api_server_failed'.tr) {
+      showCustomSnackBar('max_file_size_2mb'.tr);
+    }
+    return response;
+  }
+
+  @override
+  Future<Response> deleteSavedPrescriptionImages() async {
+    return apiClient.deleteData(AppConstants.deleteSavedFilesUri, handleError: false);
   }
 
   @override

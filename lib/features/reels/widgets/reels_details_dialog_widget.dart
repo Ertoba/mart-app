@@ -645,7 +645,7 @@ class _ReelDetailsPageState extends State<_ReelDetailsPage> {
       _videoController = controller;
       _hasVideoError = false;
     } catch (e) {
-      print('=======> ReelDetails: Video controller error: $e');
+      debugPrint('=======> ReelDetails: Video controller error: $e');
       await controller?.dispose();
       _hasVideoError = true;
     } finally {

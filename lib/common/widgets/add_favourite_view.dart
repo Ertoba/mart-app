@@ -11,7 +11,8 @@ class AddFavouriteView extends StatefulWidget {
   final double? top, right;
   final double? left;
   final int? storeId;
-  const AddFavouriteView({super.key, required this.item, this.top = 15, this.right = 15, this.left, this.storeId});
+  final double? size;
+  const AddFavouriteView({super.key, required this.item, this.top = 15, this.right = 15, this.left, this.storeId, this.size});
 
   @override
   State<AddFavouriteView> createState() => _AddFavouriteViewState();
@@ -64,7 +65,7 @@ class _AddFavouriteViewState extends State<AddFavouriteView> with SingleTickerPr
           },
           child: ScaleTransition(
             scale: Tween(begin: 0.7, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut)),
-            child: Icon(isWished ? CupertinoIcons.heart_solid : CupertinoIcons.heart, color: isWished ? Theme.of(context).primaryColor : Theme.of(context).primaryColor.withValues(alpha: 0.3), size: 25),
+            child: Icon(isWished ? CupertinoIcons.heart_solid : CupertinoIcons.heart, color: isWished ? Theme.of(context).primaryColor : Theme.of(context).primaryColor.withValues(alpha: 0.3), size: widget.size ?? 25),
           ),
         );
       }),

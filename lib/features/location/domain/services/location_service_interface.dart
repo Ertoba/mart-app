@@ -17,4 +17,7 @@ abstract class LocationServiceInterface{
   void checkLocationPermission(Function onTap);
   Future<void> authorizeNavigation(String page, List<AddressModel>? addressList, GoogleMapController? mapController, {bool offNamed = false, bool offAll = false});
   void defaultNavigation(String page, GoogleMapController? mapController);
+  String? getUserAddress();
+  List<AddressModel> getRecentDeliveryAddresses();
+  Future<List<AddressModel>> addRecentDeliveryAddress(AddressModel address);
 }

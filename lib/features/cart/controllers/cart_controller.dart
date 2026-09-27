@@ -303,10 +303,10 @@ class CartController extends GetxController implements GetxService {
     }
   }
 
-  Future<void> clearCartList() async {
+  Future<void> clearCartList({bool canRemoveOnline = true}) async {
     final int? storeId = _cartList.isNotEmpty ? _cartList[0].item?.storeId : null;
     _cartList = [];
-    if(storeId != null) {
+    if(canRemoveOnline && storeId != null) {
       _allCartsGroups?.removeWhere((AllCartsModel g) => g.store?.id == storeId);
     }
     update();

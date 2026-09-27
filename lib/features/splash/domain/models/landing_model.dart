@@ -233,9 +233,9 @@ class Translations {
 }
 
 class DownloadUserAppLinks {
-  String? playstoreUrlStatus;
+  int? playstoreUrlStatus;
   String? playstoreUrl;
-  String? appleStoreUrlStatus;
+  int? appleStoreUrlStatus;
   String? appleStoreUrl;
 
   DownloadUserAppLinks({
@@ -246,9 +246,9 @@ class DownloadUserAppLinks {
   });
 
   DownloadUserAppLinks.fromJson(Map<String, dynamic> json) {
-    playstoreUrlStatus = json['playstore_url_status'];
+    playstoreUrlStatus = int.tryParse(json['playstore_url_status']?.toString()??'0');
     playstoreUrl = json['playstore_url'];
-    appleStoreUrlStatus = json['apple_store_url_status'];
+    appleStoreUrlStatus = int.tryParse(json['apple_store_url_status']?.toString()??'0');
     appleStoreUrl = json['apple_store_url'];
   }
 

@@ -13,7 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class FavouriteScreen extends StatefulWidget {
-  const FavouriteScreen({super.key});
+  final Function? onBackPressed;
+  const FavouriteScreen({super.key, this.onBackPressed});
 
   @override
   FavouriteScreenState createState() => FavouriteScreenState();

@@ -2,6 +2,7 @@ import 'package:get/get_connect/http/src/response/response.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixam_mart/api/api_client.dart';
 import 'package:sixam_mart/features/home/domain/models/cashback_model.dart';
+import 'package:sixam_mart/features/home/domain/models/top_offer_model.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'home_repository_interface.dart';
 
@@ -28,6 +29,9 @@ class HomeRepository implements HomeRepositoryInterface {
   @override
   Future getList({int? offset}) async {
     List<CashBackModel>? cashBackModelList;
+    if(sharedPreferences.getString(AppConstants.cacheModuleId) == null) {
+      return null;
+    }
     Response response = await apiClient.getData(AppConstants.cashBackOfferListUri);
     if(response.statusCode == 200) {
       cashBackModelList = [];
@@ -51,6 +55,15 @@ class HomeRepository implements HomeRepositoryInterface {
       cashBackModel = CashBackModel.fromJson(response.body);
     }
     return cashBackModel;
+  }
+
+  @override
+  Future<TopOfferModel?> getTopOffer() async {
+    final Response response = await apiClient.getData(AppConstants.topOfferUri);
+    if(response.statusCode == 200 && response.body is Map<String, dynamic>) {
+      return TopOfferModel.fromJson(response.body);
+    }
+    return null;
   }
 
   @override

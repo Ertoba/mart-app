@@ -8,13 +8,17 @@ class ItemModel {
   int? offset;
   List<Item>? items;
   List<Categories>? categories;
+  double? minPrice;
+  double? maxPrice;
 
-  ItemModel({this.totalSize, this.limit, this.offset, this.items, this.categories});
+  ItemModel({this.totalSize, this.limit, this.offset, this.items, this.categories, this.minPrice, this.maxPrice});
 
   ItemModel.fromJson(Map<String, dynamic> json) {
     totalSize = json['total_size'];
     limit = json['limit'].toString();
     offset = (json['offset'] != null && json['offset'].toString().trim().isNotEmpty) ? int.parse(json['offset'].toString()) : null;
+    minPrice = (json['min_price'] as num?)?.toDouble();
+    maxPrice = (json['max_price'] as num?)?.toDouble();
     if (json['products'] != null) {
       items = [];
       json['products'].forEach((v) {
@@ -46,6 +50,8 @@ class ItemModel {
     data['total_size'] = totalSize;
     data['limit'] = limit;
     data['offset'] = offset;
+    data['min_price'] = minPrice;
+    data['max_price'] = maxPrice;
     if (items != null) {
       data['products'] = items!.map((v) => v.toJson()).toList();
     }
@@ -507,6 +513,8 @@ class StoreDetails {
   String? email;
   String? slug;
   int? zoneId;
+  bool? showLowStockCount;
+  int? minimumStockForWarning;
 
   StoreDetails({
     this.id,
@@ -515,6 +523,8 @@ class StoreDetails {
     this.email,
     this.slug,
     this.zoneId,
+    this.showLowStockCount,
+    this.minimumStockForWarning,
   });
 
   StoreDetails.fromJson(Map<String, dynamic> json) {
@@ -524,6 +534,8 @@ class StoreDetails {
     email = json['email'];
     slug = json['slug'];
     zoneId = json['zone_id'];
+    showLowStockCount = json['show_low_stock_count'];
+    minimumStockForWarning = json['minimum_stock_for_warning'];
   }
 
   Map<String, dynamic> toJson() {
@@ -534,6 +546,8 @@ class StoreDetails {
     data['email'] = email;
     data['slug'] = slug;
     data['zone_id'] = zoneId;
+    data['show_low_stock_count'] = showLowStockCount;
+    data['minimum_stock_for_warning'] = minimumStockForWarning;
     return data;
   }
 }

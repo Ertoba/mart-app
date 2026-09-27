@@ -36,6 +36,9 @@ class AuthController extends GetxController implements GetxService {
   bool _isActiveRememberMe = false;
   bool get isActiveRememberMe => _isActiveRememberMe;
 
+  bool _isActiveRememberMeOtp = false;
+  bool get isActiveRememberMeOtp => _isActiveRememberMeOtp;
+
   bool _notificationLoading = false;
   bool get notificationLoading => _notificationLoading;
 
@@ -215,6 +218,11 @@ class AuthController extends GetxController implements GetxService {
 
   void toggleRememberMe() {
     _isActiveRememberMe = !_isActiveRememberMe;
+    update();
+  }
+
+  void toggleRememberMeOtp() {
+    _isActiveRememberMeOtp = !_isActiveRememberMeOtp;
     update();
   }
 

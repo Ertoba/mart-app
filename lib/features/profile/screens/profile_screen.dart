@@ -24,7 +24,8 @@ import 'package:get/get.dart';
 import 'package:sixam_mart/features/profile/widgets/web_profile_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final Function? onBackPressed;
+  const ProfileScreen({super.key, this.onBackPressed});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();

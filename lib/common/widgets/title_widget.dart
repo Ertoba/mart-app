@@ -16,6 +16,7 @@ class TitleWidget extends StatelessWidget {
   final double? titleFontSize;
   final double? seeAllFontSize;
   final bool seeAllUnderline;
+  final Color? fontColor;
   const TitleWidget({
     super.key,
     required this.title,
@@ -26,6 +27,7 @@ class TitleWidget extends StatelessWidget {
     this.titleFontSize,
     this.seeAllFontSize,
     this.seeAllUnderline = false,
+    this.fontColor,
   });
 
   @override
@@ -49,6 +51,7 @@ class TitleWidget extends StatelessWidget {
                   style: MiliTypography.heading.copyWith(
                     fontSize: resolvedTitleFontSize,
                     height: 1.2,
+                    color: fontColor,
                   ),
                 ),
               ),

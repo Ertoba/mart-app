@@ -39,7 +39,9 @@ import 'package:sixam_mart/features/store/screens/store_screen.dart';
 
 class CartScreen extends StatefulWidget {
   final bool fromNav;
-  const CartScreen({super.key, required this.fromNav});
+  final int? storeId;
+  final String? storeName;
+  const CartScreen({super.key, required this.fromNav, this.storeId, this.storeName});
 
   @override
   State<CartScreen> createState() => _CartScreenState();
@@ -55,15 +57,21 @@ class _CartScreenState extends State<CartScreen> {
   @override
   void initState() {
     super.initState();
-
+    Get.find<CartController>().setActiveCartScreen(widget.storeId);
     initCall();
+  }
 
+  @override
+  void dispose() {
+    Get.find<CartController>().clearActiveCartScreen();
+    scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> initCall() async {
     _initialBottomSheetShowHide();
-    if(Get.find<CartController>().cartList.isEmpty) {
-      await Get.find<CartController>().getCartDataOnline();
+    if(Get.find<CartController>().cartList.isEmpty || widget.storeId != null) {
+      await Get.find<CartController>().getCartDataOnline(storeId: widget.storeId);
     }
 
     if(Get.find<SplashController>().module == null && Get.find<CartController>().cartList.isNotEmpty) {

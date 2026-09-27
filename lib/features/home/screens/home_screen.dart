@@ -144,6 +144,16 @@ class HomeScreen extends StatefulWidget {
     }
   }
 
+  static Future<void> loadTaxiApis() async {
+    await Get.find<TaxiHomeController>().getTaxiBannerList(true);
+    await Get.find<TaxiHomeController>().getTopRatedCarList(1, true);
+    if (AuthHelper.isLoggedIn()) {
+      await Get.find<AddressController>().getAddressList();
+      await Get.find<TaxiHomeController>().getTaxiCouponList(true);
+      await Get.find<TaxiCartController>().getCarCartList();
+    }
+  }
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -182,18 +192,18 @@ class _HomeScreenState extends State<HomeScreen> {
       if (_scrollController.position.userScrollDirection ==
           ScrollDirection.reverse) {
         if (Get.find<HomeController>().showFavButton) {
-          Get.find<HomeController>().changeFavVisibility();
+          Get.find<HomeController>().changeFavVisibility(value: false);
           Future.delayed(
             const Duration(milliseconds: 800),
-            () => Get.find<HomeController>().changeFavVisibility(),
+            () => Get.find<HomeController>().changeFavVisibility(value: true),
           );
         }
       } else {
         if (Get.find<HomeController>().showFavButton) {
-          Get.find<HomeController>().changeFavVisibility();
+          Get.find<HomeController>().changeFavVisibility(value: false);
           Future.delayed(
             const Duration(milliseconds: 800),
-            () => Get.find<HomeController>().changeFavVisibility(),
+            () => Get.find<HomeController>().changeFavVisibility(value: true),
           );
         }
       }
@@ -247,16 +257,6 @@ class _HomeScreenState extends State<HomeScreen> {
             (value) =>
                 Get.find<SplashController>().saveReferBottomSheetStatus(false),
           );
-  }
-
-  Future<void> loadTaxiApis() async {
-    await Get.find<TaxiHomeController>().getTaxiBannerList(true);
-    await Get.find<TaxiHomeController>().getTopRatedCarList(1, true);
-    if (AuthHelper.isLoggedIn()) {
-      await Get.find<AddressController>().getAddressList();
-      await Get.find<TaxiHomeController>().getTaxiCouponList(true);
-      await Get.find<TaxiCartController>().getCarCartList();
-    }
   }
 
   @override
@@ -370,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               Get.find<BrandsController>().getBrandList();
                             }
                           } else if (isTaxi) {
-                            await loadTaxiApis();
+                            await HomeScreen.loadTaxiApis();
                           } else {
                             await Get.find<BannerController>()
                                 .getFeaturedBanner();

@@ -20,22 +20,39 @@ class DishCard extends StatelessWidget {
   final double? width;
   final bool isBorder;
   final int index;
-  const DishCard({super.key, required this.item, this.width, this.isBorder = false, required this.index});
+  const DishCard({
+    super.key,
+    required this.item,
+    this.width,
+    this.isBorder = false,
+    required this.index,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final double? startingPrice = Get.find<ItemController>().getStartingPrice(item);
+    final double? startingPrice = Get.find<ItemController>().getStartingPrice(
+      item,
+    );
     final bool hasDiscount = (item.discount ?? 0) > 0;
     final String currentPrice = PriceConverter.convertPrice(
-      startingPrice, discount: item.discount, discountType: item.discountType,
+      startingPrice,
+      discount: item.discount,
+      discountType: item.discountType,
     );
-    final String previousPrice = hasDiscount ? PriceConverter.convertPrice(startingPrice) : '';
+    final String previousPrice = hasDiscount
+        ? PriceConverter.convertPrice(startingPrice)
+        : '';
     final String? discountLabel = hasDiscount
-        ? PriceConverter.percentageCalculation('${startingPrice ?? 0}', '${item.discount}', item.discountType ?? 'percent')
+        ? PriceConverter.percentageCalculation(
+            '${startingPrice ?? 0}',
+            '${item.discount}',
+            item.discountType ?? 'percent',
+          )
         : null;
     final String storeName = item.storeName ?? '';
     final String title = item.name ?? '';
-    final bool showHalal = (item.isStoreHalalActive ?? false) && (item.isHalalItem ?? false);
+    final bool showHalal =
+        (item.isStoreHalalActive ?? false) && (item.isHalalItem ?? false);
 
     return Container(
       width: width,
@@ -43,7 +60,9 @@ class DishCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-        border: isBorder ? Border.all(color: Theme.of(context).disabledColor.withAlpha(50)) : null,
+        border: isBorder
+            ? Border.all(color: Theme.of(context).disabledColor.withAlpha(50))
+            : null,
       ),
       child: Row(
         children: [
@@ -59,18 +78,22 @@ class DishCard extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-
                       StoreVerifiedAvatar(
-                        imageUrl: item.storeImageFullUrl ?? item.storeLogoFullUrl,
-                        isVerified: item.verifiedSeller == 1,
+                        imageUrl:
+                            item.storeImageFullUrl ?? item.storeLogoFullUrl,
+                        isVerified: item.verifiedSeller ?? false,
                         size: 18,
                       ),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
                           storeName,
-                          maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: robotoSemiBold.copyWith(color: Theme.of(context).disabledColor, fontSize: Dimensions.fontSizeSmall),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: robotoSemiBold.copyWith(
+                            color: Theme.of(context).disabledColor,
+                            fontSize: Dimensions.fontSizeSmall,
+                          ),
                         ),
                       ),
                     ],
@@ -78,14 +101,21 @@ class DishCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     title,
-                    maxLines: 2, overflow: TextOverflow.ellipsis,
-                    style: robotoBold.copyWith(fontSize: Dimensions.fontSizeSmall, height: 1.15),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: robotoBold.copyWith(
+                      fontSize: Dimensions.fontSizeSmall,
+                      height: 1.15,
+                    ),
                   ),
-                  const SizedBox(height: Dimensions.paddingSizeExtraSmall-2.5),
+                  const SizedBox(
+                    height: Dimensions.paddingSizeExtraSmall - 2.5,
+                  ),
                   Expanded(
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
-                      spacing: Dimensions.paddingSizeExtraSmall, mainAxisAlignment: MainAxisAlignment.start,
+                      spacing: Dimensions.paddingSizeExtraSmall,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Text(
                           currentPrice,
@@ -109,13 +139,19 @@ class DishCard extends StatelessWidget {
                   ),
                   const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
-                  if (discountLabel != null) OfferCardWidget(label: discountLabel, isHilight: true),
+                  if (discountLabel != null)
+                    OfferCardWidget(label: discountLabel, isHilight: true),
                 ],
               ),
             ),
           ),
           const SizedBox(width: Dimensions.paddingSizeSmall),
-          _TrendingDishPreview(imageUrl: item.imageFullUrl ?? '', showHalal: showHalal, item: item, index: index),
+          _TrendingDishPreview(
+            imageUrl: item.imageFullUrl ?? '',
+            showHalal: showHalal,
+            item: item,
+            index: index,
+          ),
         ],
       ),
     );
@@ -127,11 +163,19 @@ class _TrendingDishPreview extends StatelessWidget {
   final bool showHalal;
   final Item item;
   final int index;
-  const _TrendingDishPreview({required this.imageUrl, required this.showHalal, required this.item, required this.index});
+  const _TrendingDishPreview({
+    required this.imageUrl,
+    required this.showHalal,
+    required this.item,
+    required this.index,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final bool isAvailable = DateConverter.isAvailable(item.availableTimeStarts, item.availableTimeEnds);
+    final bool isAvailable = DateConverter.isAvailable(
+      item.availableTimeStarts,
+      item.availableTimeEnds,
+    );
 
     return Container(
       width: 126,
@@ -152,37 +196,59 @@ class _TrendingDishPreview extends StatelessWidget {
           ),
 
           // is halal
-          if (showHalal) Positioned(
-            top: 10, left: 10,
-            child: Container(
-              height: 18, width: 18,
-              decoration: BoxDecoration(color: Theme.of(context).primaryColor, shape: BoxShape.circle),
-              alignment: Alignment.center,
-              child: SvgPicture.asset(Images.halalTag),
+          if (showHalal)
+            Positioned(
+              top: 10,
+              left: 10,
+              child: Container(
+                height: 18,
+                width: 18,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: SvgPicture.asset(Images.halalTag),
+              ),
             ),
-          ),
 
           // add button
           Positioned(
-            right: 8, bottom: 8,
+            right: 8,
+            bottom: 8,
             child: CartCountView(
-              item: item, index: index,
+              item: item,
+              index: index,
               child: Container(
-                width: 32, height: 32,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(8),
-                  boxShadow: [BoxShadow(color: Theme.of(context).disabledColor.withValues(alpha: 0.2), blurRadius: 6, offset: const Offset(0, 2))],
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(
+                        context,
+                      ).disabledColor.withValues(alpha: 0.2),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: const Icon(Icons.add, size: 22),
               ),
             ),
           ),
 
-          if(!isAvailable) const NotAvailableWidget(radius: Dimensions.radiusMedium),
+          if (!isAvailable)
+            const NotAvailableWidget(radius: Dimensions.radiusMedium),
 
           AddFavouriteView(
-            top: Dimensions.paddingSizeSmall, right: Dimensions.paddingSizeSmall,
-            item: item, storeId: null, size: 18,
+            top: Dimensions.paddingSizeSmall,
+            right: Dimensions.paddingSizeSmall,
+            item: item,
+            storeId: null,
+            size: 18,
           ),
         ],
       ),

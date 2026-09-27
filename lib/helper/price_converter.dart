@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:get/get.dart';
+import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/styles.dart';
 
 class PriceConverter {
@@ -90,5 +91,8 @@ class PriceConverter {
     }
     return retval;
   }
+
+  static int get customTipIndex => AppConstants.tips.indexOf('custom');
+  static int get noTipIndex => AppConstants.tips.indexOf('0');
 
 }

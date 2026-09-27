@@ -145,6 +145,7 @@ class AppConstants {
   static const String vehicleChargeUri = '/api/v1/vehicle/extra_charge';
   static const String vehiclesUri = '/api/v1/get-vehicles';
   static const String storeRecommendedItemUri = '/api/v1/items/recommended';
+  static const String storeCategoryItemsUri = '/api/v1/store-categories/items';
   static const String orderCancellationUri =
       '/api/v1/customer/order/cancellation-reasons';
   static const String cartStoreSuggestedItemsUri = '/api/v1/items/suggested';
@@ -496,6 +497,12 @@ class AppConstants {
   static const String isRestaurantRegister = '6ammart_store_registration';
   static const String suggestLogin = '6ammart_login_suggestion';
 
+  /// Locally cached addresses used by the parcel and checkout location pickers.
+  static const String parcelRecentAddresses = '6ammart_parcel_recent_addresses';
+  static const int parcelRecentAddressesMax = 10;
+  static const String recentDeliveryAddresses = '6ammart_recent_delivery_addresses';
+  static const int recentDeliveryAddressesMax = 10;
+
   ///taxi
   static const String taxiSearchHistory = '6ammart_taxi_search_history';
   static const String taxiSearchAddressHistory =
@@ -529,7 +536,7 @@ class AppConstants {
   ];
 
   /// Delivery Tips
-  static List<String> tips = ['2', '5', '10', '20', '25', 'custom'];
+  static List<String> tips = ['2', '5', '10', '20', '25', 'custom', '0'];
   static List<String> deliveryInstructionList = [
     'deliver_to_front_door',
     'deliver_the_reception_desk',
@@ -633,6 +640,8 @@ class AppConstants {
   static const String exclusiveDealsUri = '/api/v1/stores/exclusive-deals';
   static const String offerItemsUri = '/api/v1/offers/items';
   static const String offerStoresUri = '/api/v1/offers/stores';
+  static const String quickDeliveryStoresUri = '/api/v1/stores/quick-delivery';
+  static const String distanceStoresUri = '/api/v1/stores/distance';
   static const String aiChatConversationListUri =
       '/api/v1/customer/ai-chat/conversations';
   static const String aiChatMessagesUri = '/api/v1/customer/ai-chat/messages';
@@ -656,4 +665,13 @@ class AppConstants {
   static const String getAllCartsUri = '/api/v1/customer/cart/get-all';
   static const String topCategoriesUri = '/api/v1/categories/top';
   static const String trendingSearchesUri = '/api/v1/trending-searches';
+  static const String topOfferUri = '/api/v1/module/top-offer';
+  static const String savedFilesUri = '/api/v1/customer/saved-files';
+  static const String deleteSavedFilesUri = '/api/v1/customer/saved-files/delete-all';
+  static const String storeSavedFilesUri = '/api/v1/customer/saved-files/store';
+  static const String reelListUri = '/api/v1/customer/reels/list';
+  static const String reelDetailsUri = '/api/v1/customer/reels/details';
+  static const String reelStatsUri = '/api/v1/customer/reels/stats';
+  static const String reelLikeUri = '/api/v1/customer/reels/like';
+  static const String reelVisitUri = '/api/v1/customer/reels/visit';
 }

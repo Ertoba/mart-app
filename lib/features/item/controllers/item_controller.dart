@@ -21,8 +21,16 @@ import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/common/widgets/item_bottom_sheet.dart';
 import 'package:sixam_mart/features/item/screens/item_details_screen.dart';
 import 'package:sixam_mart/features/item/domain/services/item_service_interface.dart';
+import 'package:sixam_mart/features/item/domain/models/item_review_model.dart';
 
 class ItemController extends GetxController implements GetxService {
+  ItemReviewModel? _itemReviewModel;
+  ItemReviewModel? get itemReviewModel => _itemReviewModel;
+
+  Future<void> getItemReviews({required int itemId, int offset = 1, int limit = 10, bool reload = false}) async {
+    if (reload) _itemReviewModel = null;
+    update();
+  }
   final ItemServiceInterface itemServiceInterface;
   ItemController({required this.itemServiceInterface});
 
@@ -458,9 +466,11 @@ class ItemController extends GetxController implements GetxService {
     update();
   }
 
-  void changeReadMore() {
-    _isReadMore = !_isReadMore;
-    update();
+  void changeReadMore({bool? value, bool notify = true}) {
+    _isReadMore = value ?? !_isReadMore;
+    if (notify) {
+      update();
+    }
   }
 
   void setCurrentIndex(int index, bool notify) {

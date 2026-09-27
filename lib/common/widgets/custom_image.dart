@@ -14,6 +14,9 @@ class CustomImage extends StatelessWidget {
   final bool isHovered;
   final Color? color;
   final Alignment alignment;
+  final int? cacheWidth;
+  final int? cacheHeight;
+  final double? size;
   const CustomImage({
     super.key,
     required this.image,
@@ -25,6 +28,9 @@ class CustomImage extends StatelessWidget {
     this.isHovered = false,
     this.color,
     this.alignment = Alignment.center,
+    this.cacheWidth,
+    this.cacheHeight,
+    this.size,
   });
 
   @override
@@ -38,8 +44,10 @@ class CustomImage extends StatelessWidget {
         imageUrl: kIsWeb
             ? '${AppConstants.baseUrl}/image-proxy?url=$image'
             : image,
-        height: height,
-        width: width,
+        height: height ?? size,
+        width: width ?? size,
+        memCacheWidth: cacheWidth,
+        memCacheHeight: cacheHeight,
         fit: fit,
         alignment: alignment,
         placeholder: (context, url) => Image.asset(
@@ -48,8 +56,8 @@ class CustomImage extends StatelessWidget {
               : (isNotification
                     ? Images.notificationPlaceholder
                     : Images.placeholder),
-          height: height,
-          width: width,
+          height: height ?? size,
+          width: width ?? size,
           fit: fit,
           color: color,
           alignment: alignment,
@@ -60,8 +68,8 @@ class CustomImage extends StatelessWidget {
               : (isNotification
                     ? Images.notificationPlaceholder
                     : Images.placeholder),
-          height: height,
-          width: width,
+          height: height ?? size,
+          width: width ?? size,
           fit: fit,
           color: color,
           alignment: alignment,

@@ -205,4 +205,41 @@ class LocationService implements LocationServiceInterface{
     }
   }
 
+  @override
+  String? getUserAddress() {
+    return locationRepoInterface.getUserAddress();
+  }
+
+  @override
+  List<AddressModel> getRecentDeliveryAddresses() {
+    final String? raw = locationRepoInterface.getRecentDeliveryAddresses();
+    if (raw == null || raw.isEmpty) {
+      return [];
+    }
+    try {
+      final List<dynamic> decoded = jsonDecode(raw) as List<dynamic>;
+      return decoded.map((dynamic value) => AddressModel.fromJson(value as Map<String, dynamic>)).toList();
+    } catch (e) {
+      log('Recent delivery addresses decode error: $e');
+      return [];
+    }
+  }
+
+  @override
+  Future<List<AddressModel>> addRecentDeliveryAddress(AddressModel address) async {
+    final List<AddressModel> addresses = getRecentDeliveryAddresses();
+    addresses.removeWhere((AddressModel savedAddress) =>
+        savedAddress.latitude == address.latitude
+        && savedAddress.longitude == address.longitude
+        && savedAddress.address == address.address);
+    addresses.insert(0, address);
+    final List<AddressModel> trimmed = addresses.length > AppConstants.recentDeliveryAddressesMax
+        ? addresses.sublist(0, AppConstants.recentDeliveryAddressesMax)
+        : addresses;
+    await locationRepoInterface.saveRecentDeliveryAddresses(
+      jsonEncode(trimmed.map((AddressModel savedAddress) => savedAddress.toJson()).toList()),
+    );
+    return trimmed;
+  }
+
 }

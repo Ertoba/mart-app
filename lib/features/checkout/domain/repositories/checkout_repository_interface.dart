@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sixam_mart/api/api_client.dart';
 import 'package:sixam_mart/features/checkout/domain/models/place_order_body_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/surge_price_model.dart';
+import 'package:sixam_mart/features/checkout/domain/models/saved_prescription_model.dart';
 import 'package:sixam_mart/features/payment/domain/models/offline_method_model.dart';
 import 'package:sixam_mart/interfaces/repository_interface.dart';
 
@@ -12,7 +13,7 @@ abstract class CheckoutRepositoryInterface implements RepositoryInterface {
   String getSharedPrefDmTipIndex();
   Future<Response> getDistanceInMeter(LatLng originLatLng, LatLng destinationLatLng);
   Future<double> getExtraCharge(double? distance);
-  Future<Response> placeOrder(PlaceOrderBodyModel orderBody, List<MultipartBody>? orderAttachment);
+  Future<Response> placeOrder(PlaceOrderBodyModel orderBody, List<MultipartBody>? orderAttachment, [List<String>? savedImages]);
   Future<Response> placePrescriptionOrder(
     int? storeId,
     double? distance,
@@ -23,6 +24,7 @@ abstract class CheckoutRepositoryInterface implements RepositoryInterface {
     List<MultipartBody> orderAttachment,
     String dmTips,
     String deliveryInstruction,
+    {List<String>? savedImages}
   );
   @override
   Future<List<OfflineMethodModel>?> getList({int? offset});
@@ -33,4 +35,7 @@ abstract class CheckoutRepositoryInterface implements RepositoryInterface {
     required String dateTime,
     String? guestId,
   });
+  Future<List<SavedPrescriptionModel>?> getSavedPrescriptionImages();
+  Future<Response> storeSavedPrescriptionImages(List<MultipartBody> images);
+  Future<Response> deleteSavedPrescriptionImages();
 }

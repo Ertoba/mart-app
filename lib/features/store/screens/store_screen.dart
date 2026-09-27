@@ -287,7 +287,7 @@ class _StoreScreenState extends State<StoreScreen> {
                                             currentStore.name!, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge - (scrollingRate * 3), color: Theme.of(context).textTheme.bodyMedium!.color),
                                             maxLines: 1, overflow: TextOverflow.ellipsis,
                                           )),
-                                          if (currentStore.verifiedSeller == true) ...[
+                                          if (currentStore.verifiedSeller == 1) ...[
                                             const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                                             VerifiedSellerBadge(verified: true, size: 16 - (scrollingRate * 2)),
                                           ],

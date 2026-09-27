@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:sixam_mart/common/enums/data_source_enum.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/cart_suggested_item_model.dart';
+import 'package:sixam_mart/features/store/domain/models/store_category_items_model.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/features/store/domain/models/recommended_product_model.dart';
@@ -18,8 +19,8 @@ class StoreService implements StoreServiceInterface {
   StoreService({required this.storeRepositoryInterface});
 
   @override
-  Future<StoreModel?> getStoreList(int offset, String filterBy, String storeType, {required DataSourceEnum source}) async {
-    return await storeRepositoryInterface.getList(offset: offset, isStoreList: true, filterBy: filterBy, type: storeType, source: source);
+  Future<StoreModel?> getStoreList(int offset, String filterBy, String storeType, {required DataSourceEnum source, String name = ''}) async {
+    return await storeRepositoryInterface.getList(offset: offset, isStoreList: true, filterBy: filterBy, type: storeType, source: source, name: name);
   }
 
   @override
@@ -38,8 +39,8 @@ class StoreService implements StoreServiceInterface {
   }
 
   @override
-  Future<List<Store>?> getFeaturedStoreList({required DataSourceEnum source}) async {
-    return await storeRepositoryInterface.getList(isFeaturedStoreList: true, source: source);
+  Future<List<Store>?> getFeaturedStoreList({required DataSourceEnum source, bool fromHome = false}) async {
+    return await storeRepositoryInterface.getList(isFeaturedStoreList: true, source: source, fromHome: fromHome);
   }
 
   @override
@@ -82,6 +83,21 @@ class StoreService implements StoreServiceInterface {
   @override
   Future<List<Store>?> getRecommendedStoreList({required DataSourceEnum source}) async {
     return await storeRepositoryInterface.getList(isRecommendedStoreList: true, source: source);
+  }
+
+  @override
+  Future<StoreModel?> getQuickDeliveryStores({int offset = 1, int limit = 10, int? moduleId, String name = ''}) async {
+    return await storeRepositoryInterface.getQuickDeliveryStores(offset: offset, limit: limit, moduleId: moduleId, name: name);
+  }
+
+  @override
+  Future<StoreModel?> getNearbyStores({int offset = 1, int limit = 10, int? moduleId, String name = ''}) async {
+    return await storeRepositoryInterface.getNearbyStores(offset: offset, limit: limit, moduleId: moduleId, name: name);
+  }
+
+  @override
+  Future<StoreCategoryItemsModel?> getStoreCategoryItems(int storeId) async {
+    return await storeRepositoryInterface.getStoreCategoryItems(storeId);
   }
 
   @override

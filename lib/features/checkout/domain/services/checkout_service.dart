@@ -6,6 +6,7 @@ import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/features/payment/domain/models/offline_method_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/place_order_body_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/timeslote_model.dart';
+import 'package:sixam_mart/features/checkout/domain/models/saved_prescription_model.dart';
 import 'package:sixam_mart/features/checkout/domain/repositories/checkout_repository_interface.dart';
 import 'package:sixam_mart/features/checkout/domain/services/checkout_service_interface.dart';
 import 'package:sixam_mart/helper/date_converter.dart';
@@ -111,14 +112,14 @@ class CheckoutService implements CheckoutServiceInterface {
   }
 
   @override
-  Future<Response> placeOrder(PlaceOrderBodyModel orderBody, List<MultipartBody> orderAttachment) async {
-    return await checkoutRepositoryInterface.placeOrder(orderBody, orderAttachment);
+  Future<Response> placeOrder(PlaceOrderBodyModel orderBody, List<MultipartBody> orderAttachment, [List<String>? savedImages]) async {
+    return await checkoutRepositoryInterface.placeOrder(orderBody, orderAttachment, savedImages);
   }
 
   @override
   Future<Response> placePrescriptionOrder(int? storeId, double? distance, String address, String longitude, String latitude, String note,
-      List<MultipartBody> orderAttachment, String dmTips, String deliveryInstruction) async {
-    return await checkoutRepositoryInterface.placePrescriptionOrder(storeId, distance, address, longitude, latitude, note, orderAttachment, dmTips, deliveryInstruction);
+      List<MultipartBody> orderAttachment, String dmTips, String deliveryInstruction, {List<String>? savedImages}) async {
+    return await checkoutRepositoryInterface.placePrescriptionOrder(storeId, distance, address, longitude, latitude, note, orderAttachment, dmTips, deliveryInstruction, savedImages: savedImages);
   }
 
   @override
@@ -138,5 +139,20 @@ class CheckoutService implements CheckoutServiceInterface {
     'monthly_reorder_policy_step_3',
     'monthly_reorder_policy_step_4',
   ];
+
+  @override
+  Future<List<SavedPrescriptionModel>?> getSavedPrescriptionImages() {
+    return checkoutRepositoryInterface.getSavedPrescriptionImages();
+  }
+
+  @override
+  Future<Response> storeSavedPrescriptionImages(List<MultipartBody> images) {
+    return checkoutRepositoryInterface.storeSavedPrescriptionImages(images);
+  }
+
+  @override
+  Future<Response> deleteSavedPrescriptionImages() {
+    return checkoutRepositoryInterface.deleteSavedPrescriptionImages();
+  }
 
 }

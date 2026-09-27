@@ -67,7 +67,7 @@ class StoreDescriptionViewWidget extends StatelessWidget {
               store!.name!, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge, color: textColor),
               maxLines: 1, overflow: TextOverflow.ellipsis,
             )),
-            if (store!.verifiedSeller == true) ...[
+            if (store!.verifiedSeller == 1) ...[
               const SizedBox(width: Dimensions.paddingSizeExtraSmall),
               const VerifiedSellerBadge(verified: true),
             ],

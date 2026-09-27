@@ -32,7 +32,8 @@ class DetailsWebViewWidget extends StatefulWidget {
   final int? stock;
   final double priceWithAddOns;
   final OnlineCart? cart;
-  const DetailsWebViewWidget({super.key, required this.cartModel, required this.stock, required this.priceWithAddOns, this.cart});
+  final String? stockIndicateText;
+  const DetailsWebViewWidget({super.key, required this.cartModel, required this.stock, required this.priceWithAddOns, this.cart, this.stockIndicateText});
 
   @override
   State<DetailsWebViewWidget> createState() => _DetailsWebViewWidgetState();

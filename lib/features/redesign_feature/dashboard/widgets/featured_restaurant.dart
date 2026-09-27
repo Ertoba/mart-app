@@ -11,7 +11,7 @@ import 'package:sixam_mart/features/home/controllers/advertisement_controller.da
 import 'package:sixam_mart/features/home/domain/models/advertisement_model.dart';
 import 'package:sixam_mart/features/home/widgets/highlight_widget.dart' show AdvertisementIndicator;
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
-import 'package:sixam_mart/features/store/domain/models/store_model.dart';
+import 'package:sixam_mart/features/store/domain/models/store_model.dart' show Store;
 import 'package:sixam_mart/features/store/screens/store_screen.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';

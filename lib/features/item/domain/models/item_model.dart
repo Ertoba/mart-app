@@ -62,6 +62,18 @@ class Item {
   String? description;
   String? imageFullUrl;
   List<String>? imagesFullUrl;
+  String? video;
+  String? videoLink;
+  String? videoFullUrl;
+  String? videoSourceType;
+  String? videoPreviewType;
+  String? videoPreviewUrl;
+  String? videoThumbnailUrl;
+  String? videoEmbedUrl;
+  String? videoPreviewModalType;
+  String? videoPreviewModalUrl;
+  bool? hasVideoPreview;
+  bool? hasVideoSource;
   int? categoryId;
   List<CategoryIds>? categoryIds;
   List<Variation>? variations;
@@ -98,6 +110,10 @@ class Item {
   List<String>? genericName;
   StoreDetails? storeDetails;
   String? slug;
+  String? storeImageFullUrl;
+  String? storeLogoFullUrl;
+  bool? freeDelivery;
+  String? offerLabel;
 
   Item({
     this.id,
@@ -105,6 +121,18 @@ class Item {
     this.description,
     this.imageFullUrl,
     this.imagesFullUrl,
+    this.video,
+    this.videoLink,
+    this.videoFullUrl,
+    this.videoSourceType,
+    this.videoPreviewType,
+    this.videoPreviewUrl,
+    this.videoThumbnailUrl,
+    this.videoEmbedUrl,
+    this.videoPreviewModalType,
+    this.videoPreviewModalUrl,
+    this.hasVideoPreview,
+    this.hasVideoSource,
     this.categoryId,
     this.categoryIds,
     this.variations,
@@ -140,6 +168,10 @@ class Item {
     this.genericName,
     this.storeDetails,
     this.slug,
+    this.storeImageFullUrl,
+    this.storeLogoFullUrl,
+    this.freeDelivery,
+    this.offerLabel,
   });
 
   Item.fromJson(Map<String, dynamic> json) {
@@ -147,6 +179,18 @@ class Item {
     name = json['name'];
     description = json['description'];
     imageFullUrl = json['image_full_url'];
+    video = json['video'];
+    videoLink = json['video_link'];
+    videoFullUrl = json['video_full_url'];
+    videoSourceType = json['video_source_type'];
+    videoPreviewType = json['video_preview_type'];
+    videoPreviewUrl = json['video_preview_url'];
+    videoThumbnailUrl = json['video_thumbnail_url'];
+    videoEmbedUrl = json['video_embed_url'];
+    videoPreviewModalType = json['video_preview_modal_type'];
+    videoPreviewModalUrl = json['video_preview_modal_url'];
+    hasVideoPreview = json['has_video_preview'];
+    hasVideoSource = json['has_video_source'];
     if(json['images_full_url'] != null){
       imagesFullUrl = [];
       json['images_full_url'].forEach((v) {
@@ -224,6 +268,10 @@ class Item {
         ? StoreDetails.fromJson(json['store_details'])
         : null;
     slug = json['slug'];
+    storeImageFullUrl = json['store_image_full_url'];
+    storeLogoFullUrl = json['store_logo_full_url'];
+    freeDelivery = json['free_delivery'];
+    offerLabel = json['offer_label'];
   }
 
   Map<String, dynamic> toJson() {
@@ -233,6 +281,18 @@ class Item {
     data['description'] = description;
     data['image_full_url'] = imageFullUrl;
     data['images_full_url'] = imagesFullUrl;
+    data['video'] = video;
+    data['video_link'] = videoLink;
+    data['video_full_url'] = videoFullUrl;
+    data['video_source_type'] = videoSourceType;
+    data['video_preview_type'] = videoPreviewType;
+    data['video_preview_url'] = videoPreviewUrl;
+    data['video_thumbnail_url'] = videoThumbnailUrl;
+    data['video_embed_url'] = videoEmbedUrl;
+    data['video_preview_modal_type'] = videoPreviewModalType;
+    data['video_preview_modal_url'] = videoPreviewModalUrl;
+    data['has_video_preview'] = hasVideoPreview;
+    data['has_video_source'] = hasVideoSource;
     data['category_id'] = categoryId;
     if (categoryIds != null) {
       data['category_ids'] = categoryIds!.map((v) => v.toJson()).toList();
@@ -281,6 +341,10 @@ class Item {
       data['store_details'] = storeDetails!.toJson();
     }
     data['slug'] = slug;
+    data['store_image_full_url'] = storeImageFullUrl;
+    data['store_logo_full_url'] = storeLogoFullUrl;
+    data['free_delivery'] = freeDelivery;
+    data['offer_label'] = offerLabel;
     return data;
   }
 }

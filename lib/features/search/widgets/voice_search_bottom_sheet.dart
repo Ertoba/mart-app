@@ -1,11 +1,12 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
+import 'package:sixam_mart/features/search/controllers/search_controller.dart' as search;
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/features/search/controllers/search_controller.dart' as search;
 
 class VoiceSearchBottomSheet extends StatefulWidget {
   final TextEditingController searchTextEditingController;
@@ -82,7 +83,7 @@ class _VoiceSearchBottomSheetState extends State<VoiceSearchBottomSheet> with Ti
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20), bottom: Radius.circular(isDesktop ? 20 : 0)),
+          borderRadius: BorderRadius.vertical(top: const Radius.circular(20), bottom: Radius.circular(isDesktop ? 20 : 0)),
         ),
         child: Stack(children: [
           Column(mainAxisSize: MainAxisSize.min, children: [
@@ -339,7 +340,7 @@ class _VoiceSearchBottomSheetState extends State<VoiceSearchBottomSheet> with Ti
                 ),
               ),
 
-              isListening ? SizedBox() : Text(
+              isListening ? const SizedBox() : Text(
                 'tap_the_mic_to_try_again'.tr,
                 textAlign: TextAlign.center,
                 style: robotoRegular.copyWith(color: Theme.of(context).disabledColor)

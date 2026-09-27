@@ -654,4 +654,6 @@ class AppConstants {
   static const String reorderUri = '/api/v1/customer/order/reorder';
   static const String allOrderList = '/api/v1/customer/order/list';
   static const String getAllCartsUri = '/api/v1/customer/cart/get-all';
+  static const String topCategoriesUri = '/api/v1/categories/top';
+  static const String trendingSearchesUri = '/api/v1/trending-searches';
 }

@@ -74,6 +74,9 @@ class Store {
   String? announcementMessage;
   int? itemCount;
   List<Items>? items;
+  List<TopItem>? topItems;
+  String? offerLabel;
+  bool? sponsored;
   bool? extraPackagingStatus;
   double? extraPackagingAmount;
   List<int>? ratings;
@@ -128,6 +131,9 @@ class Store {
     this.announcementMessage,
     this.itemCount,
     this.items,
+    this.topItems,
+    this.offerLabel,
+    this.sponsored,
     this.extraPackagingStatus,
     this.extraPackagingAmount,
     this.ratings,
@@ -194,6 +200,14 @@ class Store {
         items!.add(Items.fromJson(v));
       });
     }
+    if (json['top_items'] is List) {
+      topItems = (json['top_items'] as List)
+          .whereType<Map<String, dynamic>>()
+          .map(TopItem.fromJson)
+          .toList();
+    }
+    offerLabel = json['offer_label']?.toString();
+    sponsored = json['sponsored'] == true || json['sponsored']?.toString() == '1';
     extraPackagingStatus = json['extra_packaging_status'] ?? false;
     extraPackagingAmount = json['extra_packaging_amount']?.toDouble() ?? 0;
     if (json['ratings'] != null && json['ratings'] != 0) {
@@ -261,6 +275,9 @@ class Store {
     if (items != null) {
       data['items'] = items!.map((v) => v.toJson()).toList();
     }
+    data['top_items'] = topItems?.map((item) => item.toJson()).toList();
+    data['offer_label'] = offerLabel;
+    data['sponsored'] = sponsored;
     data['extra_packaging_status'] = extraPackagingStatus;
     data['extra_packaging_amount'] = extraPackagingAmount;
     data['ratings'] = ratings;
@@ -584,6 +601,18 @@ class TopItem {
   String? discountType;
   int? orderCount;
   double? avgRating;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'image_full_url': imageFullUrl,
+    'price': price,
+    'discounted_price': discountedPrice,
+    'discount': discount,
+    'discount_type': discountType,
+    'order_count': orderCount,
+    'avg_rating': avgRating,
+  };
 
   TopItem.fromJson(Map<String, dynamic> json) {
     id = int.tryParse(json['id']?.toString() ?? '');

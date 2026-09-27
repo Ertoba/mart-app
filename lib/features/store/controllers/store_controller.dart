@@ -350,12 +350,16 @@ class StoreController extends GetxController implements GetxService {
     getTopOfferStoreList(true, false);
   }
 
-  Future<void> getFeaturedStoreList({DataSourceEnum dataSource = DataSourceEnum.local}) async {
+  Future<void> getFeaturedStoreList({bool fromHome = false, DataSourceEnum dataSource = DataSourceEnum.local, bool notify = true}) async {
     List<Store>? stores;
     if(dataSource == DataSourceEnum.local) {
+      if (fromHome) {
+        _featuredStoreList = null;
+        if (notify) update();
+      }
       stores = await storeServiceInterface.getFeaturedStoreList(source: dataSource);
       _prepareFeaturedStore(stores);
-      getFeaturedStoreList(dataSource: DataSourceEnum.client);
+      getFeaturedStoreList(fromHome: fromHome, dataSource: DataSourceEnum.client, notify: notify);
     } else {
       stores = await storeServiceInterface.getFeaturedStoreList(source: dataSource);
       _prepareFeaturedStore(stores);

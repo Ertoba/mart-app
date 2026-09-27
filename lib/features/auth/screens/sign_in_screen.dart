@@ -17,12 +17,14 @@ class SignInScreen extends StatefulWidget {
   final bool backFromThis;
   final bool fromNotification;
   final bool fromResetPassword;
+  final bool? fromRideDialog;
   const SignInScreen({
     super.key,
     required this.exitFromApp,
     required this.backFromThis,
     this.fromNotification = false,
     this.fromResetPassword = false,
+    this.fromRideDialog,
   });
 
   @override

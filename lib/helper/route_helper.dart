@@ -327,13 +327,15 @@ class RouteHelper {
     bool? createAccount,
     int? createUserId,
     String? keepzMethodKey,
+    bool isProSubscription = false,
+    bool isRenew = false,
   }) {
     final String keepzQuery =
         keepzMethodKey != null && keepzMethodKey.isNotEmpty
         ? '&keepz-method=${Uri.encodeQueryComponent(keepzMethodKey)}'
         : '';
 
-    return '$payment?id=$id&user=$user&type=$type&amount=$amount&cod-delivery=$codDelivery&add-fund-url=$addFundUrl&payment-method=$paymentMethod&guest-id=$guestId&number=$contactNumber&subscription-url=$subscriptionUrl&store_id=$storeId&create_account=$createAccount&create_user_id=$createUserId$keepzQuery';
+    return '$payment?id=$id&user=$user&type=$type&amount=$amount&cod-delivery=$codDelivery&add-fund-url=$addFundUrl&payment-method=$paymentMethod&guest-id=$guestId&number=$contactNumber&subscription-url=$subscriptionUrl&store_id=$storeId&create_account=$createAccount&create_user_id=$createUserId&is_pro_subscription=$isProSubscription&is_renew=$isRenew$keepzQuery';
   }
 
   static String getCheckoutRoute(String page, {int? storeId}) =>
@@ -430,9 +432,9 @@ class RouteHelper {
     int? moduleId,
   }) =>
       '${_decideStoreRouteName(page)}?page=$page${isNearbyStore ? '&nearby=${isNearbyStore.toString()}' : ''}&module=${moduleId ?? ModuleHelper.getModule()?.slug ?? ModuleHelper.getModule()?.id}';
-  static String getItemImagesRoute(Item item) {
+  static String getItemImagesRoute(Item item, {int initialIndex = 0}) {
     String data = base64Url.encode(utf8.encode(jsonEncode(item.toJson())));
-    return '$itemImages?item=$data';
+    return '$itemImages?item=$data&initial_index=$initialIndex';
   }
 
   static String getParcelCategoryRoute() => parcelCategory;

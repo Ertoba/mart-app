@@ -5,6 +5,8 @@ import 'package:sixam_mart/common/models/response_model.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/common/widgets/zone_warning_dialog.dart';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
+import 'package:sixam_mart/features/ai_chat_bot/screens/ai_chat_bot_screen.dart';
+import 'package:sixam_mart/features/ai_chat_bot/screens/ai_chat_details_screen.dart';
 import 'package:sixam_mart/features/auth/screens/new_user_setup_screen.dart';
 import 'package:sixam_mart/features/brands/screens/brands_product_screen.dart';
 import 'package:sixam_mart/features/brands/screens/brands_screen.dart';
@@ -166,6 +168,8 @@ class RouteHelper {
   static const String referAndEarn = '/refer-and-earn';
   static const String messages = '/messages';
   static const String conversation = '/conversation';
+  static const String aiChatBot = '/ai-chat-bot';
+  static const String aiChatDetails = '/ai-chat-details';
   static const String restaurantRegistration = '/store-registration';
   static const String deliveryManRegistration = '/delivery-man-registration';
   static const String riderRegistration = '/rider-registration';
@@ -514,6 +518,10 @@ class RouteHelper {
   }
 
   static String getConversationRoute() => conversation;
+  static String getAiChatBotScreen() => aiChatBot;
+  static String getAiChatDetailsScreen({int? conversationId, String? title, String? initialMessage}) {
+    return '$aiChatDetails?conversation_id=${conversationId ?? ''}&title=${Uri.encodeComponent(title ?? '')}&initial_message=${Uri.encodeComponent(initialMessage ?? '')}';
+  }
   static String getRestaurantRegistrationRoute() => restaurantRegistration;
   static String getDeliverymanRegistrationRoute() => deliveryManRegistration;
   static String getRiderRegistrationRoute() => riderRegistration;
@@ -1165,6 +1173,15 @@ class RouteHelper {
       ),
     ),
     GetPage(name: support, page: () => const SupportScreen()),
+    GetPage(name: aiChatBot, page: () => const AiChatBotScreen()),
+    GetPage(
+      name: aiChatDetails,
+      page: () => AiChatDetailsScreen(
+        conversationId: int.tryParse(Get.parameters['conversation_id'] ?? ''),
+        title: Get.parameters['title'],
+        initialMessage: Get.parameters['initial_message'],
+      ),
+    ),
     GetPage(
       name: update,
       page: () => UpdateScreen(isUpdate: Get.parameters['update'] == 'true'),

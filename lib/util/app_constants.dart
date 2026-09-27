@@ -627,4 +627,24 @@ class AppConstants {
   static const String hourly = 'hourly';
   static const String distanceWise = 'distance_wise';
   static const String dayWise = 'day_wise';
+
+  // v4 feature endpoints and local state keys.
+  static const String smartBannerUri = '/api/v1/smart-banners';
+  static const String exclusiveDealsUri = '/api/v1/stores/exclusive-deals';
+  static const String offerItemsUri = '/api/v1/offers/items';
+  static const String offerStoresUri = '/api/v1/offers/stores';
+  static const String aiChatConversationListUri =
+      '/api/v1/customer/ai-chat/conversations';
+  static const String aiChatMessagesUri = '/api/v1/customer/ai-chat/messages';
+  static const String proPlansUri = '/api/v1/pro-customer/plans';
+  static const String proFaqsUri = '/api/v1/pro-customer/faqs';
+  static const String proCustomerSubscribeUri =
+      '/api/v1/customer/pro-customer/subscribe';
+  static const String proCancelSubscriptionsUri =
+      '/api/v1/customer/pro-customer/cancel';
+  static const String proActiveOfferUri =
+      '/api/v1/customer/pro-customer/active-offer';
+  static const String savedRoute = 'savedRoute';
+  static const String renewBottomSheetShown =
+      'sixam_mart_renew_bottomsheet_shown';
 }

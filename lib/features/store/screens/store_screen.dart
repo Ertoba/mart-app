@@ -43,7 +43,8 @@ class StoreScreen extends StatefulWidget {
   final Store? store;
   final bool fromModule;
   final String slug;
-  const StoreScreen({super.key, required this.store, required this.fromModule, this.slug = ''});
+  final bool fromGlobalCart;
+  const StoreScreen({super.key, required this.store, required this.fromModule, this.slug = '', this.fromGlobalCart = false});
 
   @override
   State<StoreScreen> createState() => _StoreScreenState();

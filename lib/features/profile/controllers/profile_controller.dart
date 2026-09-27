@@ -24,6 +24,8 @@ class ProfileController extends GetxController implements GetxService {
   XFile? _pickedFile;
   XFile? get pickedFile => _pickedFile;
 
+  bool get proStatus => _userInfoModel?.proStatus ?? false;
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 

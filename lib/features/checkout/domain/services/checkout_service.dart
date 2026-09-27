@@ -131,4 +131,12 @@ class CheckoutService implements CheckoutServiceInterface {
     return await checkoutRepositoryInterface.getSurgePrice(zoneId: zoneId, moduleId: moduleId, dateTime: dateTime, guestId: guestId);
   }
 
+  @override
+  List<String> getMonthlyReorderPolicy() => const [
+    'monthly_reorder_policy_step_1',
+    'monthly_reorder_policy_step_2',
+    'monthly_reorder_policy_step_3',
+    'monthly_reorder_policy_step_4',
+  ];
+
 }

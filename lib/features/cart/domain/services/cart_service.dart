@@ -2,6 +2,7 @@ import 'package:get/get_utils/get_utils.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
+import 'package:sixam_mart/features/cart/domain/models/all_carts_model.dart';
 import 'package:sixam_mart/features/cart/domain/models/cart_model.dart';
 import 'package:sixam_mart/features/cart/domain/models/online_cart_model.dart';
 import 'package:sixam_mart/features/cart/domain/repositories/cart_repository_interface.dart';
@@ -16,28 +17,28 @@ class CartService implements CartServiceInterface {
   CartService({required this.cartRepositoryInterface});
 
   @override
-  Future<List<OnlineCartModel>?> addToCartOnline(OnlineCart cart) async {
-    return await cartRepositoryInterface.add(cart);
+  Future<List<OnlineCartModel>?> addToCartOnline(OnlineCart cart, {int? storeId}) async {
+    return await cartRepositoryInterface.add(cart, storeId: storeId);
   }
 
   @override
-  Future<List<OnlineCartModel>?> updateCartOnline(OnlineCart cart) async {
-    return await cartRepositoryInterface.update(cart.toJson(), null);
+  Future<List<OnlineCartModel>?> updateCartOnline(OnlineCart cart, {int? storeId}) async {
+    return await cartRepositoryInterface.update(cart.toJson(), null, storeId: storeId);
   }
 
   @override
-  Future<bool> updateCartQuantityOnline(int cartId, double price, int quantity) async {
-    return await cartRepositoryInterface.update({}, cartId, price: price, quantity: quantity, isUpdateQty: true);
+  Future<bool> updateCartQuantityOnline(int cartId, double price, int quantity, {int? storeId}) async {
+    return await cartRepositoryInterface.update({}, cartId, price: price, quantity: quantity, isUpdateQty: true, storeId: storeId);
   }
 
   @override
-  Future<List<OnlineCartModel>?> getCartDataOnline() async {
-    return await cartRepositoryInterface.getList();
+  Future<List<OnlineCartModel>?> getCartDataOnline({int? storeId}) async {
+    return await cartRepositoryInterface.getCartDataOnline(storeId: storeId);
   }
 
   @override
-  Future<bool> removeCartItemOnline(int cartId) async {
-    return await cartRepositoryInterface.delete(cartId);
+  Future<bool> removeCartItemOnline(int cartId, {int? storeId}) async {
+    return await cartRepositoryInterface.delete(cartId, storeId: storeId);
   }
 
   @override
@@ -266,6 +267,7 @@ class CartService implements CartServiceInterface {
         for (item_variation.Variation variation in cart.item!.variations!) {
           if (variation.type == variationType) {
             discountedPrice = (PriceConverter.convertWithDiscount(variation.price!, discount, discountType)! * cart.quantity!);
+            stock = variation.stock ?? 0;
             break;
           }
         }
@@ -343,6 +345,16 @@ class CartService implements CartServiceInterface {
       }
     }
     return variant;
+  }
+
+  @override
+  Future<List<AllCartsModel>?> getAllCarts() async {
+    return await cartRepositoryInterface.getAllCarts();
+  }
+
+  @override
+  Future<bool> removeStoreCart(int storeId) async {
+    return await cartRepositoryInterface.removeStoreCart(storeId);
   }
 
 }

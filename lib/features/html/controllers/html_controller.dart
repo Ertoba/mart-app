@@ -9,11 +9,24 @@ class HtmlController extends GetxController implements GetxService {
   String? _htmlText;
   String? get htmlText => _htmlText;
 
+  String? _pageTitle;
+  String? get pageTitle => _pageTitle;
+
+  String? _pageImage;
+  String? get pageImage => _pageImage;
+
   Future<void> getHtmlText(HtmlType htmlType) async {
     _htmlText = null;
     Response response = await htmlServiceInterface.getHtmlText(htmlType);
     if (response.statusCode == 200) {
-      if(response.body != null && response.body.isNotEmpty && response.body is String){
+      if(response.body is Map && response.body['page_description'] != null){
+        final bool pageStatus = response.body['page_status'] == 1 || response.body['page_status'] == true;
+        _htmlText = pageStatus ? response.body['page_description'].toString() : '';
+        if(pageStatus) {
+          _pageTitle = response.body['page_title']?.toString();
+          _pageImage = response.body['page_image_full_url']?.toString();
+        }
+      }else if(response.body != null && response.body.isNotEmpty && response.body is String){
         _htmlText = response.body;
       }else{
         _htmlText = '';
@@ -25,6 +38,12 @@ class HtmlController extends GetxController implements GetxService {
       }
     }
     update();
+  }
+
+  void resetHtmlText() {
+    _htmlText = null;
+    _pageTitle = null;
+    _pageImage = null;
   }
 
 }

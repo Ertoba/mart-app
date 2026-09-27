@@ -23,6 +23,8 @@ class UserInfoModel {
   List<int>? selectedModuleForInterest;
   bool? isPhoneVerified;
   bool? isEmailVerified;
+  bool? proStatus;
+  ProSubscription? proSubscription;
 
   UserInfoModel({
     this.id,
@@ -47,6 +49,8 @@ class UserInfoModel {
     this.selectedModuleForInterest,
     this.isPhoneVerified,
     this.isEmailVerified,
+    this.proStatus,
+    this.proSubscription,
   });
 
   UserInfoModel.fromJson(Map<String, dynamic> json) {
@@ -79,6 +83,8 @@ class UserInfoModel {
     }
     isPhoneVerified = json['is_phone_verified'] == 1;
     isEmailVerified = json['is_email_verified'] == 1;
+    proStatus = json['pro_status'] == 1 || json['pro_status'] == true;
+    proSubscription = json['pro_subscription'] != null ? ProSubscription.fromJson(json['pro_subscription']) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -106,6 +112,67 @@ class UserInfoModel {
     data['selected_modules_for_interest'] = selectedModuleForInterest;
     data['is_phone_verified'] = isPhoneVerified;
     data['is_email_verified'] = isEmailVerified;
+    data['pro_status'] = proStatus;
+    if (proSubscription != null) {
+      data['pro_subscription'] = proSubscription!.toJson();
+    }
+    return data;
+  }
+}
+
+class ProSubscription {
+  int? id;
+  int? userId;
+  int? planId;
+  String? planName;
+  String? planType;
+  double? planPrice;
+  String? startAt;
+  String? endAt;
+  String? status;
+  int? autoRenew;
+  String? createdAt;
+  String? updatedAt;
+
+  ProSubscription({
+    this.id, this.userId, this.planId, this.planName, this.planType,
+    this.planPrice, this.startAt, this.endAt, this.status, this.autoRenew,
+    this.createdAt, this.updatedAt,
+  });
+
+  bool get isExpired {
+    return status == 'expired';
+  }
+
+  ProSubscription.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    userId = json['user_id'];
+    planId = json['plan_id'];
+    planName = json['plan_name'];
+    planType = json['plan_type'];
+    planPrice = num.tryParse(json['plan_price'].toString())?.toDouble();
+    startAt = json['start_at'];
+    endAt = json['end_at'];
+    status = json['status'];
+    autoRenew = json['auto_renew'];
+    createdAt = json['created_at'];
+    updatedAt = json['updated_at'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['user_id'] = userId;
+    data['plan_id'] = planId;
+    data['plan_name'] = planName;
+    data['plan_type'] = planType;
+    data['plan_price'] = planPrice;
+    data['start_at'] = startAt;
+    data['end_at'] = endAt;
+    data['status'] = status;
+    data['auto_renew'] = autoRenew;
+    data['created_at'] = createdAt;
+    data['updated_at'] = updatedAt;
     return data;
   }
 }

@@ -44,6 +44,14 @@ class CheckoutController extends GetxController implements GetxService {
   final CheckoutServiceInterface checkoutServiceInterface;
   CheckoutController({required this.checkoutServiceInterface});
 
+  bool _monthlySubscribe = false;
+  bool get monthlySubscribe => _monthlySubscribe;
+  void toggleMonthlySubscribe() {
+    _monthlySubscribe = !_monthlySubscribe;
+    update();
+  }
+  List<String> getMonthlyReorderPolicy() => checkoutServiceInterface.getMonthlyReorderPolicy();
+
   final TextEditingController couponController = TextEditingController();
   final TextEditingController noteController = TextEditingController();
   final TextEditingController streetNumberController = TextEditingController();

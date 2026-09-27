@@ -574,6 +574,30 @@ class Items {
   }
 }
 
+class TopItem {
+  int? id;
+  String? name;
+  String? imageFullUrl;
+  double? price;
+  double? discountedPrice;
+  double? discount;
+  String? discountType;
+  int? orderCount;
+  double? avgRating;
+
+  TopItem.fromJson(Map<String, dynamic> json) {
+    id = int.tryParse(json['id']?.toString() ?? '');
+    name = json['name']?.toString();
+    imageFullUrl = json['image_full_url']?.toString();
+    price = double.tryParse(json['price']?.toString() ?? '');
+    discountedPrice = double.tryParse(json['discounted_price']?.toString() ?? '');
+    discount = double.tryParse(json['discount']?.toString() ?? '');
+    discountType = json['discount_type']?.toString();
+    orderCount = int.tryParse(json['order_count']?.toString() ?? '');
+    avgRating = double.tryParse(json['avg_rating']?.toString() ?? '');
+  }
+}
+
 class StoreSubscription {
   int? id;
   int? packageId;

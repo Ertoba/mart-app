@@ -1,4 +1,5 @@
 import 'package:sixam_mart/common/models/module_model.dart';
+import 'package:sixam_mart/helper/type_converter_helper.dart';
 
 class ConfigModel {
   String? businessName;
@@ -67,6 +68,7 @@ class ConfigModel {
   double? additionCharge;
   List<PaymentBody>? activePaymentMethodList;
   DigitalPaymentInfo? digitalPaymentInfo;
+  ValidationConfig? validationConfig;
   bool? addFundStatus;
   bool? offlinePaymentStatus;
   bool? guestCheckoutStatus;
@@ -123,7 +125,12 @@ class ConfigModel {
   ReferralData? dmReferralData;
   ReferralData? riderReferralData;
   int? customerRoutePreference;
+  int? repeatOrderOption;
+  int? monthlyOrderRemainder;
+  MaintenanceModeData? maintenanceModeData;
+  bool? proMemberStatus;
   bool? aiChatStatus;
+  int? systemTaxIncludeStatus;
 
   ConfigModel({
     this.businessName,
@@ -192,6 +199,7 @@ class ConfigModel {
     this.additionCharge,
     this.activePaymentMethodList,
     this.digitalPaymentInfo,
+    this.validationConfig,
     this.addFundStatus,
     this.offlinePaymentStatus,
     this.guestCheckoutStatus,
@@ -246,7 +254,12 @@ class ConfigModel {
     this.dmReferralData,
     this.riderReferralData,
     this.customerRoutePreference,
+    this.repeatOrderOption,
+    this.monthlyOrderRemainder,
+    this.maintenanceModeData,
+    this.proMemberStatus,
     this.aiChatStatus,
+    this.systemTaxIncludeStatus,
   });
 
   ConfigModel.fromJson(Map<String, dynamic> json) {
@@ -341,6 +354,7 @@ class ConfigModel {
       });
     }
     digitalPaymentInfo = json['digital_payment_info'] != null ? DigitalPaymentInfo.fromJson(json['digital_payment_info']) : null;
+    validationConfig = json['validation_config'] != null ? ValidationConfig.fromJson(json['validation_config']) : null;
     addFundStatus = json['add_fund_status'] == 1;
     offlinePaymentStatus = json['offline_payment_status'] == 1;
     guestCheckoutStatus = json['guest_checkout_status'] == 1;
@@ -407,7 +421,12 @@ class ConfigModel {
     dmReferralData = json['dm_referral_data'] != null ? ReferralData.fromJson(json['dm_referral_data']) : null;
     riderReferralData = json['rider_referral_data'] != null ? ReferralData.fromJson(json['rider_referral_data']) : null;
     customerRoutePreference = json['customer_route_preference'];
-    aiChatStatus = json['ai_chat_status'] == true || json['ai_chat_status']?.toString() == '1';
+    repeatOrderOption = json['repeat_order_option'];
+    monthlyOrderRemainder = json['monthly_order_reminder'];
+    maintenanceModeData = json['maintenance_mode_data'] != null ? MaintenanceModeData.fromJson(json['maintenance_mode_data']) : null;
+    proMemberStatus = TypeConverterHelper.getBool(json['pro_member_status']);
+    aiChatStatus = TypeConverterHelper.getBool(json['ai_chat_status']);
+    systemTaxIncludeStatus = json['system_tax_include_status'];
   }
 
   Map<String, dynamic> toJson() {
@@ -495,6 +514,9 @@ class ConfigModel {
     if (digitalPaymentInfo != null) {
       data['digital_payment_info'] = digitalPaymentInfo!.toJson();
     }
+    if (validationConfig != null) {
+      data['validation_config'] = validationConfig!.toJson();
+    }
     data['add_fund_status'] = addFundStatus;
     data['offline_payment_status'] = offlinePaymentStatus;
     data['guest_checkout_status'] = guestCheckoutStatus;
@@ -525,7 +547,13 @@ class ConfigModel {
       data['parcel_return_time_fee'] = parcelReturnTimeFee!.toJson();
     }
     data['customer_route_preference'] = customerRoutePreference;
-    data['ai_chat_status'] = aiChatStatus;
+    data['repeat_order_option'] = repeatOrderOption;
+    data['monthly_order_reminder'] = monthlyOrderRemainder;
+    if (maintenanceModeData != null) {
+      data['maintenance_mode_data'] = maintenanceModeData!.toJson();
+    }
+    data['pro_member_status'] = proMemberStatus;
+    data['system_tax_include_status'] = systemTaxIncludeStatus;
     return data;
   }
 }
@@ -916,6 +944,63 @@ class DigitalPaymentInfo {
   }
 }
 
+class ValidationConfig {
+ String? imageFormat;
+ String? imageExtension;
+ String? imageFormatForValidation;
+ String? videoFormat;
+ String? videoExtension;
+ int? productVideoMaxFileSize;
+ String? documentFormat;
+ String? documentExtension;
+ String? audioFormat;
+ String? audioExtension;
+ String? fileFormat;
+ String? fileFormatForImagePicker;
+ String? fileExtension;
+ int? maxFileSize;
+
+  ValidationConfig({this.imageFormat, this.imageExtension, this.imageFormatForValidation, this.videoFormat,
+    this.videoExtension, this.productVideoMaxFileSize, this.documentFormat, this.documentExtension, this.audioFormat,
+    this.audioExtension, this.fileFormat, this.fileFormatForImagePicker, this.fileExtension, this.maxFileSize});
+
+  ValidationConfig.fromJson(Map<String, dynamic> json) {
+    imageFormat = json['image_format'];
+    imageExtension = json['image_extension'];
+    imageFormatForValidation = json['image_format_for_validation'];
+    videoFormat = json['video_format'];
+    videoExtension = json['video_extension'];
+    productVideoMaxFileSize = json['product_video_max_file_size'];
+    documentFormat = json['document_format'];
+    documentExtension = json['document_extension'];
+    audioFormat = json['audio_format'];
+    audioExtension = json['audio_extension'];
+    fileFormat = json['file_format'];
+    fileFormatForImagePicker = json['file_format_for_image_picker'];
+    fileExtension = json['file_extension'];
+    maxFileSize = json['max_file_size'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['image_format'] = imageFormat;
+    data['image_extension'] = imageExtension;
+    data['image_format_for_validation'] = imageFormatForValidation;
+    data['video_format'] = videoFormat;
+    data['video_extension'] = videoExtension;
+    data['product_video_max_file_size'] = productVideoMaxFileSize;
+    data['document_format'] = documentFormat;
+    data['document_extension'] = documentExtension;
+    data['audio_format'] = audioFormat;
+    data['audio_extension'] = audioExtension;
+    data['file_format'] = fileFormat;
+    data['file_format_for_image_picker'] = fileFormatForImagePicker;
+    data['file_extension'] = fileExtension;
+    data['max_file_size'] = maxFileSize;
+    return data;
+  }
+}
+
 class BusinessPlan {
   int? commission;
   int? subscription;
@@ -1096,6 +1181,86 @@ class ReferralData {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['referal_status'] = referalStatus;
     data['referal_amount'] = referalAmount;
+    return data;
+  }
+}
+
+class MaintenanceModeData {
+  List<String>? maintenanceSystemSetup;
+  MaintenanceDurationSetup? maintenanceDurationSetup;
+  MaintenanceMessageSetup? maintenanceMessageSetup;
+
+  MaintenanceModeData({this.maintenanceSystemSetup, this.maintenanceDurationSetup, this.maintenanceMessageSetup});
+
+  MaintenanceModeData.fromJson(Map<String, dynamic> json) {
+    if (json['maintenance_system_setup'] != null) {
+      maintenanceSystemSetup = <String>[];
+      json['maintenance_system_setup'].forEach((v) {
+        maintenanceSystemSetup!.add(v.toString());
+      });
+    }
+    maintenanceDurationSetup = json['maintenance_duration_setup'] != null ? MaintenanceDurationSetup.fromJson(json['maintenance_duration_setup']) : null;
+    maintenanceMessageSetup = json['maintenance_message_setup'] != null ? MaintenanceMessageSetup.fromJson(json['maintenance_message_setup']) : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    if (maintenanceSystemSetup != null) {
+      data['maintenance_system_setup'] = maintenanceSystemSetup;
+    }
+    if (maintenanceDurationSetup != null) {
+      data['maintenance_duration_setup'] = maintenanceDurationSetup!.toJson();
+    }
+    if (maintenanceMessageSetup != null) {
+      data['maintenance_message_setup'] = maintenanceMessageSetup!.toJson();
+    }
+    return data;
+  }
+}
+
+class MaintenanceDurationSetup {
+  String? maintenanceDuration;
+  String? startDate;
+  String? endDate;
+
+  MaintenanceDurationSetup({this.maintenanceDuration, this.startDate, this.endDate});
+
+  MaintenanceDurationSetup.fromJson(Map<String, dynamic> json) {
+    maintenanceDuration = json['maintenance_duration'];
+    startDate = json['start_date'];
+    endDate = json['end_date'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['maintenance_duration'] = maintenanceDuration;
+    data['start_date'] = startDate;
+    data['end_date'] = endDate;
+    return data;
+  }
+}
+
+class MaintenanceMessageSetup {
+  int? businessNumber;
+  int? businessEmail;
+  String? maintenanceMessage;
+  String? messageBody;
+
+  MaintenanceMessageSetup({this.businessNumber, this.businessEmail, this.maintenanceMessage, this.messageBody});
+
+  MaintenanceMessageSetup.fromJson(Map<String, dynamic> json) {
+    businessNumber = json['business_number'];
+    businessEmail = json['business_email'];
+    maintenanceMessage = json['maintenance_message'];
+    messageBody = json['message_body'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['business_number'] = businessNumber;
+    data['business_email'] = businessEmail;
+    data['maintenance_message'] = maintenanceMessage;
+    data['message_body'] = messageBody;
     return data;
   }
 }

@@ -43,6 +43,16 @@ class Images {
   static const String guest = 'assets/image/guest.png';
   static const String profileBg = 'assets/image/profile_bg.png';
   static const String warning = 'assets/image/warning.png';
+  static const String proPlanCrown = 'assets/image/pro_plan_crown.png';
+  static const String biking = 'assets/image/biking.png';
+  static const String chattingIcon = 'assets/image/Chatting_icon.png';
+  static const String newCallIcon = 'assets/image/new_call_icon.png';
+  static const String copyIcon = 'assets/image/copy.png';
+  static const String supprotIcon = 'assets/image/support_redesign.png';
+  static const String riderMarkerIcon = 'assets/image/rider_maker_icon.png';
+  static const String restaurantMarkerIcon = 'assets/image/restaurant_maker_icon.png';
+  static const String userMarkerIcon = 'assets/image/user_maker_icon.png';
+  static const String biking = 'assets/image/biking.png';
   static const String supportImage = 'assets/image/support_image.png';
   static const String cashOnDelivery = 'assets/image/cash_on_delivery.png';
   static const String digitalPayment = 'assets/image/digital_payment.png';

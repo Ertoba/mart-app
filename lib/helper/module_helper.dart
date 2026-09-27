@@ -12,6 +12,20 @@ class ModuleHelper {
     return Get.find<SplashController>().cacheModule;
   }
 
+  static String proMinSpendLabel({String? moduleType, required String fallbackKey}) {
+    final String? type = moduleType ?? getModule()?.moduleType ?? getCacheModule()?.moduleType;
+    switch (type) {
+      case AppConstants.parcel:
+        return 'min_delivery_fee'.tr;
+      case AppConstants.taxi:
+        return 'min_rental_trip'.tr;
+      case AppConstants.ride:
+        return 'min_ride'.tr;
+      default:
+        return fallbackKey.tr;
+    }
+  }
+
   static Module getModuleConfig(String? moduleType) {
     return Get.find<SplashController>().getModuleConfig(moduleType);
   }

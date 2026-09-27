@@ -1,6 +1,7 @@
 
 import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/features/parcel/domain/models/parcel_category_model.dart';
+import 'package:sixam_mart/features/pro/domain/models/pro_active_offer_model.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 
 class PaginatedOrderModel {
@@ -101,6 +102,17 @@ class OrderModel {
   double? bringChangeAmount;
   String? cancellationNote;
   List<Reviews>? reviews;
+  String? deliveryType;
+  double? deliveryTypeCharge;
+  List<String>? itemNames;
+  bool? canReorder;
+  ProBenefitType? benefitType;
+  double? deliveryFeeReductionAmount;
+  ProOfferType? deliveryOfferType;
+  double? proDiscount;
+  List<ItemsPreview>? itemsPreview;
+  int ? moduleId;
+  int? itemCount;
 
   OrderModel({
     this.id,
@@ -167,6 +179,17 @@ class OrderModel {
     this.bringChangeAmount,
     this.cancellationNote,
     this.reviews,
+    this.deliveryType,
+    this.deliveryTypeCharge,
+    this.itemNames,
+    this.canReorder,
+    this.benefitType,
+    this.deliveryFeeReductionAmount,
+    this.deliveryOfferType,
+    this.proDiscount,
+    this.itemsPreview,
+    this.itemCount,
+    this.moduleId
   });
 
   OrderModel.fromJson(Map<String, dynamic> json) {
@@ -258,6 +281,28 @@ class OrderModel {
         reviews!.add(Reviews.fromJson(v));
       });
     }
+    deliveryType = json['delivery_type'];
+    deliveryTypeCharge = json['delivery_type_charge']?.toDouble();
+    if (json['items_preview'] is List) {
+      itemNames = (json['items_preview'] as List)
+          .whereType<Map<String, dynamic>>()
+          .map((e) => e['name']?.toString() ?? '')
+          .where((String name) => name.trim().isNotEmpty)
+          .toList();
+    }
+    canReorder = json['can_reorder'] == true || json['can_reorder'] == 1;
+    benefitType = ProBenefitType.fromString(json['benefit_type']);
+    deliveryFeeReductionAmount = json['delivery_fee_reduction_amount']?.toDouble();
+    deliveryOfferType = ProOfferType.fromString(json['delivery_offer_type']);
+    proDiscount = json['pro_discount']?.toDouble();
+    if (json['items_preview'] != null) {
+      itemsPreview = <ItemsPreview>[];
+      json['items_preview'].forEach((v) {
+        itemsPreview!.add(ItemsPreview.fromJson(v));
+      });
+    }
+    itemCount = json['item_count'];
+    moduleId = json['module_id'];
   }
 
   Map<String, dynamic> toJson() {
@@ -344,6 +389,18 @@ class OrderModel {
     if (reviews != null) {
       data['reviews'] = reviews!.map((v) => v.toJson()).toList();
     }
+    data['delivery_type'] = deliveryType;
+    data['delivery_type_charge'] = deliveryTypeCharge;
+    data['can_reorder'] = canReorder;
+    data['benefit_type'] = benefitType?.name == 'deliveryFee' ? 'delivery_fee' : benefitType?.name;
+    data['delivery_fee_reduction_amount'] = deliveryFeeReductionAmount;
+    data['delivery_offer_type'] = deliveryOfferType?.toJson();
+    data['pro_discount'] = proDiscount;
+    if (itemsPreview != null) {
+      data['items_preview'] = itemsPreview!.map((v) => v.toJson()).toList();
+    }
+    data['module_id'] = moduleId;
+    data['item_count'] = itemCount;
     return data;
   }
 }
@@ -691,6 +748,31 @@ class Reviews {
     data['status'] = status;
     data['module_id'] = moduleId;
     data['review_id'] = reviewId;
+    return data;
+  }
+}
+
+class ItemsPreview {
+  int? id;
+  String? name;
+  String? imageFullUrl;
+  int? quantity;
+
+  ItemsPreview({this.id, this.name, this.imageFullUrl, this.quantity});
+
+  ItemsPreview.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    name = json['name'];
+    imageFullUrl = json['image_full_url'];
+    quantity = json['quantity'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['name'] = name;
+    data['image_full_url'] = imageFullUrl;
+    data['quantity'] = quantity;
     return data;
   }
 }

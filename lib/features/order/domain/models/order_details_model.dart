@@ -1,5 +1,6 @@
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
 import 'package:sixam_mart/features/order/domain/models/order_model.dart';
+import 'package:sixam_mart/helper/type_converter_helper.dart';
 
 class OrderDetailsModel {
   int? id;
@@ -20,7 +21,7 @@ class OrderDetailsModel {
   int? itemCampaignId;
   double? totalAddOnPrice;
   String? imageFullUrl;
-  int? isGuest;
+  bool? isGuest;
   ParcelCancellation? parcelCancellation;
 
   OrderDetailsModel({
@@ -50,7 +51,7 @@ class OrderDetailsModel {
     id = json['id'];
     itemId = json['item_id'];
     orderId = json['order_id'];
-    price = json['price'].toDouble();
+    price = num.tryParse(json['price']?.toString() ?? '')?.toDouble();
     itemDetails = json['item_details'] != null ? Item.fromJson(json['item_details']) : null;
     variation = [];
     foodVariation = [];
@@ -81,7 +82,7 @@ class OrderDetailsModel {
     itemCampaignId = json['item_campaign_id'];
     totalAddOnPrice = json['total_add_on_price']?.toDouble();
     imageFullUrl = json['image_full_url'];
-    isGuest = json['is_guest'];
+    isGuest = TypeConverterHelper.getBool(json['is_guest']);
     parcelCancellation = json['parcel_cancellation'] != null ? ParcelCancellation.fromJson(json['parcel_cancellation']) : null;
   }
 

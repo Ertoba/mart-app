@@ -11,6 +11,7 @@ import 'package:sixam_mart/features/auth/screens/new_user_setup_screen.dart';
 import 'package:sixam_mart/features/brands/screens/brands_product_screen.dart';
 import 'package:sixam_mart/features/brands/screens/brands_screen.dart';
 import 'package:sixam_mart/features/business/screens/subscription_payment_screen.dart';
+import 'package:sixam_mart/features/pro/screens/subscription_plan_screen.dart';
 import 'package:sixam_mart/features/business/screens/subscription_success_or_failed_screen.dart';
 import 'package:sixam_mart/features/chat/domain/models/order_chat_model.dart';
 import 'package:sixam_mart/features/checkout/screens/digital_payment_failed_screen.dart';
@@ -52,6 +53,7 @@ import 'package:sixam_mart/common/widgets/custom_loader.dart';
 import 'package:sixam_mart/common/widgets/image_viewer_screen.dart';
 import 'package:sixam_mart/common/widgets/not_found.dart';
 import 'package:sixam_mart/features/cart/screens/cart_screen.dart';
+import 'package:sixam_mart/features/cart/screens/global_cart_screen.dart';
 import 'package:sixam_mart/features/category/screens/category_item_screen.dart';
 import 'package:sixam_mart/features/chat/screens/chat_screen.dart';
 import 'package:sixam_mart/features/chat/screens/conversation_screen.dart';
@@ -146,6 +148,7 @@ class RouteHelper {
   static const String rateReview = '/rate-and-review';
   static const String update = '/update';
   static const String cart = '/cart';
+  static const String globalCart = '/global-cart';
   static const String addAddress = '/add-address';
   static const String editAddress = '/edit-address';
   static const String storeReview = '/store-review';
@@ -184,6 +187,7 @@ class RouteHelper {
 
   static const String subscriptionSuccess = '/subscription-success';
   static const String subscriptionPayment = '/subscription-payment';
+  static const String subscriptionPlan = '/subscription-plan';
   static const String newUserSetupScreen = '/new-user-setup-screen';
   static const String itemViewAllScreen = '/item-view-all-screen';
   static const String settingScreen = '/setting-screen';
@@ -518,6 +522,8 @@ class RouteHelper {
   }
 
   static String getConversationRoute() => conversation;
+  static String getGlobalCartRoute({bool fromNav = false, int? initialModuleId}) =>
+      '$globalCart?from_nav=$fromNav${initialModuleId != null ? '&module_id=$initialModuleId' : ''}';
   static String getAiChatBotScreen() => aiChatBot;
   static String getAiChatDetailsScreen({int? conversationId, String? title, String? initialMessage}) {
     return '$aiChatDetails?conversation_id=${conversationId ?? ''}&title=${Uri.encodeComponent(title ?? '')}&initial_message=${Uri.encodeComponent(initialMessage ?? '')}';
@@ -566,6 +572,11 @@ class RouteHelper {
     required int? storeId,
     required int? packageId,
   }) => '$subscriptionPayment?store-id=$storeId&package-id=$packageId';
+  static String getSubscriptionPlanRoute({bool? flag, bool isRenew = false}) {
+    String route = (isRenew && GetPlatform.isWeb) ? '$subscriptionPlan/renew' : subscriptionPlan;
+    if (flag != null) route = '$route?flag=${flag ? 'success' : 'fail'}&renew=$isRenew';
+    return route;
+  }
   static String getNewUserSetupScreen({
     required String name,
     required String loginType,
@@ -1200,6 +1211,13 @@ class RouteHelper {
       ),
     ),
     GetPage(
+      name: globalCart,
+      page: () => getRoute(GlobalCartScreen(
+        fromNav: Get.parameters['from_nav'] == 'true',
+        initialModuleId: int.tryParse(Get.parameters['module_id'] ?? ''),
+      )),
+    ),
+    GetPage(
       name: addAddress,
       page: () => getRoute(
         AddAddressScreen(
@@ -1675,6 +1693,17 @@ class RouteHelper {
         storeId: int.parse(Get.parameters['store-id']!),
         packageId: int.parse(Get.parameters['package-id']!),
       ),
+    ),
+    GetPage(
+      name: subscriptionPlan,
+      page: () {
+        final bool isRenew = Uri.base.toString().contains('$subscriptionPlan/renew') || Get.parameters['renew'] == 'true';
+        final String? flag = Get.parameters['flag'];
+        return SubscriptionPlanScreen(
+          flag: flag == 'success' ? true : (flag == 'fail' ? false : null),
+          isRenewalMode: isRenew,
+        );
+      },
     ),
     GetPage(
       name: newUserSetupScreen,

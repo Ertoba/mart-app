@@ -1,5 +1,6 @@
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
+import 'package:sixam_mart/features/cart/domain/models/all_carts_model.dart';
 import 'package:sixam_mart/features/cart/domain/models/cart_model.dart';
 import 'package:sixam_mart/features/cart/domain/models/online_cart_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/place_order_body_model.dart';
@@ -16,15 +17,17 @@ abstract class CartServiceInterface {
   int? getCartId(int cartIndex, List<CartModel> cartList);
   Future<int> decideItemQuantity(bool isIncrement, List<CartModel> cartList, int cartIndex, int? stock, int ? quantityLimit, bool moduleStock);
   Future<double> calculateDiscountedPrice(CartModel cartModel, int quantity, bool isFoodVariation);
-  Future<bool> updateCartQuantityOnline(int cartId, double price, int quantity);
-  Future<List<OnlineCartModel>?> getCartDataOnline();
+  Future<bool> updateCartQuantityOnline(int cartId, double price, int quantity, {int? storeId});
+  Future<List<OnlineCartModel>?> getCartDataOnline({int? storeId});
   List<CartModel> formatOnlineCartToLocalCart({required List<OnlineCartModel> onlineCartModel});
-  Future<List<OnlineCartModel>?> updateCartOnline(OnlineCart cart);
-  Future<List<OnlineCartModel>?> addToCartOnline(OnlineCart cart);
-  Future<bool> removeCartItemOnline(int cartId);
+  Future<List<OnlineCartModel>?> updateCartOnline(OnlineCart cart, {int? storeId});
+  Future<List<OnlineCartModel>?> addToCartOnline(OnlineCart cart, {int? storeId});
+  Future<bool> removeCartItemOnline(int cartId, {int? storeId});
   Future<bool> clearCartOnline();
   int isExistInCart(List<CartModel> cartList, int? itemID, String variationType, bool isUpdate, int? cartIndex);
   bool existAnotherStoreItem(int? storeID, int? moduleId, List<CartModel> cartList);
   int cartQuantity(int itemId, List<CartModel> cartList);
   String cartVariant(int itemId, List<CartModel> cartList);
+  Future<List<AllCartsModel>?> getAllCarts();
+  Future<bool> removeStoreCart(int storeId);
 }

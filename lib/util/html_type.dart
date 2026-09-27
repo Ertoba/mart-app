@@ -4,5 +4,6 @@ enum HtmlType {
   privacyPolicy,
   shippingPolicy,
   cancellation,
-  refund
+  refund,
+  proTermsAndCondition
 }

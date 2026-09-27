@@ -36,6 +36,7 @@ class SplashController extends GetxController implements GetxService {
 
   ConfigModel? _configModel;
   ConfigModel? get configModel => _configModel;
+  bool get proStaus => _configModel?.proMemberStatus ?? false;
 
   bool _firstTimeConnectionCheck = true;
   bool get firstTimeConnectionCheck => _firstTimeConnectionCheck;
@@ -102,6 +103,15 @@ class SplashController extends GetxController implements GetxService {
   void selectModuleIndex(int index) {
     _selectedModuleIndex = index;
     update();
+  }
+
+  void selectModuleByTabIndex(int tabIndex) {
+    selectModuleIndex(tabIndex);
+    if (tabIndex == 0) return;
+    final int moduleIndex = tabIndex - 1;
+    if (_moduleList != null && moduleIndex < _moduleList!.length) {
+      switchModule(moduleIndex, true);
+    }
   }
 
   void setDeeplink(Uri? route) {

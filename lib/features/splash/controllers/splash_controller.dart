@@ -4,6 +4,7 @@ import 'package:sixam_mart/common/enums/data_source_enum.dart';
 import 'package:sixam_mart/common/models/response_model.dart';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
 import 'package:sixam_mart/features/banner/controllers/banner_controller.dart';
+import 'package:sixam_mart/features/brands/controllers/brands_controller.dart';
 import 'package:sixam_mart/features/cart/controllers/cart_controller.dart';
 import 'package:sixam_mart/features/category/controllers/category_controller.dart';
 import 'package:sixam_mart/features/flash_sale/controllers/flash_sale_controller.dart';
@@ -430,6 +431,9 @@ class SplashController extends GetxController implements GetxService {
         Get.find<CategoryController>().clearCategoryList();
         Get.find<CampaignController>().itemAndBasicCampaignNull();
         Get.find<FlashSaleController>().setEmptyFlashSale(fromModule: true);
+        if(Get.isRegistered<BrandsController>()) {
+          Get.find<BrandsController>().clearBrandData();
+        }
 
         if(AuthHelper.isLoggedIn()) {
           Get.find<HomeController>().getCashBackOfferList();

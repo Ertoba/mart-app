@@ -176,6 +176,40 @@ class CheckoutController extends GetxController implements GetxService {
   double getSaverDeliveryChargeAdjustment({DeliveryOptions? deliveryOption}) => (deliveryOption?.extraCharge ?? 0) - (deliveryOption?.reduceCharge ?? 0);
   void setSaverDeliveryType(String type) { _saverDeliveryType = type; update(); }
 
+  void syncSaverDeliveryContext({required AddressModel? address, required Store? store}) {
+    final int? moduleId = Get.find<SplashController>().module?.id;
+    ZoneData? zoneData;
+    Modules? moduleData;
+
+    if(address?.zoneData != null && store != null && moduleId != null) {
+      for(final ZoneData zone in address!.zoneData!) {
+        if(zone.id != store.zoneId) {
+          continue;
+        }
+        zoneData = zone;
+        for(final Modules module in zone.modules ?? <Modules>[]) {
+          if(module.id == moduleId && module.pivot?.zoneId == store.zoneId) {
+            moduleData = module;
+            break;
+          }
+        }
+        break;
+      }
+    }
+
+    final bool contextChanged = _saverZoneData?.id != zoneData?.id
+        || _saverModule?.id != moduleData?.id;
+
+    _saverZoneData = zoneData;
+    _saverModule = moduleData;
+
+    if(contextChanged
+        || moduleData == null
+        || !(moduleData.additionalDeliveryOptionStatus ?? false)) {
+      _saverDeliveryType = 'standard';
+    }
+  }
+
   Future<List<XFile>?> pickMultiplePrescriptionImages({int? maxSelectable}) async {
     final int limit = (maxSelectable ?? maxPrescriptionSaveBatchCount)
         .clamp(1, maxPrescriptionSaveBatchCount);
@@ -608,6 +642,9 @@ class CheckoutController extends GetxController implements GetxService {
     _addressIndex = 0;
     _acceptTerms = true;
     _monthlySubscribe = false;
+    _saverDeliveryType = 'standard';
+    _saverZoneData = null;
+    _saverModule = null;
     _paymentMethodIndex = -1;
     _digitalPaymentName = null;
     _keepzPaymentOptionKey = null;

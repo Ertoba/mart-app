@@ -46,7 +46,12 @@ class RegistrationCardWidget extends StatelessWidget {
               ),
               const SizedBox(height: Dimensions.paddingSizeExtraLarge),
 
-              splashController.landingModel!.joinSellerButtonName != null || splashController.landingModel!.joinDeliveryManButtonName != null ? CustomButton(
+              ((isStore
+                        ? splashController.landingModel!.joinSellerButtonName
+                        : splashController.landingModel!.joinDeliveryManButtonName)
+                      ?.trim()
+                      .isNotEmpty ??
+                  false) ? CustomButton(
                 buttonText: isStore ? splashController.landingModel!.joinSellerButtonName ?? '' : splashController.landingModel!.joinDeliveryManButtonName ?? '', fontSize: Dimensions.fontSizeSmall,
                 width: 100, height: 40,
                 onPressed: () async {

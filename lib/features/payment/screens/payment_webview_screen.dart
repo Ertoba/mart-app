@@ -24,8 +24,11 @@ class PaymentWebViewScreen extends StatefulWidget {
   final String? subscriptionUrl;
   final int? storeId;
   final bool? createAccount;
+  final bool isProSubscription;
+  final bool isRenew;
   const PaymentWebViewScreen({super.key, required this.orderModel, required this.isCashOnDelivery, this.addFundUrl, required this.paymentMethod,
-    required this.guestId, required this.contactNumber, this.subscriptionUrl, this.storeId, this.createAccount = false});
+    required this.guestId, required this.contactNumber, this.subscriptionUrl, this.storeId, this.createAccount = false,
+    this.isProSubscription = false, this.isRenew = false});
 
   @override
   PaymentScreenState createState() => PaymentScreenState();
@@ -117,6 +120,8 @@ class PaymentScreenState extends State<PaymentWebViewScreen> {
                   addFundUrl: widget.addFundUrl, orderID: widget.orderModel.id.toString(), contactNumber: widget.contactNumber,
                   subscriptionUrl: widget.subscriptionUrl, storeId: widget.storeId, createAccount: widget.createAccount!,
                   guestId: widget.guestId,
+                  isProSubscription: widget.isProSubscription,
+                  isRenew: widget.isRenew,
                 );
                 setState(() {
                   _isLoading = true;
@@ -142,6 +147,8 @@ class PaymentScreenState extends State<PaymentWebViewScreen> {
                   addFundUrl: widget.addFundUrl, orderID: widget.orderModel.id.toString(), contactNumber: widget.contactNumber,
                   subscriptionUrl: widget.subscriptionUrl, storeId: widget.storeId, createAccount: widget.createAccount!,
                   guestId: widget.guestId,
+                  isProSubscription: widget.isProSubscription,
+                  isRenew: widget.isRenew,
                 );
                 // _redirect(url.toString());
               },

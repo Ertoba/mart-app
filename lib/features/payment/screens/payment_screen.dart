@@ -26,6 +26,8 @@ class PaymentScreen extends StatefulWidget {
   final int? storeId;
   final bool createAccount;
   final int? createUserId;
+  final bool isProSubscription;
+  final bool isRenew;
   const PaymentScreen({
     super.key,
     required this.orderModel,
@@ -38,6 +40,8 @@ class PaymentScreen extends StatefulWidget {
     this.subscriptionUrl,
     this.createAccount = false,
     this.createUserId,
+    this.isProSubscription = false,
+    this.isRenew = false,
   });
 
   @override
@@ -120,6 +124,8 @@ class PaymentScreenState extends State<PaymentScreen> {
       subscriptionUrl: widget.subscriptionUrl,
       createAccount: widget.createAccount,
       guestId: widget.guestId,
+      isProSubscription: widget.isProSubscription,
+      isRenew: widget.isRenew,
     );
 
     if (GetPlatform.isAndroid) {
@@ -253,6 +259,8 @@ class MyInAppBrowser extends InAppBrowser {
   final int? storeId;
   final bool createAccount;
   final String guestId;
+  final bool isProSubscription;
+  final bool isRenew;
 
   MyInAppBrowser({
     super.windowId,
@@ -268,6 +276,8 @@ class MyInAppBrowser extends InAppBrowser {
     this.storeId,
     required this.createAccount,
     required this.guestId,
+    required this.isProSubscription,
+    required this.isRenew,
   });
 
   bool _canRedirect = true;
@@ -363,6 +373,8 @@ class MyInAppBrowser extends InAppBrowser {
       subscriptionUrl: subscriptionUrl,
       createAccount: createAccount,
       guestId: guestId,
+      isProSubscription: isProSubscription,
+      isRenew: isRenew,
     );
 
     if (terminalUrl) {

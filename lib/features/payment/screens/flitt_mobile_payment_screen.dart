@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/checkout/widgets/payment_failed_dialog.dart';
 import 'package:sixam_mart/features/home/controllers/home_controller.dart';
+import 'package:sixam_mart/features/pro/controllers/pro_controller.dart';
+import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
 import 'package:sixam_mart/features/order/domain/models/order_model.dart';
 import 'package:sixam_mart/features/payment/screens/payment_screen.dart';
@@ -27,6 +29,8 @@ class FlittMobilePaymentScreen extends StatefulWidget {
   final int? storeId;
   final bool createAccount;
   final int? createUserId;
+  final bool isProSubscription;
+  final bool isRenew;
 
   const FlittMobilePaymentScreen({
     super.key,
@@ -40,6 +44,8 @@ class FlittMobilePaymentScreen extends StatefulWidget {
     this.storeId,
     this.createAccount = false,
     this.createUserId,
+    this.isProSubscription = false,
+    this.isRenew = false,
   });
 
   @override
@@ -431,6 +437,21 @@ class _FlittMobilePaymentScreenState extends State<FlittMobilePaymentScreen> {
       return;
     }
 
+    if (widget.isProSubscription) {
+      Get.find<ProfileController>().getUserInfo();
+      Get.find<ProController>().getProPlans();
+      Get.find<ProController>().getProActiveOffer(
+        moduleType: Get.find<SplashController>().module?.moduleType,
+      );
+      Get.find<ProController>().showPlanSubscribeState(
+        widget.isRenew,
+        redirect: true,
+        paymentStatus: true,
+        isOffAll: false,
+      );
+      return;
+    }
+
     if (_isSubscriptionFlow) {
       Get.find<HomeController>().saveRegistrationSuccessfulSharedPref(true);
       Get.find<HomeController>().saveIsStoreRegistrationSharedPref(true);
@@ -459,6 +480,16 @@ class _FlittMobilePaymentScreenState extends State<FlittMobilePaymentScreen> {
           widget.orderModel.id.toString(),
           createAccount: widget.createAccount,
         ),
+      );
+      return;
+    }
+
+    if (widget.isProSubscription) {
+      Get.find<ProController>().showPlanSubscribeState(
+        widget.isRenew,
+        redirect: true,
+        paymentStatus: false,
+        isOffAll: false,
       );
       return;
     }
@@ -514,6 +545,8 @@ class _FlittMobilePaymentScreenState extends State<FlittMobilePaymentScreen> {
             subscriptionUrl: widget.subscriptionUrl,
             storeId: widget.storeId,
             createAccount: widget.createAccount,
+            isProSubscription: widget.isProSubscription,
+            isRenew: widget.isRenew,
           )
         : PaymentScreen(
             orderModel: widget.orderModel,
@@ -526,6 +559,8 @@ class _FlittMobilePaymentScreenState extends State<FlittMobilePaymentScreen> {
             storeId: widget.storeId,
             createAccount: widget.createAccount,
             createUserId: widget.createUserId,
+            isProSubscription: widget.isProSubscription,
+            isRenew: widget.isRenew,
           );
 
     await Get.off<void>(() => screen);

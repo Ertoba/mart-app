@@ -934,6 +934,9 @@ class RouteHelper {
                 Get.parameters['create_user_id'] != 'null'
             ? int.parse(Get.parameters['create_user_id']!)
             : null;
+        final bool isProSubscription =
+            Get.parameters['is_pro_subscription'] == 'true';
+        final bool isRenew = Get.parameters['is_renew'] == 'true';
         final bool useFlittMobileSdk =
             !GetPlatform.isWeb &&
             paymentMethod == 'flitt' &&
@@ -957,6 +960,8 @@ class RouteHelper {
                   storeId: storeId,
                   createAccount: createAccount,
                   createUserId: createUserId,
+                  isProSubscription: isProSubscription,
+                  isRenew: isRenew,
                 )
               : useKeepzNativeFlow
               ? KeepzNativePaymentScreen(
@@ -980,6 +985,8 @@ class RouteHelper {
                   subscriptionUrl: subscriptionUrl,
                   storeId: storeId,
                   createAccount: createAccount,
+                  isProSubscription: isProSubscription,
+                  isRenew: isRenew,
                 )
               : PaymentScreen(
                   orderModel: order,
@@ -992,6 +999,8 @@ class RouteHelper {
                   storeId: storeId,
                   createAccount: createAccount,
                   createUserId: createUserId,
+                  isProSubscription: isProSubscription,
+                  isRenew: isRenew,
                 ),
         );
       },

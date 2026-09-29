@@ -55,6 +55,8 @@ class _WebLandingPageState extends State<WebLandingPage> {
   void initState() {
     super.initState();
 
+    Get.find<SplashController>().getLandingPageData();
+
     if(Get.find<SplashController>().moduleList == null) {
       if (kDebugMode) {
         print('-------call from web landing page------------');

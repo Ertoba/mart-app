@@ -2380,5 +2380,6 @@
   "auth_ui_use_code": "Войти с кодом",
   "auth_ui_send_code": "Продолжить",
   "auth_ui_phone_hint": "Номер телефона",
-  "auth_ui_role": "Покупатель"
+  "auth_ui_role": "Покупатель",
+  "low_stock_remaining": "Осталось только @count шт."
 }

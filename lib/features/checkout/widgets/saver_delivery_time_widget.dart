@@ -86,13 +86,15 @@ class SaverDeliveryTimeWidget extends StatelessWidget {
               height: 110,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: saverModule!.deliveryOptions!.length,
+                itemCount: saverModule!.deliveryOptions!.length + 1,
                 itemBuilder: (context, index) {
                   return Padding(
                     padding: const EdgeInsets.only(right: Dimensions.paddingSizeSmall),
                     child: SizedBox(
                       width: 270,
-                      child: _saverCard(context, index, isDesktop: true),
+                      child: index == 0
+                          ? _standardCard(context, isDesktop: true)
+                          : _saverCard(context, index - 1, isDesktop: true),
                     ),
                   );
                 },
@@ -100,13 +102,15 @@ class SaverDeliveryTimeWidget extends StatelessWidget {
             ) : ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: saverModule!.deliveryOptions!.length,
+              itemCount: saverModule!.deliveryOptions!.length + 1,
               separatorBuilder: (_, _) => Divider(
                 height: 1, thickness: 0.5,
                 color: Theme.of(context).disabledColor.withValues(alpha: 1),
               ),
               itemBuilder: (context, index) {
-                return _saverCard(context, index);
+                return index == 0
+                    ? _standardCard(context)
+                    : _saverCard(context, index - 1);
               },
             ),
           ),
@@ -125,6 +129,71 @@ class SaverDeliveryTimeWidget extends StatelessWidget {
         ]),
       ],
     ]);
+  }
+
+  Widget _standardCard(BuildContext context, {bool isDesktop = false}) {
+    final bool select = checkoutController.saverDeliveryType == 'standard';
+    final String deliveryChargeText = PriceConverter.convertPrice(deliveryCharge);
+
+    final Widget content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'undefined undefined',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          checkoutController.store?.deliveryTime ?? '',
+          style: robotoRegular.copyWith(
+            fontSize: Dimensions.fontSizeSmall,
+            color: Theme.of(context).hintColor,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'undefined: $deliveryChargeText',
+          style: robotoMedium.copyWith(
+            fontSize: Dimensions.fontSizeSmall,
+            color: Theme.of(context).primaryColor,
+          ),
+        ),
+      ],
+    );
+
+    return InkWell(
+      onTap: () => checkoutController.setSaverDeliveryType('standard'),
+      child: Container(
+        decoration: isDesktop ? BoxDecoration(
+          color: select ? Theme.of(context).primaryColor.withValues(alpha: 0.05) : Colors.transparent,
+          borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+          border: Border.all(
+            color: select ? Theme.of(context).primaryColor : Theme.of(context).disabledColor,
+            width: 0.5,
+          ),
+        ) : null,
+        padding: EdgeInsets.symmetric(
+          horizontal: isDesktop ? Dimensions.paddingSizeSmall : 0,
+          vertical: Dimensions.paddingSizeSmall,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(child: content),
+            const SizedBox(width: Dimensions.paddingSizeSmall),
+            Radio<String>(
+              value: 'standard',
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              activeColor: Theme.of(context).primaryColor,
+              visualDensity: const VisualDensity(horizontal: -3, vertical: -3),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _saverCard(BuildContext context, int index, {bool isDesktop = false}) {

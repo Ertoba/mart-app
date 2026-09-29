@@ -23,7 +23,9 @@ class ItemMediaCarouselNewWidget extends StatefulWidget {
 
   static bool isVideoMedia(String url) {
     final String s = url.toLowerCase();
-    return isYoutubeUrl(s) || s.endsWith('.mp4') || s.endsWith('.mov') || s.endsWith('.m4v') || s.endsWith('.webm') || s.endsWith('.mkv');
+    return isYoutubeUrl(s) || s.contains('vimeo.com') || s.contains('player.vimeo.com')
+        || s.endsWith('.mp4') || s.endsWith('.mov') || s.endsWith('.m4v')
+        || s.endsWith('.webm') || s.endsWith('.mkv');
   }
 
   static String? getVideoUrl(Item item) {
@@ -46,7 +48,7 @@ class ItemMediaCarouselNewWidget extends StatefulWidget {
   }
 
   static String thumbnailUrl(Item item, String mediaUrl, List<String> mediaList) {
-    if(item.videoThumbnailUrl?.isNotEmpty == true && isVideoMedia(mediaUrl)) return item.storeImageFullUrl??'';
+    if(item.videoThumbnailUrl?.isNotEmpty == true && isVideoMedia(mediaUrl)) return item.videoThumbnailUrl!;
     if(isYoutubeUrl(mediaUrl)) {
       final String? id = YoutubePlayer.convertUrlToId(mediaUrl);
       if(id != null && id.isNotEmpty) return 'https://img.youtube.com/vi/$id/hqdefault.jpg';

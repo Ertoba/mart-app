@@ -122,7 +122,7 @@ class _ShopModuleScreenState extends State<ShopModuleScreen> {
         final visible = controller.lastOrders?.isNotEmpty ?? false;
         return _conditionalSection(visible: visible, slivers: [
           sliverGepY(value: Dimensions.paddingSizeDefault),
-          const SliverToBoxAdapter(child: LastOrdersSectionWidget(moduleType: AppConstants.grocery)),
+          const SliverToBoxAdapter(child: LastOrdersSectionWidget(moduleType: AppConstants.ecommerce)),
         ]);
       }),
 

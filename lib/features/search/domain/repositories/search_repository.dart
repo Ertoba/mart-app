@@ -31,12 +31,16 @@ class SearchRepository implements SearchRepositoryInterface {
     final List<String> encoded = searchHistories
         .map((RecentSearchEntry entry) => jsonEncode(entry.toJson()))
         .toList();
-    return await sharedPreferences.setStringList(_historyKey(moduleKey), encoded);
+    return await sharedPreferences.setStringList(
+      _historyKey(moduleKey),
+      encoded,
+    );
   }
 
   @override
   List<RecentSearchEntry> getSearchAddress({String moduleKey = ''}) {
-    final List<String> stored = sharedPreferences.getStringList(_historyKey(moduleKey)) ?? [];
+    final List<String> stored =
+        sharedPreferences.getStringList(_historyKey(moduleKey)) ?? [];
     final List<RecentSearchEntry> entries = [];
     for (final String value in stored) {
       try {
@@ -46,7 +50,7 @@ class SearchRepository implements SearchRepositoryInterface {
           continue;
         }
       } catch (_) {}
-      // Legacy plain-string history — treat as a free-text keyword.
+      // Legacy plain-string history â€” treat as a free-text keyword.
       entries.add(RecentSearchEntry.keyword(value));
     }
     return entries;
@@ -84,7 +88,13 @@ class SearchRepository implements SearchRepositoryInterface {
     if (isSuggestedItems) {
       return await _getSuggestedItems();
     } else {
-      return await _getSearchData(query, isStore!, offset ?? 1, moduleId: moduleId, filterParams: filterParams);
+      return await _getSearchData(
+        query,
+        isStore!,
+        offset ?? 1,
+        moduleId: moduleId,
+        filterParams: filterParams,
+      );
     }
   }
 
@@ -130,14 +140,15 @@ class SearchRepository implements SearchRepositoryInterface {
   }
 
   @override
-  Future<SearchSuggestionModel?> getSearchSuggestions(String searchText, {bool isGlobal = false}) async {
+  Future<SearchSuggestionModel?> getSearchSuggestions(
+    String searchText, {
+    bool isGlobal = false,
+  }) async {
     SearchSuggestionModel? searchSuggestionModel;
-    // Global suggestions span all modules — drop the module_id header so the
+    // Global suggestions span all modules â€” drop the module_id header so the
     // backend isn't scoped to the active module, and flag it with is_global.
     final Map<String, String> headers = {...apiClient.getHeader()};
-    if (isGlobal) {
-      headers.remove(AppConstants.moduleId);
-    }
+
     Response response = await apiClient.getData(
       '${AppConstants.searchSuggestionsUri}?name=$searchText&is_global=${isGlobal ? 1 : 0}',
       headers: headers,
@@ -199,32 +210,18 @@ class SearchRepository implements SearchRepositoryInterface {
   }
 
   @override
-  Future<List<TrendingSearch>?> getTrendingSearches({bool isGlobal = false}) async {
-    List<TrendingSearch>? trendingSearches;
-    // In global search, fetch trending across all modules by dropping module_id.
-    final Map<String, String>? headers = isGlobal
-        ? ({...apiClient.getHeader()}..remove(AppConstants.moduleId))
-        : null;
-    Response response = await apiClient.getData('${AppConstants.trendingSearchesUri}${isGlobal ? '?is_global=true' : ''}', headers: headers);
-    if (response.statusCode == 200) {
-      trendingSearches = TrendingSearchModel.fromJson(response.body).trendingSearches;
-    }
-    return trendingSearches;
+  Future<List<TrendingSearch>?> getTrendingSearches({
+    bool isGlobal = false,
+  }) async {
+    // Current backend does not expose /api/v1/trending-searches.
+    // Keep search usable without generating a 404 request.
+    return <TrendingSearch>[];
   }
 
   @override
   Future<List<TopCategory>?> getTopCategories({int offset = 1}) async {
-    List<TopCategory>? categories;
-    // Top categories are shown only in global search — fetch across all modules
-    // by dropping the module_id header for this call.
-    final Map<String, String> headers = {...apiClient.getHeader()}..remove(AppConstants.moduleId);
-    Response response = await apiClient.getData(
-      '${AppConstants.topCategoriesUri}?limit=10&offset=$offset',
-      headers: headers,
-    );
-    if (response.statusCode == 200) {
-      categories = TopCategoryModel.fromJson(response.body).categories;
-    }
-    return categories;
+    // Current backend does not expose /api/v1/categories/top.
+    // Return an empty section instead of generating a 404 request.
+    return <TopCategory>[];
   }
 }

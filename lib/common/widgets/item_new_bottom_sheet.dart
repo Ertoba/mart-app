@@ -1094,6 +1094,32 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
               onPressed: () => _startGuidedFocus(missingIdx),
             ),
           ) : Column(mainAxisSize: MainAxisSize.min, children: [
+            if(item.storeDetails?.showLowStockCount == true &&
+                (item.storeDetails?.minimumStockForWarning ?? 0) > 0 &&
+                (stock ?? 0) > 0 &&
+                (stock ?? 0) <= (item.storeDetails?.minimumStockForWarning ?? 0)) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Dimensions.paddingSizeSmall,
+                    vertical: Dimensions.paddingSizeExtraSmall,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                  ),
+                  child: Text(
+                    'low_stock_remaining'.trParams({'count': (stock ?? 0).toString()}),
+                    style: robotoMedium.copyWith(
+                      fontSize: Dimensions.fontSizeSmall,
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+                  ),
+                ),
+              ),
+            ],
             Row(children: [
               Expanded(child: RichText(
                 text: TextSpan(

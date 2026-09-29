@@ -209,9 +209,9 @@ class SplashController extends GetxController implements GetxService {
           Get.offNamed(RouteHelper.getInitialRoute());
         }
 
-      // if(loadLandingData){
-      //   await getLandingPageData();
-      // }
+      if(loadLandingData) {
+        await getLandingPageData();
+      }
       if(fromMainFunction) {
         _mainConfigRouting();
       } else if (fromDemoReset) {

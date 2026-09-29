@@ -12,9 +12,11 @@ import 'package:sixam_mart/features/checkout/controllers/checkout_controller.dar
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
+import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/styles.dart';
 import 'package:sixam_mart/common/widgets/custom_dropdown.dart';
 import 'package:sixam_mart/features/cart/widgets/delivery_option_button_widget.dart';
+import 'package:sixam_mart/features/cart/widgets/add_to_monthly_widget.dart';
 import 'package:sixam_mart/features/checkout/widgets/coupon_section.dart';
 import 'package:sixam_mart/features/checkout/widgets/delivery_instruction_view.dart';
 import 'package:sixam_mart/features/checkout/widgets/delivery_section.dart';
@@ -80,6 +82,11 @@ class TopSection extends StatelessWidget {
     bool takeAway = (checkoutController.orderType == 'take_away');
     bool isDesktop = ResponsiveHelper.isDesktop(context);
     bool isGuestLoggedIn = AuthHelper.isGuestLoggedIn();
+    final bool showMonthlyReorder = AuthHelper.isLoggedIn() &&
+        storeId == null &&
+        Get.find<SplashController>().configModel?.monthlyOrderRemainder == 1 &&
+        (module?.moduleType == AppConstants.grocery ||
+            module?.moduleType == AppConstants.pharmacy);
 
     return Container(
       decoration: ResponsiveHelper.isDesktop(context) ? BoxDecoration(
@@ -276,6 +283,11 @@ class TopSection extends StatelessWidget {
           takeAway: takeAway, tooltipController3: dmTipsTooltipController,
           totalPrice: total, onTotalChange: (double price) => total + price, storeId: storeId,
         ),
+
+        if(showMonthlyReorder) ...[
+          const MonthlyReorderSection(),
+          SizedBox(height: isDesktop ? Dimensions.paddingSizeLarge : Dimensions.paddingSizeSmall),
+        ],
 
         ///Payment..
         Container(

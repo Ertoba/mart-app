@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:expandable_bottom_sheet/expandable_bottom_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:sixam_mart/features/profile/screens/profile_screen.dart';
+
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -30,7 +32,6 @@ import 'package:sixam_mart/features/redesign_feature/dashboard/widgets/home_stat
 import 'package:sixam_mart/features/redesign_feature/dashboard/widgets/navbar_promo_banner.dart';
 import 'package:sixam_mart/features/offer/offer_screen.dart';
 import 'package:sixam_mart/features/order/screens/my_order_screen.dart';
-import 'package:sixam_mart/features/profile/screens/profile_screen.dart';
 import 'package:sixam_mart/features/ride_share_module/ride_home/screens/biding_list_screen.dart';
 import 'package:sixam_mart/features/ride_share_module/ride_order/controllers/ride_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';

@@ -1415,9 +1415,7 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                                                           await Get.find<
                                                                                 CartController
                                                                               >()
-                                                                              .addToCartOnline(
-                                                                                onlineCart,
-                                                                              );
+                                                                              .addToCartOnline(onlineCart, storeId: itemController.item!.storeId);
                                                                           Get.back();
                                                                           //showCartSnackBar();
                                                                         }
@@ -1436,9 +1434,7 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                                               await Get.find<
                                                                     CartController
                                                                   >()
-                                                                  .updateCartOnline(
-                                                                    onlineCart,
-                                                                  )
+                                                                  .updateCartOnline(onlineCart, storeId: itemController.item!.storeId)
                                                                   .then((
                                                                     success,
                                                                   ) {
@@ -1450,9 +1446,7 @@ class _ItemBottomSheetState extends State<ItemBottomSheet> {
                                                               await Get.find<
                                                                     CartController
                                                                   >()
-                                                                  .addToCartOnline(
-                                                                    onlineCart,
-                                                                  )
+                                                                  .addToCartOnline(onlineCart, storeId: itemController.item!.storeId)
                                                                   .then((
                                                                     success,
                                                                   ) {

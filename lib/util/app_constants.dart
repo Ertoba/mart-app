@@ -657,10 +657,10 @@ class AppConstants {
   static const String renewBottomSheetShown =
       'sixam_mart_renew_bottomsheet_shown';
   static const String orderDeleteUri = '/api/v1/customer/order/delete';
-  static const String lastOrdersUri = '/api/v1/customer/order/last-orders';
-  static const String monthlyOrderListUri = '/api/v1/customer/order/monthly-list';
-  static const String monthlyOrderRemoveUri = '/api/v1/customer/order/monthly-remove';
-  static const String reorderUri = '/api/v1/customer/order/reorder';
+  static const String lastOrdersUri = '/api/v1/customer/order/last';
+  static const String monthlyOrderListUri = '/api/v1/customer/monthly-order/list';
+  static const String monthlyOrderRemoveUri = '/api/v1/customer/monthly-order/remove';
+  static const String reorderUri = '/api/v1/customer/order-again/reorder';
   static const String allOrderList = '/api/v1/customer/order/list';
   static const String getAllCartsUri = '/api/v1/customer/cart/get-all';
   static const String topCategoriesUri = '/api/v1/categories/top';

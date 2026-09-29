@@ -90,7 +90,7 @@ class _DeliveryManTipsSectionState extends State<DeliveryManTipsSection> {
                         const SizedBox(height: Dimensions.paddingSizeSmall),
 
                         SizedBox(
-                          height: ResponsiveHelper.isDesktop(context) ? 80 : 60,
+                          height: ResponsiveHelper.isDesktop(context) ? 80 : 62,
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
                             shrinkWrap: true,
@@ -103,20 +103,8 @@ class _DeliveryManTipsSectionState extends State<DeliveryManTipsSection> {
                               );
 
                               if (tipAmount == null) {
-                                return _CustomTipField(
-                                  checkoutController: checkoutController,
-                                  onChanged: (double customTip) {
-                                    total = total - checkoutController.tips;
-                                    checkoutController.updateTips(
-                                      -1,
-                                      notify: false,
-                                    );
-                                    checkoutController.addTips(customTip);
-                                    widget.onTotalChange(total + customTip);
-                                  },
-                                );
+                                return const SizedBox.shrink();
                               }
-
                               final bool isAlreadySelected =
                                   checkoutController.selectedTips == index;
                               return TipsWidget(
@@ -221,74 +209,114 @@ class _CustomTipField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDesktop = ResponsiveHelper.isDesktop(context);
+
     final bool hasCustomTip =
         checkoutController.selectedTips == -1 &&
         checkoutController.tipController.text.trim().isNotEmpty &&
         checkoutController.tipController.text.trim() != 'not_now';
 
-    return Container(
-      width: ResponsiveHelper.isDesktop(context) ? 140 : 56,
-      height: ResponsiveHelper.isDesktop(context) ? 46 : 42,
-      margin: const EdgeInsets.only(
-        right: Dimensions.paddingSizeSmall,
-        top: Dimensions.paddingSizeExtraSmall,
-      ),
-      child: TextField(
-        controller: checkoutController.tipController,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        textInputAction: TextInputAction.done,
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-        ],
-        textAlign: TextAlign.center,
-        style: robotoRegular.copyWith(
-          fontSize: ResponsiveHelper.isDesktop(context)
-              ? Dimensions.fontSizeDefault
-              : Dimensions.fontSizeExtraSmall,
+    if (isDesktop) {
+      return Container(
+        width: 140,
+        height: 46,
+        margin: const EdgeInsets.only(
+          right: Dimensions.paddingSizeSmall,
+          top: Dimensions.paddingSizeExtraSmall,
         ),
-        decoration: InputDecoration(
-          hintText: ResponsiveHelper.isDesktop(context)
-              ? 'enter_amount'.tr
-              : '0',
-          suffixText:
-              Get.find<SplashController>().configModel?.currencySymbol ?? '',
-          suffixStyle: robotoMedium.copyWith(
-            color: Theme.of(context).primaryColor,
-            fontSize: ResponsiveHelper.isDesktop(context)
-                ? Dimensions.fontSizeDefault
-                : Dimensions.fontSizeExtraSmall,
-          ),
-          filled: true,
-          fillColor: Theme.of(context).cardColor,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: ResponsiveHelper.isDesktop(context)
-                ? Dimensions.paddingSizeSmall
-                : Dimensions.paddingSizeExtraSmall,
-            vertical: ResponsiveHelper.isDesktop(context)
-                ? Dimensions.paddingSizeSmall
-                : 0,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-            borderSide: BorderSide(
-              color: hasCustomTip
-                  ? Theme.of(context).primaryColor
-                  : Theme.of(context).disabledColor.withValues(alpha: 0.35),
+        child: TextField(
+          controller: checkoutController.tipController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textInputAction: TextInputAction.done,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+          ],
+          textAlign: TextAlign.center,
+          decoration: InputDecoration(
+            hintText: 'enter_amount'.tr,
+            suffixText:
+                Get.find<SplashController>().configModel?.currencySymbol ?? '',
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: Dimensions.paddingSizeSmall,
+              vertical: Dimensions.paddingSizeSmall,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+              borderSide: BorderSide(
+                color: Theme.of(context).primaryColor,
+              ),
             ),
           ),
-          focusedBorder: OutlineInputBorder(
+          onChanged: (String value) {
+            onChanged(double.tryParse(value.trim()) ?? 0);
+          },
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(
+        right: Dimensions.paddingSizeSmall,
+        top: Dimensions.paddingSizeExtraSmall,
+        bottom: 0,
+      ),
+      child: SizedBox(
+        width: 56,
+        height: 42,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-            borderSide: BorderSide(color: Theme.of(context).primaryColor),
+            border: Border.all(
+              color: hasCustomTip
+                  ? Theme.of(context).primaryColor
+                  : Theme.of(context).cardColor,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                spreadRadius: 0.5,
+                blurRadius: 0.5,
+              ),
+            ],
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              TextField(
+                controller: checkoutController.tipController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                textInputAction: TextInputAction.done,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                ],
+                expands: true,
+                minLines: null,
+                maxLines: null,
+                textAlign: TextAlign.center,
+                textAlignVertical: TextAlignVertical.center,
+                style: robotoRegular.copyWith(
+                  color: Theme.of(context).disabledColor,
+                ),
+                decoration: const InputDecoration.collapsed(
+                  hintText: '0',
+                ),
+                onTap: () {
+                  if (checkoutController.selectedTips != -1) {
+                    checkoutController.updateTips(-1);
+                  }
+                },
+                onChanged: (String value) {
+                  onChanged(double.tryParse(value.trim()) ?? 0);
+                },
+              ),
+            ],
           ),
         ),
-        onTap: () {
-          if (checkoutController.selectedTips != -1) {
-            checkoutController.updateTips(-1);
-          }
-        },
-        onChanged: (String value) {
-          onChanged(double.tryParse(value.trim()) ?? 0);
-        },
       ),
     );
   }

@@ -55,6 +55,7 @@ class _VisitAgainViewState extends State<VisitAgainView> {
                   itemCount: stores.length,
                   options: CarouselOptions(
                     aspectRatio: 2.0,
+                    enableInfiniteScroll: stores.length > 1,
                     enlargeCenterPage: true,
                     disableCenter: true,
                   ),

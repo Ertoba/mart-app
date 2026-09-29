@@ -1333,7 +1333,7 @@ class ItemController extends GetxController implements GetxService {
             barrierDismissible: false,
           );
         } else {
-          Get.find<CartController>().addToCartOnline(onlineCart);
+          Get.find<CartController>().addToCartOnline(onlineCart, storeId: cartModel.item!.storeId);
           showCartSnackBar();
         }
       } else if (Get.find<SplashController>()

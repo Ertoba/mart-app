@@ -905,9 +905,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                                                             success,
                                                                           ) async {
                                                                             if (success) {
-                                                                              await cartController.addToCartOnline(
-                                                                                cart!,
-                                                                              );
+                                                                              await cartController.addToCartOnline(cart!, storeId: item.storeId);
                                                                               itemController.setExistInCart(
                                                                                 item,
                                                                                 null,
@@ -924,7 +922,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                                                     if (itemController
                                                                             .cartIndex ==
                                                                         -1) {
-                                                                      await cartController.addToCartOnline(cart!).then((
+                                                                      await cartController.addToCartOnline(cart!, storeId: item.storeId).then((
                                                                         success,
                                                                       ) {
                                                                         if (success) {
@@ -938,7 +936,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                                                         }
                                                                       });
                                                                     } else {
-                                                                      await cartController.updateCartOnline(cart!).then((
+                                                                      await cartController.updateCartOnline(cart!, storeId: item.storeId).then((
                                                                         success,
                                                                       ) {
                                                                         if (success) {

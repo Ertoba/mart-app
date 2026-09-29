@@ -101,7 +101,8 @@ import 'package:sixam_mart/features/support/screens/support_screen.dart';
 import 'package:sixam_mart/features/update/screens/update_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:sixam_mart/features/wallet/screens/wallet_screen.dart';
+import 'package:sixam_mart/features/wallet/screens/wallet_screen.dart';
+import 'package:sixam_mart/features/menu/screens/menu_screen.dart';
 
 class RouteHelper {
   static const String initial = '/';
@@ -842,7 +843,7 @@ class RouteHelper {
         );
       },
     ),
-    GetPage(name: profile, page: () => const ProfileScreen()),
+    GetPage(name: profile, page: () => const MenuScreen()),
     GetPage(
       name: updateProfile,
       page: () => getRoute(const UpdateProfileScreen()),

@@ -607,6 +607,7 @@ class CheckoutController extends GetxController implements GetxService {
     _distance = null;
     _addressIndex = 0;
     _acceptTerms = true;
+    _monthlySubscribe = false;
     _paymentMethodIndex = -1;
     _digitalPaymentName = null;
     _keepzPaymentOptionKey = null;

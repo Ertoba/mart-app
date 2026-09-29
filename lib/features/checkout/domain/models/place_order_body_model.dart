@@ -42,6 +42,7 @@ class PlaceOrderBodyModel {
   bool? isPrescriptionOrder;
   double? _bringChangeAmount;
   int _monthlySubscribe = 0;
+  String? _deliveryType;
 
   PlaceOrderBodyModel({
     required List<OnlineCart> cart,
@@ -83,6 +84,7 @@ class PlaceOrderBodyModel {
     this.isPrescriptionOrder = false,
     double? bringChangeAmount,
     int monthlySubscribe = 0,
+    String? deliveryType,
   }) {
     _cart = cart;
     _couponDiscountAmount = couponDiscountAmount;
@@ -123,6 +125,7 @@ class PlaceOrderBodyModel {
     isPrescriptionOrder = isPrescriptionOrder ?? false;
     _bringChangeAmount = bringChangeAmount;
     _monthlySubscribe = monthlySubscribe;
+    _deliveryType = deliveryType;
   }
 
   List<OnlineCart>? get cart => _cart;
@@ -163,6 +166,7 @@ class PlaceOrderBodyModel {
   bool? get isPrescription => isPrescriptionOrder;
   double? get bringChangeAmount => _bringChangeAmount;
   int get monthlySubscribe => _monthlySubscribe;
+  String? get deliveryType => _deliveryType;
 
   PlaceOrderBodyModel.fromJson(Map<String, dynamic> json) {
     if (json['cart'] != null) {
@@ -210,6 +214,7 @@ class PlaceOrderBodyModel {
     isPrescriptionOrder = json['is_prescription'] != null ? json['is_prescription'] == 'true' : false;
     _bringChangeAmount = json['bring_change_amount'] != null ? double.parse(json['bring_change_amount'].toString()) : null;
     _monthlySubscribe = int.tryParse(json['monthly_subscribe']?.toString() ?? '0') ?? 0;
+    _deliveryType = json['delivery_type'];
   }
 
   Map<String, String> toJson() {
@@ -283,6 +288,9 @@ class PlaceOrderBodyModel {
       data['bring_change_amount'] = _bringChangeAmount.toString();
     }
     data['monthly_subscribe'] = _monthlySubscribe.toString();
+    if(_deliveryType != null) {
+      data['delivery_type'] = _deliveryType!;
+    }
     return data;
   }
 }

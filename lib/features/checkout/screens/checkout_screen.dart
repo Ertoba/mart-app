@@ -1578,6 +1578,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                             : 0,
                         password: guestPasswordController.text,
                         bringChangeAmount: null,
+                        monthlySubscribe: checkoutController.monthlySubscribe ? 1 : 0,
                       );
 
                       checkoutController.placeOrder(

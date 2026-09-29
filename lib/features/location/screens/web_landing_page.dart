@@ -465,7 +465,7 @@ class _WebLandingPageState extends State<WebLandingPage> {
             splashController.landingModel?.joinSellerStatus == 1 ? RegistrationCardWidget(isStore: true, splashController: splashController) : const SizedBox(),
             SizedBox(height: splashController.landingModel != null && splashController.landingModel!.joinSellerStatus == 1 ? 40 : 0),
 
-            splashController.landingModel != null && (splashController.landingModel!.downloadUserAppLinks!.playstoreUrlStatus == '1' || splashController.landingModel!.downloadUserAppLinks!.appleStoreUrlStatus == '1')
+            splashController.landingModel != null && (splashController.landingModel!.downloadUserAppLinks!.playstoreUrlStatus == 1 || splashController.landingModel!.downloadUserAppLinks!.appleStoreUrlStatus == 1)
             ? Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
               CustomImage(
                 image: '${splashController.landingModel!.downloadUserAppImageFullUrl}',
@@ -485,7 +485,7 @@ class _WebLandingPageState extends State<WebLandingPage> {
                 const SizedBox(height: Dimensions.paddingSizeLarge),
 
                 Row(children: [
-                  splashController.landingModel != null && splashController.landingModel!.downloadUserAppLinks!.playstoreUrlStatus == '1' ? InkWell(
+                  splashController.landingModel != null && splashController.landingModel!.downloadUserAppLinks!.playstoreUrlStatus == 1 ? InkWell(
                     onTap: () async {
                       String url = splashController.landingModel?.downloadUserAppLinks?.playstoreUrl ?? '';
                       if(await canLaunchUrlString(url)){
@@ -494,10 +494,10 @@ class _WebLandingPageState extends State<WebLandingPage> {
                     },
                     child: Image.asset(Images.landingGooglePlay, height: 45),
                   ) : const SizedBox(),
-                  SizedBox(width: splashController.landingModel != null && (splashController.landingModel!.downloadUserAppLinks!.playstoreUrlStatus == '1' && splashController.landingModel!.downloadUserAppLinks!.appleStoreUrlStatus == '1')
+                  SizedBox(width: splashController.landingModel != null && (splashController.landingModel!.downloadUserAppLinks!.playstoreUrlStatus == 1 && splashController.landingModel!.downloadUserAppLinks!.appleStoreUrlStatus == 1)
                       ? Dimensions.paddingSizeLarge : 0),
 
-                  splashController.landingModel != null && splashController.landingModel!.downloadUserAppLinks!.appleStoreUrlStatus == '1' ? InkWell(
+                  splashController.landingModel != null && splashController.landingModel!.downloadUserAppLinks!.appleStoreUrlStatus == 1 ? InkWell(
                     onTap: () async {
                       String url = splashController.landingModel!.downloadUserAppLinks!.appleStoreUrl ?? '';
                       if(await canLaunchUrlString(url)){

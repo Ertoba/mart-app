@@ -69,4 +69,15 @@ class BrandsController extends GetxController implements GetxService {
     update();
   }
 
+  void clearBrandData({bool notify = false}) {
+    _brandList = null;
+    _brandItems = null;
+    _offset = 1;
+    _pageSize = null;
+    _isLoading = false;
+    if(notify) {
+      update();
+    }
+  }
+
 }

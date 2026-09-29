@@ -465,7 +465,10 @@ class _WebLandingPageState extends State<WebLandingPage> {
             splashController.landingModel?.joinSellerStatus == 1 ? RegistrationCardWidget(isStore: true, splashController: splashController) : const SizedBox(),
             SizedBox(height: splashController.landingModel != null && splashController.landingModel!.joinSellerStatus == 1 ? 40 : 0),
 
-            splashController.landingModel != null && (splashController.landingModel!.downloadUserAppLinks!.playstoreUrlStatus == 1 || splashController.landingModel!.downloadUserAppLinks!.appleStoreUrlStatus == 1)
+            splashController.landingModel?.downloadUserAppSectionStatus == 1
+                && splashController.landingModel?.downloadUserAppLinks != null
+                && (splashController.landingModel!.downloadUserAppLinks!.playstoreUrlStatus == 1
+                    || splashController.landingModel!.downloadUserAppLinks!.appleStoreUrlStatus == 1)
             ? Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
               CustomImage(
                 image: '${splashController.landingModel!.downloadUserAppImageFullUrl}',

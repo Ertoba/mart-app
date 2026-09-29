@@ -2466,5 +2466,6 @@
   "trending_searches": "პოპულარული ძიებები",
   "featured": "რჩეული",
   "exclusive_deals": "ექსკლუზიური შეთავაზებები",
-  "quick_picks": "სწრაფი არჩევანი"
+  "quick_picks": "სწრაფი არჩევანი",
+  "low_stock_remaining": "მარაგში დარჩა მხოლოდ @count ცალი"
 }

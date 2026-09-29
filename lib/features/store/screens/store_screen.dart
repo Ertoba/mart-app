@@ -283,12 +283,12 @@ class _StoreScreenState extends State<StoreScreen> {
 
                                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,mainAxisAlignment: MainAxisAlignment.center, children: [
                                         Row(children: [
-                                          Expanded(child: Text(
+                                          Flexible(child: Text(
                                             currentStore.name!, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge - (scrollingRate * 3), color: Theme.of(context).textTheme.bodyMedium!.color),
                                             maxLines: 1, overflow: TextOverflow.ellipsis,
                                           )),
                                           if (currentStore.verifiedSeller == 1) ...[
-                                            const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                                            const SizedBox(width: 5),
                                             VerifiedSellerBadge(verified: true, size: 16 - (scrollingRate * 2)),
                                           ],
                                           const SizedBox(width: Dimensions.paddingSizeSmall),

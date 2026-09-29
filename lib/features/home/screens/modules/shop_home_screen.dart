@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sixam_mart/features/reels/widgets/reels_section_widget.dart';
 import 'package:sixam_mart/features/home/widgets/brands_view_widget.dart';
 import 'package:sixam_mart/features/home/widgets/highlight_widget.dart';
 import 'package:sixam_mart/features/home/widgets/views/recommended_store_view.dart';
@@ -36,6 +37,7 @@ class ShopHomeScreen extends StatelessWidget {
           ),
         ),
         const CategoryView(),
+        const ReelsSectionWidget(),
         isLoggedIn ? const VisitAgainView() : const SizedBox(),
         const RecommendedStoreView(),
         const MostPopularItemView(isFood: false, isShop: true),

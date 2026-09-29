@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sixam_mart/features/reels/widgets/reels_section_widget.dart';
 import 'package:sixam_mart/features/home/widgets/highlight_widget.dart';
 import 'package:sixam_mart/features/home/widgets/views/product_with_categories_view.dart';
 import 'package:sixam_mart/features/home/widgets/views/best_store_nearby_view.dart';
@@ -34,6 +35,7 @@ class PharmacyHomeScreen extends StatelessWidget {
       ),
 
       const CategoryView(),
+      const ReelsSectionWidget(),
       isLoggedIn ? const VisitAgainView() : const SizedBox(),
       const RecommendedStoreView(),
       const ProductWithCategoriesView(),

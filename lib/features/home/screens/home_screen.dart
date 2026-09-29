@@ -21,6 +21,7 @@ import 'package:sixam_mart/features/item/controllers/item_controller.dart';
 import 'package:sixam_mart/features/store/controllers/store_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
+import 'package:sixam_mart/features/reels/controllers/reels_controller.dart';
 import 'package:sixam_mart/features/address/controllers/address_controller.dart';
 import 'package:sixam_mart/features/home/screens/modules/food_home_screen.dart';
 import 'package:sixam_mart/features/home/screens/modules/grocery_home_screen.dart';
@@ -106,6 +107,7 @@ class HomeScreen extends StatefulWidget {
       Get.find<ItemController>().getRecommendedItemList(reload, 'all', false);
       Get.find<StoreController>().getStoreList(1, reload);
       Get.find<AdvertisementController>().getAdvertisementList();
+      Get.find<ReelsController>().getReelsList(offset: 1);
     }
     if (AuthHelper.isLoggedIn()) {
       await Get.find<ProfileController>().getUserInfo();
@@ -347,6 +349,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
                             Get.find<AdvertisementController>()
                                 .getAdvertisementList();
+                            Get.find<ReelsController>()
+                                .getReelsList(offset: 1);
                             if (AuthHelper.isLoggedIn()) {
                               await Get.find<ProfileController>().getUserInfo();
                               await Get.find<NotificationController>()

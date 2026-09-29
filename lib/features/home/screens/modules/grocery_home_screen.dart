@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sixam_mart/features/reels/widgets/reels_section_widget.dart';
 import 'package:sixam_mart/features/flash_sale/widgets/flash_sale_view_widget.dart';
 import 'package:sixam_mart/features/home/widgets/highlight_widget.dart';
 import 'package:sixam_mart/features/home/widgets/views/banner_view.dart';
@@ -39,6 +40,7 @@ class GroceryHomeScreen extends StatelessWidget {
       ),
 
       const CategoryView(),
+      const ReelsSectionWidget(),
       isLoggedIn ? const VisitAgainView() : const SizedBox(),
       const RecommendedStoreView(),
       const SpecialOfferView(isFood: false, isShop: false),

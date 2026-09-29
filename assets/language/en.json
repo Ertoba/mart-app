@@ -2961,5 +2961,6 @@
   "and_max_discount_is": "and max discount is",
   "item_updated_in_cart": "Item updated in cart",
   "book_now": "Book Now",
-  "module_switch_confirmation": "This belongs to another module. Switch now to view it?"
+  "module_switch_confirmation": "This belongs to another module. Switch now to view it?",
+  "low_stock_remaining": "Only @count left in stock"
 }

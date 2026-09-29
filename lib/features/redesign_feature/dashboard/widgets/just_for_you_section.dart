@@ -10,7 +10,6 @@ import 'package:sixam_mart/features/item/domain/models/item_model.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 
-
 class JustForYouSection extends StatefulWidget {
   final String? title;
   const JustForYouSection({super.key, this.title});
@@ -23,7 +22,8 @@ class _JustForYouSectionState extends State<JustForYouSection> {
   @override
   void initState() {
     super.initState();
-    final CampaignController campaignController = Get.find<CampaignController>();
+    final CampaignController campaignController =
+        Get.find<CampaignController>();
     if (campaignController.itemCampaignList == null) {
       campaignController.getItemCampaignList(false);
     }
@@ -33,74 +33,124 @@ class _JustForYouSectionState extends State<JustForYouSection> {
   Widget build(BuildContext context) {
     const double cardSize = 72;
 
-    return GetBuilder<CampaignController>(builder: (campaignController) {
-      final List<Item>? campaigns = campaignController.itemCampaignList;
-      final bool isLoading = campaigns == null;
+    return GetBuilder<ItemController>(
+      builder: (itemController) {
+        return GetBuilder<CampaignController>(
+          builder: (campaignController) {
+            final List<Item>? personalizedItems =
+                itemController.suggestedItemList;
+            final List<Item>? campaigns = campaignController.itemCampaignList;
 
-      if (!isLoading && campaigns.isEmpty) {
-        return const SizedBox();
-      }
+            final bool hasPersonalizedItems =
+                personalizedItems != null && personalizedItems.isNotEmpty;
 
-      final int itemCount = isLoading ? 6 : (campaigns.length > 10 ? 10 : campaigns.length);
+            final List<Item>? displayItems = hasPersonalizedItems
+                ? personalizedItems
+                : campaigns;
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-            child: TitleWidget(
-              title: widget.title ?? 'just_for_you'.tr,
-              seeAllUnderline: false,
-              onTap: () => Get.toNamed(RouteHelper.getItemCampaignRoute(isJustForYou: true)),
-            ),
-          ),
-          const SizedBox(height: Dimensions.paddingSizeDefault),
+            final bool isLoading =
+                personalizedItems == null && campaigns == null;
 
-          SizedBox(
-            height: cardSize,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-              itemCount: itemCount,
-              separatorBuilder: (context, index) => const SizedBox(width: Dimensions.paddingSizeSmall),
-              itemBuilder: (context, index) {
-                if (isLoading) {
-                  return const _JustForYouShimmerCard(size: cardSize);
-                }
-                return _JustForYouCard(item: campaigns[index], size: cardSize);
-              },
-            ),
-          ),
-        ],
-      );
-    });
+            if (!isLoading && (displayItems == null || displayItems.isEmpty)) {
+              return const SizedBox();
+            }
+
+            final int itemCount = isLoading
+                ? 6
+                : (displayItems!.length > 10 ? 10 : displayItems.length);
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Dimensions.paddingSizeDefault,
+                  ),
+                  child: TitleWidget(
+                    title: widget.title ?? 'just_for_you'.tr,
+                    seeAllUnderline: false,
+                    onTap: hasPersonalizedItems
+                        ? null
+                        : () => Get.toNamed(
+                            RouteHelper.getItemCampaignRoute(
+                              isJustForYou: true,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: Dimensions.paddingSizeDefault),
+                SizedBox(
+                  height: cardSize,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: Dimensions.paddingSizeDefault,
+                    ),
+                    itemCount: itemCount,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: Dimensions.paddingSizeSmall),
+                    itemBuilder: (context, index) {
+                      if (isLoading) {
+                        return const _JustForYouShimmerCard(size: cardSize);
+                      }
+
+                      return _JustForYouCard(
+                        item: displayItems![index],
+                        size: cardSize,
+                        isCampaign: !hasPersonalizedItems,
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 }
 
 class _JustForYouCard extends StatelessWidget {
   final Item item;
   final double size;
-  const _JustForYouCard({required this.item, required this.size});
+  final bool isCampaign;
+
+  const _JustForYouCard({
+    required this.item,
+    required this.size,
+    required this.isCampaign,
+  });
 
   @override
   Widget build(BuildContext context) {
     final BorderRadius radius = BorderRadius.circular(Dimensions.radiusLarge);
     return InkWell(
       borderRadius: radius,
-      onTap: () => Get.find<ItemController>().navigateToItemPage(item, context, isCampaign: true),
+      onTap: () => Get.find<ItemController>().navigateToItemPage(
+        item,
+        context,
+        isCampaign: isCampaign,
+      ),
       child: SizedBox(
         width: size,
         height: size,
         child: ClipRRect(
           borderRadius: radius,
-          child: Stack(children: [
-            CustomImage(
-              image: item.imageFullUrl ?? '',
-              height: size, width: size, fit: BoxFit.cover,
-            ),
-            Get.find<ItemController>().isAvailable(item) ? const SizedBox() : const NotAvailableWidget(),
-          ]),
+          child: Stack(
+            children: [
+              CustomImage(
+                image: item.imageFullUrl ?? '',
+                height: size,
+                width: size,
+                fit: BoxFit.cover,
+              ),
+              Get.find<ItemController>().isAvailable(item)
+                  ? const SizedBox()
+                  : const NotAvailableWidget(),
+            ],
+          ),
         ),
       ),
     );

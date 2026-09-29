@@ -53,6 +53,28 @@ class ItemRepository implements ItemRepositoryInterface {
   }
 
   @override
+  Future<List<Item>?> getSuggestedItemList() async {
+    final Response response = await apiClient.getData(
+      AppConstants.suggestedItemUri,
+      handleError: false,
+    );
+
+    if (response.statusCode == 200 && response.body is List) {
+      final List<Item> suggestedItems = <Item>[];
+
+      for (final dynamic item in response.body as List) {
+        if (item is Map) {
+          suggestedItems.add(Item.fromJson(Map<String, dynamic>.from(item)));
+        }
+      }
+
+      return suggestedItems;
+    }
+
+    return null;
+  }
+
+  @override
   Future get(
     String? id, {
     bool isConditionWiseItem = false,

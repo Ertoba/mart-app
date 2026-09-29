@@ -27,10 +27,16 @@ class ItemController extends GetxController implements GetxService {
   ItemReviewModel? _itemReviewModel;
   ItemReviewModel? get itemReviewModel => _itemReviewModel;
 
-  Future<void> getItemReviews({required int itemId, int offset = 1, int limit = 10, bool reload = false}) async {
+  Future<void> getItemReviews({
+    required int itemId,
+    int offset = 1,
+    int limit = 10,
+    bool reload = false,
+  }) async {
     if (reload) _itemReviewModel = null;
     update();
   }
+
   final ItemServiceInterface itemServiceInterface;
   ItemController({required this.itemServiceInterface});
 
@@ -42,6 +48,9 @@ class ItemController extends GetxController implements GetxService {
 
   List<Item>? _recommendedItemList;
   List<Item>? get recommendedItemList => _recommendedItemList;
+
+  List<Item>? _suggestedItemList;
+  List<Item>? get suggestedItemList => _suggestedItemList;
 
   List<Item>? _discountedItemList;
   List<Item>? get discountedItemList => _discountedItemList;
@@ -486,6 +495,7 @@ class ItemController extends GetxController implements GetxService {
     _discountedItemList = null;
     _featuredCategoriesItem = null;
     _recommendedItemList = null;
+    _suggestedItemList = null;
   }
 
   void showBottomLoader() {
@@ -805,6 +815,24 @@ class ItemController extends GetxController implements GetxService {
       _isLoading = false;
     }
     update();
+  }
+
+  Future<void> getSuggestedItemList(bool reload) async {
+    if (reload) {
+      _suggestedItemList = null;
+    }
+
+    if (_suggestedItemList == null || reload) {
+      final List<Item>? items = await itemServiceInterface
+          .getSuggestedItemList();
+
+      if (items != null) {
+        _suggestedItemList = <Item>[];
+        _suggestedItemList!.addAll(items);
+      }
+
+      update();
+    }
   }
 
   Future<void> getBasicMedicine(
@@ -1333,7 +1361,10 @@ class ItemController extends GetxController implements GetxService {
             barrierDismissible: false,
           );
         } else {
-          Get.find<CartController>().addToCartOnline(onlineCart, storeId: cartModel.item!.storeId);
+          Get.find<CartController>().addToCartOnline(
+            onlineCart,
+            storeId: cartModel.item!.storeId,
+          );
           showCartSnackBar();
         }
       } else if (Get.find<SplashController>()

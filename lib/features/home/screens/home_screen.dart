@@ -111,6 +111,19 @@ class HomeScreen extends StatefulWidget {
     }
     if (AuthHelper.isLoggedIn()) {
       await Get.find<ProfileController>().getUserInfo();
+
+      final String? moduleType = Get.find<SplashController>().module?.moduleType
+          ?.toString();
+
+      if (<String>{
+        AppConstants.food,
+        AppConstants.grocery,
+        AppConstants.ecommerce,
+        AppConstants.pharmacy,
+      }.contains(moduleType)) {
+        Get.find<ItemController>().getSuggestedItemList(reload);
+      }
+
       Get.find<NotificationController>().getNotificationList(reload);
       Get.find<CouponController>().getCouponList();
     }
@@ -349,8 +362,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
                             Get.find<AdvertisementController>()
                                 .getAdvertisementList();
-                            Get.find<ReelsController>()
-                                .getReelsList(offset: 1);
+                            Get.find<ReelsController>().getReelsList(offset: 1);
                             if (AuthHelper.isLoggedIn()) {
                               await Get.find<ProfileController>().getUserInfo();
                               await Get.find<NotificationController>()

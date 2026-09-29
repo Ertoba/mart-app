@@ -78,6 +78,7 @@ class HomeScreen extends StatefulWidget {
       if (Get.find<SplashController>().module!.moduleType.toString() ==
           AppConstants.grocery) {
         Get.find<FlashSaleController>().getFlashSale(reload, false);
+        Get.find<BrandsController>().getBrandList();
       }
       if (Get.find<SplashController>().module!.moduleType.toString() ==
           AppConstants.ecommerce) {

@@ -847,6 +847,8 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                                   charge: originalCharge,
                                                   deliveryCharge:
                                                       deliveryCharge,
+                                                  saverBaseDeliveryCharge:
+                                                      saverBaseDeliveryCharge,
                                                   addressList: addressList,
                                                   tomorrowClosed:
                                                       tomorrowClosed,
@@ -1591,7 +1593,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                         monthlySubscribe: checkoutController.monthlySubscribe ? 1 : 0,
                         deliveryType: _effectiveSaverDeliveryType(
                           checkoutController: checkoutController,
-                          deliveryCharge: saverBaseDeliveryCharge,
+                          deliveryCharge: deliveryCharge ?? 0,
                         ),
                       );
 

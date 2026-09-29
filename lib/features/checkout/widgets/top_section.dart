@@ -22,6 +22,7 @@ import 'package:sixam_mart/features/checkout/widgets/delivery_instruction_view.d
 import 'package:sixam_mart/features/checkout/widgets/delivery_section.dart';
 import 'package:sixam_mart/features/checkout/widgets/deliveryman_tips_section.dart';
 import 'package:sixam_mart/features/checkout/widgets/payment_section.dart';
+import 'package:sixam_mart/features/checkout/widgets/saver_delivery_time_widget.dart';
 import 'package:sixam_mart/features/checkout/widgets/time_slot_section.dart';
 import 'package:sixam_mart/features/checkout/widgets/web_delivery_instruction_view.dart';
 import 'package:sixam_mart/features/store/widgets/camera_button_sheet_widget.dart';
@@ -31,6 +32,7 @@ class TopSection extends StatelessWidget {
   final CheckoutController checkoutController;
   final double charge;
   final double deliveryCharge;
+  final double saverBaseDeliveryCharge;
   final List<DropdownItem<int>> addressList;
   final bool tomorrowClosed;
   final bool todayClosed;
@@ -64,7 +66,7 @@ class TopSection extends StatelessWidget {
   final double extraChargeForToolTip;
 
   const TopSection({
-    super.key, required this.deliveryCharge, required  this.charge, required this.tomorrowClosed,
+    super.key, required this.deliveryCharge, required this.saverBaseDeliveryCharge, required  this.charge, required this.tomorrowClosed,
     required this.todayClosed, required this.price, required this.discount, required this.addOns,
     required this.addressList, required this.checkoutController,
     this.module, this.storeId, required this.address, required this.cartList,
@@ -288,6 +290,26 @@ class TopSection extends StatelessWidget {
 
         if(showMonthlyReorder) ...[
           const MonthlyReorderSection(),
+          SizedBox(height: isDesktop ? Dimensions.paddingSizeLarge : Dimensions.paddingSizeSmall),
+        ],
+
+        if(SaverDeliveryTimeWidget.canShow(
+          controller: checkoutController,
+          deliveryCharge: saverBaseDeliveryCharge,
+          originalDeliveryCharge: charge,
+        )) ...[
+          Container(
+            color: Theme.of(context).cardColor,
+            padding: const EdgeInsets.symmetric(
+              horizontal: Dimensions.paddingSizeLarge,
+              vertical: Dimensions.paddingSizeSmall,
+            ),
+            child: SaverDeliveryTimeWidget(
+              checkoutController: checkoutController,
+              deliveryCharge: saverBaseDeliveryCharge,
+              originalDeliveryCharge: charge,
+            ),
+          ),
           SizedBox(height: isDesktop ? Dimensions.paddingSizeLarge : Dimensions.paddingSizeSmall),
         ],
 

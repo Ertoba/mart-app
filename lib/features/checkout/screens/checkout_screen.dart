@@ -266,6 +266,10 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                 Pivot? moduleData = _getModuleData(
                   store: checkoutController.store,
                 );
+                checkoutController.syncSaverDeliveryContext(
+                  address: AddressHelper.getUserAddressFromSharedPref(),
+                  store: checkoutController.store,
+                );
                 _isCashOnDeliveryActive = _checkCODActive(
                   store: checkoutController.store,
                 );
@@ -583,7 +587,7 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                       surgePrice: checkoutController.surgePrice?.price,
                       surgePriceType: checkoutController.surgePrice?.priceType,
                     );
-                    double deliveryCharge = _calculateDeliveryCharge(
+                    double saverBaseDeliveryCharge = _calculateDeliveryCharge(
                       store: checkoutController.store,
                       address: AddressHelper.getUserAddressFromSharedPref()!,
                       distance: checkoutController.distance,
@@ -592,6 +596,10 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                       orderAmount: orderAmount,
                       surgePrice: checkoutController.surgePrice?.price,
                       surgePriceType: checkoutController.surgePrice?.priceType,
+                    );
+                    double deliveryCharge = _applySaverDeliveryCharge(
+                      checkoutController: checkoutController,
+                      deliveryCharge: saverBaseDeliveryCharge,
                     );
 
                     if (checkoutController.orderType != 'take_away' &&
@@ -708,6 +716,8 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                                                       charge: originalCharge,
                                                       deliveryCharge:
                                                           deliveryCharge,
+                                                      saverBaseDeliveryCharge:
+                                                          saverBaseDeliveryCharge,
                                                       addressList: addressList,
                                                       tomorrowClosed:
                                                           tomorrowClosed,
@@ -1579,6 +1589,10 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                         password: guestPasswordController.text,
                         bringChangeAmount: null,
                         monthlySubscribe: checkoutController.monthlySubscribe ? 1 : 0,
+                        deliveryType: _effectiveSaverDeliveryType(
+                          checkoutController: checkoutController,
+                          deliveryCharge: saverBaseDeliveryCharge,
+                        ),
                       );
 
                       checkoutController.placeOrder(
@@ -2189,6 +2203,60 @@ class CheckoutScreenState extends State<CheckoutScreen> {
     }
 
     return deliveryCharge;
+  }
+
+  String _effectiveSaverDeliveryType({
+    required CheckoutController checkoutController,
+    required double deliveryCharge,
+  }) {
+    if(checkoutController.orderType != 'delivery' || deliveryCharge <= 0) {
+      return 'standard';
+    }
+
+    final double? minimumDeliveryCharge =
+        checkoutController.saverModule?.pivot?.minimumDeliveryCharge;
+    if(minimumDeliveryCharge != null && deliveryCharge < minimumDeliveryCharge) {
+      return 'standard';
+    }
+
+    final String type = checkoutController.saverDeliveryType ?? 'standard';
+    if(type != 'express' && type != 'slightly_delay') {
+      return 'standard';
+    }
+
+    if(checkoutController.selectedSaverDeliveryOption == null) {
+      return 'standard';
+    }
+
+    return type;
+  }
+
+  double _applySaverDeliveryCharge({
+    required CheckoutController checkoutController,
+    required double deliveryCharge,
+  }) {
+    final String deliveryType = _effectiveSaverDeliveryType(
+      checkoutController: checkoutController,
+      deliveryCharge: deliveryCharge,
+    );
+    final DeliveryOptions? option = checkoutController.selectedSaverDeliveryOption;
+
+    if(deliveryType == 'standard' || option == null) {
+      return PriceConverter.toFixed(deliveryCharge);
+    }
+
+    if(deliveryType == 'express') {
+      return PriceConverter.toFixed(
+        deliveryCharge + (option.extraCharge ?? 0),
+      );
+    }
+
+    final double floor =
+        checkoutController.saverModule?.pivot?.minimumDeliveryCharge ?? 0;
+    final double reducedCharge = deliveryCharge - (option.reduceCharge ?? 0);
+    return PriceConverter.toFixed(
+      reducedCharge < floor ? floor : reducedCharge,
+    );
   }
 
   double _calculateDeliveryCharge({

@@ -82,11 +82,13 @@ class TopSection extends StatelessWidget {
     bool takeAway = (checkoutController.orderType == 'take_away');
     bool isDesktop = ResponsiveHelper.isDesktop(context);
     bool isGuestLoggedIn = AuthHelper.isGuestLoggedIn();
+    final String? moduleType =
+        Get.find<SplashController>().module?.moduleType?.toString();
     final bool showMonthlyReorder = AuthHelper.isLoggedIn() &&
         storeId == null &&
         Get.find<SplashController>().configModel?.monthlyOrderRemainder == 1 &&
-        (module?.moduleType == AppConstants.grocery ||
-            module?.moduleType == AppConstants.pharmacy);
+        (moduleType == AppConstants.grocery ||
+            moduleType == AppConstants.pharmacy);
 
     return Container(
       decoration: ResponsiveHelper.isDesktop(context) ? BoxDecoration(

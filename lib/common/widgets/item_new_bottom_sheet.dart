@@ -24,6 +24,7 @@ import 'package:sixam_mart/features/favourite/controllers/favourite_controller.d
 import 'package:sixam_mart/features/item/controllers/item_controller.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
 import 'package:sixam_mart/features/item/widgets/item_media_dialog.dart';
+import 'package:sixam_mart/features/item/widgets/item_image_view_widget.dart';
 import 'package:sixam_mart/features/location/controllers/location_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
@@ -701,6 +702,25 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
   // Renders the currently selected media in the header. Video media auto-plays
   // (muted, with a mute toggle); SVG images are handled separately.
   Widget _buildHeaderMedia(BuildContext context, Item item, String mediaUrl, bool isVideo) {
+    final String lowerUrl = mediaUrl.toLowerCase();
+    final bool isVimeo = lowerUrl.contains('vimeo.com') || lowerUrl.contains('player.vimeo.com');
+
+    if (isVideo && isVimeo) {
+      return ItemMediaPreviewWidget(
+        key: ValueKey<String>('header-vimeo-$mediaUrl'),
+        mediaUrl: mediaUrl,
+        thumbnailUrl: item.videoThumbnailUrl?.isNotEmpty == true
+            ? item.videoThumbnailUrl!
+            : (item.imageFullUrl ?? ''),
+        width: double.infinity,
+        height: double.infinity,
+        isDesktop: ResponsiveHelper.isDesktop(context),
+        onFullscreenTap: widget.isCampaign
+            ? null
+            : () => _openMediaFullScreen(context, item, _selectedMediaIndex),
+      );
+    }
+
     if (isVideo) {
       return _HeaderVideoPlayer(
         // Stable key so the player/controller survives the per-frame rebuilds of

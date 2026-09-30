@@ -338,7 +338,6 @@ class _ItemMediaVideoViewState extends State<_ItemMediaVideoView> {
   VideoPlayerController? _videoPlayerController;
   YoutubePlayerController? _youtubeController;
   web_youtube.YoutubePlayerController? _webYoutubeController;
-  InAppWebViewController? _vimeoController;
   bool _isYoutubeVideo = false;
   bool _isVimeoVideo = false;
   bool _hasError = false;
@@ -372,7 +371,6 @@ class _ItemMediaVideoViewState extends State<_ItemMediaVideoView> {
     _youtubeController = null;
     _webYoutubeController?.close();
     _webYoutubeController = null;
-    _vimeoController = null;
     _videoPlayerController?.removeListener(_videoListener);
     _videoPlayerController?.dispose();
     _videoPlayerController = null;
@@ -459,7 +457,6 @@ class _ItemMediaVideoViewState extends State<_ItemMediaVideoView> {
           iframeAllowFullscreen: true,
         ),
         onWebViewCreated: (controller) {
-          _vimeoController = controller;
         },
         onReceivedError: (controller, request, error) {
           if(mounted) {

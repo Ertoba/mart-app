@@ -1442,7 +1442,6 @@ class CheckoutController extends GetxController implements GetxService {
     String phone = '';
     String name = '';
 
-    print('======addressModel: ${addressModel?.toJson()}');
 
     if (AuthHelper.isLoggedIn()) {
       if (Get.find<ProfileController>().userInfoModel == null) {
@@ -1451,7 +1450,6 @@ class CheckoutController extends GetxController implements GetxService {
       phone = Get.find<ProfileController>().userInfoModel!.phone ?? '';
       name =
           '${Get.find<ProfileController>().userInfoModel!.fName ?? ''} ${Get.find<ProfileController>().userInfoModel!.lName ?? ''}';
-      print('======addressModel 2 : ${addressModel?.toJson()}');
     }
 
     try {
@@ -1475,7 +1473,6 @@ class CheckoutController extends GetxController implements GetxService {
     streetNumberController.text = _address?.streetNumber ?? '';
     houseController.text = _address?.house ?? '';
     floorController.text = _address?.floor ?? '';
-    print('======addressModel 3: ${addressModel?.toJson()}');
     if (notify) update();
   }
 }

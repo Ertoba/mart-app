@@ -192,7 +192,6 @@ class SplashController extends GetxController implements GetxService {
       }else if(GetPlatform.isWeb || (loadModuleData && _module != null)) {
         setModule(GetPlatform.isWeb ? splashServiceInterface.getModule() : _module);
       }
-      print('=====deeplink url: $_deeplinkRoute and canRoute: $canRoute');
       if(!canRoute || _deeplinkRoute != null) {
         return;
       }

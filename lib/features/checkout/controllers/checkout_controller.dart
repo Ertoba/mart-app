@@ -709,7 +709,7 @@ class CheckoutController extends GetxController implements GetxService {
         imageQuality: 50,
       );
       if (xFile != null && await FileValidationHelper().isFileUnder2MB(xFile)) {
-        await addPrescriptionImages(<XFile>[xFile]);
+        await addPrescriptionImages(<XFile>[xFile], isAutoSaved: AuthHelper.isLoggedIn());
       } else if (xFile != null) {
         showCustomSnackBar('max_file_size_2mb'.tr);
       }

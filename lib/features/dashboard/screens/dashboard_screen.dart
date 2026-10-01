@@ -1079,25 +1079,24 @@ class _HomeFloatingActionButton extends StatelessWidget {
             homeController.cashBackOfferList!.isNotEmpty &&
             homeController.showFavButton;
 
-        // AI chat is only available for the shopping modules (food, grocery, shop,
-        // pharmacy). Hidden on Home (no module), parcel, rental and rideshare.
+        // AI chat is available on the Home landing and in supported shopping
+        // modules. Parcel, rental and rideshare remain excluded.
         const Set<String> aiChatModules = {
           AppConstants.food,
           AppConstants.grocery,
           AppConstants.ecommerce,
           AppConstants.pharmacy,
         };
-        // Gate on the selected dashboard tab, not the active module: navbar screens
-        // (e.g. My Orders) call setModule() as a side effect, so `module` can be a real
-        // module even while the Home landing is shown. selectedModuleIndex == 0 is the
-        // reliable "Home landing" signal.
+        // selectedModuleIndex == 0 is the reliable Home landing signal.
+        // Outside Home, only supported shopping module types may show AI chat;
+        // ride/taxi, parcel and rental stay excluded.
         final String? moduleType = splashController.module?.moduleType
             ?.toString();
+        final bool isHomeLanding = splashController.selectedModuleIndex == 0;
         final bool showAiChat =
             (splashController.configModel?.aiChatStatus ?? false) &&
-            splashController.selectedModuleIndex != 0 &&
-            moduleType != null &&
-            aiChatModules.contains(moduleType);
+            (isHomeLanding ||
+                (moduleType != null && aiChatModules.contains(moduleType)));
 
         return AnimatedPadding(
           duration: const Duration(milliseconds: 300),

@@ -14,12 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: upgrade-v42-20261002
-      - name: Pack source
+          ref: 6980453d06bc69d264e417a06b92de8a06e2bd05
+      - name: Pack baseline source
         run: |
-          tar --exclude=.git --exclude=.dart_tool --exclude=build -czf /tmp/mart-app-upgrade-v42-current.tar.gz .
+          tar --exclude=.git --exclude=.dart_tool --exclude=build -czf /tmp/mart-app-v42-baseline.tar.gz .
       - uses: actions/upload-artifact@v4
         with:
-          name: mart-app-upgrade-v42-current
-          path: /tmp/mart-app-upgrade-v42-current.tar.gz
+          name: mart-app-v42-baseline
+          path: /tmp/mart-app-v42-baseline.tar.gz
           retention-days: 1

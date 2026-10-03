@@ -1,3 +1,4 @@
+import 'package:sixam_mart/common/models/pagination_model.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 
 class ReelModel {
@@ -13,6 +14,8 @@ class ReelModel {
   int? itemId;
   int? vehicleId;
   bool? orderNowButton;
+  String? productType;
+  int? productId;
 
   ReelModel({
     this.reelId,
@@ -27,6 +30,8 @@ class ReelModel {
     this.itemId,
     this.vehicleId,
     this.orderNowButton,
+    this.productType,
+    this.productId,
   });
 
   ReelModel.fromJson(Map<String, dynamic> json) {
@@ -59,6 +64,8 @@ class ReelModel {
     itemId = _readInt(json['item_id'] ?? json['food_id']);
     vehicleId = _readInt(json['vehicle_id']);
     orderNowButton = json['order_now_button'] == true || json['order_now_button'] == 1;
+    productType = _readString(json['product_type']);
+    productId = _readInt(json['product_id']);
   }
 
   String get resolvedTitle {
@@ -103,6 +110,8 @@ class ReelModel {
       itemId: other.itemId ?? itemId,
       vehicleId: other.vehicleId ?? vehicleId,
       orderNowButton: other.orderNowButton ?? orderNowButton,
+      productType: other.productType ?? productType,
+      productId: other.productId ?? productId,
     );
   }
 
@@ -120,6 +129,8 @@ class ReelModel {
       'item_id': itemId,
       'vehicle_id': vehicleId,
       'order_now_button': orderNowButton,
+      'product_type': productType,
+      'product_id': productId,
     };
   }
 
@@ -241,9 +252,12 @@ class ReelListModel {
   ReelListModel({this.totalSize, this.limit, this.offset, this.reels});
 
   ReelListModel.fromJson(Map<String, dynamic> json) {
-    totalSize = ReelModel._readInt(json['total_size']);
-    limit = json['limit']?.toString();
-    offset = ReelModel._readInt(json['offset']);
+    // Flat `total_size`/`limit`/`offset` on the legacy format, nested under
+    // `pagination` now. The list key below was already tolerant of both.
+    final PaginationModel pagination = PaginationModel.fromJson(json);
+    totalSize = pagination.totalSize;
+    limit = pagination.limit?.toString();
+    offset = pagination.offset;
 
     final dynamic rawList = json['reels'] ?? json['data'] ?? json['content'] ?? json['items'];
     if(rawList is List) {

@@ -187,7 +187,7 @@ class _WebCommonConditionViewWidgetState extends State<WebCommonConditionViewWid
                 const SizedBox(width: Dimensions.paddingSizeExtraOverLarge),
                 InkWell(
                   onTap: () => Get.toNamed(RouteHelper.getCommonConditionsRoute()),
-                  child: Text('see_all'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor, decoration: TextDecoration.none)),
+                  child: Text('see_all'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor, decoration: TextDecoration.underline)),
                 ),
               ]),
             ),

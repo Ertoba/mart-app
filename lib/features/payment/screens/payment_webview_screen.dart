@@ -27,8 +27,7 @@ class PaymentWebViewScreen extends StatefulWidget {
   final bool isProSubscription;
   final bool isRenew;
   const PaymentWebViewScreen({super.key, required this.orderModel, required this.isCashOnDelivery, this.addFundUrl, required this.paymentMethod,
-    required this.guestId, required this.contactNumber, this.subscriptionUrl, this.storeId, this.createAccount = false,
-    this.isProSubscription = false, this.isRenew = false});
+    required this.guestId, required this.contactNumber, this.subscriptionUrl, this.storeId, this.createAccount = false, this.isProSubscription = false, this.isRenew = false});
 
   @override
   PaymentScreenState createState() => PaymentScreenState();
@@ -48,18 +47,14 @@ class PaymentScreenState extends State<PaymentWebViewScreen> {
     super.initState();
 
     if(widget.addFundUrl == '' && widget.addFundUrl!.isEmpty && widget.subscriptionUrl == '' && widget.subscriptionUrl!.isEmpty){
-      selectedUrl = Uri.parse('${AppConstants.baseUrl}/payment-mobile').replace(queryParameters: {
-        'customer_id': (widget.orderModel.userId == 0 ? widget.guestId : widget.orderModel.userId).toString(),
-        'order_id': widget.orderModel.id.toString(),
-        'payment_method': widget.paymentMethod,
-        'payment_platform': 'app',
-      }).toString();
+      selectedUrl = '${AppConstants.baseUrl}/payment-mobile?customer_id=${widget.orderModel.userId == 0 ? widget.guestId : widget.orderModel.userId}&order_id=${widget.orderModel.id}&payment_method=${widget.paymentMethod}';
     } else if(widget.subscriptionUrl != '' && widget.subscriptionUrl!.isNotEmpty){
       selectedUrl = widget.subscriptionUrl!;
     } else{
       selectedUrl = widget.addFundUrl!;
     }
 
+    print('selectedUrl: $selectedUrl');
 
     _initData();
   }
@@ -119,9 +114,7 @@ class PaymentScreenState extends State<PaymentWebViewScreen> {
                   url: url.toString(), canRedirect: _canRedirect, onClose: (){} ,
                   addFundUrl: widget.addFundUrl, orderID: widget.orderModel.id.toString(), contactNumber: widget.contactNumber,
                   subscriptionUrl: widget.subscriptionUrl, storeId: widget.storeId, createAccount: widget.createAccount!,
-                  guestId: widget.guestId,
-                  isProSubscription: widget.isProSubscription,
-                  isRenew: widget.isRenew,
+                  guestId: widget.guestId, isProSubscription: widget.isProSubscription, isRenew: widget.isRenew,
                 );
                 setState(() {
                   _isLoading = true;
@@ -130,10 +123,8 @@ class PaymentScreenState extends State<PaymentWebViewScreen> {
               shouldOverrideUrlLoading: (controller, navigationAction) async {
                 Uri uri = navigationAction.request.url!;
                 if (!["http", "https", "file", "chrome", "data", "javascript", "about"].contains(uri.scheme)) {
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    return NavigationActionPolicy.CANCEL;
-                  }
+                  launchUrl(uri, mode: LaunchMode.externalApplication);
+                  return NavigationActionPolicy.CANCEL;
                 }
                 return NavigationActionPolicy.ALLOW;
               },
@@ -146,9 +137,7 @@ class PaymentScreenState extends State<PaymentWebViewScreen> {
                   url: url.toString(), canRedirect: _canRedirect, onClose: (){} ,
                   addFundUrl: widget.addFundUrl, orderID: widget.orderModel.id.toString(), contactNumber: widget.contactNumber,
                   subscriptionUrl: widget.subscriptionUrl, storeId: widget.storeId, createAccount: widget.createAccount!,
-                  guestId: widget.guestId,
-                  isProSubscription: widget.isProSubscription,
-                  isRenew: widget.isRenew,
+                  guestId: widget.guestId, isProSubscription: widget.isProSubscription, isRenew: widget.isRenew,
                 );
                 // _redirect(url.toString());
               },

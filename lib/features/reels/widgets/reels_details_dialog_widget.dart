@@ -21,6 +21,7 @@ import 'package:sixam_mart/features/rental_module/vendor/screens/provider_detail
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/date_converter.dart';
+import 'package:sixam_mart/helper/image_cache_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
@@ -398,6 +399,10 @@ class _ReelDetailsPageState extends State<_ReelDetailsPage> {
       Get.to(() => ProviderDetailScreen(vendorId: storeId));
       return;
     }
+    if(moduleType == AppConstants.service) {
+      Get.toNamed(RouteHelper.getProviderDetailsRoute(storeId));
+      return;
+    }
     Get.toNamed(RouteHelper.getStoreRoute(
       id: storeId,
       page: 'store_new',
@@ -425,6 +430,15 @@ class _ReelDetailsPageState extends State<_ReelDetailsPage> {
 
       Get.find<TaxiCartController>().setReelOrderId(reelModel.reelId);
       Get.to(() => RentalVehicleDetailsScreen(vehicleId: vehicleId), preventDuplicates: false);
+      return;
+    }
+
+    if(moduleType == AppConstants.service) {
+      final int? serviceId = reelModel.productId;
+      if(serviceId == null) {
+        return;
+      }
+      Get.toNamed(RouteHelper.getServiceDetailsRoute(id: serviceId));
       return;
     }
 
@@ -645,7 +659,7 @@ class _ReelDetailsPageState extends State<_ReelDetailsPage> {
       _videoController = controller;
       _hasVideoError = false;
     } catch (e) {
-      debugPrint('=======> ReelDetails: Video controller error: $e');
+      print('=======> ReelDetails: Video controller error: $e');
       await controller?.dispose();
       _hasVideoError = true;
     } finally {
@@ -782,7 +796,11 @@ class _ReelDetailsPageState extends State<_ReelDetailsPage> {
                                   border: Border.all(color: Colors.white.withValues(alpha: 0.65), width: 1),
                                 ),
                                 child: ClipOval(
-                                  child: CustomImage(image: widget.reel.resolvedLogoUrl, fit: BoxFit.cover),
+                                  child: CustomImage(
+                                    image: widget.reel.resolvedLogoUrl, fit: BoxFit.cover,
+                                    cacheWidth: ImageCacheHelper.pixels(context, 28),
+                                    cacheHeight: ImageCacheHelper.pixels(context, 28),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: Dimensions.paddingSizeSmall),
@@ -807,7 +825,7 @@ class _ReelDetailsPageState extends State<_ReelDetailsPage> {
                               width: 120,
                               height: 40,
                               radius: Dimensions.radiusDefault,
-                              buttonText: Get.find<SplashController>().module?.moduleType?.toString() == AppConstants.taxi ? 'book_now'.tr : 'order_now'.tr,
+                              buttonText: <String>[AppConstants.taxi, AppConstants.service].contains(Get.find<SplashController>().module?.moduleType?.toString()) ? 'book_now'.tr : 'order_now'.tr,
                               fontSize: Dimensions.fontSizeSmall,
                               isLoading: _isPreparingOrder,
                               onPressed: _isPreparingOrder ? null : () => _onOrderNowTap(widget.reel),

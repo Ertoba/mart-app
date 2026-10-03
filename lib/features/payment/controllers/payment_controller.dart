@@ -66,8 +66,12 @@ class PaymentController extends GetxController implements GetxService {
     return success;
   }
 
-  void changeLoadingStatus(bool status) {
+  void changeLoadingStatus(bool status, {bool isUpdate = true}) {
     _isLoading = status;
-    update();
+
+    if(isUpdate) {
+      update();
+    }
+
   }
 }

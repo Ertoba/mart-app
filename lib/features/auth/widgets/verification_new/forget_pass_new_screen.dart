@@ -50,7 +50,8 @@ class _ForgetPassNewScreenState extends State<ForgetPassNewScreen> {
     if (!kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.delayed(const Duration(milliseconds: 800), () {
-          FocusScope.of(Get.context!).requestFocus(_numberFocusNode);
+          if (!mounted) return;
+          _numberFocusNode.requestFocus();
         });
       });
     }
@@ -60,6 +61,9 @@ class _ForgetPassNewScreenState extends State<ForgetPassNewScreen> {
   void dispose() {
     _numberController.dispose();
     _numberFocusNode.dispose();
+    _scrollController.dispose();
+    _emailController.dispose();
+    _emailFocusNode.dispose();
     super.dispose();
   }
 

@@ -3,9 +3,8 @@ import 'package:sixam_mart/features/rental_module/rental_favourite/domain/servic
 
 class TaxiFavouriteController extends GetxController implements GetxService {
   final TaxiFavouriteServiceInterface taxiFavouriteServiceInterface;
+
   TaxiFavouriteController({required this.taxiFavouriteServiceInterface});
 
-  Future<void> getFavouriteTaxiList() async {
-    await taxiFavouriteServiceInterface.getFavouriteTaxiList();
-  }
+  Future<void> getFavouriteTaxiList() async {}
 }

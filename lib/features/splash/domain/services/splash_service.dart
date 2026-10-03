@@ -7,6 +7,8 @@ import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/features/splash/domain/repositories/splash_repository_interface.dart';
 import 'package:sixam_mart/features/splash/domain/services/splash_service_interface.dart';
 
+import '../models/app_download_section_model.dart';
+
 class SplashService implements SplashServiceInterface {
   final SplashRepositoryInterface splashRepositoryInterface;
   SplashService({required this.splashRepositoryInterface});
@@ -24,11 +26,6 @@ class SplashService implements SplashServiceInterface {
       configModel = ConfigModel.fromJson(response.body);
     }
     return configModel;
-  }
-
-  @override
-  Future<LandingModel?> getLandingPageData({required DataSourceEnum source}) async {
-    return await splashRepositoryInterface.getLandingPageData(source: source);
   }
 
   @override
@@ -139,6 +136,16 @@ class SplashService implements SplashServiceInterface {
   @override
   Future<void> savePaymentIncompleteBottomSheetStatus(bool data) async {
     return await splashRepositoryInterface.savePaymentIncompleteBottomSheetStatus(data);
+  }
+
+  @override
+  Future<AppDownloadSectionModel?> getAppDownloadSection() async {
+    return await splashRepositoryInterface.getAppDownloadSection();
+  }
+
+  @override
+  bool handleInitialTopicSubscription() {
+    return splashRepositoryInterface.handleInitialTopicSubscription();
   }
 
 }

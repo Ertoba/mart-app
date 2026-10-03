@@ -65,7 +65,14 @@ class CashBackDialogWidget extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
                                 ),
                                 padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                                child: Text('${PriceConverter.convertPrice(homeController.cashBackOfferList![index].cashbackAmount!)} ${homeController.cashBackOfferList![index].title}', style: robotoBold),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('${PriceConverter.convertPrice(homeController.cashBackOfferList![index].cashbackAmount!)} ${homeController.cashBackOfferList![index].title}', style: robotoBold),
+                                    Text('${"maximum".tr}: ${PriceConverter.convertPrice(homeController.cashBackOfferList![index].maxDiscount)}', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)),
+                                  ],
+                                ),
                               ),
 
                               Padding(
@@ -93,8 +100,8 @@ class CashBackDialogWidget extends StatelessWidget {
                 ),
 
               Container(
-                height: 80, width: 65,
-                margin: EdgeInsets.only(bottom: 20, right: ResponsiveHelper.isDesktop(context) ? 50 : 0),
+                height: 60,
+                margin: const EdgeInsets.only(bottom: 28, right: 0),
                 child: InkWell(onTap: () => Get.back(), child: const CashBackLogoWidget()),
               ),
             ],

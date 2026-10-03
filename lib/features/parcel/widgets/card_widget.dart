@@ -15,7 +15,7 @@ class CardWidget extends StatelessWidget {
       decoration: showCard ? BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 5, spreadRadius: 1, offset: Offset(0, 3))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 5, spreadRadius: 1, offset: const Offset(0, 3))],
       ) : null,
       child: child,
     );

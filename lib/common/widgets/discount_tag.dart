@@ -38,7 +38,8 @@ class DiscountTag extends StatelessWidget {
         ),
         child: Text(
           discount! > 0 ? '${(isRightSide || discountType == 'percent') ? '' : currencySymbol}$discount${discountType == 'percent' ? '%'
-              : isRightSide ? currencySymbol : ''} ${'off'.tr}' : 'free_delivery'.tr,
+              : isRightSide ? currencySymbol : ''}' : 'free_delivery'.tr,
+          textDirection: discount! > 0 ? TextDirection.ltr : null,
           style: robotoMedium.copyWith(
             color: Colors.white,
             fontSize: fontSize ?? (ResponsiveHelper.isMobile(context) ? 8 : 12),

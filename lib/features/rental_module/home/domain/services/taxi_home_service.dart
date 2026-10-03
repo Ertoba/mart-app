@@ -6,10 +6,4 @@ class TaxiHomeService implements TaxiHomeServiceInterface {
   final TaxiHomeRepositoryInterface taxiHomeRepositoryInterface;
   TaxiHomeService({required this.taxiHomeRepositoryInterface});
 
-  @override
-  Future<void> getTopRatedCarList(int offset, bool reload) async {}
-  @override
-  Future<void> getTaxiBannerList(bool reload) async {}
-  @override
-  Future<void> getTaxiCouponList(bool reload) async {}
 }

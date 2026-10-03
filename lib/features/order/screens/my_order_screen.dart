@@ -15,6 +15,7 @@ import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
 import 'package:sixam_mart/features/language/controllers/language_controller.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
 import 'package:sixam_mart/features/order/domain/models/order_model.dart';
+import 'package:sixam_mart/features/order/widgets/order_details_info_widgets/order_item_status_section.dart';
 import 'package:sixam_mart/features/rental_module/common/models/trip_details_model.dart';
 import 'package:sixam_mart/features/rental_module/rental_order/controllers/taxi_order_controller.dart';
 import 'package:sixam_mart/features/rental_module/rental_order/screens/taxi_order_details_screen.dart';
@@ -22,10 +23,16 @@ import 'package:sixam_mart/features/ride_share_module/ride_location/domain/model
 import 'package:sixam_mart/features/ride_share_module/ride_order/controllers/ride_controller.dart';
 import 'package:sixam_mart/features/ride_share_module/ride_order/screens/ride_order_complete_screen.dart';
 import 'package:sixam_mart/features/ride_share_module/ride_payment/screens/ride_payment_screen.dart';
+import 'package:sixam_mart/features/service_module/booking_details/controllers/booking_controller.dart';
+import 'package:sixam_mart/features/service_module/booking_details/domain/models/booking_model.dart';
+import 'package:sixam_mart/features/service_module/booking_details/domain/services/booking_service_interface.dart';
+import 'package:sixam_mart/features/service_module/common/widgets/rebook_button.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/custom_validator.dart';
 import 'package:sixam_mart/helper/date_converter.dart';
+import 'package:sixam_mart/helper/image_cache_helper.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
@@ -38,7 +45,7 @@ import 'package:sixam_mart/util/styles.dart';
 
 enum _OrderFilter { all, running, history }
 
-enum _ModuleKind { regular, taxi, ride }
+enum _ModuleKind { regular, taxi, ride, service }
 
 List<ModuleModel> _visibleModulesFrom(SplashController splash) {
   return splash.moduleList ?? <ModuleModel>[];
@@ -48,12 +55,11 @@ _ModuleKind _kindOf(ModuleModel? module) {
   switch (module?.moduleType) {
     case AppConstants.taxi: return _ModuleKind.taxi;
     case AppConstants.ride: return _ModuleKind.ride;
+    case AppConstants.service: return _ModuleKind.service;
     default:                return _ModuleKind.regular;
   }
 }
 
-// Shared end-action pane with a single delete action — mirrors the cart's
-// Slidable styling. [onDelete] runs the confirm dialog + API and removes the row.
 ActionPane _deleteActionPane(BuildContext context, Future<void> Function() onDelete) {
   return ActionPane(
     motion: const ScrollMotion(),
@@ -104,17 +110,15 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
     final List<ModuleModel> visibleModules = _visibleModulesFrom(splash);
 
     if(visibleModules.isNotEmpty) {
-      final ModuleModel? currentSplashModule = _moduleAtSplashIndex(splash, splash.selectedModuleIndex);
+      // The tab index reads 0 for a module reached any way but a dashboard tab.
+      final ModuleModel? currentModule = splash.module ?? _moduleAtSplashIndex(splash, splash.selectedModuleIndex);
       int matchIndex = -1;
-      if(currentSplashModule != null) {
-        matchIndex = visibleModules.indexWhere((ModuleModel m) => m.id == currentSplashModule.id);
+      if(currentModule != null) {
+        matchIndex = visibleModules.indexWhere((ModuleModel m) => m.id == currentModule.id);
       }
       _selectedVisibleIndex = matchIndex >= 0 ? matchIndex : 0;
 
       if(matchIndex < 0) {
-        // Opened from Home (no matching active module): default to the 1st module
-        // and point the header at it so order details resolve correctly — but do
-        // NOT change the dashboard's selected module index.
         await splash.setModule(visibleModules[_selectedVisibleIndex], notify: false);
       }
     }
@@ -136,6 +140,12 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
     _OrderFilter.history => OrderListType.previous,
   };
 
+  BookingListType _bookingApiTypeOf(_OrderFilter filter) => switch(filter) {
+    _OrderFilter.all => BookingListType.all,
+    _OrderFilter.running => BookingListType.running,
+    _OrderFilter.history => BookingListType.previous,
+  };
+
   ModuleModel? _moduleAtSplashIndex(SplashController splash, int splashIndex) {
     if(splashIndex <= 0) return null;
     final int moduleIndex = splashIndex - 1;
@@ -155,10 +165,8 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
 
   String get _pageKey => '${_activeKind.name}-${_activeKind == _ModuleKind.regular ? (_activeModuleId ?? 0) : 0}-${_selectedFilter.name}';
 
-  // Taxi & ride APIs don't have an "all" type. If the user lands on a kind
-  // that doesn't support All, snap to Running.
   void _coerceFilterForActiveKind() {
-    if(_activeKind != _ModuleKind.regular && _selectedFilter == _OrderFilter.all) {
+    if((_activeKind == _ModuleKind.taxi || _activeKind == _ModuleKind.ride) && _selectedFilter == _OrderFilter.all) {
       _selectedFilter = _OrderFilter.running;
     }
   }
@@ -175,6 +183,8 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
           await Get.find<TaxiOrderController>().getTripList(1, isUpdate: clearVisible, isRunning: filter != _OrderFilter.history);
         case _ModuleKind.ride:
           await Get.find<RideController>().getRideList(1, isUpdate: clearVisible, isRunning: filter != _OrderFilter.history);
+        case _ModuleKind.service:
+          await Get.find<BookingController>().getBookings(_bookingApiTypeOf(filter), 1, isUpdate: clearVisible);
       }
     } finally {
       if(mounted) setState(() => _isLoadingFirstPage = false);
@@ -185,7 +195,7 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
 
   void _selectFilter(_OrderFilter filter) {
     if(_selectedFilter == filter) return;
-    if(_activeKind != _ModuleKind.regular && filter == _OrderFilter.all) return;
+    if((_activeKind == _ModuleKind.taxi || _activeKind == _ModuleKind.ride) && filter == _OrderFilter.all) return;
     setState(() => _selectedFilter = filter);
     _loadFirstPageForActiveKind(filter, clearVisible: true);
   }
@@ -223,6 +233,9 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
         final bool running = _selectedFilter != _OrderFilter.history;
         final dynamic m = running ? c.runningRideList : c.historyRideList;
         return (totalSize: m?.totalSize as int?, currentPage: int.tryParse((m?.offset as String?) ?? '1') ?? 1);
+      case _ModuleKind.service:
+        final PaginatedBookingModel? model = Get.find<BookingController>().bookingModelOf(_bookingApiTypeOf(_selectedFilter));
+        return (totalSize: model?.totalSize, currentPage: model?.offset ?? 1);
     }
   }
 
@@ -252,6 +265,8 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
         request = Get.find<TaxiOrderController>().getTripList(nextPage, isUpdate: true, isRunning: _selectedFilter != _OrderFilter.history);
       case _ModuleKind.ride:
         request = Get.find<RideController>().getRideList(nextPage, isUpdate: true, isRunning: _selectedFilter != _OrderFilter.history);
+      case _ModuleKind.service:
+        request = Get.find<BookingController>().getBookings(_bookingApiTypeOf(_selectedFilter), nextPage, isUpdate: true);
     }
     request.whenComplete(() {
       if(mounted) setState(() => _isPaginating = false);
@@ -302,10 +317,9 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
             count: model?.totalSize ?? 0,
             isEmpty: grouped.isEmpty,
             emptyText: 'no_order_found'.tr,
-            buildSection: (group) => _OrderDateSection(
-              group: group,
-              onConfirmDelete: _confirmDeleteOrder,
-            ),
+            buildCard: (OrderModel order) => order.orderType == 'parcel'
+                ? _ParcelOrderItemCard(orderModel: order, onConfirmDelete: () => _confirmDeleteOrder(order))
+                : _OrderItemCard(orderModel: order, onConfirmDelete: () => _confirmDeleteOrder(order)),
             groups: grouped,
             bottomClearance: bottomNavClearance,
           );
@@ -321,7 +335,7 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
             count: (model?.totalSize as int?) ?? 0,
             isEmpty: grouped.isEmpty,
             emptyText: 'no_trip_found'.tr,
-            buildSection: (group) => _TripDateSection(group: group, onConfirmDelete: _confirmDeleteTrip),
+            buildCard: (TripDetailsModel trip) => _TripItemCard(trip: trip, onConfirmDelete: () => _confirmDeleteTrip(trip)),
             groups: grouped,
             bottomClearance: bottomNavClearance,
           );
@@ -337,7 +351,22 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
             count: (model?.totalSize as int?) ?? 0,
             isEmpty: grouped.isEmpty,
             emptyText: 'no_ride_found'.tr,
-            buildSection: (group) => _RideDateSection(group: group, onConfirmDelete: _confirmDeleteRide),
+            buildCard: (RideDetails ride) => _RideItemCard(ride: ride, onConfirmDelete: () => _confirmDeleteRide(ride)),
+            groups: grouped,
+            bottomClearance: bottomNavClearance,
+          );
+        });
+      case _ModuleKind.service:
+        return GetBuilder<BookingController>(builder: (bookingController) {
+          final PaginatedBookingModel? model = bookingController.bookingModelOf(_bookingApiTypeOf(_selectedFilter));
+          final List<BookingModel> bookings = List<BookingModel>.from(model?.bookings ?? <BookingModel>[]);
+          bookings.sort((a, b) => _compareDescByCreatedAt(a.createdAt, b.createdAt));
+          final List<_DateGroup<BookingModel>> grouped = _groupByDate<BookingModel>(bookings, (b) => b.createdAt);
+          return _buildScroll(
+            count: model?.totalSize ?? 0,
+            isEmpty: grouped.isEmpty,
+            emptyText: 'no_booking_found'.tr,
+            buildCard: (BookingModel booking) => _BookingItemCard(bookingModel: booking, onConfirmDelete: () => _confirmDeleteBooking(booking)),
             groups: grouped,
             bottomClearance: bottomNavClearance,
           );
@@ -345,7 +374,8 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
     }
   }
 
-  Widget _buildScroll<T>({required int count, required bool isEmpty, required String emptyText, required Widget Function(_DateGroup<T> group) buildSection, required List<_DateGroup<T>> groups, required double bottomClearance,}) {
+  Widget _buildScroll<T>({required int count, required bool isEmpty, required String emptyText, required Widget Function(T item) buildCard, required List<_DateGroup<T>> groups, required double bottomClearance,}) {
+    final List<_FlatRow<T>> rows = _flattenGroups<T>(groups);
     return RefreshIndicator(
       onRefresh: _onRefresh,
       child: CustomScrollView(
@@ -371,7 +401,7 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
                 selected: _selectedFilter,
                 count: count,
                 onSelected: _selectFilter,
-                showAllChip: _activeKind == _ModuleKind.regular,
+                showAllChip: _activeKind == _ModuleKind.regular || _activeKind == _ModuleKind.service,
                 kind: _activeKind,
               ),
             ),
@@ -380,8 +410,18 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
           if(_isLoadingFirstPage && isEmpty) const SliverToBoxAdapter(child: _OrderListShimmer())
           else if(isEmpty) SliverFillRemaining(hasScrollBody: false, child: _EmptyOrderView(text: emptyText))
           else SliverList.builder(
-            itemCount: groups.length,
-            itemBuilder: (context, index) => buildSection(groups[index]),
+            itemCount: rows.length,
+            itemBuilder: (context, index) {
+              final _FlatRow<T> row = rows[index];
+              switch(row.kind) {
+                case _RowKind.band:
+                  return _OrderDateBand(label: row.label!);
+                case _RowKind.card:
+                  return buildCard(row.item as T);
+                case _RowKind.divider:
+                  return const _OrderCardDivider();
+              }
+            },
           ),
 
           if(_isPaginating) const SliverToBoxAdapter(
@@ -469,8 +509,6 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
     }
   }
 
-  // confirmDismiss handler: shows confirm dialog, runs dummy delete API with loader,
-  // returns true so Dismissible animates out. Local list removal happens in onDismissed.
   Future<bool> _confirmDeleteOrder(OrderModel order) async {
     final bool? confirmed = await Get.dialog<bool>(
       _DeleteOrderConfirmDialog(
@@ -533,12 +571,57 @@ class _MyOrderScreenState extends State<MyOrderScreen> {
     }
     return true;
   }
+
+  Future<bool> _confirmDeleteBooking(BookingModel booking) async {
+    final bool? confirmed = await Get.dialog<bool>(
+      _DeleteOrderConfirmDialog(
+        title: 'delete_booking_question'.tr,
+        subtitle: booking.id != null ? '${'booking'.tr} #${booking.displayId ?? ''}' : '',
+      ),
+      barrierDismissible: true,
+    );
+    if(confirmed != true) return false;
+
+    Get.dialog(const CustomLoaderWidget(), barrierDismissible: false);
+    final bool ok = await Get.find<BookingController>().deleteBooking(booking.id!);
+    if(Get.isDialogOpen ?? false) Get.back();
+
+    if(!ok) {
+      showCustomSnackBar('failed_to_delete_booking'.tr);
+      return false;
+    }
+    return true;
+  }
 }
 
 class _DateGroup<T> {
   final String dateLabel;
   final List<T> items;
   const _DateGroup({required this.dateLabel, required this.items});
+}
+
+enum _RowKind { band, card, divider }
+
+class _FlatRow<T> {
+  final _RowKind kind;
+  final String? label;
+  final T? item;
+
+  const _FlatRow.band(this.label) : kind = _RowKind.band, item = null;
+  const _FlatRow.card(this.item) : kind = _RowKind.card, label = null;
+  const _FlatRow.divider() : kind = _RowKind.divider, label = null, item = null;
+}
+
+List<_FlatRow<T>> _flattenGroups<T>(List<_DateGroup<T>> groups) {
+  final List<_FlatRow<T>> rows = <_FlatRow<T>>[];
+  for(final _DateGroup<T> group in groups) {
+    rows.add(_FlatRow<T>.band(group.dateLabel));
+    for(int i = 0; i < group.items.length; i++) {
+      rows.add(_FlatRow<T>.card(group.items[i]));
+      if(i < group.items.length - 1) rows.add(const _FlatRow.divider());
+    }
+  }
+  return rows;
 }
 
 // Opaque wrapper that prevents underlying scroll content from showing through.
@@ -553,10 +636,6 @@ class _SolidBar extends StatelessWidget {
   }
 }
 
-// Screen-local copy of dashboard's ModuleTabs.
-// Indicator uses disabledColor tint so the selected pill is visible against
-// the white module strip on this screen.
-// Module tab strip — excludes taxi and ride-share modules.
 class _OrderModuleTabs extends StatelessWidget {
   final int selectedVisibleIndex;
   final void Function(int visibleIndex, ModuleModel module) onModuleSelected;
@@ -758,6 +837,7 @@ class _ResultCountBar extends StatelessWidget {
     final String unit = switch(kind) {
       _ModuleKind.taxi => 'trips'.tr,
       _ModuleKind.ride => 'rides'.tr,
+      _ModuleKind.service => 'bookings'.tr,
       _ModuleKind.regular => 'orders'.tr,
     };
     return Padding(
@@ -776,93 +856,8 @@ class _ResultCountBar extends StatelessWidget {
   }
 }
 
-class _OrderDateSection extends StatelessWidget {
-  final _DateGroup<OrderModel> group;
-  final Future<bool> Function(OrderModel) onConfirmDelete;
 
-  const _OrderDateSection({
-    required this.group,
-    required this.onConfirmDelete,
-  });
 
-  @override
-  Widget build(BuildContext context) {
-    final List<Widget> cards = <Widget>[];
-    for(int i = 0; i < group.items.length; i++) {
-      final OrderModel order = group.items[i];
-      cards.add(order.orderType == 'parcel'
-          ? _ParcelOrderItemCard(
-              orderModel: order,
-              onConfirmDelete: () => onConfirmDelete(order),
-            )
-          : _OrderItemCard(
-              orderModel: order,
-              onConfirmDelete: () => onConfirmDelete(order),
-            ));
-      if(i < group.items.length - 1) cards.add(const _OrderCardDivider());
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _OrderDateBand(label: group.dateLabel),
-        ...cards,
-      ],
-    );
-  }
-}
-
-class _TripDateSection extends StatelessWidget {
-  final _DateGroup<TripDetailsModel> group;
-  final Future<bool> Function(TripDetailsModel) onConfirmDelete;
-  const _TripDateSection({required this.group, required this.onConfirmDelete});
-
-  @override
-  Widget build(BuildContext context) {
-    final List<Widget> cards = <Widget>[];
-    for(int i = 0; i < group.items.length; i++) {
-      final TripDetailsModel trip = group.items[i];
-      cards.add(_TripItemCard(
-        trip: trip,
-        onConfirmDelete: () => onConfirmDelete(trip),
-      ));
-      if(i < group.items.length - 1) cards.add(const _OrderCardDivider());
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _OrderDateBand(label: group.dateLabel),
-        ...cards,
-      ],
-    );
-  }
-}
-
-class _RideDateSection extends StatelessWidget {
-  final _DateGroup<RideDetails> group;
-  final Future<bool> Function(RideDetails) onConfirmDelete;
-  const _RideDateSection({required this.group, required this.onConfirmDelete});
-
-  @override
-  Widget build(BuildContext context) {
-    final List<Widget> cards = <Widget>[];
-    for(int i = 0; i < group.items.length; i++) {
-      final RideDetails ride = group.items[i];
-      cards.add(_RideItemCard(
-        ride: ride,
-        onConfirmDelete: () => onConfirmDelete(ride),
-      ));
-      if(i < group.items.length - 1) cards.add(const _OrderCardDivider());
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _OrderDateBand(label: group.dateLabel),
-        ...cards,
-      ],
-    );
-  }
-}
 
 class _OrderCardDivider extends StatelessWidget {
   const _OrderCardDivider();
@@ -932,10 +927,7 @@ class _OrderItemCard extends StatelessWidget {
                 const SizedBox(height: Dimensions.paddingSizeSmall),
                 Row(
                   children: [
-                    ImagePreviewWidget(
-                      image: ((orderModel.itemsPreview != null && orderModel.itemsPreview!.isNotEmpty) ? orderModel.itemsPreview : null)?.first.imageFullUrl ?? '',
-                      extraCount: ((orderModel.itemCount ?? orderModel.itemsPreview?.length ?? 1) - 1).clamp(0, 999),
-                    ),
+                    ImagePreviewWidget(image: ((orderModel.itemsPreview != null && orderModel.itemsPreview!.isNotEmpty) ? orderModel.itemsPreview : null)?.first.imageFullUrl ?? '', extraCount: (orderModel.itemCount)! - 1),
                     const SizedBox(width: Dimensions.paddingSizeSmall),
 
                     Expanded(child: Column(
@@ -958,7 +950,7 @@ class _OrderItemCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         if(orderModel.parcelCategory != null) Text(
-                          DateConverter.dateTimeStringToTime(orderModel.createdAt ?? ''),
+                          DateConverter.dateTimeStringToTime(orderModel.createdAt!),
                           style: robotoRegular.copyWith(
                             fontSize: Dimensions.fontSizeExtraSmall,
                             color: Theme.of(context).disabledColor,
@@ -968,6 +960,7 @@ class _OrderItemCard extends StatelessWidget {
                         ),
                       ],
                     )),
+                    const SizedBox(width: Dimensions.paddingSizeSmall),
                     _OrderActionButton(orderModel: orderModel),
                   ],
                 ),
@@ -1034,7 +1027,8 @@ class _OrderActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String status = (orderModel.orderStatus ?? '').toLowerCase();
-    final bool reorderEnabled = Get.find<SplashController>().configModel?.repeatOrderOption == 1;
+    // A BOGO order cannot be repeated — its bundles are re-priced by the offer, not by the cart.
+    final bool reorderEnabled = !(orderModel.isBogo ?? false) && Get.find<SplashController>().configModel?.repeatOrderOption == 1;
     final (String label, VoidCallback onTap) = (status == 'delivered' && reorderEnabled)
         ? ('reorder'.tr, () => Get.find<OrderController>().reorder(orderModel))
         : _trackable.contains(status)
@@ -1245,10 +1239,12 @@ class _TripItemCard extends StatelessWidget {
                     height: 30, width: 30,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Theme.of(context).cardColor, width: 2),
+                      border: Border.all(color: Theme.of(context).cardColor, width: _avatarBorderWidth),
                     ),
                     child: ClipOval(
-                      child: CustomImage(image: trip.provider?.logoFullUrl ?? '', fit: BoxFit.cover),
+                      child: CustomImage(image: trip.provider?.logoFullUrl ?? '', fit: BoxFit.cover,
+                        cacheWidth: ImageCacheHelper.pixels(context, 30 - (_avatarBorderWidth * 2)),
+                      ),
                     ),
                   ),
                   const SizedBox(width: Dimensions.paddingSizeSmall),
@@ -1398,6 +1394,106 @@ class _RideItemCard extends StatelessWidget {
     } else {
       Get.to(() => RideOrderCompleteScreen(tripId: ride.id!, fromRideList: true));
     }
+  }
+}
+
+
+class _BookingItemCard extends StatelessWidget {
+  final BookingModel bookingModel;
+  final Future<bool> Function() onConfirmDelete;
+  const _BookingItemCard({required this.bookingModel, required this.onConfirmDelete});
+
+  @override
+  Widget build(BuildContext context) {
+    final String status = (bookingModel.bookingStatus ?? '').toLowerCase();
+    final bool isHistory = status == 'completed' || status == 'canceled';
+    final bool canDelete = isHistory;
+    final bool showRebook = isHistory && bookingModel.canRebook == true;
+    final List<String> names = bookingModel.serviceNames ?? const <String>[];
+    final String servicesLabel = names.isEmpty
+        ? '${bookingModel.detailsCount ?? 0} ${'services'.tr}'
+        : names.length > 1 ? '${names.first} +${names.length - 1}' : names.first;
+
+    return Slidable(
+      key: ValueKey<int?>(bookingModel.id),
+      endActionPane: canDelete ? _deleteActionPane(context, () async {
+        final bool ok = await onConfirmDelete();
+        if(ok) Get.find<BookingController>().removeBookingFromList(bookingModel.id);
+      }) : null,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Get.toNamed(RouteHelper.getBookingDetailsRoute(bookingModel.id)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeDefault),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _BookingCardHeader(bookingModel: bookingModel),
+              const SizedBox(height: Dimensions.paddingSizeSmall),
+              Row(
+                children: [
+                  ImagePreviewWidget(image: bookingModel.provider?.logoFullUrl ?? '', extraCount: 0, imageSize: 40),
+                  const SizedBox(width: Dimensions.paddingSizeSmall),
+
+                  Expanded(child: Text(
+                    servicesLabel,
+                    style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  )),
+
+                  if (showRebook)
+                    RebookButton(booking: bookingModel)
+                  else
+                    CustomButton(
+                      height: 32,
+                      width: 90,
+                      color: Theme.of(context).primaryColor,
+                      buttonText: 'details'.tr,
+                      onPressed: () => Get.toNamed(RouteHelper.getBookingDetailsRoute(bookingModel.id)),
+                      fontSize: Dimensions.fontSizeSmall,
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BookingCardHeader extends StatelessWidget {
+  final BookingModel bookingModel;
+  const _BookingCardHeader({required this.bookingModel});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if(bookingModel.provider != null)
+          Text(bookingModel.provider?.name ?? '',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault),
+          ),
+        Row(
+          children: [
+            Text('${'booking'.tr} #${bookingModel.displayId ?? bookingModel.id}',
+              style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall, color: Theme.of(context).disabledColor),
+            ),
+            const SizedBox(width: Dimensions.paddingSizeDefault),
+            StatusCard(orderStatus: (bookingModel.statusLabel?.trim().isNotEmpty ?? false) ? bookingModel.statusLabel! : (bookingModel.bookingStatus ?? '').tr),
+            const Spacer(),
+            Text(
+              PriceConverter.convertPrice(bookingModel.bookingAmount ?? -1),
+              style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }
 
@@ -1584,9 +1680,7 @@ class StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String lower = orderStatus.toLowerCase();
-    final Color color = lower.contains("pending") ? Colors.blueAccent
-        : lower.contains("cancel") ? Theme.of(context).colorScheme.error
-        : Theme.of(context).primaryColor;
+    StatusBadgeColors statusColors = StatusBadgeColors.resolve(context, lower);
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -1595,18 +1689,22 @@ class StatusCard extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-        color: color.withValues(alpha: 0.1),
+        color: statusColors.background,
       ),
       child: Text(
         orderStatus.toTitleCase(),
         style: robotoMedium.copyWith(
           fontSize: Dimensions.fontSizeExtraSmall,
-          color: color,
+          color: statusColors.text,
         ),
       ),
     );
   }
 }
+
+/// Ring drawn around the circular avatars. It insets the image, so the decode
+/// target has to subtract it from both sides or we decode more than is painted.
+const double _avatarBorderWidth = 2;
 
 class ImagePreviewWidget extends StatelessWidget {
   final String? image;
@@ -1628,9 +1726,11 @@ class ImagePreviewWidget extends StatelessWidget {
             width: imageSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Theme.of(context).cardColor, width: 2),
+              border: Border.all(color: Theme.of(context).cardColor, width: _avatarBorderWidth),
             ),
-            child: ClipOval(child: CustomImage(image: image ?? '', fit: BoxFit.cover)),
+            child: ClipOval(child: CustomImage(image: image ?? '', fit: BoxFit.cover,
+              cacheWidth: ImageCacheHelper.pixels(context, imageSize - (_avatarBorderWidth * 2)),
+            )),
           ),
           if(extraCount > 0) Positioned(
             left: imageSize - 5,
@@ -1761,6 +1861,18 @@ class _GuestTrackOrderViewState extends State<_GuestTrackOrderView> {
               onPressed: () => _onTrackPressed(orderController),
             );
           }),
+
+          // Reference link to the service-module booking tracker (guests can't otherwise track bookings).
+          if (ModuleHelper.isActiveServiceModule()) ...[
+            const SizedBox(height: Dimensions.paddingSizeDefault),
+            TextButton(
+              onPressed: () => Get.toNamed(RouteHelper.getBookingTrackRoute()),
+              child: Text(
+                'track_a_service_booking'.tr,
+                style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor),
+              ),
+            ),
+          ],
         ]),
       ),
     );

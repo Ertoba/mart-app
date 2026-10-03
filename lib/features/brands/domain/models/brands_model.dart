@@ -30,7 +30,7 @@ class BrandModel {
     status = json['status'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
-    itemsCount = json['items_count'];
+    itemsCount = json['items_count'] ?? 0;
     if (json['translations'] != null) {
       translations = <Translations>[];
       json['translations'].forEach((v) {

@@ -1,7 +1,8 @@
 import 'package:get/get.dart';
 import 'package:sixam_mart/api/api_client.dart';
-import 'package:sixam_mart/features/redesign_feature/common/models/new_item_model.dart';
+import 'package:sixam_mart/features/offer/domain/models/new_item_model.dart';
 import 'package:sixam_mart/features/offer/domain/repositories/offer_repository_interface.dart';
+import 'package:sixam_mart/features/service_module/service_home/domain/models/service_model.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 
@@ -14,10 +15,20 @@ class OfferRepository implements OfferRepositoryInterface {
     final Response response = await apiClient.getData(
       '${AppConstants.offerItemsUri}?search=$search&limit=$limit&offset=$offset',
       headers: _headersWithModule(moduleId),
-      handleError: false,
     );
     if (response.statusCode == 200) {
       return NewItemListResponse.fromJson(response.body);
+    }
+    return null;
+  }
+
+  @override
+  Future<ServiceModel?> getServiceOfferItems({required int offset, int limit = 10, String search = '', int? moduleId}) async {
+    final Response response = await apiClient.getData('${AppConstants.serviceOfferItemsUri}?search=$search&limit=$limit&offset=$offset',
+      headers: _headersWithModule(moduleId),
+    );
+    if (response.statusCode == 200) {
+      return ServiceModel.fromJson(response.body);
     }
     return null;
   }
@@ -27,7 +38,6 @@ class OfferRepository implements OfferRepositoryInterface {
     final Response response = await apiClient.getData(
       '${AppConstants.offerStoresUri}?search=$search&limit=$limit&offset=$offset',
       headers: _headersWithModule(moduleId),
-      handleError: false,
     );
     if (response.statusCode == 200) {
       return StoreModel.fromJson(response.body);
@@ -40,7 +50,6 @@ class OfferRepository implements OfferRepositoryInterface {
     final Response response = await apiClient.getData(
       AppConstants.exclusiveDealsUri,
       headers: _headersWithModule(moduleId),
-      handleError: false,
     );
     if (response.statusCode == 200) {
       return StoreModel.fromJson(response.body).stores;

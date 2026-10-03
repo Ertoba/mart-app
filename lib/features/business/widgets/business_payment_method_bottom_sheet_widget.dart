@@ -1,79 +1,141 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sixam_mart/common/widgets/custom_button.dart';
+import 'package:sixam_mart/common/widgets/custom_image.dart';
 import 'package:sixam_mart/features/business/controllers/business_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
+import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
 
-class BusinessPaymentMethodBottomSheetWidget extends StatelessWidget {
+class BusinessPaymentMethodBottomSheetWidget extends StatefulWidget {
   const BusinessPaymentMethodBottomSheetWidget({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final methods = Get.find<SplashController>().configModel?.activePaymentMethodList ?? [];
+  State<BusinessPaymentMethodBottomSheetWidget> createState() => _PaymentMethodBottomSheetState();
+}
 
-    return Container(
-      padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(Dimensions.radiusLarge)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: GetBuilder<BusinessController>(
-          builder: (businessController) {
-            return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('select_payment_method'.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
-              const SizedBox(height: Dimensions.paddingSizeDefault),
-              if(methods.isEmpty)
-                Text(
-                  'no_payment_method_found'.tr,
-                  style: robotoRegular.copyWith(color: Theme.of(context).disabledColor),
+class _PaymentMethodBottomSheetState extends State<BusinessPaymentMethodBottomSheetWidget> {
+
+  @override
+  Widget build(BuildContext context) {
+
+    return SizedBox(
+      width: 550,
+      child: GetBuilder<BusinessController>(builder: (businessController) {
+        return Container(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.vertical(top: const Radius.circular(Dimensions.radiusLarge), bottom: Radius.circular(ResponsiveHelper.isDesktop(context) ? Dimensions.radiusLarge : 0)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge, vertical: Dimensions.paddingSizeLarge),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+
+            ResponsiveHelper.isDesktop(context) ? Align(
+              alignment: Alignment.topRight,
+              child: InkWell(
+                onTap: () => Get.back(),
+                child: Container(
+                  height: 30, width: 30,
+                  margin: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeExtraSmall),
+                  decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(50)),
+                  child: const Icon(Icons.clear),
                 ),
-              if(methods.isNotEmpty)
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: methods.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: Dimensions.paddingSizeSmall),
-                  itemBuilder: (context, index) {
-                    final method = methods[index];
-                    final bool isSelected = businessController.digitalPaymentName == method.getWay;
-                    return InkWell(
-                      onTap: () {
-                        businessController.setPaymentIndex(1);
-                        businessController.changeDigitalPaymentName(method.getWay);
-                        Get.back();
-                      },
-                      borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                      child: Container(
-                        padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-                        decoration: BoxDecoration(
-                          color: isSelected ? Theme.of(context).primaryColor.withValues(alpha: 0.12) : Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                          border: Border.all(
-                            color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).disabledColor.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: Row(children: [
-                          Expanded(
-                            child: Text(
-                              method.getWayTitle ?? method.getWay ?? 'payment',
-                              style: robotoMedium.copyWith(
-                                color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).textTheme.bodyLarge?.color,
-                              ),
-                            ),
-                          ),
-                          if(isSelected) Icon(Icons.check_circle, color: Theme.of(context).primaryColor),
-                        ]),
+              ),
+            ) : Align(
+              alignment: Alignment.center,
+              child: Container(
+                height: 4, width: 35,
+                margin: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeExtraSmall),
+                decoration: BoxDecoration(color: Theme.of(context).disabledColor, borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+
+            const SizedBox(height: Dimensions.paddingSizeLarge),
+
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+
+                    Align(alignment: Alignment.center, child: Text('payment_method'.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge))),
+                    const SizedBox(height: Dimensions.paddingSizeLarge),
+
+                    Row(children: [
+                      Text('pay_via_online'.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault)),
+                      Text(
+                        'faster_and_secure_way_to_pay_bill'.tr,
+                        style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor),
                       ),
-                    );
-                  },
+                    ]),
+                    const SizedBox(height: Dimensions.paddingSizeLarge),
+
+                    ListView.builder(
+                        itemCount: Get.find<SplashController>().configModel!.activePaymentMethodList!.length,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.zero,
+                        itemBuilder: (context, index){
+                          bool isSelected = businessController.paymentIndex == 1 && Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWay! == businessController.digitalPaymentName;
+
+                          return InkWell(
+                            onTap: (){
+                              businessController.setPaymentIndex(1);
+                              businessController.changeDigitalPaymentName(Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWay!);
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isSelected ? Theme.of(context).primaryColor.withValues(alpha: 0.05) : Colors.transparent,
+                                borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+                                border: Border.all(color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).disabledColor, width: 0.3),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeLarge),
+                              margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
+                              child: Row(children: [
+                                Container(
+                                  height: 20, width: 20,
+                                  decoration: BoxDecoration(
+                                      shape: BoxShape.circle, color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).cardColor,
+                                      border: Border.all(color: Theme.of(context).disabledColor)
+                                  ),
+                                  child: Icon(Icons.check, color: Theme.of(context).cardColor, size: 16),
+                                ),
+                                const SizedBox(width: Dimensions.paddingSizeDefault),
+
+                                CustomImage(
+                                  height: 20, fit: BoxFit.contain,
+                                  image: '${Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWayImageFullUrl}',
+                                ),
+                                const SizedBox(width: Dimensions.paddingSizeSmall),
+
+                                Text(
+                                  Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWayTitle!,
+                                  style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault),
+                                ),
+                              ]),
+                            ),
+                          );
+                        }),
+
+                  ],
                 ),
-            ]);
-          },
-        ),
-      ),
+              ),
+            ),
+
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
+                child: CustomButton(
+                  buttonText: 'select'.tr,
+                  onPressed: () => Get.back(),
+                ),
+              ),
+            ),
+          ]),
+        );
+      }),
     );
   }
 }

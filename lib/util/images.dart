@@ -1,23 +1,5 @@
 class Images {
   static const String logo = 'assets/image/logo.png';
-  static const String brandMark = 'assets/image/brand_mark.png';
-  static const String splashScreen = 'assets/image/splash.png';
-  static const String georgian = 'assets/image/georgian.png';
-  static const String russian = 'assets/image/russian.png';
-  static const String manShoppingSupermarket = 'assets/image/man_shopping_supermarket.jpg';
-  static const String highlightStarAnimation = 'assets/json/star.json';
-  static const String cheersLottie = 'assets/json/cheers!.lottie';
-  static const String starLottie = 'assets/json/Star.lottie';
-  static const String beerRefillLottie = 'assets/json/beer_refill.lottie';
-  static const String keepzCredo = 'assets/image/keepz/credo.png';
-  static const String keepzBog = 'assets/image/keepz/bog.png';
-  static const String keepzTbc = 'assets/image/keepz/tbc.png';
-  static const String keepzLiberty = 'assets/image/keepz/liberty.png';
-  static const String keepzGooglePay = 'assets/image/keepz/google_pay.png';
-  static const String keepzInstallment = 'assets/image/keepz/installment.png';
-  static const String keepzCrypto = 'assets/image/keepz/crypto.png';
-  static const String keepzCard = 'assets/image/keepz/card.png';
-  static const String liveChatbotAnimation = 'assets/json/live_chatbot.json';
   static const String placeholder = 'assets/image/placeholder.jpg';
   static const String notificationPlaceholder = 'assets/image/notification_placeholder.jpg';
   static const String arabic = 'assets/image/arabic.jpg';
@@ -145,6 +127,7 @@ class Images {
   static const String locationConfirm = 'assets/image/location_confirm.png';
   static const String cutlery = 'assets/image/cutlery.png';
   static const String percentTag = 'assets/image/percent_tag.png';
+  static const String happyHours = 'assets/image/happy_hours.png';
   static const String percentCouponOffer = 'assets/image/percent_offer.png';
   static const String freeDelivery = 'assets/image/free_delivery.png';
   static const String money = 'assets/image/money.png';
@@ -401,10 +384,19 @@ class Images {
   static const String couponRedIcon = 'assets/image/couponicon.png';
   static const String serviceEditIcon = 'assets/image/service/edit_icon.svg';
   static const String serviceCreatedIcon = 'assets/image/service/service_created.svg';
-  static const String notFoundIcon = 'assets/image/service/not_found_icon.svg';
+  static const String providerImage = 'assets/image/service/provider_image.svg';
   static const String createServiceRequestIcon = 'assets/image/service/create_service_request_icon.svg';
   static const String deleteServiceIcon = 'assets/image/service/delete_service_icon.svg';
   static const String eyeIcon = 'assets/image/service/eye_icon.svg';
   static const String circularCrossIcon = 'assets/image/service/circular_cross_icon.svg';
   static const String rebookingIcon = 'assets/image/service/re_booking_icon.svg';
+  static const String couponProBadge = 'assets/image/service/coupon_pro_badge.svg';
+  static const String couponPercentageBadge = 'assets/image/service/coupon_percentage_badge.svg';
+  static const String dropdownIcon = 'assets/image/service/drop_down_icon.svg';
+  static const String nearByIcon = 'assets/image/service/near_by_icon.png';
+
+
+  static const String bogoOfferIcon = 'assets/image/bogo_offer.png';
+  static const String bogoOffers = 'assets/image/bogo_offers.png';
+  static const String giftIcons = 'assets/image/gifts.png';
 }

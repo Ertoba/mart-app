@@ -2,7 +2,6 @@ import 'package:sixam_mart/common/widgets/card_design/store_card_with_distance.d
 import 'package:sixam_mart/features/store/controllers/store_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/features/home/widgets/web/web_new_on_view_widget.dart';
-import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/common/widgets/title_widget.dart';
@@ -24,7 +23,7 @@ class RecommendedStoreView extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
             child: TitleWidget(
-              title: ModuleHelper.recommendedStoreLabel,
+              title: 'recommended_store'.tr,
               onTap: () => Get.toNamed(RouteHelper.getAllStoreRoute('recommended')),
             ),
           ),

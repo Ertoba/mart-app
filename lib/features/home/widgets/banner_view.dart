@@ -1,23 +1,24 @@
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:shimmer_animation/shimmer_animation.dart';
+import 'package:sixam_mart/common/models/module_model.dart';
+import 'package:sixam_mart/common/widgets/custom_image.dart';
+import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/banner/controllers/banner_controller.dart';
 import 'package:sixam_mart/features/item/controllers/item_controller.dart';
-import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/item/domain/models/basic_campaign_model.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
-import 'package:sixam_mart/common/models/module_model.dart';
-import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
+import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/common/widgets/custom_image.dart';
-import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
-import 'package:sixam_mart/features/store/screens/store_screen.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:shimmer_animation/shimmer_animation.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+
+import 'package:sixam_mart/features/store/screens/store_screen.dart';
 
 class BannerView extends StatelessWidget {
   final bool isFeatured;
@@ -40,7 +41,8 @@ class BannerView extends StatelessWidget {
             Expanded(
               child: CarouselSlider.builder(
                 options: CarouselOptions(
-                  autoPlay: true,
+                  autoPlay: bannerList.length > 1,
+                  enableInfiniteScroll: bannerList.length > 1,
                   enlargeCenterPage: true,
                   disableCenter: true,
                   viewportFraction: 1,
@@ -91,7 +93,7 @@ class BannerView extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                        boxShadow: [BoxShadow(offset : Offset(0, 2), color: Theme.of(context).disabledColor.withValues(alpha: 0.2), blurRadius: 8, spreadRadius: 2),],
+                        boxShadow: [BoxShadow(offset : const Offset(0, 2), color: Theme.of(context).disabledColor.withValues(alpha: 0.2), blurRadius: 8, spreadRadius: 2),],
                       ),
                       margin: const EdgeInsets.all(Dimensions.paddingSizeSmall),
                       child: ClipRRect(
@@ -109,20 +111,22 @@ class BannerView extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+            if(bannerList.length > 1) ... [
+              const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
-            Center(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).disabledColor.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: 1),
-                child: Text('${(bannerController.currentIndex) + 1}/${bannerList.length}',
-                    style: robotoBold.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 12),
+              Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).disabledColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: 1),
+                  child: Text('${(bannerController.currentIndex) + 1}/${bannerList.length}',
+                      style: robotoBold.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 12),
+                  ),
                 ),
               ),
-            ),
+            ],
 
           ],
         ) : Shimmer(

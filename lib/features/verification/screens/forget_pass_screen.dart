@@ -51,7 +51,8 @@ class _ForgetPassScreenState extends State<ForgetPassScreen> {
     if (!kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.delayed(const Duration(milliseconds: 800), () {
-          FocusScope.of(Get.context!).requestFocus(_numberFocusNode);
+          if (!mounted) return;
+          _numberFocusNode.requestFocus();
         });
       });
     }
@@ -61,6 +62,9 @@ class _ForgetPassScreenState extends State<ForgetPassScreen> {
   void dispose() {
     _numberController.dispose();
     _numberFocusNode.dispose();
+    _scrollController.dispose();
+    _emailController.dispose();
+    _emailFocusNode.dispose();
     super.dispose();
   }
 
@@ -95,7 +99,7 @@ class _ForgetPassScreenState extends State<ForgetPassScreen> {
                   padding: widget.fromDialog ? const EdgeInsets.all(Dimensions.paddingSizeExtremeLarge) : context.width > 700 ? const EdgeInsets.all(Dimensions.paddingSizeDefault) : const EdgeInsets.all(Dimensions.paddingSizeLarge),
                   child: Column(children: [
 
-                    Image.asset(Images.brandMark, height: 112),
+                    Image.asset(Images.logo, width: 135),
                     const SizedBox(height: Dimensions.paddingSizeLarge),
 
                     Padding(

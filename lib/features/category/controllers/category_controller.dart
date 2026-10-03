@@ -1,7 +1,6 @@
 import 'package:sixam_mart/common/enums/data_source_enum.dart';
 import 'package:sixam_mart/features/category/domain/models/category_model.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
-import 'package:sixam_mart/features/item/controllers/item_controller.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/features/category/domain/services/category_service_interface.dart';
 
@@ -63,36 +62,21 @@ class CategoryController extends GetxController implements GetxService {
     _categoryList = null;
   }
 
-  Future<void> getCategoryList(
-    bool reload, {
-    bool allCategory = false,
-    DataSourceEnum dataSource = DataSourceEnum.local,
-    bool fromRecall = false,
-  }) async {
-    if (_categoryList == null || reload || fromRecall) {
-      if (reload) {
+  Future<void> getCategoryList(bool reload, {bool allCategory = false, DataSourceEnum dataSource = DataSourceEnum.local, bool fromRecall = false}) async {
+    if(_categoryList == null || reload || fromRecall) {
+      if(reload) {
         _categoryList = null;
       }
       List<CategoryModel>? categoryList;
-      if (dataSource == DataSourceEnum.local) {
-        categoryList = await categoryServiceInterface.getCategoryList(
-          allCategory,
-          source: DataSourceEnum.local,
-        );
+      if(dataSource == DataSourceEnum.local) {
+        categoryList = await categoryServiceInterface.getCategoryList(allCategory, source: DataSourceEnum.local);
         _prepareCategoryList(categoryList);
-        getCategoryList(
-          false,
-          fromRecall: true,
-          allCategory: allCategory,
-          dataSource: DataSourceEnum.client,
-        );
+        getCategoryList(false, fromRecall: true, allCategory: allCategory, dataSource: DataSourceEnum.client);
       } else {
-        categoryList = await categoryServiceInterface.getCategoryList(
-          allCategory,
-          source: DataSourceEnum.client,
-        );
+        categoryList = await categoryServiceInterface.getCategoryList(allCategory, source: DataSourceEnum.client);
         _prepareCategoryList(categoryList);
       }
+
     }
   }
 
@@ -101,7 +85,7 @@ class CategoryController extends GetxController implements GetxService {
       _categoryList = [];
       _interestSelectedList = [];
       _categoryList!.addAll(categoryList);
-      for (int i = 0; i < _categoryList!.length; i++) {
+      for(int i = 0; i < _categoryList!.length; i++) {
         _interestSelectedList!.add(false);
       }
     }
@@ -112,13 +96,12 @@ class CategoryController extends GetxController implements GetxService {
     _subCategoryIndex = 0;
     _subCategoryList = null;
     _categoryItemList = null;
-    List<CategoryModel>? subCategoryList = await categoryServiceInterface
-        .getSubCategoryList(categoryID);
+    List<CategoryModel>? subCategoryList = await categoryServiceInterface.getSubCategoryList(categoryID);
     if (subCategoryList != null) {
-      _subCategoryList = [];
-      _subCategoryList!.add(
-        CategoryModel(id: int.parse(categoryID!), name: 'all'.tr),
-      );
+      _subCategoryList= [];
+      if(subCategoryList.length>1){
+        _subCategoryList!.add(CategoryModel(id: int.parse(categoryID!), name: 'all'.tr));
+      }
       _subCategoryList!.addAll(subCategoryList);
       getCategoryItemList(categoryID, 1, 'all', false);
     }
@@ -126,46 +109,26 @@ class CategoryController extends GetxController implements GetxService {
 
   void setSubCategoryIndex(int index, String? categoryID) {
     _subCategoryIndex = index;
-    if (_isStore) {
-      getCategoryStoreList(
-        _subCategoryIndex == 0
-            ? categoryID
-            : _subCategoryList![index].id.toString(),
-        1,
-        _type,
-        true,
-      );
-    } else {
-      getCategoryItemList(
-        _subCategoryIndex == 0
-            ? categoryID
-            : _subCategoryList![index].id.toString(),
-        1,
-        _type,
-        true,
-      );
+    if(_isStore) {
+      getCategoryStoreList(_subCategoryIndex == 0 ? categoryID : _subCategoryList![index].id.toString(), 1, _type, true);
+    }else {
+      getCategoryItemList(_subCategoryIndex == 0 ? categoryID : _subCategoryList![index].id.toString(), 1, _type, true);
     }
   }
 
-  void getCategoryItemList(
-    String? categoryID,
-    int offset,
-    String type,
-    bool notify,
-  ) async {
+  void getCategoryItemList(String? categoryID, int offset, String type, bool notify) async {
     _offset = offset;
-    if (offset == 1) {
-      if (_type == type) {
+    if(offset == 1) {
+      if(_type == type) {
         _isSearching = false;
       }
       _type = type;
-      if (notify) {
+      if(notify) {
         update();
       }
       _categoryItemList = null;
     }
-    ItemModel? categoryItem = await categoryServiceInterface
-        .getCategoryItemList(categoryID, offset, type);
+    ItemModel? categoryItem = await categoryServiceInterface.getCategoryItemList(categoryID, offset, type);
     if (categoryItem != null) {
       if (offset == 1) {
         _categoryItemList = [];
@@ -177,25 +140,19 @@ class CategoryController extends GetxController implements GetxService {
     update();
   }
 
-  void getCategoryStoreList(
-    String? categoryID,
-    int offset,
-    String type,
-    bool notify,
-  ) async {
+  void getCategoryStoreList(String? categoryID, int offset, String type, bool notify) async {
     _offset = offset;
-    if (offset == 1) {
-      if (_type == type) {
+    if(offset == 1) {
+      if(_type == type) {
         _isSearching = false;
       }
       _type = type;
-      if (notify) {
+      if(notify) {
         update();
       }
       _categoryStoreList = null;
     }
-    StoreModel? categoryStore = await categoryServiceInterface
-        .getCategoryStoreList(categoryID, offset, type);
+    StoreModel? categoryStore = await categoryServiceInterface.getCategoryStoreList(categoryID, offset, type);
     if (categoryStore != null) {
       if (offset == 1) {
         _categoryStoreList = [];
@@ -208,29 +165,21 @@ class CategoryController extends GetxController implements GetxService {
   }
 
   void searchData(String? query, String? categoryID, String type) async {
-    if ((_isStore && query!.isNotEmpty) ||
-        (!_isStore && query!.isNotEmpty /*&& query != _itemResultText*/ )) {
+    if((_isStore && query!.isNotEmpty) || (!_isStore && query!.isNotEmpty /*&& query != _itemResultText*/)) {
       _searchText = query;
       _type = type;
       _isStore ? _searchStoreList = null : _searchItemList = null;
       _isSearching = true;
       update();
 
-      Response response = await categoryServiceInterface.getSearchData(
-        query,
-        categoryID,
-        _isStore,
-        type,
-      );
+      Response response = await categoryServiceInterface.getSearchData(query, categoryID, _isStore, type);
       if (response.statusCode == 200) {
         if (query.isEmpty) {
           _isStore ? _searchStoreList = [] : _searchItemList = [];
         } else {
           if (_isStore) {
             _searchStoreList = [];
-            _searchStoreList!.addAll(
-              StoreModel.fromJson(response.body).stores!,
-            );
+            _searchStoreList!.addAll(StoreModel.fromJson(response.body).stores!);
             update();
           } else {
             _searchItemList = [];
@@ -245,7 +194,7 @@ class CategoryController extends GetxController implements GetxService {
   void toggleSearch() {
     _isSearching = !_isSearching;
     _searchItemList = [];
-    if (_categoryItemList != null) {
+    if(_categoryItemList != null) {
       _searchItemList!.addAll(_categoryItemList!);
     }
     update();
@@ -259,14 +208,7 @@ class CategoryController extends GetxController implements GetxService {
   Future<bool> saveInterest(List<int?> interests) async {
     _isLoading = true;
     update();
-    bool isSuccess = await categoryServiceInterface.saveUserInterests(
-      interests,
-    );
-
-    if (isSuccess && Get.isRegistered<ItemController>()) {
-      await Get.find<ItemController>().getSuggestedItemList(true);
-    }
-
+    bool isSuccess = await categoryServiceInterface.saveUserInterests(interests);
     _isLoading = false;
     update();
     return isSuccess;
@@ -289,4 +231,5 @@ class CategoryController extends GetxController implements GetxService {
     }
     return null;
   }
+
 }

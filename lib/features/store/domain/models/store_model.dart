@@ -1,3 +1,5 @@
+import 'package:sixam_mart/api/response_parser.dart';
+import 'package:sixam_mart/common/models/pagination_model.dart';
 class StoreModel {
   int? totalSize;
   String? limit;
@@ -7,14 +9,25 @@ class StoreModel {
   StoreModel({this.totalSize, this.limit, this.offset, this.stores});
 
   StoreModel.fromJson(Map<String, dynamic> json) {
-    totalSize = _toInt(json['total_size']);
-    limit = json['limit']?.toString();
-    offset = _toInt(json['offset']);
-    if (json['stores'] != null) {
+    // Paging arrives either flat (`total_size`/`limit`/`offset`) or nested under
+    // `pagination`. The field names here stay as they are — the app treats
+    // `offset` as a 1-based page number, which `current_page` maps onto directly.
+    final PaginationModel pagination = PaginationModel.fromJson(json);
+    totalSize = pagination.totalSize;
+    limit = pagination.limit?.toString();
+    offset = pagination.offset;
+    // The list is `data` now; `stores` and `providers` were the legacy keys, and
+    // are still checked first so a legacy body keeps its original precedence.
+    final List<dynamic>? storeList = (json['stores'] is List)
+        ? json['stores'] as List<dynamic>
+        : (json['providers'] is List)
+            ? json['providers'] as List<dynamic>
+            : ResponseParser.listOf(json);
+    if (storeList != null) {
       stores = [];
-      json['stores'].forEach((v) {
+      for (final dynamic v in storeList) {
         stores!.add(Store.fromJson(v));
-      });
+      }
     }
   }
 
@@ -86,6 +99,7 @@ class Store {
   String? storeBusinessModel;
   double? distance;
   double? distanceKm;
+  String? distanceLabel;
   int? minDeliveryTime;
   int? maxDeliveryTime;
   String? storeOpeningTime;
@@ -101,6 +115,9 @@ class Store {
   List<String?>? storeItemImageList;
   String? description;
   List<dynamic>? activeCoupons;
+  double? minPrice;
+  double? maxPrice;
+  bool? isHappyHourRunning;
 
 
   Store({
@@ -117,7 +134,8 @@ class Store {
     this.reviewsCount, this.storeSubscription, this.storeBusinessModel, this.distance, this.distanceKm,
     this.minDeliveryTime, this.maxDeliveryTime, this.storeOpeningTime, this.verifiedSeller, this.avgItemDiscountPercentage,
     this.offers, this.ad, this.proDiscount, this.isNew, this.sponsored,
-    this.offerLabel, this.storeItemImageList, this.description, this.activeCoupons,
+    this.offerLabel, this.storeItemImageList, this.description, this.activeCoupons, this.minPrice,
+    this.maxPrice, this.isHappyHourRunning,
   });
 
   Store.fromJson(Map<String, dynamic> json) {
@@ -138,7 +156,10 @@ class Store {
     scheduleOrder = _toBool(json['schedule_order']);
     avgRating = _toDouble(json['avg_rating']);
     tax = _toDouble(json['tax']);
-    ratingCount = _toInt(json['rating_count']);
+    // `rating_count` was dropped from stores/details and the list responses;
+    // `reviews_count` carries the value now. Falling back keeps the rating
+    // summary showing a real count instead of 0.
+    ratingCount = _toInt(json['rating_count']) ?? _toInt(json['reviews_count']);
     reviewsCount = _toInt(json['reviews_count']);
     selfDeliverySystem = _toInt(json['self_delivery_system']);
     posSystem = _toBool(json['pos_system']);
@@ -185,7 +206,10 @@ class Store {
     slug = json['slug']?.toString();
     announcementActive = json['announcement'] == 1 || json['announcement'] == true;
     announcementMessage = json['announcement_message']?.toString();
-    itemCount = _toInt(json['total_items']);
+    // `total_items` is now `items_count` on both the details and the list
+    // payloads. Store cards print this as "N items", so without the fallback
+    // every card reads "null items".
+    itemCount = _toInt(json['total_items']) ?? _toInt(json['items_count']);
     if (json['items'] != null) {
       items = <Items>[];
       json['items'].forEach((v) {
@@ -211,6 +235,11 @@ class Store {
     storeBusinessModel = json['store_business_model']?.toString();
     distance = _toDouble(json['distance']) ?? 0;
     distanceKm = _toDouble(json['distance_km']);
+    // The live API spells it `distance_label`; `distance_lavel` is accepted too
+    // because the misspelling has been seen in the wild and costs one `??` to
+    // survive. Blank strings are normalised to null so callers only have to test
+    // for null before falling back.
+    distanceLabel = _nonEmpty(json['distance_label']) ?? _nonEmpty(json['distance_lavel']);
     minDeliveryTime = _toInt(json['min_delivery_time']);
     maxDeliveryTime = _toInt(json['max_delivery_time']);
     storeOpeningTime = json['current_opening_time']?.toString();
@@ -224,11 +253,21 @@ class Store {
     isNew = _toBool(json['is_new']);
     sponsored = _toBool(json['sponsored']);
     offerLabel = json['offer_label']?.toString();
+    isHappyHourRunning = _toBool(json['is_happy_hour_running']);
     if (json['store_item_image_list'] != null) {
       storeItemImageList = [];
       json['store_item_image_list'].forEach((v) => storeItemImageList!.add(v));
     }
     description = json['description']?.toString();
+    // `price_range` arrives as a single-entry list — [{min_price, max_price}] —
+    // and is what the store item filter's price slider spans.
+    if (json['price_range'] is List && (json['price_range'] as List).isNotEmpty) {
+      final dynamic range = (json['price_range'] as List).first;
+      if (range is Map) {
+        minPrice = _toDouble(range['min_price']);
+        maxPrice = _toDouble(range['max_price']);
+      }
+    }
     if (json['active_coupons'] != null) {
       activeCoupons = json['active_coupons'] is List ? json['active_coupons'] : [];
     }
@@ -303,6 +342,7 @@ class Store {
     data['store_business_model'] = storeBusinessModel;
     data['distance'] = distance;
     data['distance_km'] = distanceKm;
+    data['distance_label'] = distanceLabel;
     data['verified_seller'] = verifiedSeller;
     data['avg_item_discount_percentage'] = avgItemDiscountPercentage;
     if (offers != null) {
@@ -315,9 +355,15 @@ class Store {
     data['is_new'] = isNew;
     data['sponsored'] = sponsored;
     data['offer_label'] = offerLabel;
+    data['is_happy_hour_running'] = isHappyHourRunning;
     data['store_item_image_list'] = storeItemImageList;
     data['description'] = description;
     data['active_coupons'] = activeCoupons;
+    if (minPrice != null || maxPrice != null) {
+      data['price_range'] = <Map<String, dynamic>>[
+        <String, dynamic>{'min_price': minPrice, 'max_price': maxPrice},
+      ];
+    }
     return data;
   }
 }
@@ -579,6 +625,7 @@ class Items {
 class TopItem {
   int? id;
   String? name;
+  String? slug;
   String? imageFullUrl;
   double? price;
   double? discountedPrice;
@@ -588,18 +635,29 @@ class TopItem {
   double? avgRating;
 
   TopItem({
-    this.id, this.name, this.imageFullUrl, this.price, this.discountedPrice,
-    this.discount, this.discountType, this.orderCount, this.avgRating,
+    this.id, this.name, this.slug, this.imageFullUrl, this.price,
+    this.discountedPrice, this.discount, this.discountType, this.orderCount, this.avgRating,
   });
 
   TopItem.fromJson(Map<String, dynamic> json) {
     id = _toInt(json['id']);
     name = json['name']?.toString();
-    imageFullUrl = json['image_full_url']?.toString();
-    price = _toDouble(json['price']);
+    slug = json['slug']?.toString();
+    // Service module top_items use `thumbnail_full_url`/`base_price`; fall back to
+    // those so the same TopItem renders service top-items too.
+    imageFullUrl = json['image_full_url']?.toString() ?? json['thumbnail_full_url']?.toString();
+    price = _toDouble(json['price']) ?? _toDouble(json['base_price']);
     discountedPrice = _toDouble(json['discounted_price']);
     discount = _toDouble(json['discount']);
     discountType = json['discount_type']?.toString();
+    // Service top_items don't carry a pre-computed discounted price — derive it so
+    // the card shows the real current price (and a meaningful strikethrough).
+    if (discountedPrice == null && price != null && (discount ?? 0) > 0) {
+      final double computed = discountType == 'percent'
+          ? price! - (price! * (discount! / 100))
+          : price! - discount!;
+      discountedPrice = computed < 0 ? 0 : computed;
+    }
     orderCount = _toInt(json['order_count']);
     avgRating = _toDouble(json['avg_rating']);
   }
@@ -608,6 +666,7 @@ class TopItem {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
     data['name'] = name;
+    data['slug'] = slug;
     data['image_full_url'] = imageFullUrl;
     data['price'] = price;
     data['discounted_price'] = discountedPrice;
@@ -717,6 +776,16 @@ double? _toDouble(dynamic value) {
   return double.tryParse(value.toString());
 }
 
+/// A trimmed string, or null when the value is absent or blank.
+///
+/// A display label the API sent as `""` is nothing to show, and callers should
+/// not each have to test both null and empty before falling back.
+String? _nonEmpty(dynamic value) {
+  if (value == null) return null;
+  final String text = value.toString().trim();
+  return text.isEmpty ? null : text;
+}
+
 bool? _toBool(dynamic value) {
   if (value == null) return null;
   if (value is bool) return value;
@@ -726,5 +795,3 @@ bool? _toBool(dynamic value) {
   if (s == 'false' || s == '0') return false;
   return null;
 }
-
-typedef TopItems = TopItem;

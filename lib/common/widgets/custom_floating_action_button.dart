@@ -15,7 +15,7 @@ class CustomFloatingActionButton extends StatelessWidget {
       child: Container(width: 40, height: 40,
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(50),
           // boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 6, spreadRadius: 0.5, offset: const Offset(0, 4))],
         ),
         child: FloatingActionButton(
@@ -23,7 +23,7 @@ class CustomFloatingActionButton extends StatelessWidget {
           onPressed: onTap,
           backgroundColor: Colors.transparent,
           elevation: 0,
-          child: Icon(icon, size: 32, color: Theme.of(context).primaryColor),
+          child: Icon(icon, size: 28, color: Theme.of(context).textTheme.bodyLarge!.color),
         ),
       ),
     );

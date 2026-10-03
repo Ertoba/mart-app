@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +10,7 @@ class RatingBar extends StatelessWidget {
   final double size;
   final int? ratingCount;
   final bool showRatingText;
-  const RatingBar({super.key, required this.rating, required this.ratingCount, this.size = 18, this.showRatingText = true});
+  const RatingBar({super.key, required this.rating, required this.ratingCount, this.size = 18, this.showRatingText = false});
 
   @override
   Widget build(BuildContext context) {
@@ -31,8 +32,8 @@ class RatingBar extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(0, 4, 0, 0),
           child: Row(
             children: [
-              if (showRatingText) Text(rating?.toStringAsFixed(1)??'0', style: robotoRegular.copyWith(fontSize: size*0.8, color: Theme.of(context).textTheme.bodyLarge?.color), textDirection: TextDirection.ltr),
-              if (showRatingText) Text(' ($ratingCount)', style: robotoRegular.copyWith(fontSize: size*0.8, color: Theme.of(context).disabledColor), textDirection: TextDirection.ltr),
+              Text(rating?.toStringAsFixed(1)??'0', style: robotoRegular.copyWith(fontSize: size*0.8, color: Theme.of(context).textTheme.bodyLarge?.color), textDirection: TextDirection.ltr),
+              Text(' ($ratingCount${showRatingText ? ' ${'review'.tr}' : ''})', style: robotoRegular.copyWith(fontSize: size*0.8, color: Theme.of(context).disabledColor), textDirection: TextDirection.ltr),
             ],
           ),
         ),

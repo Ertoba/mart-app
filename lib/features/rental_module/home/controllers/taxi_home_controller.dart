@@ -15,6 +15,7 @@ class TaxiHomeController extends GetxController implements GetxService {
 
   }
 
+
   Future<void> getTaxiBannerList(bool reload, {DataSourceEnum source = DataSourceEnum.local}) async {
 
   }
@@ -30,4 +31,5 @@ class TaxiHomeController extends GetxController implements GetxService {
   Future<bool> setReelOrderId(int vehicleId) async {
     return false;
   }
+
 }

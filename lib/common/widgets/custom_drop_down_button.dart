@@ -17,6 +17,7 @@ class CustomDropdownButton extends StatefulWidget {
   final FontWeight? titleFontWeight;
   final String? selectedValue;
   final List<DropdownMenuItem<String>>? dropdownMenuItems;
+  final Widget? iconWidget;
 
   const CustomDropdownButton({
     super.key,
@@ -32,6 +33,7 @@ class CustomDropdownButton extends StatefulWidget {
     this.titleFontWeight,
     this.selectedValue,
     this.dropdownMenuItems,
+    this.iconWidget,
   });
 
   @override
@@ -90,7 +92,7 @@ class _CustomDropdownButtonState extends State<CustomDropdownButton> {
           padding: EdgeInsets.only(right: 8),
         ),
         iconStyleData: IconStyleData(
-          icon: Icon(Icons.keyboard_arrow_down, color: Theme.of(context).disabledColor, size: 30),
+          icon: widget.iconWidget ?? Icon(Icons.keyboard_arrow_down, color: Theme.of(context).disabledColor, size: 30),
         ),
         dropdownStyleData: DropdownStyleData(
           maxHeight: 300,

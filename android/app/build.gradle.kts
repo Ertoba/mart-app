@@ -6,7 +6,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
-    //id("com.google.firebase.crashlytics")
+    id("com.google.firebase.crashlytics")
 }
 
 val keystoreProperties = Properties()
@@ -14,29 +14,8 @@ val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
-fun hasKeystoreValue(key: String): Boolean {
-    return (keystoreProperties[key] as String?)?.isNotBlank() == true
-}
-val hasReleaseKeystore = keystorePropertiesFile.exists()
-        && hasKeystoreValue("keyAlias")
-        && hasKeystoreValue("keyPassword")
-        && hasKeystoreValue("storeFile")
-        && hasKeystoreValue("storePassword")
-
-if (!hasReleaseKeystore) {
-    gradle.taskGraph.whenReady {
-        if (allTasks.any { it.name.contains("Release", ignoreCase = true) }) {
-            throw GradleException("Release signing requires android/key.properties with the upload keystore configuration.")
-        }
-    }
-}
 
 android {
-    // Preserve native-library extraction through the supported AGP DSL.
-    packaging {
-        jniLibs.useLegacyPackaging = true
-    }
-
     namespace = "ge.mili.customer"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
@@ -71,38 +50,9 @@ android {
 
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-            signingConfig = if (hasReleaseKeystore) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig = signingConfigs.getByName("debug") // or "release" if you have real keystore
         }
     }
-
-
-}
-
-// Fix for AGP 8.10.0: manually copy flutter_assets into the merge output with correct path
-project.afterEvaluate {
-    val buildDir = project.layout.buildDirectory.get()
-    val flutterAssetsDir = "$buildDir/intermediates/flutter/release/flutter_assets"
-    val mergeOutputDir = "$buildDir/intermediates/assets/release/mergeReleaseAssets"
-
-    val fixFlutterAssets = project.tasks.register("fixFlutterAssetsRelease", Copy::class.java) {
-        dependsOn("compileFlutterBuildRelease")
-        dependsOn("mergeReleaseAssets")
-        from(flutterAssetsDir)
-        into("$mergeOutputDir/flutter_assets")
-    }
-
-    project.tasks.findByName("compressReleaseAssets")?.dependsOn(fixFlutterAssets)
-    project.tasks.findByName("packageRelease")?.dependsOn(fixFlutterAssets)
 }
 
 flutter {
@@ -111,9 +61,6 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
-    implementation("androidx.core:core:1.17.0")
-    implementation("androidx.datastore:datastore-preferences:1.2.1")
     implementation("com.google.firebase:firebase-messaging:23.4.1")
-    implementation("com.google.android.gms:play-services-base:17.6.0")
-    implementation("com.google.android.gms:play-services-wallet:19.4.0")
+    implementation("com.facebook.android:facebook-android-sdk:latest.release")
 }

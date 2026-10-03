@@ -2,11 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/custom_asset_image_widget.dart';
+import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/common/widgets/custom_tool_tip_widget.dart';
-import 'package:sixam_mart/features/item/controllers/item_controller.dart';
-import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
+import 'package:sixam_mart/common/widgets/organic_tag.dart';
+import 'package:sixam_mart/common/widgets/rating_bar.dart';
 import 'package:sixam_mart/features/favourite/controllers/favourite_controller.dart';
+import 'package:sixam_mart/features/item/controllers/item_controller.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
@@ -14,22 +17,19 @@ import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
-import 'package:sixam_mart/common/widgets/organic_tag.dart';
-import 'package:sixam_mart/common/widgets/rating_bar.dart';
-import 'package:sixam_mart/common/widgets/verified_seller_badge.dart';
 
 class ItemTitleViewWidget extends StatelessWidget {
   final Item? item;
   final bool inStorePage;
   final bool isCampaign;
-  final bool inStock;
-  const ItemTitleViewWidget({super.key, required this.item,  this.inStorePage = false, this.isCampaign = false, required this.inStock});
+  final bool isOutOfStock;
+  final String? stockIndicateText;
+  const ItemTitleViewWidget({super.key, required this.item,  this.inStorePage = false, this.isCampaign = false, required this.isOutOfStock, this.stockIndicateText});
 
   @override
   Widget build(BuildContext context) {
     if (kDebugMode) {
-      print(inStock ? 'out_of_stock'.tr : 'in_stock'.tr);
+      print(isOutOfStock ? 'out_of_stock'.tr : 'in_stock'.tr);
     }
     double? startingPrice;
     double? endingPrice;
@@ -89,18 +89,18 @@ class ItemTitleViewWidget extends StatelessWidget {
                       style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).disabledColor),
                     ),
                   )),
-                  if (item!.verifiedSeller == true) ...[
-                    const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                    const VerifiedSellerBadge(verified: true, size: 15),
-                  ],
+                  item?.verifiedSeller == 1 ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall),
+                    child: Image.asset(Images.verifiedBadge, width: 16, height: 16),
+                  ) : const SizedBox.shrink(),
 
                   ResponsiveHelper.isDesktop(context) ? Container(
                     margin: const EdgeInsets.only(left: Dimensions.paddingSizeSmall),
                     padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeExtraSmall),
                     decoration: BoxDecoration(
-                      color: inStock ? Colors.red.withValues(alpha: 0.1) : Theme.of(context).primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                      color: isOutOfStock ? Colors.red.withValues(alpha: 0.1) : Theme.of(context).primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
                     ),
-                    child: Text(inStock ? 'out_of_stock'.tr : 'in_stock'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)),
+                    child: Text(isOutOfStock ? 'out_of_stock'.tr : (stockIndicateText ?? 'in_stock'.tr), style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)),
                   ) : const SizedBox(),
                 ]),
               ),
@@ -108,15 +108,15 @@ class ItemTitleViewWidget extends StatelessWidget {
               ResponsiveHelper.isDesktop(context) ? const SizedBox() : Container(
                 padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeExtraSmall),
                 decoration: BoxDecoration(
-                  color: inStock ? Colors.red.withValues(alpha: 0.1) : Theme.of(context).primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                  color: isOutOfStock ? Colors.red.withValues(alpha: 0.1) : Theme.of(context).primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
                 ),
-                child: Text(inStock ? 'out_of_stock'.tr : 'in_stock'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)),
+                child: Text(isOutOfStock ? 'out_of_stock'.tr : (stockIndicateText ?? 'in_stock'.tr), style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)),
               ),
             ]),
             // const SizedBox(height: 5),
 
             Padding(
-              padding: const EdgeInsets.fromLTRB(0, 5, 5, 5),
+              padding: const EdgeInsets.fromLTRB(0, 10, 5, 5),
               child: Text(
                 item?.name ?? '',
                 style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeExtraLarge),
@@ -265,9 +265,9 @@ class ItemTitleViewWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall, vertical: 3),
             decoration: BoxDecoration(
-              color: inStock ? Colors.red.shade50 : Colors.green.shade50, borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+              color: isOutOfStock ? Colors.red.shade50 : Colors.green.shade50, borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
             ),
-            child: Text(inStock ? 'out_of_stock'.tr : 'in_stock'.tr, style: robotoRegular.copyWith(
+            child: Text(isOutOfStock ? 'out_of_stock'.tr : 'in_stock'.tr, style: robotoRegular.copyWith(
               color: Theme.of(context).disabledColor,
               fontSize: Dimensions.fontSizeOverSmall,
             )),
@@ -288,13 +288,10 @@ class ItemTitleViewWidget extends StatelessWidget {
           },
           child: Padding(
             padding: const EdgeInsets.fromLTRB(0, 5, 5, 5),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Flexible(child: Text(item?.storeName ?? '', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor))),
-              if (item?.verifiedSeller == true) ...[
-                const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                const VerifiedSellerBadge(verified: true, size: 14),
-              ],
-            ]),
+            child: Text(
+              item?.storeName ?? '',
+              style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor),
+            ),
           ),
         ),
 

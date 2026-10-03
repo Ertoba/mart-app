@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sixam_mart/common/widgets/add_favourite_view.dart';
+import 'package:sixam_mart/common/widgets/cart_count_view.dart';
+import 'package:sixam_mart/common/widgets/custom_image.dart';
 import 'package:sixam_mart/common/widgets/custom_ink_well.dart';
+import 'package:sixam_mart/common/widgets/discount_tag.dart';
+import 'package:sixam_mart/common/widgets/hover/on_hover.dart';
 import 'package:sixam_mart/common/widgets/hover/text_hover.dart';
+import 'package:sixam_mart/common/widgets/organic_tag.dart';
 import 'package:sixam_mart/features/item/controllers/item_controller.dart';
-import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/common/widgets/add_favourite_view.dart';
-import 'package:sixam_mart/common/widgets/cart_count_view.dart';
-import 'package:sixam_mart/common/widgets/custom_image.dart';
-import 'package:sixam_mart/common/widgets/discount_tag.dart';
-import 'package:sixam_mart/common/widgets/hover/on_hover.dart';
-import 'package:sixam_mart/common/widgets/organic_tag.dart';
 
 class MedicineItemCard extends StatelessWidget {
   final Item item;
-  const MedicineItemCard({super.key, required this.item});
+  final bool fromShop;
+  const MedicineItemCard({super.key, required this.item, this.fromShop = false});
 
   @override
   Widget build(BuildContext context) {
@@ -60,9 +61,7 @@ class MedicineItemCard extends StatelessWidget {
                       ),
                     ),
 
-                    AddFavouriteView(
-                      item: item,
-                    ),
+                    AddFavouriteView(item: item),
 
                     DiscountTag(
                       discount: discount,
@@ -93,10 +92,19 @@ class MedicineItemCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: isShop ? CrossAxisAlignment.center : CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
 
-                      Text(
-                        item.storeName ?? '',
-                        maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: robotoRegular.copyWith(color: Theme.of(context).disabledColor, fontSize: Dimensions.fontSizeSmall),
+                      Row(
+                        mainAxisAlignment: fromShop ? MainAxisAlignment.center : MainAxisAlignment.start,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              item.storeName ?? '',
+                              maxLines: 1, overflow: TextOverflow.ellipsis,
+                              style: robotoRegular.copyWith(color: Theme.of(context).disabledColor, fontSize: Dimensions.fontSizeSmall),
+                            ),
+                          ),
+                          const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                          item.verifiedSeller == 1 ? Image.asset(Images.verifiedBadge, width: 14, height: 14) : const SizedBox.shrink(),
+                        ],
                       ),
 
                       Text(item.name ?? '', style: robotoBold,
@@ -116,7 +124,7 @@ class MedicineItemCard extends StatelessWidget {
 
                       if(isShop)
                         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          Icon(Icons.star, size: 15, color: Colors.orange),
+                          const Icon(Icons.star, size: 15, color: Colors.orange),
                           const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                           Text(item.avgRating.toString(), style: robotoRegular),

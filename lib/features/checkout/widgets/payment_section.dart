@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/checkout/controllers/checkout_controller.dart';
-import 'package:sixam_mart/features/payment/domain/models/keepz_payment_option.dart';
-import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
+import 'package:sixam_mart/features/checkout/widgets/payment_method_bottom_sheet.dart';
+import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
+import 'package:sixam_mart/helper/string_extension.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/features/checkout/widgets/payment_method_bottom_sheet.dart';
 
 class PaymentSection extends StatelessWidget {
   final int? storeId;
@@ -30,506 +30,280 @@ class PaymentSection extends StatelessWidget {
     required this.isOfflinePaymentActive,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    if (storeId == null && !ResponsiveHelper.isDesktop(context)) {
-      return _buildMobilePaymentOptions(context);
+  bool get _anyMethodActive =>
+      isCashOnDeliveryActive || isDigitalPaymentActive || isWalletActive || isOfflinePaymentActive;
+
+  void _openPicker(BuildContext context) {
+    if (!_anyMethodActive) {
+      showCustomSnackBar('no_payment_method_found'.tr);
+      return;
     }
-
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              storeId != null
-                  ? 'payment_method'.tr
-                  : 'choose_payment_method'.tr,
-              style: robotoMedium,
-            ),
-
-            storeId == null && !ResponsiveHelper.isDesktop(context)
-                ? InkWell(
-                    onTap: () {
-                      if (isCashOnDeliveryActive ||
-                          isDigitalPaymentActive ||
-                          isWalletActive ||
-                          isOfflinePaymentActive) {
-                        Get.bottomSheet(
-                          PaymentMethodBottomSheet(
-                            isCashOnDeliveryActive: isCashOnDeliveryActive,
-                            isDigitalPaymentActive: isDigitalPaymentActive,
-                            totalPrice: total,
-                            isOfflinePaymentActive: isOfflinePaymentActive,
-                          ),
-                          backgroundColor: Colors.transparent,
-                          isScrollControlled: true,
-                        );
-                      } else {
-                        showCustomSnackBar('no_payment_method_found'.tr);
-                      }
-                    },
-                    child: Image.asset(
-                      Images.paymentSelect,
-                      height: 24,
-                      width: 24,
-                    ),
-                  )
-                : const SizedBox(),
-          ],
-        ),
-
-        !ResponsiveHelper.isDesktop(context)
-            ? const Divider()
-            : const SizedBox(height: Dimensions.paddingSizeSmall),
-        SizedBox(
-          height: !ResponsiveHelper.isDesktop(context)
-              ? Dimensions.paddingSizeSmall
-              : 0,
-        ),
-
-        Container(
-          decoration: ResponsiveHelper.isDesktop(context)
-              ? BoxDecoration(
-                  borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-                  color: Theme.of(context).cardColor,
-                  border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).disabledColor.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                )
-              : const BoxDecoration(),
-          padding: ResponsiveHelper.isDesktop(context)
-              ? const EdgeInsets.symmetric(
-                  vertical: Dimensions.paddingSizeSmall,
-                  horizontal: Dimensions.radiusDefault,
-                )
-              : EdgeInsets.zero,
-          child: storeId != null
-              ? checkoutController.paymentMethodIndex == 0
-                    ? Row(
-                        children: [
-                          Image.asset(
-                            Images.cash,
-                            width: 20,
-                            height: 20,
-                            color: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium!.color,
-                          ),
-                          const SizedBox(width: Dimensions.paddingSizeSmall),
-
-                          Expanded(
-                            child: Text(
-                              'cash_on_delivery'.tr,
-                              style: robotoMedium.copyWith(
-                                fontSize: Dimensions.fontSizeSmall,
-                                color: Theme.of(context).disabledColor,
-                              ),
-                            ),
-                          ),
-
-                          Text(
-                            PriceConverter.convertPrice(total),
-                            textDirection: TextDirection.ltr,
-                            style: robotoMedium.copyWith(
-                              fontSize: Dimensions.fontSizeLarge,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          ),
-                        ],
-                      )
-                    : const SizedBox()
-              : InkWell(
-                  onTap: () {
-                    if (ResponsiveHelper.isDesktop(context) &&
-                        checkoutController.paymentMethodIndex == -1) {
-                      if (isCashOnDeliveryActive ||
-                          isDigitalPaymentActive ||
-                          isWalletActive ||
-                          isOfflinePaymentActive) {
-                        Get.dialog(
-                          Dialog(
-                            backgroundColor: Colors.transparent,
-                            child: PaymentMethodBottomSheet(
-                              isCashOnDeliveryActive: isCashOnDeliveryActive,
-                              isDigitalPaymentActive: isDigitalPaymentActive,
-                              totalPrice: total,
-                              isOfflinePaymentActive: isOfflinePaymentActive,
-                            ),
-                          ),
-                        );
-                      } else {
-                        showCustomSnackBar('no_payment_method_found'.tr);
-                      }
-                    }
-                  },
-                  child: Row(
-                    children: [
-                      checkoutController.paymentMethodIndex != -1
-                          ? _SelectedPaymentIcon(
-                              paymentMethodIndex:
-                                  checkoutController.paymentMethodIndex,
-                              keepzPaymentOption:
-                                  checkoutController.selectedKeepzPaymentOption,
-                            )
-                          : Icon(
-                              !ResponsiveHelper.isDesktop(context)
-                                  ? Icons.wallet_outlined
-                                  : Icons.add_circle_outline_sharp,
-                              size: 18,
-                              color: !ResponsiveHelper.isDesktop(context)
-                                  ? Theme.of(context).disabledColor
-                                  : Theme.of(context).primaryColor,
-                            ),
-                      const SizedBox(width: Dimensions.paddingSizeSmall),
-
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Flexible(
-                              child: Builder(
-                                builder: (context) {
-                                  //print('=======pay: ${checkoutController.paymentMethodIndex}==== ${checkoutController.isPartialPay}');
-                                  return Text(
-                                    checkoutController.paymentMethodIndex == 0
-                                        ? '${'cash_on_delivery'.tr} ${checkoutController.isPartialPay ? '(${'partial'.tr})' : ''}'
-                                        : checkoutController
-                                                      .paymentMethodIndex ==
-                                                  1 &&
-                                              !checkoutController.isPartialPay
-                                        ? 'wallet_payment'.tr
-                                        : checkoutController
-                                                  .paymentMethodIndex ==
-                                              2
-                                        ? '${_selectedDigitalPaymentTitle(checkoutController)}${checkoutController.isPartialPay ? ' (${'partial'.tr})' : ''}'
-                                        : checkoutController
-                                                  .paymentMethodIndex ==
-                                              3
-                                        ? '${'offline_payment'.tr}(${checkoutController.offlineMethodList![checkoutController.selectedOfflineBankIndex].methodName}${checkoutController.isPartialPay ? ' - ${'partial'.tr}' : ''})'
-                                        : !ResponsiveHelper.isDesktop(context)
-                                        ? 'select_payment_method'.tr
-                                        : 'add_payment_method'.tr,
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                    style: robotoMedium.copyWith(
-                                      fontSize: Dimensions.fontSizeSmall,
-                                      color:
-                                          !ResponsiveHelper.isDesktop(context)
-                                          ? Theme.of(context).disabledColor
-                                          : checkoutController
-                                                    .paymentMethodIndex ==
-                                                -1
-                                          ? Theme.of(context).primaryColor
-                                          : Theme.of(context).disabledColor,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-
-                            checkoutController.paymentMethodIndex == -1 &&
-                                    !ResponsiveHelper.isDesktop(context)
-                                ? Padding(
-                                    padding: const EdgeInsets.only(
-                                      left: Dimensions.paddingSizeExtraSmall,
-                                    ),
-                                    child: Icon(
-                                      Icons.warning_rounded,
-                                      size: 16,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.error,
-                                    ),
-                                  )
-                                : const SizedBox(),
-                          ],
-                        ),
-                      ),
-                      checkoutController.paymentMethodIndex != -1
-                          ? PriceConverter.convertAnimationPrice(
-                              checkoutController.viewTotalPrice,
-                              textStyle: robotoMedium.copyWith(
-                                fontSize: Dimensions.fontSizeLarge,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                            )
-                          : const SizedBox(),
-                      SizedBox(
-                        width: ResponsiveHelper.isDesktop(context)
-                            ? Dimensions.paddingSizeSmall
-                            : 0,
-                      ),
-
-                      storeId == null && ResponsiveHelper.isDesktop(context)
-                          ? InkWell(
-                              onTap: () {
-                                if (isCashOnDeliveryActive ||
-                                    isDigitalPaymentActive ||
-                                    isWalletActive ||
-                                    isOfflinePaymentActive) {
-                                  Get.dialog(
-                                    Dialog(
-                                      backgroundColor: Colors.transparent,
-                                      child: PaymentMethodBottomSheet(
-                                        isCashOnDeliveryActive:
-                                            isCashOnDeliveryActive,
-                                        isDigitalPaymentActive:
-                                            isDigitalPaymentActive,
-                                        totalPrice: total,
-                                        isOfflinePaymentActive:
-                                            isOfflinePaymentActive,
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  showCustomSnackBar(
-                                    'no_payment_method_found'.tr,
-                                  );
-                                }
-                              },
-                              child: Image.asset(
-                                Images.paymentSelect,
-                                height: 24,
-                                width: 24,
-                              ),
-                            )
-                          : const SizedBox(),
-                    ],
-                  ),
-                ),
-        ),
-      ],
+    final sheet = PaymentMethodBottomSheet(
+      isCashOnDeliveryActive: isCashOnDeliveryActive,
+      isDigitalPaymentActive: isDigitalPaymentActive,
+      totalPrice: total,
+      isOfflinePaymentActive: isOfflinePaymentActive,
     );
+    if (ResponsiveHelper.isDesktop(context)) {
+      Get.dialog(Dialog(backgroundColor: Colors.transparent, child: sheet));
+    } else {
+      Get.bottomSheet(sheet, backgroundColor: Colors.transparent, isScrollControlled: true);
+    }
   }
 
-  Widget _buildMobilePaymentOptions(BuildContext context) {
-    final activeDigitalMethods =
-        Get.find<SplashController>().configModel?.activePaymentMethodList ?? [];
-    final bool keepzGatewayActive =
-        isDigitalPaymentActive &&
-        activeDigitalMethods.any(
-          (paymentMethod) => paymentMethod.getWay == 'keepz',
-        );
+  @override
+  Widget build(BuildContext context) {
+    return GetBuilder<CheckoutController>(builder: (controller) {
+      final bool isReorderCod = storeId != null && controller.paymentMethodIndex == 0;
+      final bool methodSelected = controller.paymentMethodIndex != -1;
+      final bool partial = controller.isPartialPay;
 
-    Widget paymentOption({
-      required String label,
-      required bool enabled,
-      required bool selected,
-      required VoidCallback onTap,
-      Widget? icon,
-    }) {
-      return InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(
-            children: [
-              Icon(
-                selected
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked,
-                size: 24,
-                color: selected
-                    ? Theme.of(context).primaryColor
-                    : Theme.of(context).disabledColor.withValues(alpha: 0.75),
-              ),
-              const SizedBox(width: Dimensions.paddingSizeSmall),
-              SizedBox(
-                width: 52,
-                height: 30,
-                child: Center(
-                  child:
-                      icon ??
-                      Image.asset(
-                        Images.digitalPayment,
-                        height: 24,
-                        width: 24,
-                        fit: BoxFit.contain,
-                        color: enabled
-                            ? Theme.of(context).textTheme.bodyLarge!.color
-                            : Theme.of(context).disabledColor,
-                      ),
-                ),
-              ),
-              const SizedBox(width: Dimensions.paddingSizeSmall),
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: robotoMedium.copyWith(
-                    fontSize: Dimensions.fontSizeDefault,
-                    color: enabled
-                        ? Theme.of(context).textTheme.bodyLarge!.color
-                        : Theme.of(context).disabledColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+
+        _PaymentHeader(
+          showEdit: methodSelected && !isReorderCod,
+          onEdit: () => _openPicker(context),
         ),
-      );
-    }
+        const SizedBox(height: Dimensions.paddingSizeDefault),
 
-    final bool hasPrimaryPayment = isCashOnDeliveryActive || keepzGatewayActive;
-    final List<Widget> paymentRows = <Widget>[];
-
-    void addPaymentRow(Widget row) {
-      if (paymentRows.isNotEmpty) {
-        paymentRows.add(const Divider(height: 1));
-      }
-      paymentRows.add(row);
-    }
-
-    if (isCashOnDeliveryActive) {
-      addPaymentRow(
-        paymentOption(
-          label: 'cash_on_delivery'.tr,
-          enabled: true,
-          selected: checkoutController.paymentMethodIndex == 0,
-          icon: Image.asset(
-            Images.cash,
-            width: 24,
-            height: 24,
-            fit: BoxFit.contain,
-            color: Theme.of(context).textTheme.bodyLarge!.color,
-          ),
-          onTap: () => checkoutController.setPaymentMethod(0),
-        ),
-      );
-    }
-
-    if (keepzGatewayActive) {
-      final KeepzPaymentOption option = KeepzPaymentOption.defaultOption;
-      addPaymentRow(
-        paymentOption(
-          label: 'digital_payment'.tr,
-          enabled: true,
-          selected:
-              checkoutController.paymentMethodIndex == 2 &&
-              checkoutController.digitalPaymentName == 'keepz' &&
-              checkoutController.keepzPaymentOptionKey == option.key,
-          icon: const _VisaIcon(),
-          onTap: () {
-            checkoutController.setPaymentMethod(2, isUpdate: false);
-            checkoutController.changeKeepzPaymentOption(option);
-          },
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('choose_payment_method'.tr, style: robotoMedium),
-            Image.asset(
-              Images.cash,
-              width: 26,
-              height: 26,
-              color: Theme.of(context).primaryColor,
-            ),
-          ],
-        ),
-        const SizedBox(height: Dimensions.paddingSizeSmall),
-        if (hasPrimaryPayment)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: Dimensions.paddingSizeSmall,
-              vertical: Dimensions.paddingSizeExtraSmall,
-            ),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-              border: Border.all(
-                color: Theme.of(context).primaryColor.withValues(alpha: 0.55),
-              ),
-            ),
-            child: Column(children: paymentRows),
+        if (isReorderCod)
+          _ReorderCodReadonlyRow(total: total)
+        else if (!methodSelected)
+          _PaymentEmptyButton(onTap: () => _openPicker(context))
+        else if (partial)
+          _PaymentPartialRows(
+            controller: controller,
+            total: total,
           )
         else
+          _PaymentSingleRow(
+            controller: controller,
+            total: controller.viewTotalPrice ?? total,
+          ),
+      ]);
+    });
+  }
+}
+
+class _PaymentHeader extends StatelessWidget {
+  final bool showEdit;
+  final VoidCallback onEdit;
+
+  const _PaymentHeader({required this.showEdit, required this.onEdit});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('payment_method'.tr, style: robotoBold),
+          const SizedBox(height: 2),
           Text(
-            'no_payment_method_found'.tr,
+            'add_at_least_one_option_to_pay_your_order'.tr,
             style: robotoRegular.copyWith(
-              color: Theme.of(context).colorScheme.error,
+              fontSize: Dimensions.fontSizeSmall,
+              color: Theme.of(context).disabledColor,
             ),
           ),
-      ],
-    );
-  }
-
-  String _selectedDigitalPaymentTitle(CheckoutController checkoutController) {
-    if (checkoutController.digitalPaymentName == 'keepz') {
-      return checkoutController.selectedKeepzPaymentOption?.title ??
-          'digital_payment'.tr;
-    }
-
-    return 'digital_payment'.tr;
+        ]),
+      ),
+      if (showEdit)
+        GestureDetector(
+          onTap: onEdit,
+          behavior: HitTestBehavior.opaque,
+          child: Padding(
+            padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
+            child: Icon(Icons.edit_outlined, size: 18, color: Theme.of(context).primaryColor),
+          ),
+        ),
+    ]);
   }
 }
 
-class _SelectedPaymentIcon extends StatelessWidget {
-  final int paymentMethodIndex;
-  final KeepzPaymentOption? keepzPaymentOption;
+class _PaymentEmptyButton extends StatelessWidget {
+  final VoidCallback onTap;
 
-  const _SelectedPaymentIcon({
-    required this.paymentMethodIndex,
-    this.keepzPaymentOption,
-  });
+  const _PaymentEmptyButton({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    if (paymentMethodIndex == 2 && keepzPaymentOption != null) {
-      return const _VisaIcon();
-    }
-
-    if (paymentMethodIndex == 2) {
-      return const _VisaIcon();
-    }
-
-    return Image.asset(
-      paymentMethodIndex == 0
-          ? Images.cash
-          : paymentMethodIndex == 1
-          ? Images.wallet
-          : Images.cash,
-      width: 20,
-      height: 20,
-      color: Theme.of(context).textTheme.bodyMedium!.color,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
+        decoration: BoxDecoration(
+          color: Theme.of(context).disabledColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.add_circle_outline, size: 20, color: Theme.of(context).textTheme.bodyLarge!.color),
+          const SizedBox(width: Dimensions.paddingSizeSmall),
+          Text(
+            'add_payment_method'.tr,
+            style: robotoBold.copyWith(
+              fontSize: Dimensions.fontSizeDefault,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
+          ),
+        ]),
+      ),
     );
   }
 }
 
-class _VisaIcon extends StatelessWidget {
-  const _VisaIcon();
+class _PaymentSingleRow extends StatelessWidget {
+  final CheckoutController controller;
+  final double total;
+
+  const _PaymentSingleRow({required this.controller, required this.total});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 38,
-      height: 24,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(
-          color: Theme.of(context).disabledColor.withValues(alpha: 0.25),
-        ),
-      ),
-      child: Text(
-        'VISA',
-        style: robotoBlack.copyWith(
-          color: const Color(0xFF1A4DB3),
-          fontSize: 9,
-        ),
-      ),
+    return _PaymentMethodRow(
+      iconAsset: _PaymentRowHelper.iconForIndex(controller.paymentMethodIndex),
+      label: _PaymentRowHelper.labelForIndex(controller),
+      amount: total,
     );
+  }
+}
+
+class _PaymentPartialRows extends StatelessWidget {
+  final CheckoutController controller;
+  final double total;
+
+  const _PaymentPartialRows({required this.controller, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    final double walletBalance = Get.find<ProfileController>().userInfoModel?.walletBalance ?? 0;
+    final double walletShare = walletBalance.clamp(0, total).toDouble();
+    final double remainder = (total - walletShare).clamp(0, total).toDouble();
+    final bool secondarySet = controller.paymentMethodIndex != -1 && controller.paymentMethodIndex != 1;
+
+    return Column(children: [
+      _PaymentMethodRow(
+        iconAsset: Images.wallet,
+        label: 'wallet_payment'.tr,
+        amount: walletShare,
+      ),
+      const SizedBox(height: Dimensions.paddingSizeDefault),
+      secondarySet
+          ? _PaymentMethodRow(
+              iconAsset: _PaymentRowHelper.iconForIndex(controller.paymentMethodIndex),
+              label: _PaymentRowHelper.labelForIndex(controller),
+              amount: remainder,
+            )
+          : _PaymentMethodRow(
+              iconAsset: Images.cash,
+              label: 'select_payment_method'.tr,
+              amount: null,
+            ),
+    ]);
+  }
+}
+
+class _ReorderCodReadonlyRow extends StatelessWidget {
+  final double total;
+
+  const _ReorderCodReadonlyRow({required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    return _PaymentMethodRow(
+      iconAsset: Images.cash,
+      label: 'cash_on_delivery'.tr,
+      amount: total,
+    );
+  }
+}
+
+class _PaymentMethodRow extends StatelessWidget {
+  final String iconAsset;
+  final String label;
+  final double? amount;
+
+  const _PaymentMethodRow({required this.iconAsset, required this.label, required this.amount});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+      Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Theme.of(context).disabledColor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+        ),
+        alignment: Alignment.center,
+        child: Image.asset(
+          iconAsset,
+          width: 20, height: 20,
+          color: Theme.of(context).disabledColor,
+        ),
+      ),
+      const SizedBox(width: Dimensions.paddingSizeDefault),
+      Expanded(
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: robotoMedium.copyWith(
+            fontSize: Dimensions.fontSizeDefault,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+          ),
+        ),
+      ),
+      if (amount != null)
+        Text(
+          PriceConverter.convertPrice(amount),
+          textDirection: TextDirection.ltr,
+          style: robotoMedium.copyWith(
+            fontSize: Dimensions.fontSizeDefault,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+          ),
+        ),
+    ]);
+  }
+}
+
+class _PaymentRowHelper {
+  static String iconForIndex(int index) {
+    switch (index) {
+      case 0:
+        return Images.cash;
+      case 1:
+        return Images.wallet;
+      case 2:
+        return Images.digitalPayment;
+      case 3:
+        return Images.cash;
+      default:
+        return Images.cash;
+    }
+  }
+
+  static String labelForIndex(CheckoutController c) {
+    switch (c.paymentMethodIndex) {
+      case 0:
+        return c.isPartialPay ? '${'cash_on_delivery'.tr} (${'partial'.tr})' : 'cash_on_delivery'.tr;
+      case 1:
+        return 'wallet_payment'.tr;
+      case 2:
+        final String name = c.digitalPaymentName?.replaceAll('_', ' ').toTitleCase() ?? '';
+        if (name.isEmpty) return 'digital_payment'.tr;
+        return c.isPartialPay ? '$name (${'partial'.tr})' : name;
+      case 3:
+        final List? methods = c.offlineMethodList;
+        final int idx = c.selectedOfflineBankIndex;
+        final String methodName = (methods != null && idx >= 0 && idx < methods.length)
+            ? (methods[idx].methodName ?? '')
+            : '';
+        final String base = methodName.isNotEmpty ? '${'offline_payment'.tr} ($methodName)' : 'offline_payment'.tr;
+        return c.isPartialPay ? '$base - ${'partial'.tr}' : base;
+      default:
+        return 'select_payment_method'.tr;
+    }
   }
 }

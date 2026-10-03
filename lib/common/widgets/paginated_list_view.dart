@@ -34,14 +34,29 @@ class _PaginatedListViewState extends State<PaginatedListView> {
     _offset = 1;
     _offsetList = [1];
 
-    widget.scrollController.addListener(() {
-      if (widget.scrollController.position.pixels == widget.scrollController.position.maxScrollExtent
-          && widget.totalSize != null && !_isLoading && widget.enabledPagination) {
-        if(mounted && !ResponsiveHelper.isDesktop(context)) {
-          _paginate();
-        }
+    widget.scrollController.addListener(_handleScroll);
+  }
+
+  @override
+  void dispose() {
+    widget.scrollController.removeListener(_handleScroll);
+    super.dispose();
+  }
+
+  void _handleScroll() {
+    if (!widget.enabledPagination || _isLoading || widget.totalSize == null) return;
+    if (!mounted || ResponsiveHelper.isDesktop(context)) return;
+    if (!widget.scrollController.hasClients) return;
+
+    // The same controller can be attached to more than one scrollable
+    // (e.g. when shared via PrimaryScrollController). Using `.position`
+    // would throw `_positions.length == 1`, so iterate over all positions.
+    for (final position in widget.scrollController.positions) {
+      if (position.pixels >= position.maxScrollExtent - 50) {
+        _paginate();
+        return;
       }
-    });
+    }
   }
 
   void _paginate() async {
@@ -98,7 +113,10 @@ class _PaginatedListViewState extends State<PaginatedListView> {
 
       (ResponsiveHelper.isDesktop(context) && !shouldShowViewMore) ? const SizedBox() : Center(child: Padding(
         padding: (_isLoading || ResponsiveHelper.isDesktop(context)) ? const EdgeInsets.all(Dimensions.paddingSizeSmall) : EdgeInsets.zero,
-        child: _isLoading ? const CircularProgressIndicator() : (ResponsiveHelper.isDesktop(context) && widget.totalSize != null) ? InkWell(
+        child: _isLoading ? const Padding(
+          padding: EdgeInsets.only(bottom: Dimensions.paddingSizeDefault),
+          child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+        ) : (ResponsiveHelper.isDesktop(context) && widget.totalSize != null) ? InkWell(
           onTap: _paginate,
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeLarge),

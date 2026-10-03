@@ -165,7 +165,7 @@ class _CodePickerWidgetState extends State<CodePickerWidget> {
     if (!GetPlatform.isAndroid && !GetPlatform.isIOS) {
       showDialog(
         barrierColor: widget.barrierColor ?? Colors.grey.withValues(alpha: 0.5),
-        // backgroundColor: widgets.backgroundColor ?? Colors.transparent,
+        // backgroundColor: widgets_new.backgroundColor ?? Colors.transparent,
         context: context,
         builder: (context) => Center(
           child: Container(

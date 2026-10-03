@@ -1,11 +1,11 @@
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:sixam_mart/common/widgets/custom_image.dart';
 import 'package:sixam_mart/features/chat/domain/models/chat_model.dart';
-import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/file_type_helper.dart';
+import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:video_player/video_player.dart';
-import 'package:chewie/chewie.dart';
 
 class ImagePreviewWidget extends StatefulWidget {
   final Message currentMessage;
@@ -19,8 +19,8 @@ class ImagePreviewWidget extends StatefulWidget {
 class _ImagePreviewWidgetState extends State<ImagePreviewWidget> {
   PageController _pageController = PageController();
   int _currentIndex = 0;
-  Map<int, VideoPlayerController?> _videoControllers = {};
-  Map<int, ChewieController?> _chewieControllers = {};
+  final Map<int, VideoPlayerController?> _videoControllers = {};
+  final Map<int, ChewieController?> _chewieControllers = {};
 
   @override
   void initState() {
@@ -50,15 +50,15 @@ class _ImagePreviewWidgetState extends State<ImagePreviewWidget> {
         looping: false,
         aspectRatio: videoController.value.aspectRatio,
         errorBuilder: (context, errorMessage) {
-          return Center(
+          return const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error, color: Colors.white, size: 48),
-                const SizedBox(height: 8),
+                Icon(Icons.error, color: Colors.white, size: 48),
+                SizedBox(height: 8),
                 Text(
                   'Error loading video',
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Colors.white),
                 ),
               ],
             ),

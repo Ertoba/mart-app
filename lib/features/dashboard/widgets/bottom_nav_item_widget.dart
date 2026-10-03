@@ -22,13 +22,10 @@ class BottomNavItemWidget extends StatelessWidget {
             color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).textTheme.bodyMedium!.color!,
           ),
 
-          const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+          SizedBox(height: isSelected ? Dimensions.paddingSizeExtraSmall : Dimensions.paddingSizeSmall),
 
           Text(
             title,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.ellipsis,
             style: robotoRegular.copyWith(color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).textTheme.bodyMedium!.color!, fontSize: 12),
           ),
 

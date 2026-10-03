@@ -7,7 +7,8 @@ import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
 
 class DetailsAppBarWidget extends StatefulWidget implements PreferredSizeWidget {
-  const DetailsAppBarWidget({super.key});
+  final VoidCallback? onBackPressed;
+  const DetailsAppBarWidget({super.key, this.onBackPressed});
 
   @override
   DetailsAppBarWidgetState createState() => DetailsAppBarWidgetState();
@@ -46,7 +47,9 @@ class DetailsAppBarWidgetState extends State<DetailsAppBarWidget> with SingleTic
 
     return AppBar(
       leading: IconButton(icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).textTheme.bodyLarge!.color), onPressed: () {
-        if(Get.find<SplashController>().deeplinkRoute != null) {
+        if(widget.onBackPressed != null) {
+          widget.onBackPressed!();
+        } else if(Get.find<SplashController>().deeplinkRoute != null) {
           Get.find<SplashController>().setDeeplink(null);
           Get.offAllNamed(RouteHelper.getInitialRoute());
         } else {

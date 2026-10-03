@@ -119,7 +119,7 @@ class _InterestScreenState extends State<InterestScreen> {
 
               ]),
             ),
-          ) : NoDataScreen(text: 'no_category_found'.tr) : const Center(child: CircularProgressIndicator());
+          ) : NoDataScreen(text: 'no_category_found'.tr, fromInterestPage: true) : const Center(child: CircularProgressIndicator());
         }),
       ),
     );

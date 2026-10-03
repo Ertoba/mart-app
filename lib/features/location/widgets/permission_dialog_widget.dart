@@ -1,3 +1,4 @@
+import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
 import 'package:sixam_mart/common/widgets/custom_button.dart';
@@ -23,8 +24,11 @@ class PermissionDialogWidget extends StatelessWidget {
             Icon(Icons.add_location_alt_rounded, color: Theme.of(context).primaryColor, size: 100),
             const SizedBox(height: Dimensions.paddingSizeLarge),
 
-            Text(
+            ResponsiveHelper.isMobile(context) ? Text(
               'you_denied_location_permission'.tr, textAlign: TextAlign.center,
+              style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge),
+            ) : Text(
+              'please_enable_location_permission_from_browser_settings'.tr, textAlign: TextAlign.center,
               style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge),
             ),
             const SizedBox(height: Dimensions.paddingSizeLarge),
@@ -41,10 +45,10 @@ class PermissionDialogWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: Dimensions.paddingSizeSmall),
-              Expanded(child: CustomButton(buttonText: 'settings'.tr, onPressed: () async {
+              ResponsiveHelper.isMobile(context) ? Expanded(child: CustomButton(buttonText: 'settings'.tr, onPressed: () async {
                 await Geolocator.openAppSettings();
                 Get.back();
-              })),
+              })) : const SizedBox(),
             ]),
 
           ]),

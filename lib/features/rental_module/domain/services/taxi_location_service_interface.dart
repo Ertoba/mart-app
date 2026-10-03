@@ -1,1 +1,1 @@
-abstract class TaxiLocationServiceInterface {}
+abstract class TaxiLocationServiceInterface{}

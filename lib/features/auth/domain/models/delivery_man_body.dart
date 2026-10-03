@@ -7,10 +7,10 @@ class DeliveryManBody {
   String? identityType;
   String? identityNumber;
   String? earning;
-  String? type;
   String? zoneId;
   String? vehicleId;
   String? referCode;
+  String? type;
 
   DeliveryManBody({
     this.fName,
@@ -21,10 +21,10 @@ class DeliveryManBody {
     this.identityType,
     this.identityNumber,
     this.earning,
-    this.type,
     this.zoneId,
     this.vehicleId,
     this.referCode,
+    this.type
   });
 
   DeliveryManBody.fromJson(Map<String, dynamic> json) {
@@ -36,10 +36,10 @@ class DeliveryManBody {
     identityType = json['identity_type'];
     identityNumber = json['identity_number'];
     earning = json['earning'];
-    type = json['type'];
     zoneId = json['zone_id'];
     vehicleId = json['vehicle_id'];
     referCode = json['referral_code'];
+    type = json['type'];
   }
 
   Map<String, String> toJson() {
@@ -51,13 +51,17 @@ class DeliveryManBody {
     data['password'] = password!;
     data['identity_type'] = identityType!;
     data['identity_number'] = identityNumber!;
-    data['earning'] = earning!;
-    data['type'] = type ?? (earning == '1' ? 'freelancer' : 'salary_based');
+    if(earning != null && earning!.isNotEmpty){
+      data['earning'] = earning!;
+    }
     data['zone_id'] = zoneId!;
-    data['vehicle_id'] = vehicleId!;
-    if (referCode != null && referCode!.isNotEmpty) {
+    if(vehicleId !=null && vehicleId!.isNotEmpty){
+      data['vehicle_id'] = vehicleId!;
+    }
+    if(referCode != null && referCode!.isNotEmpty) {
       data['referral_code'] = referCode!;
     }
+    data['type'] = type!;
     return data;
   }
 }

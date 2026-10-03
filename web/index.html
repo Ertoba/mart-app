@@ -5,7 +5,7 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="პორტალი - მრავალმომწოდებლიანი მიტანისა და შეკვეთების პლატფორმა.">
+  <meta name="description" content="A Multi-vendor Food. Grocery, eCommerce, Pharmacy & Parcel service.">
 
   <!--For demo only-->
 <!--  <link rel="canonical" href="https://6ammart-web.6amtech.com/" />-->
@@ -14,8 +14,8 @@
   <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="პორტალი">
-  <link rel="apple-touch-icon" href="favicon.png">
+  <meta name="apple-mobile-web-app-title" content="StackFood">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
@@ -24,7 +24,7 @@
 
   <script type="text/javascript" src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"></script>
 
-  <title>პორტალი</title>
+  <title>6amMart</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" type="text/css" href="style.css">
   <script type="application/javascript" src="/assets/packages/flutter_inappwebview_web/assets/web/web_support.js" defer></script>
@@ -34,7 +34,7 @@
     var serviceWorkerVersion = {{flutter_service_worker_version}};
   </script>
   <!-- This script adds the flutter initialization JS code -->
-  <script src="flutter.js?version=3.7.0.0" defer></script>
+  <script src="flutter.js?version=3.9.1.1" defer></script>
 </head>
 
 <body>
@@ -42,7 +42,7 @@
        application. For more information, see:
        https://developers.google.com/web/fundamentals/primers/service-workers -->
 
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAH368t9ZTjskreXv80LncZUemOb8KT3_g"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDiDGVR1GnClPIXcsOOvAniamtAmS-MHjY"></script>
 <!--  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>-->
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -56,7 +56,7 @@
 
   <div class="preloader">
     <div class="preloader-container">
-      <img width="72" class="preloader-img" src="preloader_logo.png" alt="">
+      <img width="50" class="preloader-img" src="favicon.png" alt="">
       <div class="loader"></div>
     </div>
   </div>
@@ -65,7 +65,7 @@
   <header class="header">
     <div class="header-container d-flex align-items-center justify-content-between">
       <div class="header-start d-flex gap-5 align-items-center">
-        <img class="logo" src="preloader_logo.png" alt="">
+        <img class="logo" src="logo.png" alt="">
         <div class="placeholder placeholder-wide"></div>
         <div class="placeholder"></div>
         <div class="placeholder"></div>
@@ -174,6 +174,29 @@
         preloader.remove();
       }
     }
+  </script>
+
+  <script>
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "firebase/app";
+    import { getAnalytics } from "firebase/analytics";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+    // Your web app's Firebase configuration
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    const firebaseConfig = {
+      apiKey: "AIzaSyDFN-73p8zKVZbA0i5DtO215XzAb-xuGSE",
+      authDomain: "ammart-8885e.firebaseapp.com",
+      databaseURL: "https://ammart-8885e-default-rtdb.firebaseio.com",
+      projectId: "ammart-8885e",
+      storageBucket: "ammart-8885e.appspot.com",
+      messagingSenderId: "1000163153346",
+      appId: "1:1000163153346:web:4f702a4b5adbd5c906b25b",
+      measurementId: "G-L1GNL2YV61"
+    };
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
   </script>
 
 </body>

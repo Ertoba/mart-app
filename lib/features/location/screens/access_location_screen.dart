@@ -25,7 +25,6 @@ import 'package:sixam_mart/common/widgets/no_data_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/features/location/screens/pick_map_screen.dart';
-import 'package:sixam_mart/features/location/screens/web_landing_page.dart';
 
 class AccessLocationScreen extends StatefulWidget {
   final bool fromSignUp;
@@ -94,9 +93,7 @@ class _AccessLocationScreenState extends State<AccessLocationScreen> {
           padding: ResponsiveHelper.isDesktop(context) ? EdgeInsets.zero : const EdgeInsets.all(Dimensions.paddingSizeSmall),
           child: GetBuilder<AddressController>(builder: (locationController) {
             bool isLoggedIn = AuthHelper.isLoggedIn();
-            return (ResponsiveHelper.isDesktop(context) && AddressHelper.getUserAddressFromSharedPref() == null) ? WebLandingPage(
-              fromSignUp: widget.fromSignUp, fromHome: widget.fromHome, route: widget.route,
-            ) : isLoggedIn ? Column(children: [
+            return isLoggedIn ? Column(children: [
               Expanded(child: SingleChildScrollView(
                 child: FooterView(child: Column(mainAxisAlignment: (locationController.addressList != null && locationController.addressList!.isNotEmpty) ? MainAxisAlignment.start : MainAxisAlignment.center, children: [
 
@@ -176,7 +173,7 @@ class BottomButton extends StatelessWidget {
             }else {
               Get.back();
               if(ResponsiveHelper.isDesktop(Get.context)) {
-                showGeneralDialog(context: Get.context!, pageBuilder: (_,__,___) {
+                showGeneralDialog(context: Get.context!, pageBuilder: (_,_,_) {
                   return SizedBox(
                       height: 300, width: 300,
                       child: PickMapScreen(fromSignUp: fromSignUp, canRoute: route != null, fromAddAddress: false, route: route ?? RouteHelper.accessLocation)
@@ -204,7 +201,7 @@ class BottomButton extends StatelessWidget {
         ),
         onPressed: () {
           if(ResponsiveHelper.isDesktop(Get.context)) {
-            showGeneralDialog(context: Get.context!, pageBuilder: (_,__,___) {
+            showGeneralDialog(context: Get.context!, pageBuilder: (_,_,_) {
               return SizedBox(
                   height: 300, width: 300,
                   child: PickMapScreen(fromSignUp: fromSignUp, canRoute: route != null, fromAddAddress: false, route: route ?? RouteHelper.accessLocation)

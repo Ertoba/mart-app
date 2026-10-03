@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sixam_mart/common/widgets/custom_button.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
 import 'package:sixam_mart/features/order/domain/models/order_model.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/common/widgets/custom_button.dart';
 
 class OfflineSuccessDialog extends StatelessWidget {
   final int? orderId;
@@ -66,7 +66,7 @@ class OfflineSuccessDialog extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeExtraSmall),
                                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                   Expanded(flex: 4, child: Text(data.userInput.toString().replaceAll('_', ' '), maxLines: 1, overflow: TextOverflow.ellipsis, style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: 0.6)))),
-                                  Text(': '),
+                                  const Text(': '),
                                   Expanded(flex: 8, child: Text(data.userData.toString(), maxLines: 2, overflow: TextOverflow.ellipsis, style: robotoMedium)),
                                 ]),
                               );

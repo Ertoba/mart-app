@@ -22,9 +22,9 @@ class StoreRegistrationRepository implements StoreRegistrationRepositoryInterfac
   Future<bool> checkInZone(String? lat, String? lng, int zoneId) async {
     Response response = await apiClient.getData('${AppConstants.checkZoneUri}?lat=$lat&lng=$lng&zone_id=$zoneId');
     if(response.statusCode == 200) {
-      return response.body;
+      return response.body ?? false;
     } else {
-      return response.body;
+      return response.body ?? false;
     }
   }
 

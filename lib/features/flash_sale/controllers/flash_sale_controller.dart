@@ -32,6 +32,10 @@ class FlashSaleController extends GetxController implements GetxService {
   void setEmptyFlashSale({bool fromModule = false}) {
     if(fromModule) {
       _flashSaleModel = null;
+      _timer?.cancel();
+      _timer = null;
+      _duration = null;
+      update();
     }
   }
 

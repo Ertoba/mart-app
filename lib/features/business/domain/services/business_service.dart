@@ -72,7 +72,7 @@ class BusinessService implements BusinessServiceInterface{
         businessPlanStatus = 'complete';
         Get.find<HomeController>().saveRegistrationSuccessfulSharedPref(true);
         Get.find<HomeController>().saveIsStoreRegistrationSharedPref(true);
-        Get.offAllNamed(RouteHelper.getSubscriptionSuccessRoute(status: 'success', fromSubscription: true, storeId: storeId));
+        Get.offAllNamed(RouteHelper.getSubscriptionSuccessRoute(status: 'success', fromSubscription: businessPlanBody.businessPlan != 'commission', storeId: storeId));
       }
     }
     return businessPlanStatus;

@@ -43,7 +43,7 @@ class ParcelAppBarWidget extends StatelessWidget implements PreferredSizeWidget 
                 child: GetBuilder<LocationController>(builder: (locationController) {
                   return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(
-                      AddressHelper.getAddressTypeLabel(AddressHelper.getUserAddressFromSharedPref()!.addressType),
+                      AddressHelper.getUserAddressFromSharedPref()!.addressType!.tr,
                       style: robotoMedium.copyWith(
                         color: Theme.of(context).textTheme.bodyLarge!.color, fontSize: Dimensions.fontSizeDefault,
                       ),

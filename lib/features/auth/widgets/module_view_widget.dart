@@ -7,7 +7,8 @@ import 'package:sixam_mart/common/widgets/custom_dropdown.dart';
 import 'package:sixam_mart/util/styles.dart';
 
 class ModuleViewWidget extends StatelessWidget {
-  const ModuleViewWidget({super.key});
+  final bool isEnable;
+  const ModuleViewWidget({super.key, required this.isEnable});
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +33,7 @@ class ModuleViewWidget extends StatelessWidget {
         }
       }
 
-      return storeRegController.moduleList != null ? Stack(clipBehavior: Clip.none, children: [
+      return storeRegController.moduleList != null &&  isEnable? Stack(clipBehavior: Clip.none, children: [
 
         Container(
           decoration: BoxDecoration(
@@ -82,7 +83,7 @@ class ModuleViewWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
           border: Border.all(color: Theme.of(context).hintColor.withValues(alpha: 0.5)),
         ),
-        child: Center(child: Text('not_available_module'.tr)),
+        child: Center(child: Text(isEnable? 'not_available_module'.tr : "zone_unselected".tr)),
       );
 
     });

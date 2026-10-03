@@ -1,13 +1,15 @@
 import 'dart:math';
+
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
-import 'package:sixam_mart/features/language/controllers/language_controller.dart';
-import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/common/controllers/theme_controller.dart';
 import 'package:sixam_mart/features/coupon/domain/models/coupon_model.dart';
+import 'package:sixam_mart/features/language/controllers/language_controller.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/date_converter.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
@@ -18,7 +20,8 @@ class CouponCardWidget extends StatelessWidget {
   final CouponModel coupon;
   final int index;
   final List<JustTheController>? toolTipController;
-  const CouponCardWidget({super.key, required this.coupon, required this.index, this.toolTipController});
+  final Color? color;
+  const CouponCardWidget({super.key, required this.coupon, required this.index, this.toolTipController, this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +51,6 @@ class CouponCardWidget extends StatelessWidget {
 
             Container(
               alignment: Alignment.center,
-
               width: ResponsiveHelper.isDesktop(context) ? 150 : size.width * 0.3,
               child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Image.asset(
@@ -60,19 +62,24 @@ class CouponCardWidget extends StatelessWidget {
 
                 Text(
                   coupon.couponType == 'free_delivery' ? 'free_delivery'.tr : '${coupon.discount}${coupon.discountType == 'percent' ? '%' : Get.find<SplashController>().configModel!.currencySymbol} ${'off'.tr}',
+                  textDirection: coupon.couponType == 'free_delivery' ? null : TextDirection.ltr,
                   style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault),
                 ),
                 const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
                 coupon.store == null ?  Flexible(child: Text(
-                  coupon.couponType == 'store_wise' ? '${'on'.tr} ${coupon.data}' : 'on_all_store'.tr,
+                  coupon.couponType == 'store_wise' ? '${'on'.tr} ${coupon.data}' : (Get.find<SplashController>().module?.moduleName == 'Rental' || ModuleHelper.isBookingModule()) ? "on_all_provider".tr : 'on_all_store'.tr,
                   style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall),
                   maxLines: 1, overflow: TextOverflow.ellipsis,
-                )) : Flexible(child: Text(
-                  coupon.couponType == 'default' ? '${coupon.store!.name}' : '',
-                  style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall),
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
-                )),
+                )) : Row( mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Flexible(child: Text(
+                    coupon.couponType == 'store_wise' ? '${'on'.tr} ${coupon.data}' : coupon.couponType == 'default' ? '${coupon.store!.name}' : '',
+                    style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall),
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                  )),
+                  const SizedBox(width: 4),
+                  coupon.store!.verifiedSeller == 1 ? Image.asset(Images.verifiedBadge, width: 12, height: 12) : const SizedBox.shrink(),
+                ]),
               ]),
             ),
             SizedBox(width: ResponsiveHelper.isDesktop(context) ? 10 : 20),
@@ -91,27 +98,32 @@ class CouponCardWidget extends StatelessWidget {
                     padding: const EdgeInsets.all(8.0),
                     child: Text('${'code_copied'.tr} !',style: robotoRegular.copyWith(color: Theme.of(context).cardColor)),
                   ),
-                  child: DottedBorder(
-                    options: RoundedRectDottedBorderOptions(
-                      color: Colors.blueAccent,
-                      strokeWidth: 1,
-                      strokeCap: StrokeCap.butt,
-                      dashPattern: const [5, 5],
-                      padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeExtraSmall),
-                      radius: const Radius.circular(50),
-                    ),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-
-                      Text(
-                        '${coupon.code}',
-                        style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall),
-                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
+                    child: DottedBorder(
+                      options: const RoundedRectDottedBorderOptions(
+                        color: Colors.blueAccent,
+                        strokeWidth: 1,
+                        strokeCap: StrokeCap.butt,
+                        dashPattern: [5, 5],
+                        padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeExtraSmall),
+                        radius: Radius.circular(50),
                       ),
-                      const SizedBox(width: Dimensions.paddingSizeSmall),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
 
-                      Icon(Icons.copy_rounded, color: Colors.blueAccent, size: 20),
+                        Flexible(
+                          child: Text(
+                            '${coupon.code}',
+                            style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall),
+                            maxLines: 1, overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: Dimensions.paddingSizeSmall),
 
-                    ]),
+                        const Icon(Icons.copy_rounded, color: Colors.blueAccent, size: 20),
+
+                      ]),
+                    ),
                   ),
                 ),
                 const SizedBox(height: Dimensions.paddingSizeSmall),
@@ -141,10 +153,42 @@ class CouponCardWidget extends StatelessWidget {
 
                 ]),
 
+                coupon.maxDiscount! > 0 ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  //
+                  // Text('*', style: robotoRegular.copyWith(color: Theme.of(context).colorScheme.error, fontSize: Dimensions.fontSizeSmall)),
+
+                  Text(
+                    '${'max_discount'.tr} ',
+                    style: robotoRegular.copyWith(color: Theme.of(context).disabledColor, fontSize: Dimensions.fontSizeSmall),
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                  ),
+
+                  Text(
+                    PriceConverter.convertPrice(coupon.maxDiscount),
+                    style: robotoMedium.copyWith(color: Theme.of(context).disabledColor, fontSize: Dimensions.fontSizeSmall),
+                    maxLines: 1, overflow: TextOverflow.ellipsis, textDirection: TextDirection.ltr,
+                  ),
+
+                ]) : const SizedBox(),
+
               ]),
             ),
 
           ]),
+        ),
+
+        if(coupon.couponType == 'pro_customer') Positioned.directional(
+          textDirection: Directionality.of(context),
+          top: Dimensions.paddingSizeSmall,
+          start: Dimensions.paddingSizeSmall,
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: const BoxDecoration(
+              color: Color(0xFFB57BEE),
+              shape: BoxShape.circle,
+            ),
+            child: Image.asset(Images.proPlanCrown, height: 14, width: 14, color: Colors.white),
+          ),
         ),
 
       ]),

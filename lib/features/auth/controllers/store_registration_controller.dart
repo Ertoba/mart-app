@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -11,6 +12,7 @@ import 'package:sixam_mart/features/location/controllers/location_controller.dar
 import 'package:sixam_mart/features/location/domain/services/location_service_interface.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
+import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_data_model.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
 import 'package:sixam_mart/features/auth/domain/models/store_body_model.dart';
@@ -19,10 +21,6 @@ import 'package:sixam_mart/helper/date_converter.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 
 class StoreRegistrationController extends GetxController implements GetxService {
-  static const int _maxLogoUploadBytes = 5 * 1024 * 1024;
-  static const int _maxCoverUploadBytes = 10 * 1024 * 1024;
-  static const int _maxDocumentUploadBytes = 10 * 1024 * 1024;
-
   final StoreRegistrationServiceInterface storeRegistrationServiceInterface;
   final LocationServiceInterface locationServiceInterface;
 
@@ -57,6 +55,17 @@ class StoreRegistrationController extends GetxController implements GetxService 
 
   int? _selectedModuleIndex = -1;
   int? get selectedModuleIndex => _selectedModuleIndex;
+
+  /// The currently selected module, or null when nothing is selected yet.
+  ModuleModel? get selectedModule {
+    final int index = _selectedModuleIndex ?? -1;
+    if (index < 0 || _moduleList == null || index >= _moduleList!.length) return null;
+    return _moduleList![index];
+  }
+
+  /// Service modules book a service rather than deliver an order, so screens
+  /// swap delivery-oriented wording (e.g. estimated delivery time) accordingly.
+  bool get isServiceModuleSelected => selectedModule?.moduleType == AppConstants.service;
 
   bool _showPassView = false;
   bool get showPassView => _showPassView;
@@ -126,6 +135,8 @@ class StoreRegistrationController extends GetxController implements GetxService 
 
   String? _tinExpireDate;
   String? get tinExpireDate => _tinExpireDate;
+
+  final config = Get.find<SplashController>().configModel;
 
   void setSelectedPickupZone(String? zone, int? zoneId) {
     if (zone != null && zoneId != null) {
@@ -206,22 +217,10 @@ class StoreRegistrationController extends GetxController implements GetxService 
       _pickedLogo = null;
       _pickedCover = null;
     }else {
-      final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
-      if (pickedImage == null) {
-        return;
-      }
-      final int fileSize = await pickedImage.length();
-      final int maximumBytes = isLogo ? _maxLogoUploadBytes : _maxCoverUploadBytes;
-      if (fileSize > maximumBytes) {
-        showCustomSnackBar(isLogo
-            ? 'please_upload_logo_within_5_mb'.tr
-            : 'please_upload_cover_within_10_mb'.tr);
-        return;
-      }
       if (isLogo) {
-        _pickedLogo = pickedImage;
+        _pickedLogo = await ImagePicker().pickImage(source: ImageSource.gallery);
       } else {
-        _pickedCover = pickedImage;
+        _pickedCover = await ImagePicker().pickImage(source: ImageSource.gallery);
       }
       update();
     }
@@ -265,8 +264,8 @@ class StoreRegistrationController extends GetxController implements GetxService 
       _zoneList = [];
       _zoneList!.addAll(zones);
       setLocation(LatLng(
-        double.parse(Get.find<SplashController>().configModel!.defaultLocation!.lat ?? '0'),
-        double.parse(Get.find<SplashController>().configModel!.defaultLocation!.lng ?? '0'),
+        double.parse(config!.defaultLocation!.lat ?? '0'),
+        double.parse(config!.defaultLocation!.lng ?? '0'),
       ), forStoreRegistration: true, zoneId: _zoneList![0].id, resetAddress: resetAddress);
       await getModules(_zoneList![0].id);
     }
@@ -311,6 +310,9 @@ class StoreRegistrationController extends GetxController implements GetxService 
     List<ModuleModel>? modules = await storeRegistrationServiceInterface.getModules(zoneId);
     if (modules != null) {
       _moduleList = [];
+      modules.removeWhere((module) {
+        return module.moduleType?.contains("ride-share") ??false;
+      });
       _moduleList!.addAll(modules);
     }
     update();
@@ -356,16 +358,21 @@ class StoreRegistrationController extends GetxController implements GetxService 
         ));
       }
     }
+    else{
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        storeStatusChange(0.6);
+      });
+    }
     _isLoading = false;
     update();
   }
 
   void resetBusiness(){
-    _businessIndex = Get.find<SplashController>().configModel!.commissionBusinessModel == 0 ? 1 : 0;
+    _businessIndex = config!.commissionBusinessModel == 0 ? 1 : 0;
     _activeSubscriptionIndex = 0;
     _businessPlanStatus = 'business';
     // _isFirstTime = true;
-    _paymentIndex = Get.find<SplashController>().configModel!.subscriptionFreeTrialStatus??false ? 1 : 0;
+    _paymentIndex = config!.subscriptionFreeTrialStatus ?? false ? 1 : 0;
   }
 
   Future<void> getPackageList({bool isUpdate = true, int? moduleId}) async {
@@ -421,7 +428,7 @@ class StoreRegistrationController extends GetxController implements GetxService 
 
     if (result != null && result.files.isNotEmpty) {
       for (var file in result.files) {
-        if (file.size > _maxDocumentUploadBytes) {
+        if (file.size > 2000000) {
           showCustomSnackBar('please_upload_lower_size_file'.tr);
         } else {
           _tinFiles.add(result);

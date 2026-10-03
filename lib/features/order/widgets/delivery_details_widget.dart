@@ -23,9 +23,9 @@ class _DeliveryDetailsWidgetState extends State<DeliveryDetailsWidget> {
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      widget.deliveryAddress?.contactPersonName != null ? _detailsItem(Icons.person_2_outlined, '${widget.deliveryAddress?.contactPersonName}', context) : SizedBox.shrink(),
-      widget.deliveryAddress?.contactPersonNumber != null ?_detailsItem(Icons.phone_enabled_outlined, '${widget.deliveryAddress?.contactPersonNumber}', context) : SizedBox.shrink(),
-      widget.deliveryAddress?.address != null ? _detailsItem(Icons.location_on_outlined, '${widget.deliveryAddress?.address}', context) : SizedBox.shrink(),
+      widget.deliveryAddress?.contactPersonName != null ? _detailsItem(Icons.person_2_outlined, '${widget.deliveryAddress?.contactPersonName}', context) : const SizedBox.shrink(),
+      widget.deliveryAddress?.contactPersonNumber != null ?_detailsItem(Icons.phone_enabled_outlined, '${widget.deliveryAddress?.contactPersonNumber}', context) : const SizedBox.shrink(),
+      widget.deliveryAddress?.address != null ? _detailsItem(Icons.location_on_outlined, '${widget.deliveryAddress?.address}', context) : const SizedBox.shrink(),
 
       const SizedBox(height: Dimensions.paddingSizeSmall),
 

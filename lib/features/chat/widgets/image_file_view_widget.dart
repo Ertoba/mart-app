@@ -3,8 +3,8 @@ import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/custom_image.dart';
 import 'package:sixam_mart/features/chat/domain/models/chat_model.dart';
 import 'package:sixam_mart/features/chat/widgets/image_preview_widget.dart';
-import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/file_type_helper.dart';
+import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -79,13 +79,13 @@ class _ImageFileViewWidgetState extends State<ImageFileViewWidget> {
           ClipRRect(
             borderRadius: BorderRadius.circular(Dimensions.radiusLarge),
             child: Container(color: Colors.black12,
-              child: Icon(Icons.videocam, size: 50, color: Colors.white70),
+              child: const Icon(Icons.videocam, size: 50, color: Colors.white70),
             ),
           ),
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-            child: Icon(Icons.play_arrow, size: 30, color: Colors.white),
+            decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+            child: const Icon(Icons.play_arrow, size: 30, color: Colors.white),
           ),
         ]);
       case FileType.image:

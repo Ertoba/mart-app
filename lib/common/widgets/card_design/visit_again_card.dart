@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/add_favourite_view.dart';
+import 'package:sixam_mart/common/widgets/custom_image.dart';
 import 'package:sixam_mart/common/widgets/custom_ink_well.dart';
 import 'package:sixam_mart/common/widgets/hover/text_hover.dart';
 import 'package:sixam_mart/common/widgets/not_available_widget.dart';
-import 'package:sixam_mart/common/widgets/verified_seller_badge.dart';
 import 'package:sixam_mart/features/language/controllers/language_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
@@ -12,8 +12,9 @@ import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/common/widgets/custom_image.dart';
+
 import 'package:sixam_mart/features/store/screens/store_screen.dart';
+import '../../../util/images.dart';
 
 class VisitAgainCard extends StatelessWidget {
   final Store store;
@@ -40,7 +41,7 @@ class VisitAgainCard extends StatelessWidget {
             child: CustomInkWell(
               onTap: () {
                 Get.toNamed(
-                  RouteHelper.getStoreRoute(id: store.id, page: 'store', slug: store.slug??''),
+                  RouteHelper.getStoreRoute(id: store.id, page: 'store_new', slug: store.slug??''),
                   arguments: StoreScreen(store: store, fromModule: false),
                 );
               },
@@ -48,24 +49,22 @@ class VisitAgainCard extends StatelessWidget {
               padding: const EdgeInsets.only(top: 40, bottom: Dimensions.paddingSizeSmall),
               child: Column(crossAxisAlignment: CrossAxisAlignment.center, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
 
-                Flexible(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Flexible(child: Text(store.name ?? '', style: robotoBold, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                  if (store.verifiedSeller == true) ...[
-                    const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                    const VerifiedSellerBadge(verified: true, size: 14),
-                  ],
-                ])),
-
-                if(store.ratingCount! > 0)
+                // Flexible(child: Text(store.name ?? '', style: robotoBold, maxLines: 1, overflow: TextOverflow.ellipsis)),
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(Icons.star, size: 15, color: Colors.orange),
+                  Text(store.name ?? '', style: robotoMedium),
+                  const SizedBox(width: 8),
+                  store.verifiedSeller == 1 ? Image.asset(Images.verifiedBadge, width: 16, height: 16) : const SizedBox.shrink()
+                ]),
+
+                store.ratingCount! > 0 ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Icon(Icons.star, size: 15, color: Colors.orange),
                   const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                   Text(store.avgRating!.toStringAsFixed(1), style: robotoRegular),
                   const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                   Text("(${store.ratingCount})", style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor)),
-                ]),
+                ]) : const SizedBox.shrink(),
 
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),

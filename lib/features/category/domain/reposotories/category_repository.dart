@@ -2,15 +2,18 @@ import 'dart:convert';
 
 import 'package:get/get.dart';
 import 'package:sixam_mart/api/local_client.dart';
+import 'package:sixam_mart/api/response_parser.dart';
 import 'package:sixam_mart/common/enums/data_source_enum.dart';
 import 'package:sixam_mart/features/category/domain/models/category_model.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
+import 'package:sixam_mart/features/service_module/service_home/domain/models/service_category_model.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/features/language/controllers/language_controller.dart';
 import 'package:sixam_mart/api/api_client.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/features/category/domain/reposotories/category_repository_interface.dart';
+import 'package:sixam_mart/helper/module_helper.dart';
 
 class CategoryRepository implements CategoryRepositoryInterface {
   final ApiClient apiClient;
@@ -43,13 +46,16 @@ class CategoryRepository implements CategoryRepositoryInterface {
 
     switch(source) {
       case DataSourceEnum.client:
-        Response response = await apiClient.getData(AppConstants.categoryUri, headers: header);
+        Response response = await apiClient.getData(AppConstants.categoryUri, headers: header, moduleScoped: !allCategory);
         if (response.statusCode == 200) {
+          final List<dynamic> categoriesJson = ResponseParser.listOrEmpty(response.body);
           categoryList = [];
-          response.body.forEach((category) {
-            categoryList!.add(CategoryModel.fromJson(category));
-          });
-          LocalClient.organize(DataSourceEnum.client, cacheId, jsonEncode(response.body), cacheHeader);
+          for (final dynamic category in categoriesJson) {
+            categoryList.add(CategoryModel.fromJson(category));
+          }
+          // Cache the extracted list, not the raw body, so the local branch below
+          // decodes the same shape whichever response format the client branch saw.
+          LocalClient.organize(DataSourceEnum.client, cacheId, jsonEncode(categoriesJson), cacheHeader);
 
         }
 
@@ -57,9 +63,9 @@ class CategoryRepository implements CategoryRepositoryInterface {
         String? cacheResponseData = await LocalClient.organize(DataSourceEnum.local, cacheId, null, null);
         if(cacheResponseData != null) {
           categoryList = [];
-          jsonDecode(cacheResponseData).forEach((category) {
-            categoryList!.add(CategoryModel.fromJson(category));
-          });
+          for (final dynamic category in ResponseParser.listOrEmpty(jsonDecode(cacheResponseData))) {
+            categoryList.add(CategoryModel.fromJson(category));
+          }
         }
     }
 
@@ -71,7 +77,9 @@ class CategoryRepository implements CategoryRepositoryInterface {
     Response response = await apiClient.getData('${AppConstants.subCategoryUri}$parentID');
     if (response.statusCode == 200) {
       subCategoryList= [];
-      response.body.forEach((category) => subCategoryList!.add(CategoryModel.fromJson(category)));
+      for (final dynamic category in ResponseParser.listOrEmpty(response.body)) {
+        subCategoryList.add(CategoryModel.fromJson(category));
+      }
     }
     return subCategoryList;
   }
@@ -108,6 +116,23 @@ class CategoryRepository implements CategoryRepositoryInterface {
   }
 
   @override
+  Future<List<ServiceCategoryModel>?> getCategoriesWithChildes() async {
+    // Reached from profile/menu, so the service module's id has to be pinned here.
+    final Map<String, String> headers = Map<String, String>.from(apiClient.getHeader());
+    final int? serviceModuleId = ModuleHelper.getModuleByType(AppConstants.service)?.id;
+    if (serviceModuleId != null) {
+      headers[AppConstants.moduleId] = '$serviceModuleId';
+    }
+    final Response response = await apiClient.getData(AppConstants.serviceCategoriesUri, headers: headers);
+    if (response.statusCode == 200) {
+      return ResponseParser.listOrEmpty(response.body)
+          .map((e) => ServiceCategoryModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    return null;
+  }
+
+  @override
   Future add(value) {
     throw UnimplementedError();
   }
@@ -128,3 +153,8 @@ class CategoryRepository implements CategoryRepositoryInterface {
   }
 
 }
+
+// SUMMARY
+// Category data source. Fetches category, sub-category, category item and category
+// store lists (cache-first where cached), the category search results, user interest
+// saving, and the service module's categories with their sub-categories.

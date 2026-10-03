@@ -2,6 +2,7 @@ import 'package:sixam_mart/common/widgets/custom_ink_well.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
 import 'package:sixam_mart/features/order/domain/models/order_model.dart';
 import 'package:sixam_mart/features/order/widgets/order_shimmer_widget.dart';
+import 'package:sixam_mart/features/order/screens/order_details_new_screen.dart';
 import 'package:sixam_mart/helper/date_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
@@ -12,7 +13,6 @@ import 'package:sixam_mart/common/widgets/custom_image.dart';
 import 'package:sixam_mart/common/widgets/footer_view.dart';
 import 'package:sixam_mart/common/widgets/no_data_screen.dart';
 import 'package:sixam_mart/common/widgets/paginated_list_view.dart';
-import 'package:sixam_mart/features/order/screens/order_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -36,11 +36,7 @@ class OrderViewWidget extends StatelessWidget {
 
         return paginatedOrderModel != null ? paginatedOrderModel.orders!.isNotEmpty ? RefreshIndicator(
           onRefresh: () async {
-            if(isRunning) {
-              await orderController.getRunningOrders(1, isUpdate: true);
-            }else {
-              await orderController.getHistoryOrders(1, isUpdate: true);
-            }
+            await orderController.getOrders(isRunning ? OrderListType.running : OrderListType.previous, 1, isUpdate: true);
           },
           child: SingleChildScrollView(
             controller: scrollController,
@@ -53,11 +49,7 @@ class OrderViewWidget extends StatelessWidget {
                   child: PaginatedListView(
                     scrollController: scrollController,
                     onPaginate: (int? offset) async {
-                      if(isRunning) {
-                        await orderController.getRunningOrders(offset!, isUpdate: true);
-                      }else {
-                        await orderController.getHistoryOrders(offset!, isUpdate: true);
-                      }
+                      await orderController.getOrders(isRunning ? OrderListType.running : OrderListType.previous, offset!, isUpdate: true);
                     },
                     totalSize: isRunning ? orderController.runningOrderModel?.totalSize : orderController.historyOrderModel?.totalSize,
                     offset: isRunning ? orderController.runningOrderModel?.offset : orderController.historyOrderModel?.offset,
@@ -87,7 +79,7 @@ class OrderViewWidget extends StatelessWidget {
                             onTap: () {
                               Get.toNamed(
                                 RouteHelper.getOrderDetailsRoute(paginatedOrderModel!.orders![index].id),
-                                arguments: OrderDetailsScreen(
+                                arguments: OrderDetailsNewScreen(
                                   orderId: paginatedOrderModel.orders![index].id,
                                   orderModel: paginatedOrderModel.orders![index],
                                 ),
@@ -141,28 +133,14 @@ class OrderViewWidget extends StatelessWidget {
 
                                 Expanded(
                                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: Text.rich(
-                                        TextSpan(children: [
-                                          TextSpan(
-                                            text: '${isParcel ? 'delivery_id'.tr : 'order_id'.tr}: ',
-                                            style: robotoRegular.copyWith(
-                                              fontSize: ResponsiveHelper.isDesktop(context) ? Dimensions.fontSizeSmall : 11,
-                                            ),
-                                          ),
-                                          TextSpan(
-                                            text: '#${paginatedOrderModel.orders![index].id}',
-                                            style: robotoMedium.copyWith(
-                                              fontSize: ResponsiveHelper.isDesktop(context) ? Dimensions.fontSizeSmall : 11,
-                                            ),
-                                          ),
-                                        ]),
-                                        maxLines: 1,
-                                        softWrap: false,
-                                        overflow: TextOverflow.ellipsis,
+                                    Row(children: [
+                                      Text(
+                                        '${isParcel ? 'delivery_id'.tr : 'order_id'.tr}:',
+                                        style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
                                       ),
-                                    ),
+                                      const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                                      Text('#${paginatedOrderModel.orders![index].id}', style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall)),
+                                    ]),
                                     const SizedBox(height: Dimensions.paddingSizeSmall),
 
                                     ResponsiveHelper.isDesktop(context) ? Padding(

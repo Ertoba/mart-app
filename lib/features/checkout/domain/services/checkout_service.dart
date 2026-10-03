@@ -1,12 +1,13 @@
+import 'package:sixam_mart/features/checkout/domain/models/checkout_summary_body_model.dart';
+import 'package:sixam_mart/features/checkout/domain/models/coverage_list_model.dart';
 import 'package:get/get_connect/http/src/response/response.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sixam_mart/api/api_client.dart';
-import 'package:sixam_mart/features/checkout/domain/models/surge_price_model.dart';
+import 'package:sixam_mart/features/checkout/domain/models/saved_prescription_model.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/features/payment/domain/models/offline_method_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/place_order_body_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/timeslote_model.dart';
-import 'package:sixam_mart/features/checkout/domain/models/saved_prescription_model.dart';
 import 'package:sixam_mart/features/checkout/domain/repositories/checkout_repository_interface.dart';
 import 'package:sixam_mart/features/checkout/domain/services/checkout_service_interface.dart';
 import 'package:sixam_mart/helper/date_converter.dart';
@@ -40,14 +41,19 @@ class CheckoutService implements CheckoutServiceInterface {
     List<TimeSlotModel>? timeSlots = [];
     int minutes = 0;
     DateTime now = DateTime.now();
-    for(int index=0; index<store.schedules!.length; index++) {
+    // `stores/details` no longer returns `schedules`, so this is null rather
+    // than empty. Force-unwrapping it threw inside `getStoreDetails` — before
+    // its `update()` — which left the store page stuck on its loader with the
+    // data already fetched. No schedules simply means no bookable slots.
+    final List<Schedules> schedules = store.schedules ?? <Schedules>[];
+    for(int index=0; index<schedules.length; index++) {
       DateTime openTime = DateTime(
-        now.year, now.month, now.day, DateConverter.convertStringTimeToDate(store.schedules![index].openingTime!).hour,
-        DateConverter.convertStringTimeToDate(store.schedules![index].openingTime!).minute,
+        now.year, now.month, now.day, DateConverter.convertStringTimeToDate(schedules[index].openingTime!).hour,
+        DateConverter.convertStringTimeToDate(schedules[index].openingTime!).minute,
       );
       DateTime closeTime = DateTime(
-        now.year, now.month, now.day, DateConverter.convertStringTimeToDate(store.schedules![index].closingTime!).hour,
-        DateConverter.convertStringTimeToDate(store.schedules![index].closingTime!).minute,
+        now.year, now.month, now.day, DateConverter.convertStringTimeToDate(schedules[index].closingTime!).hour,
+        DateConverter.convertStringTimeToDate(schedules[index].closingTime!).minute,
       );
       if(closeTime.difference(openTime).isNegative) {
         minutes = openTime.difference(closeTime).inMinutes;
@@ -63,14 +69,14 @@ class CheckoutService implements CheckoutServiceInterface {
             if(end.isAfter(closeTime)) {
               end = closeTime;
             }
-            timeSlots.add(TimeSlotModel(day: store.schedules![index].day, startTime: start, endTime: end));
+            timeSlots.add(TimeSlotModel(day: schedules[index].day, startTime: start, endTime: end));
             time = time.add(Duration(minutes: scheduleOrderSlotDuration));
           }else {
             break;
           }
         }
       }else {
-        timeSlots.add(TimeSlotModel(day: store.schedules![index].day, startTime: openTime, endTime: closeTime));
+        timeSlots.add(TimeSlotModel(day: schedules[index].day, startTime: openTime, endTime: closeTime));
       }
     }
     return timeSlots;
@@ -112,14 +118,14 @@ class CheckoutService implements CheckoutServiceInterface {
   }
 
   @override
-  Future<Response> placeOrder(PlaceOrderBodyModel orderBody, List<MultipartBody> orderAttachment, [List<String>? savedImages]) async {
+  Future<Response> placeOrder(PlaceOrderBodyModel orderBody, List<MultipartBody> orderAttachment, List<String>? savedImages) async {
     return await checkoutRepositoryInterface.placeOrder(orderBody, orderAttachment, savedImages);
   }
 
   @override
   Future<Response> placePrescriptionOrder(int? storeId, double? distance, String address, String longitude, String latitude, String note,
-      List<MultipartBody> orderAttachment, String dmTips, String deliveryInstruction, {List<String>? savedImages}) async {
-    return await checkoutRepositoryInterface.placePrescriptionOrder(storeId, distance, address, longitude, latitude, note, orderAttachment, dmTips, deliveryInstruction, savedImages: savedImages);
+      List<MultipartBody> orderAttachment, List<String> savedImages, String dmTips, String deliveryInstruction) async {
+    return await checkoutRepositoryInterface.placePrescriptionOrder(storeId, distance, address, longitude, latitude, note, orderAttachment, savedImages, dmTips, deliveryInstruction);
   }
 
   @override
@@ -128,8 +134,28 @@ class CheckoutService implements CheckoutServiceInterface {
   }
 
   @override
-  Future<SurgePriceModel?> getSurgePrice({required String zoneId, required String moduleId, required String dateTime, String? guestId}) async {
-    return await checkoutRepositoryInterface.getSurgePrice(zoneId: zoneId, moduleId: moduleId, dateTime: dateTime, guestId: guestId);
+  Future<Response> getCheckoutSummary(CheckoutSummaryBodyModel body) async {
+    return await checkoutRepositoryInterface.getCheckoutSummary(body);
+  }
+
+  @override
+  Future<CoverageListModel?> getCoverageList({required int zoneId, int? moduleId}) async {
+    return await checkoutRepositoryInterface.getCoverageList(zoneId: zoneId, moduleId: moduleId);
+  }
+
+    @override
+  Future<List<SavedPrescriptionModel>?> getSavedPrescriptionImages() async {
+    return await checkoutRepositoryInterface.getSavedPrescriptionImages();
+  }
+
+  @override
+  Future<Response> storeSavedPrescriptionImages(List<MultipartBody> images) async {
+    return await checkoutRepositoryInterface.storeSavedPrescriptionImages(images);
+  }
+
+  @override
+  Future<Response> deleteSavedPrescriptionImages() async {
+    return await checkoutRepositoryInterface.deleteSavedPrescriptionImages();
   }
 
   @override
@@ -138,21 +164,7 @@ class CheckoutService implements CheckoutServiceInterface {
     'monthly_reorder_policy_step_2',
     'monthly_reorder_policy_step_3',
     'monthly_reorder_policy_step_4',
+    'monthly_reorder_policy_step_5',
+    'monthly_reorder_policy_step_6',
   ];
-
-  @override
-  Future<List<SavedPrescriptionModel>?> getSavedPrescriptionImages() {
-    return checkoutRepositoryInterface.getSavedPrescriptionImages();
-  }
-
-  @override
-  Future<Response> storeSavedPrescriptionImages(List<MultipartBody> images) {
-    return checkoutRepositoryInterface.storeSavedPrescriptionImages(images);
-  }
-
-  @override
-  Future<Response> deleteSavedPrescriptionImages() {
-    return checkoutRepositoryInterface.deleteSavedPrescriptionImages();
-  }
-
 }

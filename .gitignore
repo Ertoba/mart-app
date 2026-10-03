@@ -54,3 +54,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 *.hprof
+
+# Android native build cache
+android/app/.cxx/

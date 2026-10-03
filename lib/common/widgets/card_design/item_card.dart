@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sixam_mart/common/widgets/add_favourite_view.dart';
+import 'package:sixam_mart/common/widgets/cart_count_view.dart';
 import 'package:sixam_mart/common/widgets/custom_asset_image_widget.dart';
+import 'package:sixam_mart/common/widgets/custom_image.dart';
 import 'package:sixam_mart/common/widgets/custom_ink_well.dart';
+import 'package:sixam_mart/common/widgets/discount_tag.dart';
+import 'package:sixam_mart/common/widgets/hover/on_hover.dart';
 import 'package:sixam_mart/common/widgets/hover/text_hover.dart';
+import 'package:sixam_mart/common/widgets/not_available_widget.dart';
+import 'package:sixam_mart/common/widgets/organic_tag.dart';
 import 'package:sixam_mart/features/item/controllers/item_controller.dart';
-import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/common/widgets/add_favourite_view.dart';
-import 'package:sixam_mart/common/widgets/cart_count_view.dart';
-import 'package:sixam_mart/common/widgets/custom_image.dart';
-import 'package:sixam_mart/common/widgets/discount_tag.dart';
-import 'package:sixam_mart/common/widgets/hover/on_hover.dart';
-import 'package:sixam_mart/common/widgets/not_available_widget.dart';
-import 'package:sixam_mart/common/widgets/organic_tag.dart';
-import 'package:sixam_mart/common/widgets/verified_seller_badge.dart';
 
 class ItemCard extends StatelessWidget {
   final Item item;
@@ -52,7 +51,9 @@ class ItemCard extends StatelessWidget {
                     flex: 5,
                     child: Stack(children: [
                       Padding(
-                        padding: EdgeInsets.only(top: isPopularItem ? Dimensions.paddingSizeExtraSmall : 0, left: isPopularItem ? Dimensions.paddingSizeExtraSmall : 0, right: isPopularItem ? Dimensions.paddingSizeExtraSmall : 0),
+                        padding: EdgeInsets.only(top: isPopularItem ? Dimensions.paddingSizeExtraSmall : 0,
+                            left: isPopularItem ? Dimensions.paddingSizeExtraSmall : 0,
+                            right: isPopularItem ? Dimensions.paddingSizeExtraSmall : 0),
                         child: ClipRRect(
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(Dimensions.radiusLarge),
@@ -67,10 +68,6 @@ class ItemCard extends StatelessWidget {
                             fit: BoxFit.cover, width: double.infinity, height: double.infinity,
                           ),
                         ),
-                      ),
-
-                      AddFavouriteView(
-                        item: item,
                       ),
 
                       item.isStoreHalalActive! && item.isHalalItem! ? const Positioned(
@@ -114,6 +111,9 @@ class ItemCard extends StatelessWidget {
 
                       Get.find<ItemController>().isAvailable(item) ? const SizedBox() : NotAvailableWidget(radius: Dimensions.radiusLarge, isAllSideRound: isPopularItem),
 
+                      AddFavouriteView(
+                        item: item,
+                      ),
                     ]),
                   ),
 
@@ -127,13 +127,15 @@ class ItemCard extends StatelessWidget {
                           alignment: isPopularItem ? Alignment.center : Alignment.centerLeft,
                           child: Column(
                               crossAxisAlignment: isPopularItem ? CrossAxisAlignment.center : CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                            (isFood || isShop) ? Row(mainAxisAlignment: isPopularItem ? MainAxisAlignment.center : MainAxisAlignment.start, children: [
-                              Flexible(child: Text(item.storeName ?? '', style: robotoRegular.copyWith(color: Theme.of(context).disabledColor), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                              if (item.verifiedSeller == true) ...[
+                            (isFood || isShop) ? Row(
+                              children: [
+                                Flexible(
+                                  child: Text(item.storeName ?? '', style: robotoRegular.copyWith(color: Theme.of(context).disabledColor), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                ),
                                 const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                                const VerifiedSellerBadge(verified: true, size: 14),
+                                item.verifiedSeller == 1 ? Image.asset(Images.verifiedBadge, width: 14, height: 14) : const SizedBox.shrink()
                               ],
-                            ])
+                            )
                                 : Text(item.name ?? '', style: robotoBold, maxLines: 1, overflow: TextOverflow.ellipsis),
 
                             (isFood || isShop) ? Flexible(
@@ -142,7 +144,7 @@ class ItemCard extends StatelessWidget {
                                 style: robotoBold, maxLines: 1, overflow: TextOverflow.ellipsis,
                               ),
                             ) : item.ratingCount! > 0 ? Row(mainAxisAlignment: isPopularItem ? MainAxisAlignment.center : MainAxisAlignment.start, children: [
-                              Icon(Icons.star, size: 14, color: Colors.orange),
+                              const Icon(Icons.star, size: 14, color: Colors.orange),
                               const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                               Text(item.avgRating!.toStringAsFixed(1), style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)),
@@ -153,7 +155,7 @@ class ItemCard extends StatelessWidget {
 
                             // showUnitOrRattings(context);
                             (isFood || isShop) ? item.ratingCount! > 0 ? Row(mainAxisAlignment: isPopularItem ? MainAxisAlignment.center : MainAxisAlignment.start, children: [
-                              Icon(Icons.star, size: 14, color: Colors.orange),
+                              const Icon(Icons.star, size: 14, color: Colors.orange),
                               const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                               Text(item.avgRating!.toStringAsFixed(1), style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)),

@@ -4,12 +4,12 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:sixam_mart/features/order/controllers/order_controller.dart';
-import 'package:sixam_mart/util/dimensions.dart';
-import 'package:sixam_mart/util/styles.dart';
 import 'package:sixam_mart/common/widgets/custom_app_bar.dart';
 import 'package:sixam_mart/common/widgets/custom_button.dart';
 import 'package:sixam_mart/common/widgets/custom_text_field.dart';
+import 'package:sixam_mart/features/order/controllers/order_controller.dart';
+import 'package:sixam_mart/util/dimensions.dart';
+import 'package:sixam_mart/util/styles.dart';
 
 class RefundRequestScreen extends StatefulWidget {
   final String? orderId;
@@ -27,6 +27,23 @@ class _RefundRequestScreenState extends State<RefundRequestScreen> {
     super.initState();
     Get.find<OrderController>().pickRefundImage(true);
     Get.find<OrderController>().getRefundReasons();
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit(OrderController orderController) async {
+    final String? orderId = widget.orderId;
+    final bool isSuccess = await orderController.submitRefundRequest(_noteController.text.trim(), orderId);
+    if(!isSuccess || orderId == null) {
+      return;
+    }
+    Get.back(closeOverlays: true);
+    await orderController.timerTrackOrder(orderId);
+    orderController.syncOrderStatusInLists(int.tryParse(orderId), orderController.trackModel?.orderStatus);
   }
 
   @override
@@ -51,7 +68,7 @@ class _RefundRequestScreenState extends State<RefundRequestScreen> {
                         decoration: BoxDecoration(
                           color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5, spreadRadius: 1)],
+                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5, spreadRadius: 1)],
                         ),
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
@@ -74,7 +91,7 @@ class _RefundRequestScreenState extends State<RefundRequestScreen> {
                               );
                             },
                           ) : Center(child: Text('no_data_found'.tr)),
-                          SizedBox(height: Dimensions.paddingSizeLarge),
+                          const SizedBox(height: Dimensions.paddingSizeLarge),
 
                           Text('comments'.tr, style: robotoBold),
                           const SizedBox(height: Dimensions.paddingSizeSmall),
@@ -99,7 +116,7 @@ class _RefundRequestScreenState extends State<RefundRequestScreen> {
                         decoration: BoxDecoration(
                           color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5, spreadRadius: 1)],
+                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5, spreadRadius: 1)],
                         ),
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
@@ -173,7 +190,7 @@ class _RefundRequestScreenState extends State<RefundRequestScreen> {
                 CustomButton(
                   buttonText: 'submit_refund_request'.tr,
                   isLoading: orderController.isLoading,
-                  onPressed: () => orderController.submitRefundRequest(_noteController.text.trim(), widget.orderId),
+                  onPressed: () => _submit(orderController),
                 ),
 
               ]),

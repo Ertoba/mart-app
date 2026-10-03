@@ -101,7 +101,7 @@ class TrackDetailsViewWidget extends StatelessWidget {
 
         Align(alignment: Alignment.centerLeft, child: Text(
           takeAway ? Get.find<SplashController>().configModel!.moduleConfig!.module!.showRestaurantText!
-              ? 'store'.tr : 'store'.tr : 'delivery_man'.tr,
+              ? 'store_new'.tr : 'store_new'.tr : 'delivery_man'.tr,
           style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall),
         )),
         const SizedBox(height: Dimensions.paddingSizeExtraSmall),

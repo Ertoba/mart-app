@@ -147,7 +147,7 @@ class _SavedAddressBottomSheetState extends State<SavedAddressBottomSheet> {
                               const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                               Text(
-                                AddressHelper.getAddressTypeLabel(address.addressType),
+                                address.addressType!.tr,
                                 style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault),
                               ),
                             ]),
@@ -180,7 +180,7 @@ class _SavedAddressBottomSheetState extends State<SavedAddressBottomSheet> {
                   onPressed: () {
                     Get.back();
                     if(ResponsiveHelper.isDesktop(Get.context)){
-                      showGeneralDialog(context: context, pageBuilder: (_,__,___) {
+                      showGeneralDialog(context: context, pageBuilder: (_,_,_) {
                         return SizedBox(
                           height: 300, width: 300,
                           child: PickMapScreen(fromSignUp: false, canRoute: false, fromAddAddress: false, route:'', onPicked: (AddressModel address) async {

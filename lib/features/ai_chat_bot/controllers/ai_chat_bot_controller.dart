@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:sixam_mart/api/api_client.dart';
 import 'package:sixam_mart/features/ai_chat_bot/domain/models/ai_chat_conversation_model.dart';
 import 'package:sixam_mart/features/ai_chat_bot/domain/models/ai_chat_message_model.dart';
 import 'package:sixam_mart/features/ai_chat_bot/domain/services/ai_chat_bot_service_interface.dart';
+import 'package:sixam_mart/features/cart/controllers/cart_controller.dart';
 
 class AiChatBotController extends GetxController implements GetxService {
   final AiChatBotServiceInterface aiChatBotServiceInterface;
@@ -100,8 +102,10 @@ class AiChatBotController extends GetxController implements GetxService {
       response = null;
     }
 
-    if (response != null && response.statusCode == 200 && response.body is Map<String, dynamic>) {
-      final Map<String, dynamic> body = response.body as Map<String, dynamic>;
+    // `ai-chat/send` answers `201 Created`; a plain `== 200` check read every reply as a
+    // failure, dropping the assistant's message and the customer's own along with it.
+    if (response != null && ApiClient.isSuccessCode(response.statusCode) && response.body is Map) {
+      final Map<String, dynamic> body = Map<String, dynamic>.from(response.body as Map);
 
       final dynamic newId = body['conversation_id'];
       if (newId is int) {
@@ -117,6 +121,12 @@ class AiChatBotController extends GetxController implements GetxService {
           assistantMessage.createdAt ??= DateTime.now().toUtc().toIso8601String();
           _messageModel!.messages!.insert(0, assistantMessage);
           _messageModel!.totalSize = (_messageModel!.totalSize ?? 0) + 1;
+          // The bot mutates the cart server-side during this call — the app never
+          // otherwise calls CartController for it, so the header badge and cart
+          // screens would stay stale until some unrelated screen happened to refetch.
+          if (assistantMessage.metadata?.cartUpdated == true) {
+            Get.find<CartController>().getAllCarts();
+          }
         } catch (_) {}
       }
     } else {

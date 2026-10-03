@@ -1,3 +1,5 @@
+import 'package:sixam_mart/api/json_reader.dart';
+import 'package:sixam_mart/common/models/measurement_unit_model.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/helper/type_converter_helper.dart';
 
@@ -37,6 +39,20 @@ class ConfigModel {
   int? digitAfterDecimalPoint;
   double? parcelPerKmShippingCharge;
   double? parcelMinimumShippingCharge;
+  MeasurementUnitModel? distanceUnit;
+
+  /// Flat `distance_unit_label` — `km` or `mi`. Reports the same setting as
+  /// [distanceUnit], and is the key the platform sends today.
+  String? distanceUnitLabel;
+
+  /// The suffix to render beside a distance or a per-unit rate. The flat key
+  /// decides so the suffix can never disagree with the unit word beside it.
+  String get distanceUnitSuffix {
+    final String? label = distanceUnitLabel ?? distanceUnit?.label;
+    return (label != null && label.trim().isNotEmpty) ? label.trim() : 'km';
+  }
+  MeasurementUnitModel? weightUnit;
+  MeasurementUnitModel? dimensionUnit;
   ModuleModel? module;
   ModuleConfig? moduleConfig;
   LandingPageSettings? landingPageSettings;
@@ -131,6 +147,10 @@ class ConfigModel {
   bool? proMemberStatus;
   bool? aiChatStatus;
   int? systemTaxIncludeStatus;
+  ServiceModuleConfig? serviceModule;
+  bool? verifiedStoreStatus;
+  bool? productBundleStatus;
+  List<String>? productBundleModuleTypes;
 
   ConfigModel({
     this.businessName,
@@ -170,6 +190,10 @@ class ConfigModel {
     this.moduleConfig,
     this.parcelPerKmShippingCharge,
     this.parcelMinimumShippingCharge,
+    this.distanceUnit,
+    this.distanceUnitLabel,
+    this.weightUnit,
+    this.dimensionUnit,
     this.landingPageSettings,
     this.socialMedia,
     this.footerText,
@@ -260,6 +284,10 @@ class ConfigModel {
     this.proMemberStatus,
     this.aiChatStatus,
     this.systemTaxIncludeStatus,
+    this.serviceModule,
+    this.verifiedStoreStatus,
+    this.productBundleStatus,
+    this.productBundleModuleTypes,
   });
 
   ConfigModel.fromJson(Map<String, dynamic> json) {
@@ -305,6 +333,13 @@ class ConfigModel {
     moduleConfig = json['module_config'] != null ? ModuleConfig.fromJson(json['module_config']) : null;
     parcelPerKmShippingCharge = json['parcel_per_km_shipping_charge']?.toDouble();
     parcelMinimumShippingCharge = json['parcel_minimum_shipping_charge']?.toDouble();
+    distanceUnitLabel = json['distance_unit_label'];
+    final dynamic units = json['units'];
+    if (units is Map) {
+      distanceUnit = MeasurementUnitModel.maybeFrom(units['distance']);
+      weightUnit = MeasurementUnitModel.maybeFrom(units['weight']);
+      dimensionUnit = MeasurementUnitModel.maybeFrom(units['dimension']);
+    }
     landingPageSettings = json['landing_page_settings'] != null ? LandingPageSettings.fromJson(json['landing_page_settings']) : null;
     if (json['social_media'] != null) {
       socialMedia = <SocialMedia>[];
@@ -321,7 +356,7 @@ class ConfigModel {
     customerWalletStatus = json['customer_wallet_status'];
     dmTipsStatus = json['dm_tips_status'];
     refEarningStatus = json['ref_earning_status'];
-    refundActiveStatus = json['refund_active_status'];
+    refundActiveStatus = TypeConverterHelper.getBool(json['refund_active_status']);
     refEarningExchangeRate = json['ref_earning_exchange_rate']?.toDouble();
     if (json['social_login'] != null) {
       socialLogin = <SocialLogin>[];
@@ -391,7 +426,7 @@ class ConfigModel {
     popularTips = json['popular_tips'];
     if(json['ride_search_radius'] != null){
       try{
-        searchRadius = json['ride_search_radius'].toDouble();
+        searchRadius = JsonReader.toDouble(json['ride_search_radius']);
       }catch(e){
         searchRadius = double.parse(json['ride_search_radius'].toString());
       }
@@ -413,7 +448,7 @@ class ConfigModel {
     referralEarningStatus = int.tryParse(json['rider_referral_earning_status'].toString());
     if(json['rider_completion_radius'] != null){
       try{
-        completionRadius = json['rider_completion_radius'].toDouble();
+        completionRadius = JsonReader.toDouble(json['rider_completion_radius']);
       }catch(e){
         completionRadius = double.parse(json['rider_completion_radius'].toString());
       }
@@ -427,6 +462,15 @@ class ConfigModel {
     proMemberStatus = TypeConverterHelper.getBool(json['pro_member_status']);
     aiChatStatus = TypeConverterHelper.getBool(json['ai_chat_status']);
     systemTaxIncludeStatus = json['system_tax_include_status'];
+    serviceModule = json['service_module'] != null ? ServiceModuleConfig.fromJson(json['service_module']) : null;
+    verifiedStoreStatus = TypeConverterHelper.getBool(json['verified_store_status']);
+    productBundleStatus = TypeConverterHelper.getBool(json['product_bundle_status']);
+    if (json['product_bundle_module_types'] != null) {
+      productBundleModuleTypes = <String>[];
+      json['product_bundle_module_types'].forEach((v) {
+        productBundleModuleTypes!.add(v.toString());
+      });
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -554,6 +598,54 @@ class ConfigModel {
     }
     data['pro_member_status'] = proMemberStatus;
     data['system_tax_include_status'] = systemTaxIncludeStatus;
+    if (serviceModule != null) {
+      data['service_module'] = serviceModule!.toJson();
+    }
+    data['verified_store_status'] = verifiedStoreStatus;
+    data['product_bundle_status'] = productBundleStatus;
+    if (productBundleModuleTypes != null) {
+      data['product_bundle_module_types'] = productBundleModuleTypes;
+    }
+    return data;
+  }
+}
+
+class ServiceModuleConfig {
+  bool? scheduleTimeRestrictionStatus;
+  int? scheduleTimeRestrictionValue;
+  String? scheduleTimeRestrictionUnit;
+  bool? biddingSystem;
+  int? postValidationDays;
+  bool? otpForCompleteService;
+  bool? rebookingOption;
+  bool? providerVerifiedBadge;
+
+  ServiceModuleConfig({
+    this.scheduleTimeRestrictionStatus, this.scheduleTimeRestrictionValue, this.scheduleTimeRestrictionUnit, this.biddingSystem, this.postValidationDays,
+    this.otpForCompleteService, this.rebookingOption, this.providerVerifiedBadge,
+  });
+
+  ServiceModuleConfig.fromJson(Map<String, dynamic> json) {
+    scheduleTimeRestrictionStatus = TypeConverterHelper.getBool(json['schedule_time_restriction_status']);
+    scheduleTimeRestrictionValue = int.tryParse('${json['schedule_time_restriction_value']}');
+    scheduleTimeRestrictionUnit = json['schedule_time_restriction_unit'];
+    biddingSystem = TypeConverterHelper.getBool(json['bidding_system']);
+    postValidationDays = int.tryParse('${json['post_validation_days']}');
+    otpForCompleteService = TypeConverterHelper.getBool(json['otp_for_complete_service']);
+    rebookingOption = TypeConverterHelper.getBool(json['rebooking_option']);
+    providerVerifiedBadge = TypeConverterHelper.getBool(json['provider_verified_badge']);
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['schedule_time_restriction_status'] = scheduleTimeRestrictionStatus;
+    data['schedule_time_restriction_value'] = scheduleTimeRestrictionValue;
+    data['schedule_time_restriction_unit'] = scheduleTimeRestrictionUnit;
+    data['bidding_system'] = biddingSystem;
+    data['post_validation_days'] = postValidationDays;
+    data['otp_for_complete_service'] = otpForCompleteService;
+    data['rebooking_option'] = rebookingOption;
+    data['provider_verified_badge'] = providerVerifiedBadge;
     return data;
   }
 }
@@ -1119,7 +1211,7 @@ class ParcelReturnTimeFee {
   ParcelReturnTimeFee({this.status, this.parcelReturnTime, this.returnTimeType, this.returnFeeForDm});
 
   ParcelReturnTimeFee.fromJson(Map<String, dynamic> json) {
-    status = json['status'];
+    status = json['status']?.toString();
     parcelReturnTime = json['parcel_return_time'];
     returnTimeType = json['return_time_type'];
     returnFeeForDm = json['return_fee_for_dm'];

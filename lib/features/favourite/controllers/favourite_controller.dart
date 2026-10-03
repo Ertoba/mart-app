@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sixam_mart/common/models/response_model.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
+import 'package:sixam_mart/features/service_module/service_home/domain/models/service_model.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:get/get.dart';
@@ -17,58 +18,68 @@ class FavouriteController extends GetxController implements GetxService {
   List<Store?>? _wishStoreList;
   List<Store?>? get wishStoreList => _wishStoreList;
 
+  List<Service?>? _wishServiceList;
+  List<Service?>? get wishServiceList => _wishServiceList;
+
   List<int?> _wishItemIdList = [];
   List<int?> get wishItemIdList => _wishItemIdList;
 
   List<int?> _wishStoreIdList = [];
   List<int?> get wishStoreIdList => _wishStoreIdList;
 
+  List<int?> _wishServiceIdList = [];
+  List<int?> get wishServiceIdList => _wishServiceIdList;
+
   bool _isRemoving = false;
   bool get isRemoving => _isRemoving;
 
-  void addToFavouriteList(Item? product, int? storeID, bool isStore, {bool getXSnackBar = false}) async {
+  Future<bool> addToFavouriteList(Item? product, int? storeID, bool isStore, {bool getXSnackBar = false, int? serviceId}) async {
     _isRemoving = true;
     update();
     if(isStore) {
       _wishStoreList ??= [];
       _wishStoreIdList.add(storeID);
       _wishStoreList!.add(Store());
-    }else{
+    } else if (serviceId != null) {
+      _wishServiceList ??= [];
+      _wishServiceIdList.add(serviceId);
+      _wishServiceList!.add(null);
+    } else {
       _wishItemList ??= [];
       _wishItemList!.add(product);
-      _wishItemIdList.add(product!.id);
+      _wishItemIdList.add(product?.id);
     }
-    ResponseModel responseModel = await favouriteServiceInterface.addFavouriteList(isStore ? storeID : product!.id, isStore);
+    final bool isServiceModule = serviceId != null;
+    final int? apiId = isStore ? storeID : (isServiceModule ? serviceId : product?.id);
+    ResponseModel responseModel = await favouriteServiceInterface.addFavouriteList(apiId, isStore, isServiceModule: isServiceModule);
     if (responseModel.isSuccess) {
       showCustomSnackBar(responseModel.message, isError: false, getXSnackBar: getXSnackBar);
     } else {
       if(isStore) {
-        for (var storeId in _wishStoreIdList) {
-          if (storeId == storeID) {
-            _wishStoreIdList.removeAt(_wishStoreIdList.indexOf(storeId));
-          }
-        }
-      }else{
-        for (var productId in _wishItemIdList) {
-          if(productId == product!.id){
-            _wishItemIdList.removeAt(_wishItemIdList.indexOf(productId));
-          }
-        }
+        _wishStoreIdList.removeWhere((id) => id == storeID);
+
+      } else if (isServiceModule) {
+        _wishServiceIdList.removeWhere((id) => id == serviceId);
+        if (_wishServiceList != null) _wishServiceList!.removeLast();
+      } else {
+        _wishItemIdList.removeWhere((id) => id == product!.id);
       }
       showCustomSnackBar(responseModel.message, isError: true, getXSnackBar: getXSnackBar);
     }
     _isRemoving = false;
     update();
+    return responseModel.isSuccess;
   }
 
-  void removeFromFavouriteList(int? id, bool isStore, {bool getXSnackBar = false}) async {
+  Future<bool> removeFromFavouriteList(int? id, bool isStore, {bool getXSnackBar = false}) async {
     _isRemoving = true;
     update();
 
     int idIndex = -1;
-    int? storeId, itemId;
+    int? storeId, itemId, serviceId;
     Store? store;
     Item? item;
+    Service? service;
     if(isStore) {
       idIndex = _wishStoreIdList.indexOf(id);
       if(idIndex != -1) {
@@ -77,48 +88,62 @@ class FavouriteController extends GetxController implements GetxService {
         store = _wishStoreList![idIndex];
         _wishStoreList!.removeAt(idIndex);
       }
-    }else {
-      idIndex = _wishItemIdList.indexOf(id);
-      if(idIndex != -1) {
-        itemId = id;
-        _wishItemIdList.removeAt(idIndex);
-        item = _wishItemList![idIndex];
-        _wishItemList!.removeAt(idIndex);
+    } else {
+      idIndex = _wishServiceIdList.indexOf(id);
+      if (idIndex != -1) {
+        serviceId = id;
+        _wishServiceIdList.removeAt(idIndex);
+        service = _wishServiceList![idIndex];
+        _wishServiceList!.removeAt(idIndex);
+      } else {
+        idIndex = _wishItemIdList.indexOf(id);
+        if(idIndex != -1) {
+          itemId = id;
+          _wishItemIdList.removeAt(idIndex);
+          item = _wishItemList![idIndex];
+          _wishItemList!.removeAt(idIndex);
+        }
       }
     }
-    ResponseModel responseModel = await favouriteServiceInterface.removeFavouriteList(id, isStore);
+    ResponseModel responseModel = await favouriteServiceInterface.removeFavouriteList(id, isStore, isServiceModule: serviceId != null);
     if (responseModel.isSuccess) {
       showCustomSnackBar(responseModel.message, isError: false, getXSnackBar: getXSnackBar);
-    }
-    else {
+    } else {
       showCustomSnackBar(responseModel.message, isError: true, getXSnackBar: getXSnackBar);
       if(isStore) {
         _wishStoreIdList.add(storeId);
         _wishStoreList!.add(store);
-      }else {
+      } else if (serviceId != null) {
+        _wishServiceIdList.add(serviceId);
+        _wishServiceList!.add(service);
+      } else {
         _wishItemIdList.add(itemId);
         _wishItemList!.add(item);
       }
     }
     _isRemoving = false;
     update();
+    return responseModel.isSuccess;
   }
 
   Future<void> getFavouriteList() async {
     _wishItemList = null;
     _wishStoreList = null;
+    _wishServiceList = null;
     Response response = await favouriteServiceInterface.getFavouriteList();
     if (response.statusCode == 200) {
       update();
       _wishItemList = [];
       _wishStoreList = [];
+      _wishServiceList = [];
       _wishStoreIdList = [];
       _wishItemIdList = [];
+      _wishServiceIdList = [];
 
       if(response.body['item'] != null) {
         response.body['item'].forEach((item) async {
           if(item['module_type'] == null || !Get.find<SplashController>().getModuleConfig(item['module_type']).newVariation!
-            || item['variations'] == null || item['variations'].isEmpty || (item['food_variations'] != null && item['food_variations'].isNotEmpty)){
+            || item['variations'] == null || item['variations'].isEmpty || (item['food_variations'] != null)){
 
             Item i = Item.fromJson(item);
             if(Get.find<SplashController>().module == null){
@@ -132,7 +157,9 @@ class FavouriteController extends GetxController implements GetxService {
         });
       }
 
-      response.body['store'].forEach((store) async {
+      _setWishServiceList(response);
+
+      response.body['store']?.forEach((store) async {
         if(Get.find<SplashController>().module == null){
           _wishStoreList!.addAll(favouriteServiceInterface.wishStoreList(store));
           _wishStoreIdList.addAll(favouriteServiceInterface.wishStoreIdList(store));
@@ -141,7 +168,7 @@ class FavouriteController extends GetxController implements GetxService {
           try{
             s = Store.fromJson(store);
           }catch(e){
-            debugPrint('exception create in store list create : $e');
+            debugPrint('exception create in store_new list create : $e');
           }
           if(s != null && Get.find<SplashController>().module!.id == s.moduleId) {
             _wishStoreList!.add(s);
@@ -153,9 +180,22 @@ class FavouriteController extends GetxController implements GetxService {
     update();
   }
 
+  void _setWishServiceList(Response response) {
+    response.body['service']?.forEach((serviceJson) {
+      try {
+        final Service s = Service.fromJson(serviceJson as Map<String, dynamic>);
+        _wishServiceList!.add(s);
+        _wishServiceIdList.add(s.id);
+      } catch (e) {
+        debugPrint('exception creating service in favourite list: $e');
+      }
+    });
+  }
+
   void removeFavourite() {
     _wishItemIdList = [];
     _wishStoreIdList = [];
+    _wishServiceIdList = [];
   }
 
 }

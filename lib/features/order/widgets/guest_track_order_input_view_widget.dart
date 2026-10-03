@@ -1,6 +1,7 @@
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sixam_mart/common/widgets/not_logged_in_screen.dart';
 import 'package:sixam_mart/features/language/controllers/language_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
@@ -18,8 +19,9 @@ import 'package:sixam_mart/common/widgets/custom_text_field.dart';
 import 'package:sixam_mart/common/widgets/footer_view.dart';
 
 class GuestTrackOrderInputViewWidget extends StatefulWidget {
-  final int? selectType;
-  const GuestTrackOrderInputViewWidget({super.key, this.selectType = 0});
+  final String? selectType;
+  final Function(bool success) callBack;
+  const GuestTrackOrderInputViewWidget({super.key, this.selectType = 'orders', required this.callBack});
 
   @override
   State<GuestTrackOrderInputViewWidget> createState() => _GuestTrackOrderInputViewWidgetState();
@@ -32,12 +34,14 @@ class _GuestTrackOrderInputViewWidgetState extends State<GuestTrackOrderInputVie
   final FocusNode _phoneFocus = FocusNode();
   String? _countryDialCode;
   bool isOrder = true;
+  bool isRide = false;
 
   @override
   void initState() {
     super.initState();
+    isOrder = widget.selectType! == 'orders';
+    isRide = widget.selectType == 'rides';
 
-    isOrder = widget.selectType! == 0;
     _countryDialCode = Get.find<AuthController>().getUserCountryCode().isNotEmpty
         ? Get.find<AuthController>().getUserCountryCode()
         : CountryCode.fromCountryCode(Get.find<SplashController>().configModel!.country!).dialCode;
@@ -47,7 +51,17 @@ class _GuestTrackOrderInputViewWidgetState extends State<GuestTrackOrderInputVie
   void didUpdateWidget(covariant GuestTrackOrderInputViewWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    isOrder = widget.selectType! == 0;
+    isOrder = widget.selectType! == 'orders';
+    isRide = widget.selectType == 'rides';
+  }
+
+  @override
+  void dispose() {
+    _orderIdController.dispose();
+    _phoneNumberController.dispose();
+    _orderFocus.dispose();
+    _phoneFocus.dispose();
+    super.dispose();
   }
 
   @override
@@ -78,7 +92,7 @@ class _GuestTrackOrderInputViewWidgetState extends State<GuestTrackOrderInputVie
                   const SizedBox(height: Dimensions.paddingSizeDefault),
 
                   CustomTextField(
-                    titleText: 'XXX-XXXXXX',
+                    titleText: 'enter_phone_number'.tr,
                     labelText: 'phone'.tr,
                     controller: _phoneNumberController,
                     focusNode: _phoneFocus,
@@ -132,7 +146,7 @@ class _GuestTrackOrderInputViewWidgetState extends State<GuestTrackOrderInputVie
           ),
         ),
       ),
-    ) : SingleChildScrollView(
+    ) : isRide ? NotLoggedInScreen(callBack: widget.callBack) : SingleChildScrollView(
       child: Padding(
         padding:  const EdgeInsets.symmetric(horizontal: Dimensions.radiusExtraLarge, vertical: Dimensions.paddingSizeLarge),
         child: Column(children: [
@@ -151,7 +165,7 @@ class _GuestTrackOrderInputViewWidgetState extends State<GuestTrackOrderInputVie
           const SizedBox(height: Dimensions.paddingSizeExtraLarge),
 
           CustomTextField(
-            titleText: 'XXX-XXXXXX',
+            titleText: 'enter_phone_number'.tr,
             labelText: 'phone'.tr,
             controller: _phoneNumberController,
             focusNode: _phoneFocus,

@@ -4,7 +4,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/features/category/controllers/category_controller.dart';
 import 'package:sixam_mart/features/category/domain/models/category_model.dart';
@@ -18,6 +17,7 @@ import 'package:sixam_mart/features/search/domain/models/search_suggestion_model
 import 'package:sixam_mart/features/search/domain/models/top_category_model.dart';
 import 'package:sixam_mart/features/search/domain/models/trending_search_model.dart';
 import 'package:sixam_mart/features/search/domain/services/search_service_interface.dart';
+import 'package:sixam_mart/features/service_module/service_home/domain/models/service_model.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart' hide Items;
 import 'package:sixam_mart/helper/address_helper.dart';
@@ -50,6 +50,32 @@ class SearchController extends GetxController implements GetxService {
     if (_searchItemTotalSize == null) return false;
     final int pageSize = _searchItemLimit > 0 ? _searchItemLimit : 10;
     return _searchItemOffset < (_searchItemTotalSize! / pageSize).ceil();
+  }
+
+  // Service module: the item-search response carries `services[]` instead of
+  // `products[]`. We park those in a parallel list and render service cards.
+  bool get isServiceModule => Get.find<SplashController>().module?.moduleType == AppConstants.service;
+
+  List<Service>? _searchServiceList;
+  List<Service>? get searchServiceList => _searchServiceList;
+
+  int? _searchServiceTotalSize;
+  int? get searchServiceTotalSize => _searchServiceTotalSize;
+
+  int _searchServiceOffset = 1;
+  int get searchServiceOffset => _searchServiceOffset;
+
+  int _searchServiceLimit = 10;
+
+  final List<int> _searchServiceOffsetList = [];
+
+  bool _isSearchServicePaginating = false;
+  bool get isSearchServicePaginating => _isSearchServicePaginating;
+
+  bool get hasMoreSearchServices {
+    if (_searchServiceTotalSize == null) return false;
+    final int pageSize = _searchServiceLimit > 0 ? _searchServiceLimit : 10;
+    return _searchServiceOffset < (_searchServiceTotalSize! / pageSize).ceil();
   }
 
   List<Item>? _allItemList;
@@ -461,6 +487,7 @@ class SearchController extends GetxController implements GetxService {
     RecentSearchEntry? recentEntry,
     int? preferredModuleId,
   }) async {
+    int? moduleId = Get.find<SplashController>().module?.id;
     final bool isStoreSearch = _isStore;
     final bool isPaginating = offset > 1;
     final int version = _searchVersion;
@@ -491,6 +518,11 @@ class SearchController extends GetxController implements GetxService {
           _searchItemOffset = 1;
           _searchItemLimit = 10;
           _searchItemOffsetList.clear();
+          _searchServiceList = null;
+          _searchServiceTotalSize = null;
+          _searchServiceOffset = 1;
+          _searchServiceLimit = 10;
+          _searchServiceOffsetList.clear();
           // Only clear store results when the query actually changed — a same-query
           // re-fetch (e.g. after applying a filter) must not wipe loaded stores.
           if (query != _storeResultText) {
@@ -540,6 +572,7 @@ class SearchController extends GetxController implements GetxService {
         moduleId: scopeModuleId,
         filterParams: _buildFilterQuery(),
       );
+      if(moduleId != Get.find<SplashController>().module?.id) return;
       // The user navigated back while this request was in flight — discard the
       // response so stale results don't overwrite _itemResultText/_storeResultText
       // and block the guard on the next search attempt.
@@ -548,6 +581,9 @@ class SearchController extends GetxController implements GetxService {
         if (query.isEmpty) {
           if (isStoreSearch) {
             _searchStoreList = [];
+          } else if (isServiceModule) {
+            _searchServiceList = [];
+            _searchServiceTotalSize = 0;
           } else {
             _searchItemList = [];
             _allItemList = [];
@@ -571,6 +607,19 @@ class SearchController extends GetxController implements GetxService {
             }
             _searchStoreList!.addAll(storeModel.stores ?? []);
             _allStoreList!.addAll(storeModel.stores ?? []);
+          } else if (isServiceModule) {
+            _itemResultText = query;
+            ServiceModel serviceModel = ServiceModel.fromJson(response.body);
+            _searchServiceTotalSize = serviceModel.totalSize ?? _searchServiceTotalSize;
+            _searchServiceOffset = serviceModel.offset ?? offset;
+            _searchServiceLimit = serviceModel.limit ?? _searchServiceLimit;
+            if (isPaginating) {
+              _searchServiceList ??= [];
+            } else {
+              _searchServiceList = [];
+              _searchServiceOffsetList.add(_searchServiceOffset);
+            }
+            _searchServiceList!.addAll(serviceModel.services ?? []);
           } else {
             _itemResultText = query;
             ItemModel itemModel = ItemModel.fromJson(response.body);
@@ -634,6 +683,31 @@ class SearchController extends GetxController implements GetxService {
     update();
   }
 
+  Future<void> paginateSearchServices(String? query) async {
+    if (query == null ||
+        query.trim().isEmpty ||
+        _isSearchServicePaginating ||
+        !hasMoreSearchServices) {
+      return;
+    }
+    final int nextOffset = _searchServiceOffset + 1;
+    if (_searchServiceOffsetList.contains(nextOffset)) return;
+    _searchServiceOffsetList.add(nextOffset);
+    _isSearchServicePaginating = true;
+    update();
+
+    final bool previousIsStore = _isStore;
+    _isStore = false;
+    await searchData(query, false, offset: nextOffset);
+    _isStore = previousIsStore;
+    if (_searchServiceOffset < nextOffset) {
+      _searchServiceOffsetList.remove(nextOffset);
+    }
+
+    _isSearchServicePaginating = false;
+    update();
+  }
+
   Future<void> paginateSearchStores(String? query) async {
     if (query == null ||
         query.trim().isEmpty ||
@@ -693,6 +767,10 @@ class SearchController extends GetxController implements GetxService {
     _searchItemTotalSize = null;
     _searchItemOffset = 1;
     _searchItemOffsetList.clear();
+    _searchServiceList = null;
+    _searchServiceTotalSize = null;
+    _searchServiceOffset = 1;
+    _searchServiceOffsetList.clear();
     _itemResultText = '';
   }
 
@@ -1038,30 +1116,6 @@ class SearchController extends GetxController implements GetxService {
     setVoiceListening(false);
   }
 
-  Future<String?> _resolveVoiceLocaleId() async {
-    try {
-      final locales = await _speech.locales();
-      final locale = Get.find<LocalizationController>().locale;
-      final language = locale.languageCode.toLowerCase();
-      final country = locale.countryCode?.toLowerCase();
-      final candidates = <String>[
-        if (language == 'ka') 'ka_GE',
-        if (country != null && country.isNotEmpty) '${language}_$country',
-        language,
-      ];
-      for (final candidate in candidates) {
-        final normalized = candidate.toLowerCase().replaceAll('-', '_');
-        for (final supported in locales) {
-          final id = supported.localeId.toLowerCase().replaceAll('-', '_');
-          if (id == normalized || id.startsWith('${normalized}_')) {
-            return supported.localeId;
-          }
-        }
-      }
-    } catch (_) {}
-    return null;
-  }
-
   /// Start listening and optionally update an external TextEditingController live
   Future<void> startVoiceListening({
     TextEditingController? externalController,
@@ -1076,21 +1130,12 @@ class SearchController extends GetxController implements GetxService {
 
     if (!voiceAvailable) {
       await initVoice();
-      if (!voiceAvailable) {
-        showCustomSnackBar('voice_recognition_not_available'.tr);
-        return;
-      }
+      if (!voiceAvailable) return;
     }
 
     // reset
     setVoiceText('');
     setVoiceSoundLevel(0.0);
-    final localeId = await _resolveVoiceLocaleId();
-    if (Get.find<LocalizationController>().locale.languageCode.toLowerCase() == 'ka' && localeId == null) {
-      showCustomSnackBar('georgian_voice_recognition_not_available'.tr);
-      setVoiceListening(false);
-      return;
-    }
 
     try {
       await _speech.listen(
@@ -1110,7 +1155,8 @@ class SearchController extends GetxController implements GetxService {
           final normalized = (level / 50).clamp(0.0, 1.0);
           setVoiceSoundLevel(normalized);
         },
-        localeId: localeId,
+        localeId:
+            '${Get.find<LocalizationController>().locale.languageCode}_${Get.find<LocalizationController>().locale.countryCode}',
         listenOptions: stt.SpeechListenOptions(
           partialResults: true,
           cancelOnError: true,

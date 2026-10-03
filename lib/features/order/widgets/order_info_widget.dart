@@ -3,14 +3,24 @@ import 'package:get/get.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:sixam_mart/common/widgets/custom_button.dart';
 import 'package:sixam_mart/common/widgets/custom_card.dart';
+import 'package:sixam_mart/common/widgets/custom_image.dart';
+import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
+import 'package:sixam_mart/common/widgets/rating_bar.dart';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
-import 'package:sixam_mart/features/checkout/widgets/payment_method_bottom_sheet.dart';
-import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
-import 'package:sixam_mart/features/notification/domain/models/notification_body_model.dart';
 import 'package:sixam_mart/features/chat/domain/models/conversation_model.dart';
+import 'package:sixam_mart/features/chat/widgets/image_dialog_widget.dart';
+import 'package:sixam_mart/features/checkout/widgets/payment_method_bottom_sheet.dart';
+import 'package:sixam_mart/features/notification/domain/models/notification_body_model.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
 import 'package:sixam_mart/features/order/domain/models/order_model.dart';
+import 'package:sixam_mart/features/order/widgets/delivery_details_widget.dart';
+import 'package:sixam_mart/features/order/widgets/order_banner_view_widget.dart';
+import 'package:sixam_mart/features/order/widgets/order_item_widget.dart';
+import 'package:sixam_mart/features/parcel/widgets/details_widget.dart';
+import 'package:sixam_mart/features/payment/widgets/offline_info_edit_dialog_widget.dart';
 import 'package:sixam_mart/features/review/domain/models/review_model.dart';
+import 'package:sixam_mart/features/review/widgets/review_dialog_widget.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/date_converter.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
@@ -21,16 +31,6 @@ import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/common/widgets/custom_image.dart';
-import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
-import 'package:sixam_mart/common/widgets/rating_bar.dart';
-import 'package:sixam_mart/features/chat/widgets/image_dialog_widget.dart';
-import 'package:sixam_mart/features/order/widgets/delivery_details_widget.dart';
-import 'package:sixam_mart/features/payment/widgets/offline_info_edit_dialog_widget.dart';
-import 'package:sixam_mart/features/order/widgets/order_banner_view_widget.dart';
-import 'package:sixam_mart/features/order/widgets/order_item_widget.dart';
-import 'package:sixam_mart/features/parcel/widgets/details_widget.dart';
-import 'package:sixam_mart/features/review/widgets/review_dialog_widget.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class OrderInfoWidget extends StatelessWidget {
@@ -60,14 +60,14 @@ class OrderInfoWidget extends StatelessWidget {
       ) : const SizedBox(),
 
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        !isDesktop && (orderController.orderDetails!.isNotEmpty && orderController.orderDetails![0].itemDetails!.moduleType == 'food')
-            && order.orderStatus != 'pending' ? SizedBox(height: Dimensions.paddingSizeExtraLarge) :SizedBox.shrink(),
+        !isDesktop && (orderController.orderDetails!.isNotEmpty && orderController.orderDetails![0].itemDetails?.moduleType == 'food')
+            && order.orderStatus != 'pending' ? const SizedBox(height: Dimensions.paddingSizeExtraLarge) :const SizedBox.shrink(),
 
         !isDesktop ? SizedBox(height: DateConverter.isBeforeTime(order.scheduleAt) && Get.find<SplashController>().getModuleConfig(order.moduleType).newVariation!
           ? order.orderStatus == 'pending' ? 100 : 140 :
-          parcel || prescriptionOrder || (orderController.orderDetails!.isNotEmpty && orderController.orderDetails![0].itemDetails!.moduleType == 'grocery')
-          || (orderController.orderDetails!.isNotEmpty && orderController.orderDetails![0].itemDetails!.moduleType == 'ecommerce')
-          || (orderController.orderDetails!.isNotEmpty && orderController.orderDetails![0].itemDetails!.moduleType == 'pharmacy')
+          parcel || prescriptionOrder || (orderController.orderDetails!.isNotEmpty && orderController.orderDetails![0].itemDetails?.moduleType == 'grocery')
+          || (orderController.orderDetails!.isNotEmpty && orderController.orderDetails![0].itemDetails?.moduleType == 'ecommerce')
+          || (orderController.orderDetails!.isNotEmpty && orderController.orderDetails![0].itemDetails?.moduleType == 'pharmacy')
           ? 140 : 0) : const SizedBox(),
 
         CustomCard(
@@ -310,11 +310,11 @@ class OrderInfoWidget extends StatelessWidget {
 
           ]),
         ),
-        SizedBox(height: Dimensions.paddingSizeSmall),
+        const SizedBox(height: Dimensions.paddingSizeSmall),
 
         (order.orderNote != null && order.orderNote!.isNotEmpty) ? CustomCard(
           borderRadius: isDesktop ? Dimensions.radiusDefault : 0, isBorder: false,
-          padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('additional_note'.tr, style: robotoRegular),
             const SizedBox(height: Dimensions.paddingSizeSmall),
@@ -332,7 +332,7 @@ class OrderInfoWidget extends StatelessWidget {
 
         parcel && order.parcelCancellation != null ? CustomCard(
           borderRadius: isDesktop ? Dimensions.radiusDefault : 0, isBorder: false,
-          padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
             order.parcelCancellation!.returnFee != null && order.parcelCancellation!.returnFee! > 0 ? Container(
@@ -414,7 +414,7 @@ class OrderInfoWidget extends StatelessWidget {
 
         (!parcel && order.store != null && (order.deliveryAddress?.address != null || order.deliveryAddress?.contactPersonNumber != null || order.deliveryAddress?.contactPersonName != null) ) ? CustomCard(
           borderRadius: isDesktop ? Dimensions.radiusDefault : 0, isBorder: false,
-          padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             !isDesktop ? Text('delivery_information'.tr, style: robotoSemiBold) : const SizedBox(),
             !isDesktop ? const Divider() : const SizedBox(),
@@ -429,7 +429,7 @@ class OrderInfoWidget extends StatelessWidget {
         // SizedBox(height: !isDesktop ? (parcel || orderController.orderDetails!.isNotEmpty) ? Dimensions.paddingSizeSmall : 0 : 0),
         !isDesktop ? (parcel || orderController.orderDetails!.isNotEmpty) ? CustomCard(
           borderRadius: isDesktop ? Dimensions.radiusDefault : 0, isBorder: false,
-          padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
           child: parcel ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             DetailsWidget(title: 'sender_details'.tr, address: order.deliveryAddress),
             const SizedBox(height: Dimensions.paddingSizeLarge),
@@ -484,7 +484,7 @@ class OrderInfoWidget extends StatelessWidget {
 
         (Get.find<SplashController>().getModuleConfig(order.moduleType).orderAttachment! && order.orderAttachmentFullUrl != null && order.orderAttachmentFullUrl!.isNotEmpty) ? CustomCard(
           borderRadius: isDesktop ? Dimensions.radiusDefault : 0, isBorder: false,
-          padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             !isDesktop ? Text('prescription'.tr, style: robotoSemiBold) : const SizedBox(),
             !isDesktop ? const SizedBox(height: Dimensions.paddingSizeSmall) : const SizedBox(),
@@ -527,7 +527,7 @@ class OrderInfoWidget extends StatelessWidget {
 
         (order.orderStatus == 'delivered' && order.orderProofFullUrl != null && order.orderProofFullUrl!.isNotEmpty) ? CustomCard(
           borderRadius: isDesktop ? Dimensions.radiusDefault : 0, isBorder: false,
-          padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
           margin: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('order_proof'.tr, style: robotoRegular),
@@ -570,7 +570,7 @@ class OrderInfoWidget extends StatelessWidget {
 
         order.deliveryMan != null ? CustomCard(
           borderRadius: isDesktop ? Dimensions.radiusDefault : 0, isBorder: false,
-          padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('delivery_man_details'.tr, style: robotoSemiBold),
             const SizedBox(height: Dimensions.paddingSizeExtraSmall),
@@ -626,7 +626,7 @@ class OrderInfoWidget extends StatelessWidget {
 
         (parcel &&  isDesktop) ? CustomCard(
           borderRadius: isDesktop ? Dimensions.radiusDefault : 0, isBorder: false,
-          padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             DetailsWidget(title: 'sender_details'.tr, address: order.deliveryAddress),
             const SizedBox(height: Dimensions.paddingSizeLarge),
@@ -645,7 +645,7 @@ class OrderInfoWidget extends StatelessWidget {
 
         CustomCard(
           borderRadius: isDesktop ? Dimensions.radiusDefault : 0, isBorder: false,
-          padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             !isDesktop ? Text(parcel ? 'parcel_category'.tr : Get.find<SplashController>().getModuleConfig(order.moduleType).showRestaurantText! ? 'restaurant_details'.tr : 'store_details'.tr, style: robotoSemiBold) : const SizedBox(),
             !isDesktop ? const SizedBox(height: Dimensions.paddingSizeSmall) : const SizedBox(),
@@ -663,10 +663,14 @@ class OrderInfoWidget extends StatelessWidget {
               const SizedBox(width: Dimensions.paddingSizeSmall),
 
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(
-                  parcel ? order.parcelCategory!.name! : order.store!.name!, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
-                ),
+                Row(children: [
+                  Text(
+                    parcel ? order.parcelCategory!.name! : order.store!.name!, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
+                  ),
+                  const SizedBox(width: 8),
+                  !parcel && order.store?.verifiedSeller == 1 ? Image.asset(Images.verifiedBadge, width: 14, height: 14) : const SizedBox.shrink()
+                ]),
                 Text(
                   parcel ? order.parcelCategory!.description! : order.store?.address ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
                   style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor),
@@ -730,14 +734,14 @@ class OrderInfoWidget extends StatelessWidget {
             ]),
           ]),
         ),
-        SizedBox(height: Dimensions.paddingSizeDefault),
+        const SizedBox(height: Dimensions.paddingSizeDefault),
 
         isDesktop ? Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('payment_method'.tr, style: robotoMedium),
             /*order.paymentMethod == 'offline_payment' ? Text(
-              orderController.trackModel!.offlinePayment != null ? orderController.trackModel!.offlinePayment!.data!.status!.tr : '',
+              (orderController.trackModel!.offlinePayment?.data?.status ?? '').tr,
               style: robotoMedium.copyWith(color: Theme.of(context).primaryColor),
             ) : */const SizedBox(),
           ],
@@ -746,7 +750,7 @@ class OrderInfoWidget extends StatelessWidget {
 
         CustomCard(
           borderRadius: isDesktop ? Dimensions.radiusDefault : 0, isBorder: false,
-          padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
 
@@ -756,14 +760,14 @@ class OrderInfoWidget extends StatelessWidget {
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-                    color: (orderController.trackModel!.offlinePayment != null ? orderController.trackModel!.offlinePayment!.data!.status.toString() == 'denied' : false)
+                    color: ((orderController.trackModel!.offlinePayment?.data?.status?.toString() ?? '') == 'denied')
                         ? Colors.red.withValues(alpha: 0.1)
                         : orderController.trackModel!.offlinePayment == null ? Colors.red.withValues(alpha: 0.1) : Theme.of(context).primaryColor.withValues(alpha: 0.1),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: 2),
                   child: Text(
-                    orderController.trackModel!.offlinePayment != null ? orderController.trackModel!.offlinePayment!.data!.status!.tr : 'unpaid'.tr,
-                    style: robotoMedium.copyWith(color: (orderController.trackModel!.offlinePayment != null ? orderController.trackModel!.offlinePayment!.data!.status.toString() == 'denied' : false)
+                    (orderController.trackModel!.offlinePayment?.data?.status ?? 'unpaid').tr,
+                    style: robotoMedium.copyWith(color: ((orderController.trackModel!.offlinePayment?.data?.status?.toString() ?? '') == 'denied')
                         ? Colors.red
                         : orderController.trackModel!.offlinePayment == null ? Colors.red : Theme.of(context).primaryColor),
                   ),
@@ -869,8 +873,8 @@ Widget paymentSectionButton(BuildContext context, OrderController orderControlle
                 if(success){
                   orderController.timerTrackOrder(orderController.paymentModel!.orderID.toString(), contactNumber: orderController.paymentModel!.contactNumber);
                   if(AuthHelper.isLoggedIn()) {
-                    Get.find<OrderController>().getRunningOrders(1);
-                    Get.find<OrderController>().getHistoryOrders(1);
+                    Get.find<OrderController>().getOrders(OrderListType.running, 1);
+                    Get.find<OrderController>().getOrders(OrderListType.previous, 1);
                     double total = ((orderController.paymentModel!.orderAmount! / 100) * Get.find<SplashController>().configModel!.loyaltyPointItemPurchasePoint!);
                     Get.find<AuthController>().saveEarningPoint(total.toStringAsFixed(0));
                   }
@@ -993,7 +997,7 @@ Widget offlineView(BuildContext context, OrderController orderController, Expans
                 padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeExtraSmall),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Expanded(flex: 4, child: Text(orderController.trackModel!.offlinePayment!.methodFields![index].inputName.toString().replaceAll('_', ' '), style: robotoRegular)),
-                  Text(': '),
+                  const Text(': '),
                   Expanded(flex: 8, child: Text('${orderController.trackModel!.offlinePayment!.methodFields![index].inputData}', style: robotoRegular)),
                 ]),
               );
@@ -1033,7 +1037,7 @@ Widget offlineView(BuildContext context, OrderController orderController, Expans
                 padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeExtraSmall),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Expanded(flex: 4, child: Text(data.userInput.toString().replaceAll('_', ' '), style: robotoRegular)),
-                  Text(': '),
+                  const Text(': '),
                   Expanded(flex: 8, child: Text(data.userData.toString(), style: robotoRegular)),
                 ]),
               );
@@ -1080,13 +1084,14 @@ Widget offlineView(BuildContext context, OrderController orderController, Expans
 void openDialog(BuildContext context, String imageUrl) => showDialog(
   context: context,
   builder: (BuildContext context) {
+    print("the image url is : $imageUrl");
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Dimensions.radiusLarge)),
       child: Stack(children: [
 
         ClipRRect(
           borderRadius: BorderRadius.circular(Dimensions.radiusLarge),
-          child: PhotoView(
+          child: GetPlatform.isWeb ? CustomImage(image: imageUrl) : PhotoView(
             tightMode: true,
             imageProvider: NetworkImage(imageUrl),
             heroAttributes: PhotoViewHeroAttributes(tag: imageUrl),

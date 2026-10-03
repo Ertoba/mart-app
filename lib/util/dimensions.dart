@@ -1,26 +1,47 @@
 import 'package:get/get.dart';
 
 class Dimensions {
-  static double fontSizeOverSmall = Get.context!.width >= 1300 ? 8 : 6.4;
-  static double fontSizeExtraSmall = Get.context!.width >= 1300 ? 9.6 : 8;
-  static double fontSizeSmall = Get.context!.width >= 1300 ? 11.2 : 9.6;
-  static double fontSizeDefault = Get.context!.width >= 1300 ? 12.8 : 11.2;
-  static double fontSizeLarge = Get.context!.width >= 1300 ? 14.4 : 12.8;
-  static double fontSizeExtraLarge = Get.context!.width >= 1300 ? 16 : 14.4;
-  static double fontSizeOverLarge = Get.context!.width >= 1300 ? 20.8 : 19.2;
+  /// 8
+  static double fontSizeOverSmall = Get.context!.width >= 1300 ? 10 : 8;
+  /// 10
+  static double fontSizeExtraSmall = Get.context!.width >= 1300 ? 12 : 10;
+  /// 12
+  static double fontSizeSmall = Get.context!.width >= 1300 ? 14 : 12;
+  /// 14
+  static double fontSizeDefault = Get.context!.width >= 1300 ? 16 : 14;
+  /// 16
+  static double fontSizeLarge = Get.context!.width >= 1300 ? 18 : 16;
+  /// 18
+  static double fontSizeExtraLarge = Get.context!.width >= 1300 ? 20 : 18;
+  /// 20
+  static double fontSizeExtremeLarge = Get.context!.width >= 1300 ? 22 : 20;
+  /// 24
+  static double fontSizeOverLarge = Get.context!.width >= 1300 ? 26 : 24;
 
+  /// 5.0
   static const double paddingSizeExtraSmall = 5.0;
+  /// 10.0
   static const double paddingSizeSmall = 10.0;
+  /// 15.00
   static const double paddingSizeDefault = 15.0;
+  /// 20.0
   static const double paddingSizeLarge = 20.0;
-  static const double paddingSizeExtraLarge = 25.0;
+  /// 24.0
+  static const double paddingSizeExtraLarge = 24.0;
+  /// 30.0
   static const double paddingSizeExtremeLarge = 30.0;
+  /// 35.0
   static const double paddingSizeExtraOverLarge = 35.0;
 
+  /// 5.0
   static const double radiusSmall = 5.0;
+  /// 8.0
   static const double radiusMedium = 8.0;
+  /// 10.0
   static const double radiusDefault = 10.0;
+  /// 15.0
   static const double radiusLarge = 15.0;
+  /// 20.0
   static const double radiusExtraLarge = 20.0;
 
   static const double webMaxWidth = 1170;

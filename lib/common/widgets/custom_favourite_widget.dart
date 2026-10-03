@@ -37,8 +37,8 @@ class _CustomFavouriteWidgetState extends State<CustomFavouriteWidget> with Sing
 
   @override
   void dispose() {
-    super.dispose();
     _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -55,7 +55,7 @@ class _CustomFavouriteWidgetState extends State<CustomFavouriteWidget> with Sing
       },
       child: ScaleTransition(
         scale: Tween(begin: 0.7, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut)),
-        child: Icon(widget.isWished ? CupertinoIcons.heart_solid : CupertinoIcons.heart, color: widget.isWished ? Theme.of(context).primaryColor : Theme.of(context).primaryColor.withValues(alpha: 0.3), size: widget.size),
+        child: Icon(widget.isWished ? CupertinoIcons.heart_solid : CupertinoIcons.heart, color: Theme.of(context).colorScheme.error, size: widget.size),
       ),
     );
   }

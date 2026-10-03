@@ -158,10 +158,10 @@ class WebBonusBannerWidget extends StatelessWidget {
   //     Item? item = bannerController.bannerDataList![index];
   //     Get.find<ItemController>().navigateToItemPage(item, context);
   //   }else if(bannerController.bannerDataList![index] is Store) {
-  //     Store store = bannerController.bannerDataList![index];
+  //     Store store_new = bannerController.bannerDataList![index];
   //     Get.toNamed(
-  //       RouteHelper.getStoreRoute(id: store.id, page: 'banner', moduleId: Get.find<SplashController>().module!.id, fromShare: false),
-  //       arguments: StoreScreen(store: store, fromModule: false, moduleId: Get.find<SplashController>().module!.id!, fromShare: false),
+  //       RouteHelper.getStoreRoute(id: store_new.id, page: 'banner', moduleId: Get.find<SplashController>().module!.id, fromShare: false),
+  //       arguments: StoreScreen(store_new: store_new, fromModule: false, moduleId: Get.find<SplashController>().module!.id!, fromShare: false),
   //     );
   //   }else if(bannerController.bannerDataList![index] is BasicCampaignModel) {
   //     BasicCampaignModel campaign = bannerController.bannerDataList![index];

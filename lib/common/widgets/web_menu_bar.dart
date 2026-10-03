@@ -276,7 +276,7 @@ class WebMenuBar extends StatelessWidget implements PreferredSizeWidget {
 
             InkWell(
               onTap: () => Get.toNamed(RouteHelper.getInitialRoute()),
-              child: Image.asset(Images.brandMark, width: 42, height: 50),
+              child: Image.asset(Images.logo, width: 100, height: 50),
             ),
 
             const SizedBox(width: 20),

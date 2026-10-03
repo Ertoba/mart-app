@@ -16,63 +16,33 @@ class LocationRepository implements LocationRepositoryInterface {
 
   @override
   Future<String> getAddressFromGeocode(LatLng latLng) async {
-    Response response = await apiClient.getData(
-      '${AppConstants.geocodeUri}?lat=${latLng.latitude}&lng=${latLng.longitude}&language=ka',
-      handleError: false,
-    );
-    String address = 'მდებარეობა ვერ მოიძებნა';
-    if (response.statusCode == 200 && response.body['status'] == 'OK') {
+    Response response = await apiClient.getData('${AppConstants.geocodeUri}?lat=${latLng.latitude}&lng=${latLng.longitude}', handleError: false);
+    String address = 'Unknown Location Found';
+    if(response.statusCode == 200 && response.body['status'] == 'OK') {
       address = response.body['results'][0]['formatted_address'].toString();
-      // Remove Plus Code prefix (e.g. "GC27+X4 " or "GC27+X4, ")
-      address = address
-          .replaceAll(RegExp(r'^[A-Z0-9]{2,8}\+[A-Z0-9]{2,3}[,\s]*'), '')
-          .trim();
-    } else {
+    }else {
       showCustomSnackBar(response.body['error_message'] ?? response.bodyString);
     }
     return address;
   }
 
   @override
-  Future<ZoneResponseModel> getZone(
-    String? lat,
-    String? lng, {
-    bool handleError = false,
-  }) async {
-    Response response = await apiClient.getData(
-      '${AppConstants.zoneUri}?lat=$lat&lng=$lng',
-      handleError: handleError,
-    );
-    if (response.statusCode == 200) {
+  Future<ZoneResponseModel> getZone(String? lat, String? lng, {bool handleError = false}) async {
+    Response response = await apiClient.getData('${AppConstants.zoneUri}?lat=$lat&lng=$lng', handleError: handleError);
+    if(response.statusCode == 200) {
       ZoneResponseModel responseModel;
       List<int>? zoneIds = ZoneModel.fromJson(response.body).zoneIds;
       List<ZoneData>? zoneData = ZoneModel.fromJson(response.body).zoneData;
-      responseModel = ZoneResponseModel(
-        true,
-        '',
-        zoneIds ?? [],
-        zoneData ?? [],
-        [],
-        response.statusCode,
-      );
+      responseModel = ZoneResponseModel(true, '' , zoneIds ?? [], zoneData??[], [], response.statusCode, null);
       return responseModel;
     } else {
-      return ZoneResponseModel(
-        false,
-        response.statusText,
-        [],
-        [],
-        [],
-        response.statusCode,
-      );
+      return ZoneResponseModel(false, response.statusText, [], [], [], response.statusCode, null);
     }
   }
 
   @override
   Future<Response> searchLocation(String text) async {
-    return await apiClient.getData(
-      '${AppConstants.searchLocationUri}?search_text=$text',
-    );
+    return await apiClient.getData('${AppConstants.searchLocationUri}?search_text=$text');
   }
 
   @override
@@ -87,9 +57,7 @@ class LocationRepository implements LocationRepositoryInterface {
 
   @override
   Future<Response> get(String? id) async {
-    Response response = await apiClient.getData(
-      '${AppConstants.placeDetailsUri}?placeid=$id',
-    );
+    Response response = await apiClient.getData('${AppConstants.placeDetailsUri}?placeid=$id');
     return response;
   }
 
@@ -102,7 +70,6 @@ class LocationRepository implements LocationRepositoryInterface {
   Future update(Map<String, dynamic> body, int? id) {
     throw UnimplementedError();
   }
-
   @override
   String? getUserAddress() {
     return sharedPreferences.getString(AppConstants.userAddress);
@@ -117,4 +84,5 @@ class LocationRepository implements LocationRepositoryInterface {
   Future<void> saveRecentDeliveryAddresses(String addresses) async {
     await sharedPreferences.setString(AppConstants.recentDeliveryAddresses, addresses);
   }
+
 }

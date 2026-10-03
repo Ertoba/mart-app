@@ -1,14 +1,8 @@
-import 'package:get/get.dart';
-import 'package:sixam_mart/common/models/response_model.dart';
 import 'package:sixam_mart/interfaces/repository_interface.dart';
 
-abstract class FavouriteRepositoryInterface<T> extends RepositoryInterface<T> {
+abstract class FavouriteRepositoryInterface<ResponseModel> implements RepositoryInterface<ResponseModel> {
   @override
-  Future<Response> getList({int? offset});
-
+  Future<ResponseModel> add(dynamic a, {bool isStore = false, int? id, bool isServiceModule = false});
   @override
-  Future<ResponseModel> add(dynamic value, {bool isStore = false, int? id});
-
-  @override
-  Future<ResponseModel> delete(int? id, {bool isStore = false});
+  Future<ResponseModel> delete(int? id, {bool isStore = false, bool isServiceModule = false});
 }

@@ -1,3 +1,7 @@
+import 'package:sixam_mart/api/json_reader.dart';
+// `show`: online_cart_model also declares a `Variation`, which would collide with the
+// item model's `Variation` used by `_variation` below. Only the BOGO type is needed here.
+import 'package:sixam_mart/features/cart/domain/models/online_cart_model.dart' show BogoCartDetails, BundleCartDetails;
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
 
 class CartModel {
@@ -15,6 +19,9 @@ class CartModel {
   Item? _item;
   int? _quantityLimit;
   bool? _isLoading;
+  BogoCartDetails? _bogoDetails;
+  BundleCartDetails? _bundleDetails;
+  int? _bundleStoreId;
 
   CartModel(
     int? id,
@@ -47,6 +54,51 @@ class CartModel {
     _isLoading = isLoading;
   }
 
+  /// A bundle cart row has no item/variations/add-ons of its own — see [BogoCartDetails].
+  CartModel.bogoBundle({required BogoCartDetails bogoDetails, int? storeId}) {
+    _bogoDetails = bogoDetails;
+    _bundleStoreId = storeId;
+    _id = int.tryParse(bogoDetails.bogoGroupId);
+    _price = bogoDetails.bundlePrice;
+    _discountedPrice = bogoDetails.finalPrice ?? bogoDetails.bundlePrice;
+    _discountAmount = bogoDetails.discountAmount;
+    _quantity = bogoDetails.quantity;
+    _addOnIds = [];
+    _addOns = [];
+    _isCampaign = false;
+    _item = null;
+    _variation = [];
+    _foodVariations = [];
+    _quantityLimit = null;
+    _stock = null;
+    _isLoading = false;
+  }
+
+  /// A product bundle entry, the structural twin of [CartModel.bogoBundle]: no
+  /// item, no variations, no add-ons of its own — [BundleCartDetails] is all it
+  /// carries, and it prices itself.
+  CartModel.bundle({required BundleCartDetails bundleDetails, int? storeId}) {
+    _bundleDetails = bundleDetails;
+    _bundleStoreId = storeId;
+    /// The entry's own `id` is always 0, so the group id stands in as a local
+    /// identity for list keys. It is a uuid, so this is usually null — the tile
+    /// addresses the group by [BundleCartDetails.bundleGroupId], never by this.
+    _id = int.tryParse(bundleDetails.bundleGroupId);
+    _price = bundleDetails.finalPrice;
+    _discountedPrice = bundleDetails.finalPrice;
+    _discountAmount = bundleDetails.discountAmount;
+    _quantity = bundleDetails.quantity;
+    _addOnIds = [];
+    _addOns = [];
+    _isCampaign = false;
+    _item = null;
+    _variation = [];
+    _foodVariations = [];
+    _quantityLimit = null;
+    _stock = null;
+    _isLoading = false;
+  }
+
   int? get id => _id;
   double? get price => _price;
   double? get discountedPrice => _discountedPrice;
@@ -66,12 +118,38 @@ class CartModel {
   // ignore: unnecessary_getters_setters
   bool? get isLoading => _isLoading;
   set isLoading(bool? status) => _isLoading = status;
+  bool get isBogoBundle => _bogoDetails != null;
+  BogoCartDetails? get bogoDetails => _bogoDetails;
+  bool get isBundle => _bundleDetails != null;
+  BundleCartDetails? get bundleDetails => _bundleDetails;
+
+  /// True for any entry that is a whole bundle rather than a cart row: it has no
+  /// item to price from, prices itself from the server's figures, and is added,
+  /// re-quantified and removed as one thing.
+  bool get isAtomicBundle => isBogoBundle || isBundle;
+  int? get storeId => _item?.storeId ?? _bundleStoreId;
+
+  // What this row looks like in a thumbnail strip. A bundle has no item of its own, so
+  // reading the item's picture leaves it blank — the pictures are its members'.
+  List<String> get thumbnails {
+    if(_bogoDetails != null) {
+      return _bogoDetails!.itemThumbnails;
+    }
+    if(_bundleDetails != null) {
+      return _bundleDetails!.itemThumbnails;
+    }
+    final String? image = _item?.imageFullUrl;
+    return image != null ? <String>[image] : const <String>[];
+  }
 
   CartModel.fromJson(Map<String, dynamic> json) {
     _id = json['cart_id'];
-    _price = json['price'].toDouble();
+    _price = JsonReader.toDouble(json['price']);
     _discountedPrice = json['discounted_price']?.toDouble();
-    if (json['variation'] != null) {
+    // The service module returns `variation` as a single object ({variant_key, name,
+    // price, discount, discount_type}) instead of a list; List.forEach's callback shape
+    // doesn't match Map.forEach's, so guard the type rather than crash on that module.
+    if (json['variation'] is List) {
       _variation = [];
       json['variation'].forEach((v) {
         _variation!.add(Variation.fromJson(v));
@@ -91,15 +169,25 @@ class CartModel {
     _stock = json['stock'];
     if (json['add_on_ids'] != null) {
       _addOnIds = [];
-      json['add_on_ids'].forEach((v) {
-        _addOnIds!.add(AddOn.fromJson(v));
-      });
+      final List<dynamic> rawIds = json['add_on_ids'] as List<dynamic>;
+      final List<dynamic>? rawQtys = json['add_on_qtys'] as List<dynamic>?;
+      for (int i = 0; i < rawIds.length; i++) {
+        final dynamic v = rawIds[i];
+        if (v is Map) {
+          _addOnIds!.add(AddOn.fromJson(Map<String, dynamic>.from(v)));
+        } else {
+          final dynamic rawQty = (rawQtys != null && i < rawQtys.length) ? rawQtys[i] : 1;
+          final int? qty = rawQty is int ? rawQty : int.tryParse('$rawQty');
+          _addOnIds!.add(AddOn(id: v is int ? v : int.tryParse('$v'), quantity: qty ?? 1));
+        }
+      }
     }
-    if (json['add_ons'] != null) {
-      _addOns = [];
-      json['add_ons'].forEach((v) {
-        _addOns!.add(AddOns.fromJson(v));
-      });
+    final dynamic addOnsRaw = json['add_ons'] ?? (json['item'] is Map ? (json['item'] as Map)['addons'] : null);
+    if (addOnsRaw is List) {
+      _addOns = addOnsRaw
+          .whereType<Map>()
+          .map<AddOns>((Map v) => AddOns.fromJson(Map<String, dynamic>.from(v)))
+          .toList();
     }
     _isCampaign = json['is_campaign'];
     if (json['item'] != null) {
@@ -131,7 +219,9 @@ class CartModel {
     }
     data['is_campaign'] = _isCampaign;
     data['stock'] = _stock;
-    data['item'] = _item!.toJson();
+    if (_item != null) {
+      data['item'] = _item!.toJson();
+    }
     data['quantity_limit'] = _quantityLimit?.toString();
     // data['is_loading'] = _isLoading?? false;
     return data;

@@ -1,4 +1,5 @@
 import 'package:get/get_connect/http/src/response/response.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sixam_mart/common/models/ongoing_order_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/payment_model.dart';
@@ -29,7 +30,7 @@ abstract class OrderServiceInterface {
   Future<List<OrderDetailsModel>?> getOrderDetails(String orderID, String? guestId);
   Future<List<CancellationData>?> getCancelReasons();
   Future<List<String?>?> getRefundReasons();
-  Future<void> submitRefundRequest(int selectedReasonIndex, List<String?>? refundReasons, String note, String? orderId, XFile? refundImage);
+  Future<bool> submitRefundRequest(int selectedReasonIndex, List<String?>? refundReasons, String note, String? orderId, XFile? refundImage);
   Future<Response> trackOrder(String? orderID, String? guestId, {String? contactNumber});
   Future<bool> cancelOrder({required String orderID, String? reason, String? guestId, required bool isParcel, List<String>? reasons, String? comment});
   Future<bool> deleteOrder(int orderId);
@@ -42,4 +43,5 @@ abstract class OrderServiceInterface {
   Future<bool> submitParcelReturn({required int orderId, required String orderStatus, required int returnOtp});
   Future<PaymentModel?> getPaymentFailedDetails(String? orderID);
   Future<OngoingOrderModel?> getDashboardOrders();
+  Future<List<LatLng>> getDirectionPolyline({required LatLng origin, required LatLng destination});
 }

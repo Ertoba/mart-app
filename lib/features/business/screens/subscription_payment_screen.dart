@@ -17,11 +17,9 @@ import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
 
 class SubscriptionPaymentScreen extends StatefulWidget {
-  final bool? isProSubscription;
-  final bool? isRenew;
   final int storeId;
   final int packageId;
-  const SubscriptionPaymentScreen({super.key, required this.storeId, required this.packageId, this.isProSubscription, this.isRenew});
+  const SubscriptionPaymentScreen({super.key, required this.storeId, required this.packageId});
 
   @override
   State<SubscriptionPaymentScreen> createState() => _SubscriptionPaymentScreenState();

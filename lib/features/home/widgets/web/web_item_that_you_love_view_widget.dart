@@ -2,21 +2,20 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
-import 'package:sixam_mart/common/widgets/hover/text_hover.dart';
-import 'package:sixam_mart/features/item/controllers/item_controller.dart';
-import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
-import 'package:sixam_mart/features/item/domain/models/item_model.dart';
-import 'package:sixam_mart/features/home/widgets/components/item_that_you_love_card_widget.dart';
-import 'package:sixam_mart/helper/module_helper.dart';
-import 'package:sixam_mart/helper/price_converter.dart';
-import 'package:sixam_mart/util/app_constants.dart';
-import 'package:sixam_mart/util/dimensions.dart';
-import 'package:sixam_mart/util/styles.dart';
 import 'package:sixam_mart/common/widgets/add_favourite_view.dart';
 import 'package:sixam_mart/common/widgets/custom_image.dart';
 import 'package:sixam_mart/common/widgets/discount_tag.dart';
 import 'package:sixam_mart/common/widgets/hover/on_hover.dart';
+import 'package:sixam_mart/common/widgets/hover/text_hover.dart';
+import 'package:sixam_mart/features/home/widgets/components/item_that_you_love_card_widget.dart';
 import 'package:sixam_mart/features/home/widgets/web/widgets/arrow_icon_button.dart';
+import 'package:sixam_mart/features/item/controllers/item_controller.dart';
+import 'package:sixam_mart/features/item/domain/models/item_model.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
+import 'package:sixam_mart/helper/price_converter.dart';
+import 'package:sixam_mart/util/app_constants.dart';
+import 'package:sixam_mart/util/dimensions.dart';
+import 'package:sixam_mart/util/styles.dart';
 
 class WebItemThatYouLoveViewWidget extends StatefulWidget {
   const WebItemThatYouLoveViewWidget({super.key});
@@ -35,14 +34,34 @@ class _WebItemThatYouLoveViewWidgetState extends State<WebItemThatYouLoveViewWid
       List<Item>? recommendItems = itemController.recommendedItemList;
 
       return recommendItems != null ? recommendItems.isNotEmpty ? Stack(children: [
-          Column(children: [
+          Column(
+            crossAxisAlignment: recommendItems.length < 3 ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+              children: [
 
             Padding(
               padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
-              child: Text(ModuleHelper.itemThatYouLoveLabel, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
+              child: Text('item_that_you_love'.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
             ),
 
-            !isShop ? CarouselSlider.builder(
+            !isShop ? (recommendItems.length < 3 ? SizedBox(
+              height: 300,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
+                itemCount: recommendItems.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: EdgeInsets.only(left: index == 0 ? 0 : Dimensions.paddingSizeDefault),
+                    child: SizedBox(
+                      width: 250,
+                      child: ItemThatYouLoveCard(item: recommendItems[index], lessCount: true,),
+                    ),
+                  );
+                },
+              ),
+            ) : CarouselSlider.builder(
               itemCount: recommendItems.length,
               carouselController: carouselController,
               options: CarouselOptions(
@@ -59,7 +78,7 @@ class _WebItemThatYouLoveViewWidgetState extends State<WebItemThatYouLoveViewWid
                   child: ItemThatYouLoveCard(item: recommendItems[index]),
                 );
               },
-            ) : SizedBox(
+            )) : SizedBox(
               height: 285,
               child: ListView.builder(
                 //controller: scrollController,
@@ -127,7 +146,7 @@ class _WebItemThatYouLoveViewWidgetState extends State<WebItemThatYouLoveViewWid
                                                 Text(recommendItems[index].name!, style: robotoBold, maxLines: 1, overflow: TextOverflow.ellipsis),
 
                                                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                                  Icon(Icons.star, size: 15, color: Colors.orange),
+                                                  const Icon(Icons.star, size: 15, color: Colors.orange),
                                                   const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                                                   Text(recommendItems[index].avgRating!.toStringAsFixed(1), style: robotoRegular),
                                                   const SizedBox(width: Dimensions.paddingSizeExtraSmall),
@@ -176,14 +195,14 @@ class _WebItemThatYouLoveViewWidgetState extends State<WebItemThatYouLoveViewWid
             ),
           ]),
 
-        Positioned(
+        if(isShop || recommendItems.length >= 3) Positioned(
           top: 220, right: 0,
           child: ArrowIconButton(
             onTap: () => carouselController.nextPage(),
           ),
         ),
 
-        Positioned(
+        if(isShop || recommendItems.length >= 3) Positioned(
           top: 220, left: 0,
           child: ArrowIconButton(
             onTap: () => carouselController.previousPage(),
@@ -253,7 +272,7 @@ class _WebItemThatYouLoveForShopState extends State<WebItemThatYouLoveForShop> {
 
           Padding(
             padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
-            child: Text(ModuleHelper.itemThatYouLoveLabel, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
+            child: Text('item_that_you_love'.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
           ),
 
           Container(
@@ -324,7 +343,7 @@ class _WebItemThatYouLoveForShopState extends State<WebItemThatYouLoveForShop> {
                                               Text(recommendItems[index].name!, style: robotoBold, maxLines: 1, overflow: TextOverflow.ellipsis),
 
                                               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                                Icon(Icons.star, size: 15, color: Colors.orange),
+                                                const Icon(Icons.star, size: 15, color: Colors.orange),
                                                 const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                                                 Text(recommendItems[index].avgRating!.toStringAsFixed(1), style: robotoRegular),
                                                 const SizedBox(width: Dimensions.paddingSizeExtraSmall),
@@ -407,7 +426,7 @@ class WebItemThatYouLoveForShopShimmer extends StatelessWidget {
 
         Padding(
           padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
-          child: Text(ModuleHelper.itemThatYouLoveLabel, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
+          child: Text('item_that_you_love'.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
         ),
 
         Shimmer(
@@ -465,7 +484,7 @@ class WebItemThatYouLoveForShopShimmer extends StatelessWidget {
                                       ),
 
                                       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                        Icon(Icons.star, size: 15, color: Colors.orange),
+                                        const Icon(Icons.star, size: 15, color: Colors.orange),
                                         const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                                         Text('0.0', style: robotoRegular),
                                         const SizedBox(width: Dimensions.paddingSizeExtraSmall),
@@ -514,7 +533,7 @@ class WebItemThatYouLoveShimmerView extends StatelessWidget {
 
         Padding(
           padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
-          child: Text(ModuleHelper.itemThatYouLoveLabel, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
+          child: Text('item_that_you_love'.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
         ),
 
         CarouselSlider.builder(

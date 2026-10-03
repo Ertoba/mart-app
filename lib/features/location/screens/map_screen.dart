@@ -152,7 +152,7 @@ class MapScreenState extends State<MapScreen> {
                                 Expanded(
                                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
 
-                                    Text(AddressHelper.getAddressTypeLabel(widget.address.addressType), style: robotoRegular.copyWith(
+                                    Text(widget.address.addressType!.tr, style: robotoRegular.copyWith(
                                       fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor,
                                     )),
                                     const SizedBox(height: Dimensions.paddingSizeExtraSmall),

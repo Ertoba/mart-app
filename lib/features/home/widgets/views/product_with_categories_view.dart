@@ -110,7 +110,7 @@ class _ProductWithCategoriesViewState extends State<ProductWithCategoriesView> {
                   itemBuilder: (context, index) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeDefault, right: Dimensions.paddingSizeDefault, top: Dimensions.paddingSizeDefault),
-                      child: MedicineItemCard(item: products[index]),
+                      child: MedicineItemCard(item: products[index], fromShop: widget.fromShop),
                     );
                   },
                 ) : const MedicineCardShimmer(),

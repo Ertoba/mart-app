@@ -36,7 +36,7 @@ class _PromoCodeBannerViewState extends State<PromoCodeBannerView> {
             itemCount: couponController.couponList!.length,
             options: CarouselOptions(
               height: 135,
-              autoPlay: true,
+              autoPlay: couponController.couponList!.length > 1 ? true : false,
               enlargeCenterPage: true,
               disableCenter: true,
               viewportFraction: 0.95,

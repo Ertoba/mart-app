@@ -67,13 +67,9 @@ class AddressBottomSheetWidget extends StatelessWidget {
             Flexible(
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(horizontal: fromDialog ? 50 : Dimensions.paddingSizeLarge, vertical: Dimensions.paddingSizeSmall),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
 
-                  Text(
-                    '${'hey_welcome_back'.tr}\n${'which_location_do_you_want_to_select'.tr}',
-                    textAlign: TextAlign.center,
-                    style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault),
-                  ),
+                  Text('${'hey_welcome_back'.tr}\n${'which_location_do_you_want_to_select'.tr}', style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault)),
                   const SizedBox(height: Dimensions.paddingSizeLarge),
 
                   Center(
@@ -116,7 +112,7 @@ class AddressBottomSheetWidget extends StatelessWidget {
                             Get.back();
                             if(ResponsiveHelper.isDesktop(Get.context)) {
                               Get.find<SplashController>().saveWebSuggestedLocationStatus(true);
-                              showGeneralDialog(context: Get.context!, pageBuilder: (_,__,___) {
+                              showGeneralDialog(context: Get.context!, pageBuilder: (_,_,_) {
                                 return const SizedBox(
                                     height: 300, width: 300,
                                     child: PickMapScreen(fromSignUp: false, canRoute: false, fromAddAddress: true, route: null),

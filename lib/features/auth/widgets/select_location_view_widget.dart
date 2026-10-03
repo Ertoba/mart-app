@@ -1,30 +1,31 @@
 import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:sixam_mart/common/widgets/custom_app_bar.dart';
 import 'package:sixam_mart/common/widgets/custom_asset_image_widget.dart';
+import 'package:sixam_mart/common/widgets/custom_button.dart';
+import 'package:sixam_mart/common/widgets/custom_dropdown.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/common/widgets/custom_text_field.dart';
+import 'package:sixam_mart/features/auth/controllers/store_registration_controller.dart';
 import 'package:sixam_mart/features/auth/widgets/pickup_zone_widget.dart';
 import 'package:sixam_mart/features/auth/widgets/zone_selection_widget.dart';
 import 'package:sixam_mart/features/location/controllers/location_controller.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_data_model.dart';
+import 'package:sixam_mart/features/location/widgets/location_search_dialog_widget.dart';
 import 'package:sixam_mart/features/location/widgets/permission_dialog_widget.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
-import 'package:sixam_mart/features/auth/controllers/store_registration_controller.dart';
-import 'package:sixam_mart/features/location/widgets/location_search_dialog_widget.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/validate_check.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/common/widgets/custom_app_bar.dart';
-import 'package:sixam_mart/common/widgets/custom_button.dart';
-import 'package:sixam_mart/common/widgets/custom_dropdown.dart';
 
 class SelectLocationViewWidget extends StatefulWidget {
   final bool fromView;
@@ -34,7 +35,8 @@ class SelectLocationViewWidget extends StatefulWidget {
   final TextEditingController? addressController;
   final FocusNode? addressFocus;
   final bool inDialog;
-  const SelectLocationViewWidget({super.key, required this.fromView, this.mapController, this.mapView = false, this.zoneModuleView = false, this.addressController, this.addressFocus, this.inDialog = false});
+  final bool resetZoneIndex;
+  const SelectLocationViewWidget({super.key, required this.fromView, this.mapController, this.mapView = false, this.zoneModuleView = false, this.addressController, this.addressFocus, this.inDialog = false, this.resetZoneIndex = true});
 
   @override
   State<SelectLocationViewWidget> createState() => _SelectLocationViewWidgetState();
@@ -66,7 +68,7 @@ class _SelectLocationViewWidgetState extends State<SelectLocationViewWidget> {
     // Ensure zone index is -1 initially
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final storeRegController = Get.find<StoreRegistrationController>();
-      if (storeRegController.selectedZoneIndex != -1) {
+      if (storeRegController.selectedZoneIndex != -1 && widget.resetZoneIndex) {
         storeRegController.setZoneIndex(-1, canUpdate: false);
       }
     });
@@ -277,7 +279,7 @@ class _SelectLocationViewWidgetState extends State<SelectLocationViewWidget> {
                   // Update the zone index and polygon if a different zone was found
                   if (storeRegController.selectedZoneIndex != foundZoneIndex) {
                     // Use canUpdate:false to skip async module loading, preventing state conflicts
-                    storeRegController.setZoneIndex(foundZoneIndex, canUpdate: false);
+                    storeRegController.setZoneIndex(foundZoneIndex, canUpdate: true);
                     _setPolygon(storeRegController.zoneList![foundZoneIndex]);
                   }
 
@@ -336,65 +338,60 @@ class _SelectLocationViewWidgetState extends State<SelectLocationViewWidget> {
               top: widget.fromView ? 10 : 20,
               left: widget.fromView ? 10 : 20,
               right: widget.fromView ? 10 : 20,
-              child: InkWell(
-                onTap: () async {
-                  var p = await Get.dialog(
-                    LocationSearchDialogWidget(
-                      mapController: _mapController,
-                    ),
+              child: LocationSearchDialogWidget(
+                showEmptyState: true,
+                mapController: _mapController,
+                fromAddress: true,
+                callBack: (position) {
+                  // Mark that user has interacted with map
+                  _hasUserInteractedWithMap = true;
+                  _isMarkerVisible = true;
+                  _isInitialLoad = false;
+
+                  _cameraPosition = CameraPosition(
+                    target: LatLng(position.latitude, position.longitude),
+                    zoom: 16,
                   );
-                  Position? position = p;
-                  if (position != null) {
-                    // Mark that user has interacted with map
-                    _hasUserInteractedWithMap = true;
-                    _isMarkerVisible = true;
-                    _isInitialLoad = false;
 
-                    _cameraPosition = CameraPosition(
-                      target: LatLng(position.latitude, position.longitude),
-                      zoom: 16,
+                  _mapController?.animateCamera(CameraUpdate.newCameraPosition(_cameraPosition));
+
+                  // Automatically find the zone for the searched location
+                  int? foundZoneIndex = _findZoneForLocation(_cameraPosition.target, storeRegController.zoneList!);
+
+                  if (foundZoneIndex != null) {
+                    // Update the zone index and polygon if a different zone was found
+                    if (storeRegController.selectedZoneIndex != foundZoneIndex) {
+                      storeRegController.setZoneIndex(foundZoneIndex, canUpdate: true);
+                      _setPolygon(storeRegController.zoneList![foundZoneIndex]);
+                    }
+
+                    // Set location with detected zone ID
+                    storeRegController.setLocation(
+                      _cameraPosition.target,
+                      forStoreRegistration: true,
+                      zoneId: storeRegController.zoneList![foundZoneIndex].id,
                     );
-
-                    _mapController?.animateCamera(CameraUpdate.newCameraPosition(_cameraPosition));
-
-                    // Automatically find the zone for the searched location
-                    int? foundZoneIndex = _findZoneForLocation(_cameraPosition.target, storeRegController.zoneList!);
-
-                    if (foundZoneIndex != null) {
-                      // Update the zone index and polygon if a different zone was found
-                      if (storeRegController.selectedZoneIndex != foundZoneIndex) {
-                        storeRegController.setZoneIndex(foundZoneIndex, canUpdate: false);
-                        _setPolygon(storeRegController.zoneList![foundZoneIndex]);
-                      }
-
-                      // Set location with detected zone ID
-                      storeRegController.setLocation(
-                        _cameraPosition.target,
-                        forStoreRegistration: true,
-                        zoneId: storeRegController.zoneList![foundZoneIndex].id,
-                      );
-                    } else {
-                      // No zone found - reset dropdown
-                      if (storeRegController.selectedZoneIndex != -1) {
-                        storeRegController.setZoneIndex(-1, canUpdate: false);
-                      }
-
-                      // Clear polygon
-                      setState(() {
-                        _polygons = {};
-                      });
-
-                      // Set location with null zoneId (will set inZone to false)
-                      storeRegController.setLocation(
-                        _cameraPosition.target,
-                        forStoreRegistration: true,
-                        zoneId: null, resetAddress: true,
-                      );
+                  } else {
+                    // No zone found - reset dropdown
+                    if (storeRegController.selectedZoneIndex != -1) {
+                      storeRegController.setZoneIndex(-1, canUpdate: false);
                     }
 
-                    if (!widget.fromView) {
-                      widget.mapController!.moveCamera(CameraUpdate.newCameraPosition(_cameraPosition));
-                    }
+                    // Clear polygon
+                    setState(() {
+                      _polygons = {};
+                    });
+
+                    // Set location with null zoneId (will set inZone to false)
+                    storeRegController.setLocation(
+                      _cameraPosition.target,
+                      forStoreRegistration: true,
+                      zoneId: null, resetAddress: true,
+                    );
+                  }
+
+                  if (!widget.fromView) {
+                    widget.mapController!.moveCamera(CameraUpdate.newCameraPosition(_cameraPosition));
                   }
                 },
                 child: Container(
@@ -547,13 +544,13 @@ class _SelectLocationViewWidgetState extends State<SelectLocationViewWidget> {
             (_hasUserInteractedWithMap && !storeRegController.inZone) ? Positioned(
               bottom: 10, right: 10, left: 10,
               child: Container(
-                padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
+                padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
                   color: Colors.black,
                 ),
                 child: Row(children: [
-                  CustomAssetImageWidget(Images.infoError, height: 20, width: 20),
+                  const CustomAssetImageWidget(Images.infoError, height: 20, width: 20),
                   const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                   Expanded(

@@ -7,14 +7,4 @@ class TaxiRepository implements TaxiRepositoryInterface{
   final SharedPreferences sharedPreferences;
   TaxiRepository({required this.sharedPreferences, required this.apiClient});
 
-  @override
-  Future add(value) async {}
-  @override
-  Future update(Map<String, dynamic> body, int? id) async {}
-  @override
-  Future delete(int? id) async {}
-  @override
-  Future getList({int? offset}) async => const [];
-  @override
-  Future get(String? id) async {}
 }

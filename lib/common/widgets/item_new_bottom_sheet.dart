@@ -18,18 +18,20 @@ import 'package:sixam_mart/common/widgets/quantity_decrement_icon.dart';
 import 'package:sixam_mart/common/widgets/store_verified_avatar.dart';
 import 'package:sixam_mart/features/cart/controllers/cart_controller.dart';
 import 'package:sixam_mart/features/cart/domain/models/cart_model.dart';
+import 'package:sixam_mart/features/cart/screens/global_cart_screen.dart';
 import 'package:sixam_mart/features/checkout/domain/models/place_order_body_model.dart';
 import 'package:sixam_mart/features/checkout/screens/checkout_screen.dart';
 import 'package:sixam_mart/features/favourite/controllers/favourite_controller.dart';
 import 'package:sixam_mart/features/item/controllers/item_controller.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
+import 'package:sixam_mart/features/item/domain/models/item_selection_preview.dart';
 import 'package:sixam_mart/features/item/widgets/item_media_dialog.dart';
-import 'package:sixam_mart/features/item/widgets/item_image_view_widget.dart';
 import 'package:sixam_mart/features/location/controllers/location_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/date_converter.dart';
+import 'package:sixam_mart/helper/image_cache_helper.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
@@ -48,7 +50,11 @@ class ItemNewBottomSheet extends StatefulWidget {
   final bool inStorePage;
   final Item? item;
   final int? reelId;
-  const ItemNewBottomSheet({super.key, required this.itemId, this.isCampaign = false, this.cart, this.cartIndex, this.inStorePage = false, this.item, this.reelId});
+
+  final ItemSelectionPreview? preview;
+  final int? availableStock;
+
+  const ItemNewBottomSheet({super.key, required this.itemId, this.isCampaign = false, this.cart, this.cartIndex, this.inStorePage = false, this.item, this.reelId, this.preview, this.availableStock});
 
   @override
   State<ItemNewBottomSheet> createState() => _ItemNewBottomSheetState();
@@ -59,13 +65,8 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
   int? _highlightedVariationIndex;
   final Map<int, GlobalKey> _variationCardKeys = {};
   Timer? _highlightTimer;
-  // Collapsible option cards: indexes of collapsed variation cards + the addon card.
   final Set<int> _collapsedVariationIndexes = <int>{};
   bool _collapsedAddon = false;
-  // Re-entrancy guard: stays true from the first add-to-cart tap until the
-  // action fully completes (including the sheet closing), so the button can't
-  // be tapped again during the window where the controller's shared isLoading
-  // has already reset but the sheet hasn't closed yet.
   bool _isAddingToCart = false;
   bool _sheetClosed = false;
 
@@ -80,16 +81,10 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
   void _toggleAddonCollapse() {
     setState(() => _collapsedAddon = !_collapsedAddon);
   }
-  // Guided required-variation focus: once the user taps "choose required option",
-  // selecting/fulfilling the focused variation auto-advances focus to the next missing one.
   bool _guidedFocusActive = false;
   int? _guidedFocusIndex;
-  // Index of the currently shown media (video + images) in the collapsing header.
   int _selectedMediaIndex = 0;
-  // Drives the swipeable header media slider; lets the arrow buttons animate pages.
   final CarouselSliderController _mediaCarouselController = CarouselSliderController();
-  // The page the slider is actually showing — guards against animating back to a
-  // page the user just swiped to.
   int _mediaCarouselPage = 0;
 
   @override
@@ -99,8 +94,6 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
     ItemController itemController = Get.find<ItemController>();
     SplashController splashController = Get.find<SplashController>();
 
-    // Controller is a singleton, so the expanded state can leak from a previously
-    // opened item — start every sheet with the details collapsed.
     itemController.changeReadMore(value: false, notify: false);
 
     if(splashController.module == null) {
@@ -114,6 +107,9 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
       final item = itemController.item;
       if (item == null) return;
       _newVariation = splashController.getModuleConfig(item.moduleType).newVariation ?? false;
+      if (widget.preview != null) {
+        _applyPreviewSelection(item, itemController, widget.preview!);
+      }
     });
 
   }
@@ -123,6 +119,50 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
     _highlightTimer?.cancel();
     super.dispose();
   }
+
+  bool get _readOnly => widget.preview != null;
+  void _applyPreviewSelection(Item item, ItemController itemController, ItemSelectionPreview preview) {
+    if (_newVariation) {
+      final List<FoodVariation> groups = item.foodVariations ?? const <FoodVariation>[];
+      for (final OrderVariation picked in preview.variations) {
+        final int groupIndex = groups.indexWhere((g) => _sameLabel(g.name, picked.name));
+        if (groupIndex == -1) continue;
+        final List<VariationValue> values = groups[groupIndex].variationValues ?? const <VariationValue>[];
+        for (final String? label in picked.values?.label ?? const <String?>[]) {
+          final int valueIndex = values.indexWhere((v) => _sameLabel(v.level, label));
+          if (valueIndex != -1) {
+            itemController.setNewCartVariationIndex(groupIndex, valueIndex, item);
+          }
+        }
+      }
+    } else {
+      final List<ChoiceOptions> groups = item.choiceOptions ?? const <ChoiceOptions>[];
+      for (final OrderVariation picked in preview.variations) {
+        final int groupIndex = groups.indexWhere((g) => _sameLabel(g.title, picked.name) || _sameLabel(g.name, picked.name));
+        if (groupIndex == -1) continue;
+        final List<String> options = groups[groupIndex].options ?? const <String>[];
+        final List<String?> labels = picked.values?.label ?? const <String?>[];
+        final String? label = labels.isNotEmpty ? labels.first : null;
+        final int valueIndex = options.indexWhere((o) => _sameLabel(o, label));
+        if (valueIndex != -1) {
+          itemController.setCartVariationIndex(groupIndex, valueIndex, item);
+        }
+      }
+    }
+
+    final List<AddOns> addOns = item.addOns ?? const <AddOns>[];
+    for (int i = 0; i < preview.addOnIds.length; i++) {
+      final int addOnIndex = addOns.indexWhere((a) => a.id == preview.addOnIds[i]);
+      if (addOnIndex == -1) continue;
+      itemController.addAddOn(true, addOnIndex);
+      final int targetQty = i < preview.addOnQtys.length ? preview.addOnQtys[i] : 1;
+      for (int bump = 1; bump < targetQty; bump++) {
+        itemController.setAddOnQuantity(true, addOnIndex);
+      }
+    }
+  }
+
+  bool _sameLabel(String? a, String? b) => (a ?? '').trim().toLowerCase() == (b ?? '').trim().toLowerCase() && (a ?? '').trim().isNotEmpty;
 
   int? _findFirstMissingRequiredIndex(Item item, ItemController c) {
     if (!_newVariation || item.foodVariations == null) return null;
@@ -137,7 +177,6 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
   }
 
   void _pulseMissingVariation(int idx) {
-    // Expand the card if collapsed so the user can actually see/select its options.
     _collapsedVariationIndexes.remove(idx);
     final ctx = _variationCardKeys[idx]?.currentContext;
     if (ctx != null) {
@@ -155,16 +194,12 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
     });
   }
 
-  // Entry point from the "choose required option" button: focus the first missing
-  // required variation and arm the auto-advance flow.
   void _startGuidedFocus(int idx) {
     _guidedFocusActive = true;
     _guidedFocusIndex = idx;
     _pulseMissingVariation(idx);
   }
 
-  // While guided focus is active, advance to the next missing required variation
-  // as soon as the currently focused one is fulfilled (and stop once all are met).
   void _scheduleGuidedFocusCheck(Item item, ItemController itemController) {
     if (!_guidedFocusActive) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -178,6 +213,13 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
         _pulseMissingVariation(next);
       }
     });
+  }
+
+  bool _isOutOfStock(int? stock) {
+    if((stock ?? 0) > 0) {
+      return false;
+    }
+    return widget.availableStock != null || Get.find<SplashController>().configModel!.moduleConfig!.module!.stock!;
   }
 
   @override
@@ -263,6 +305,10 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
           }
         }
 
+        if(widget.availableStock != null && widget.availableStock! < (stock ?? 0)) {
+          stock = widget.availableStock;
+        }
+
         price = price! + variationPrice;
         double priceWithDiscount = PriceConverter.convertWithDiscount(price, discount, discountType)!;
         double addonsCost = 0;
@@ -324,7 +370,7 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
     final double screenHeight = MediaQuery.of(context).size.height;
     final double maxSheetHeight = screenHeight * (ResponsiveHelper.isDesktop(context) ? 0.88 : 0.94);
     final double expandedHeaderHeight = (screenHeight * 0.30).clamp(240.0, 320.0).toDouble();
-    final bool showPinnedCartBar = !(!item.scheduleOrder! && !isAvailable);
+    final bool showPinnedCartBar = !_readOnly && !(!item.scheduleOrder! && !isAvailable);
 
     final bool addOnEnabled = Get.find<SplashController>().configModel!.moduleConfig!.module!.addOn!;
     final bool hasAddons = addOnEnabled && item.addOns!.isNotEmpty;
@@ -338,12 +384,24 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
     final double cartBarBaseHeight = hasUnmetRequired ? 72 : 100;
     final double bottomBarHeight = showPinnedCartBar ? cartBarBaseHeight + MediaQuery.of(context).padding.bottom : 0;
 
+    final bool isDesktop = ResponsiveHelper.isDesktop(context);
+
+    final double estimatedHeight = _estimateContentHeight(
+      context: context, item: item, expandedHeaderHeight: expandedHeaderHeight,
+      bottomBarHeight: bottomBarHeight, hasAddons: hasAddons,
+      hasFoodVariations: hasFoodVariations, hasChoiceOptions: hasChoiceOptions, isAvailable: isAvailable,
+    );
+    final double contentFraction = (estimatedHeight / screenHeight).clamp(0.45, 1.0).toDouble();
+    final double minFraction = (contentFraction * 0.8).clamp(0.35, contentFraction).toDouble();
+
+    final bool reserveStatusBar = !isDesktop && contentFraction >= 1.0;
+
     Widget sheetChild({ScrollController? scrollController}) {
       return ClipRRect(
-        borderRadius: ResponsiveHelper.isDesktop(context) ? const BorderRadius.all(Radius.circular(Dimensions.radiusDefault)) : const BorderRadius.vertical(top: Radius.circular(Dimensions.radiusExtraLarge)),
+        borderRadius: isDesktop ? const BorderRadius.all(Radius.circular(Dimensions.radiusDefault)) : const BorderRadius.vertical(top: Radius.circular(Dimensions.radiusExtraLarge)),
         child: Stack(children: [
           CustomScrollView(controller: scrollController, slivers: [
-            _buildCollapsingHeader(context, item, expandedHeaderHeight),
+            _buildCollapsingHeader(context, item, expandedHeaderHeight, isAvailable, reserveStatusBar),
 
             SliverToBoxAdapter(
               child: Container(
@@ -364,7 +422,9 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
             ),
 
             showOptionsSection ? SliverToBoxAdapter(
-              child: Container(
+              child: IgnorePointer(
+                ignoring: _readOnly,
+                child: Container(
                 color: Theme.of(context).disabledColor.withValues(alpha: 0.08),
                 padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeDefault, Dimensions.paddingSizeLarge, Dimensions.paddingSizeDefault, Dimensions.paddingSizeLarge),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -382,6 +442,7 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
 
                   isAvailable ? const SizedBox.shrink() : _buildAvailabilityWarning(context, item),
                 ]),
+                ),
               ),
             ) : const SliverToBoxAdapter(child: SizedBox.shrink()),
 
@@ -407,20 +468,12 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
       );
     }
 
-    if (ResponsiveHelper.isDesktop(context)) {
+    if (isDesktop) {
       return ConstrainedBox(
         constraints: BoxConstraints(maxHeight: maxSheetHeight),
         child: sheetChild(),
       );
     }
-
-    final double estimatedHeight = _estimateContentHeight(
-      context: context, item: item, expandedHeaderHeight: expandedHeaderHeight,
-      bottomBarHeight: bottomBarHeight, hasAddons: hasAddons,
-      hasFoodVariations: hasFoodVariations, hasChoiceOptions: hasChoiceOptions, isAvailable: isAvailable,
-    );
-    final double contentFraction = (estimatedHeight / screenHeight).clamp(0.45, 1.0).toDouble();
-    final double minFraction = (contentFraction * 0.8).clamp(0.35, contentFraction).toDouble();
 
     return DraggableScrollableSheet(
       initialChildSize: contentFraction,
@@ -441,9 +494,6 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
     required bool hasChoiceOptions,
     required bool isAvailable,
   }) {
-    // viewPadding.top is the physical status bar height. padding.top is zeroed
-    // inside showModalBottomSheet by MediaQuery.removePadding(removeTop: true),
-    // so padding.top would return 0 and cause the header to ignore the status bar.
     final double statusBarHeight = MediaQuery.of(context).viewPadding.top;
     double height = expandedHeaderHeight + statusBarHeight + 16;
     height += 180;
@@ -482,8 +532,8 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
     return height;
   }
 
-  Widget _buildCollapsingHeader(BuildContext context, Item item, double expandedHeaderHeight) {
-    final double statusBarHeight = MediaQuery.of(context).viewPadding.top;
+  Widget _buildCollapsingHeader(BuildContext context, Item item, double expandedHeaderHeight, bool isAvailable, bool reserveStatusBar) {
+    final double statusBarHeight = reserveStatusBar ? MediaQuery.of(context).viewPadding.top : 0;
     const double statusBarGap = 16;
     final double toolbarHeight = 82 + statusBarHeight + statusBarGap;
     final double totalExpandedHeight = expandedHeaderHeight + statusBarHeight + statusBarGap;
@@ -497,7 +547,6 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
     final String selectedMediaUrl = mediaList.isNotEmpty ? mediaList[selectedMediaIndex] : (item.imageFullUrl ?? '');
     final bool isVideoSelected = videoUrl != null && selectedMediaUrl == videoUrl;
     final bool hasMultipleMedia = mediaList.length > 1;
-    // Realign the swipe slider when the arrows changed the selected media.
     _syncMediaCarousel(selectedMediaIndex);
 
     return SliverAppBar(
@@ -522,7 +571,9 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
             child: mediaList.isEmpty
                 ? InkWell(
                     onTap: widget.isCampaign ? null : () => _openMediaFullScreen(context, item, selectedMediaIndex),
-                    child: _buildHeaderMedia(context, item, selectedMediaUrl, isVideoSelected),
+                    child: _buildHeaderMedia(context, item, selectedMediaUrl, isVideoSelected,
+                      boxWidth: constraints.maxWidth, boxHeight: totalExpandedHeight,
+                    ),
                   )
                 : CarouselSlider.builder(
                     carouselController: _mediaCarouselController,
@@ -535,12 +586,9 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
                       initialPage: selectedMediaIndex,
                       onPageChanged: (i, reason) {
                         _mediaCarouselPage = i;
-                        // Pause the header video when it scrolls off-screen; resume
-                        // when it returns (video is always media index 0 when present).
                         final bool onVideoPage = videoUrl != null && i == 0;
                         onVideoPage ? _HeaderVideoPlayerState.resumeAll() : _HeaderVideoPlayerState.pauseAll();
-                        // Only a user swipe drives the selection; arrow-driven jumps
-                        // already updated _selectedMediaIndex.
+                       
                         if (reason == CarouselPageChangedReason.manual && i != _selectedMediaIndex) {
                           setState(() => _selectedMediaIndex = i);
                         }
@@ -549,19 +597,42 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
                     itemBuilder: (context, i, _) {
                       final String url = mediaList[i];
                       final bool isVideo = videoUrl != null && url == videoUrl;
-                      // The video page handles its own taps (player controls + mute);
-                      // only images get the tap-to-fullscreen wrapper.
                       if (isVideo) {
-                        return _buildHeaderMedia(context, item, url, true);
+                        return _buildHeaderMedia(context, item, url, true,
+                          boxWidth: constraints.maxWidth, boxHeight: totalExpandedHeight,
+                        );
                       }
                       return InkWell(
                         onTap: widget.isCampaign ? null : () => _openMediaFullScreen(context, item, i),
-                        child: _buildHeaderMedia(context, item, url, false),
+                        child: _buildHeaderMedia(context, item, url, false,
+                          boxWidth: constraints.maxWidth, boxHeight: totalExpandedHeight,
+                        ),
                       );
                     },
                   ),
           ),
 
+          if(!isAvailable)
+            Positioned(
+            top: 0, left: 0, bottom: 0, right: 0,
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(borderRadius: const BorderRadius.vertical(top: Radius.circular(Dimensions.radiusExtraLarge)),
+              color: Colors.black.withValues(alpha: 0.6)),
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text('not_available_now'.tr, style: robotoMedium.copyWith(
+                  color: Theme.of(context).cardColor, fontSize: Dimensions.fontSizeLarge,
+                )),
+                const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+                Text(
+                  '${'available_will_be'.tr} ${DateConverter.convertTimeToTime(item.availableTimeStarts!)} - ${DateConverter.convertTimeToTime(item.availableTimeEnds!)}',
+                  textAlign: TextAlign.center,
+                  style: robotoRegular.copyWith(color: Theme.of(context).cardColor),
+
+                ),
+              ]),
+            ),
+          ),
           if(hasMultipleMedia && selectedMediaIndex > 0) Positioned(
             left: Dimensions.paddingSizeSmall, top: 0, bottom: 0,
             child: Center(child: IgnorePointer(
@@ -699,32 +770,9 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
     );
   }
 
-  // Renders the currently selected media in the header. Video media auto-plays
-  // (muted, with a mute toggle); SVG images are handled separately.
-  Widget _buildHeaderMedia(BuildContext context, Item item, String mediaUrl, bool isVideo) {
-    final String lowerUrl = mediaUrl.toLowerCase();
-    final bool isVimeo = lowerUrl.contains('vimeo.com') || lowerUrl.contains('player.vimeo.com');
-
-    if (isVideo && isVimeo) {
-      return ItemMediaPreviewWidget(
-        key: ValueKey<String>('header-vimeo-$mediaUrl'),
-        mediaUrl: mediaUrl,
-        thumbnailUrl: item.videoThumbnailUrl?.isNotEmpty == true
-            ? item.videoThumbnailUrl!
-            : (item.imageFullUrl ?? ''),
-        width: double.infinity,
-        height: double.infinity,
-        isDesktop: ResponsiveHelper.isDesktop(context),
-        onFullscreenTap: widget.isCampaign
-            ? null
-            : () => _openMediaFullScreen(context, item, _selectedMediaIndex),
-      );
-    }
-
+  Widget _buildHeaderMedia(BuildContext context, Item item, String mediaUrl, bool isVideo, {required double boxWidth, required double boxHeight}) {
     if (isVideo) {
       return _HeaderVideoPlayer(
-        // Stable key so the player/controller survives the per-frame rebuilds of
-        // the collapsing SliverAppBar instead of restarting.
         key: ValueKey<String>('header-video-$mediaUrl'),
         videoUrl: mediaUrl,
         thumbnailUrl: item.videoThumbnailUrl?.isNotEmpty == true ? item.videoThumbnailUrl! : (item.imageFullUrl ?? ''),
@@ -736,7 +784,9 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
     if (imageUrl.toLowerCase().endsWith('.svg')) {
       return SvgPicture.network(imageUrl, fit: BoxFit.cover, width: double.infinity, height: double.infinity);
     }
-    return CustomImage(image: imageUrl, fit: BoxFit.cover, width: double.infinity, height: double.infinity);
+    return CustomImage(image: imageUrl, fit: BoxFit.cover, width: double.infinity, height: double.infinity,
+      cacheWidth: ImageCacheHelper.pixels(context, boxWidth), cacheHeight: ImageCacheHelper.pixels(context, boxHeight),
+    );
   }
 
   Widget _mediaArrowButton({required IconData icon, required VoidCallback onTap}) {
@@ -789,8 +839,6 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
     }
   }
 
-  // Keeps the swipeable header slider aligned with [_selectedMediaIndex] when it
-  // changes from outside the slider (the left/right arrow buttons).
   void _syncMediaCarousel(int targetIndex) {
     if (targetIndex == _mediaCarouselPage) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -801,7 +849,6 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
     });
   }
 
-  // Header media list: video (if any) first, then the main image, then gallery images.
   List<String> _getMediaList(Item item, {bool isCampaign = false}) {
     final List<String> mediaList = [];
     final String? videoUrl = _getVideoUrl(item);
@@ -856,11 +903,24 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
           const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
           Flexible(
-            child: Text(
-              item.storeName!,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
+            child: InkWell(
+              onTap: () {
+                if(widget.inStorePage) {
+                  Get.back();
+                }else {
+                  Get.back();
+                  Get.find<CartController>().forcefullySetModule(item.moduleId!);
+                  Get.toNamed(
+                    RouteHelper.getStoreRoute(id: item.storeId, page: 'item', slug: item.storeDetails?.slug??''),
+                  );
+                }
+              },
+              child: Text(
+                item.storeName!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
+              ),
             ),
           ),
         ]),
@@ -871,6 +931,13 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
         style: robotoBold.copyWith(fontSize: Dimensions.fontSizeExtraLarge),
       ),
       const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+
+      if (item.brandName != null && item.brandName!.isNotEmpty) ...[
+        Text("${'brand'.tr}: ${item.brandName!}", maxLines: 1, overflow: TextOverflow.ellipsis,
+          style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).hintColor),
+        ),
+        const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+      ],
 
       widget.isCampaign ? const SizedBox() : AvgReviewWidget(avgRating: item.avgRating ?? 0, ratingCount: item.ratingCount ?? 0),
 
@@ -891,12 +958,21 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
       ]),
       const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
+      if (item.unitType != null && item.unitType!.isNotEmpty) ...[
+        Text("${'unit'.tr}: ${item.unitType!}", maxLines: 1, overflow: TextOverflow.ellipsis,
+          style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).hintColor),
+        ),
+        const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+      ],
+      const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+
       Wrap(spacing: Dimensions.paddingSizeSmall, runSpacing: Dimensions.paddingSizeSmall, children: [
         (initialDiscount ?? 0) > 0 ? _buildOfferBadge(
           context: context,
           label: _formatDiscountLabel(initialDiscount, discountType),
           backgroundColor: const Color(0xFFFF2424),
           textColor: Colors.white,
+          textDirection: TextDirection.ltr,
         ) : const SizedBox(),
 
         if (item.freeDelivery ?? false)
@@ -912,14 +988,14 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
   }
 
   Widget _buildOfferBadge({required BuildContext context, required String label, required Color backgroundColor,
-    required Color textColor, IconData? icon}) {
+    required Color textColor, IconData? icon, TextDirection? textDirection}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: 2),
       decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(30)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         icon != null ? Icon(icon, size: 16, color: textColor) : const SizedBox(),
         SizedBox(width: icon != null ? Dimensions.paddingSizeExtraSmall : 0),
-        Text(label, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: textColor)),
+        Text(label, textDirection: textDirection, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: textColor)),
       ]),
     );
   }
@@ -940,8 +1016,6 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
 
     final TextStyle descriptionStyle = robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).hintColor);
 
-    // Collapsed view shows the first 200 characters; the full text is revealed
-    // (no line cap) once expanded, so long descriptions are never cut off.
     const int collapsedCharLimit = 200;
     final String description = item.description ?? '';
     final bool descriptionTooLong = description.length > collapsedCharLimit;
@@ -949,8 +1023,6 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
         ? '${description.substring(0, collapsedCharLimit).trimRight()}...'
         : description;
 
-    // "see more" is meaningful only when there is genuinely hidden content:
-    // a truncated description, or extra info blocks revealed on expand.
     final bool hasMoreDetails = descriptionTooLong || hasNutrition || hasAllergy || hasGeneric;
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1051,7 +1123,7 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
     required List<AddOn> addOnIdList,
     required List<AddOns> addOnsList,
   }) {
-    if(!item.scheduleOrder! && !isAvailable) {
+    if(_readOnly || (!item.scheduleOrder! && !isAvailable)) {
       return const SizedBox();
     }
 
@@ -1094,32 +1166,6 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
               onPressed: () => _startGuidedFocus(missingIdx),
             ),
           ) : Column(mainAxisSize: MainAxisSize.min, children: [
-            if(item.storeDetails?.showLowStockCount == true &&
-                (item.storeDetails?.minimumStockForWarning ?? 0) > 0 &&
-                (stock ?? 0) > 0 &&
-                (stock ?? 0) <= (item.storeDetails?.minimumStockForWarning ?? 0)) ...[
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: Dimensions.paddingSizeSmall,
-                    vertical: Dimensions.paddingSizeExtraSmall,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-                  ),
-                  child: Text(
-                    'low_stock_remaining'.trParams({'count': (stock ?? 0).toString()}),
-                    style: robotoMedium.copyWith(
-                      fontSize: Dimensions.fontSizeSmall,
-                      color: Theme.of(context).colorScheme.onErrorContainer,
-                    ),
-                  ),
-                ),
-              ),
-            ],
             Row(children: [
               Expanded(child: RichText(
                 text: TextSpan(
@@ -1190,10 +1236,10 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
                   radius: Dimensions.radiusDefault,
                   isLoading: cartController.isLoading || _isAddingToCart,
                   fontSize: Dimensions.fontSizeDefault,
-                  buttonText: (Get.find<SplashController>().configModel!.moduleConfig!.module!.stock! && stock! <= 0)
+                  buttonText: _isOutOfStock(stock)
                       ? 'out_of_stock'.tr : widget.isCampaign ? 'order_now'.tr
                       : (widget.cart != null || itemController.cartIndex != -1) ? 'update_in_cart'.tr : 'add_to_cart'.tr,
-                  onPressed: (Get.find<SplashController>().configModel!.moduleConfig!.module!.stock! && stock! <= 0) ? null : () async {
+                  onPressed: _isOutOfStock(stock) ? null : () async {
                     if (_isAddingToCart || _sheetClosed) {
                       return;
                     }
@@ -1314,21 +1360,21 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
             : await Get.find<CartController>().addToCartOnline(onlineCart, storeId: item.storeId);
 
         if(success) {
-          // Close the sheet FIRST, then show the snackbar. If the snackbar is shown
-          // before Get.back(), the pop dismisses the open snackbar instead of the
-          // sheet route — so the sheet stays open and the message never appears.
-          // Popping first targets the sheet; the snackbar then shows over the screen
-          // behind it (and only once, guarded by _closeSheet).
           _closeSheet();
-          showCustomSnackBar(isUpdate ? 'item_updated_in_cart'.tr : 'item_added_to_cart'.tr, getXSnackBar: true, isError: false);
+          showCustomSnackBar(
+            isUpdate ? 'item_updated_in_cart'.tr : 'item_added_to_cart'.tr,
+            getXSnackBar: true, isError: false,
+            actionLabel: 'view_cart'.tr,
+            // Pre-select the added item's module tab — the dashboard's selected
+            // module index can still point at the previous module (e.g. after
+            // switching modules on the offer page).
+            onAction: () => Get.to(() => GlobalCartScreen(fromNav: false, initialModuleId: item.moduleId)),
+          );
         }
       }
     }
   }
 
-  // Closes the sheet exactly once. If the widget is already gone (sheet closed by
-  // hand) or we've already closed it, this is a no-op — so a successful cart action
-  // can never pop a second, unintended route (e.g. the screen behind the sheet).
   void _closeSheet() {
     if (_sheetClosed || !mounted) return;
     _sheetClosed = true;
@@ -1848,8 +1894,12 @@ class _HeaderVideoPlayer extends StatefulWidget {
 class _HeaderVideoPlayerState extends State<_HeaderVideoPlayer> {
   // Active header-video instances, so the carousel/fullscreen can pause/resume them.
   static final Set<_HeaderVideoPlayerState> _instances = <_HeaderVideoPlayerState>{};
-  static void pauseAll() { for (final s in _instances.toList()) s._pause(); }
-  static void resumeAll() { for (final s in _instances.toList()) s._resume(); }
+  static void pauseAll() { for (final s in _instances.toList()) {
+    s._pause();
+  } }
+  static void resumeAll() { for (final s in _instances.toList()) {
+    s._resume();
+  } }
 
   VideoPlayerController? _fileController;
   YoutubePlayerController? _ytController;
@@ -1892,15 +1942,10 @@ class _HeaderVideoPlayerState extends State<_HeaderVideoPlayer> {
       await _fileController!.setVolume(0); // start muted
       await _fileController!.setLooping(true);
       await _fileController!.play();
-      _fileController!.addListener(_onFileTick);
       _ready = true;
     } catch (_) {
       _hasError = true;
     }
-    if (mounted) setState(() {});
-  }
-
-  void _onFileTick() {
     if (mounted) setState(() {});
   }
 
@@ -1930,7 +1975,6 @@ class _HeaderVideoPlayerState extends State<_HeaderVideoPlayer> {
   @override
   void dispose() {
     _instances.remove(this);
-    _fileController?.removeListener(_onFileTick);
     _fileController?.dispose();
     _ytController?.dispose();
     _ytWebController?.close();
@@ -1939,16 +1983,27 @@ class _HeaderVideoPlayerState extends State<_HeaderVideoPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(fit: StackFit.expand, children: <Widget>[
-      // Thumbnail underneath so there's never a blank frame while the player warms up.
-      _thumbnail(),
-      if (!_hasError) _player(),
-      if (_ready && !_hasError) Positioned(
-        left: Dimensions.paddingSizeDefault,
-        bottom: Dimensions.paddingSizeLarge,
-        child: _MuteToggleButton(muted: _muted, onTap: _toggleMute),
-      ),
-    ]);
+    // A playing video repaints continuously. Without this boundary those repaints
+    // dirty the enclosing SliverAppBar header layer — carousel, badges, the
+    // not-available overlay and the collapsing title all repaint per video frame.
+    // A file video paints with BoxFit.cover, so once it is initialised it fills the
+    // box completely and the thumbnail beneath becomes a full-width bitmap blitted
+    // under an opaque video on every frame. The YouTube player is letterboxed inside
+    // a 16:9 box, so there the thumbnail is still visible around it and must stay.
+    final bool fileVideoCoversBox = !_isYoutube && !_hasError && (_fileController?.value.isInitialized ?? false);
+
+    return RepaintBoundary(
+      child: Stack(fit: StackFit.expand, children: <Widget>[
+        // Thumbnail underneath so there's never a blank frame while the player warms up.
+        if (!fileVideoCoversBox) _thumbnail(),
+        if (!_hasError) _player(),
+        if (_ready && !_hasError) Positioned(
+          left: Dimensions.paddingSizeDefault,
+          bottom: Dimensions.paddingSizeLarge,
+          child: _MuteToggleButton(muted: _muted, onTap: _toggleMute),
+        ),
+      ]),
+    );
   }
 
   Widget _thumbnail() {

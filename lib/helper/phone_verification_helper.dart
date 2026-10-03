@@ -2,7 +2,7 @@ import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:phone_numbers_parser/phone_numbers_parser.dart';
-import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
+import 'package:sixam_mart/features/location/controllers/location_controller.dart';
 
 import '../features/splash/controllers/splash_controller.dart';
 
@@ -18,17 +18,17 @@ class PhoneVerificationHelper {
       PhoneNumber phoneNumber = PhoneNumber.parse(number);
       isValid = phoneNumber.isValid(type: PhoneNumberType.mobile);
       if(isValid && fromAuthPage == false){
-        Get.find<AuthController>().countryDialCode = "+${phoneNumber.countryCode}";
+        Get.find<LocationController>().countryDialCode = "+${phoneNumber.countryCode}";
         return phoneNumber.nsn.toString();
       }else if(isValid && fromAuthPage == true){
-        Get.find<AuthController>().countryDialCode = CountryCode.fromCountryCode(Get.find<SplashController>().configModel?.country ?? "BD").dialCode!;
+        Get.find<LocationController>().countryDialCode = CountryCode.fromCountryCode(Get.find<SplashController>().configModel?.country ?? "BD").dialCode!;
         return phoneNumber.nsn.toString();
       }else{
-        Get.find<AuthController>().countryDialCode = CountryCode.fromCountryCode(Get.find<SplashController>().configModel?.country ?? "BD").dialCode!;
+        Get.find<LocationController>().countryDialCode = CountryCode.fromCountryCode(Get.find<SplashController>().configModel?.country ?? "BD").dialCode!;
         return "";
       }
     } catch (e) {
-      Get.find<AuthController>().countryDialCode = CountryCode.fromCountryCode(Get.find<SplashController>().configModel?.country ?? "BD").dialCode!;
+      Get.find<LocationController>().countryDialCode = CountryCode.fromCountryCode(Get.find<SplashController>().configModel?.country ?? "BD").dialCode!;
       debugPrint('Phone Number is not parsing: $e');
       return "";
     }

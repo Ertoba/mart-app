@@ -1,12 +1,13 @@
+import 'package:sixam_mart/features/checkout/domain/models/checkout_summary_body_model.dart';
+import 'package:sixam_mart/features/checkout/domain/models/coverage_list_model.dart';
 import 'package:get/get_connect/http/src/response/response.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sixam_mart/api/api_client.dart';
-import 'package:sixam_mart/features/checkout/domain/models/surge_price_model.dart';
+import 'package:sixam_mart/features/checkout/domain/models/saved_prescription_model.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/features/payment/domain/models/offline_method_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/place_order_body_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/timeslote_model.dart';
-import 'package:sixam_mart/features/checkout/domain/models/saved_prescription_model.dart';
 
 abstract class CheckoutServiceInterface {
   Future<List<OfflineMethodModel>?> getOfflineMethodList();
@@ -17,12 +18,13 @@ abstract class CheckoutServiceInterface {
   List<TimeSlotModel>? validateTimeSlot(List<TimeSlotModel> slots, int dateIndex, int? interval, bool? orderPlaceToScheduleInterval);
   Future<Response> getDistanceInMeter(LatLng originLatLng, LatLng destinationLatLng);
   Future<double> getExtraCharge(double? distance);
-  Future<Response> placeOrder(PlaceOrderBodyModel orderBody, List<MultipartBody> orderAttachment, [List<String>? savedImages]);
-  Future<Response> placePrescriptionOrder(int? storeId, double? distance, String address, String longitude, String latitude, String note, List<MultipartBody> orderAttachment, String dmTips, String deliveryInstruction, {List<String>? savedImages});
+  Future<Response> placeOrder(PlaceOrderBodyModel orderBody, List<MultipartBody> orderAttachment, List<String>? savedImages);
+  Future<Response> placePrescriptionOrder(int? storeId, double? distance, String address, String longitude, String latitude, String note, List<MultipartBody> orderAttachment, List<String> savedImages, String dmTips, String deliveryInstruction);
   Future<Response> getOrderTax(PlaceOrderBodyModel placeOrderBody);
-  Future<SurgePriceModel?> getSurgePrice({required String zoneId, required String moduleId, required String dateTime, String? guestId});
-  List<String> getMonthlyReorderPolicy();
+  Future<Response> getCheckoutSummary(CheckoutSummaryBodyModel body);
+  Future<CoverageListModel?> getCoverageList({required int zoneId, int? moduleId});
   Future<List<SavedPrescriptionModel>?> getSavedPrescriptionImages();
   Future<Response> storeSavedPrescriptionImages(List<MultipartBody> images);
   Future<Response> deleteSavedPrescriptionImages();
+  List<String> getMonthlyReorderPolicy();
 }

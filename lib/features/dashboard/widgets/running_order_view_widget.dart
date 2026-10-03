@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sixam_mart/common/models/ongoing_order_model.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
-import 'package:sixam_mart/features/order/domain/models/order_model.dart';
+import 'package:sixam_mart/features/ride_share_module/ride_order/controllers/ride_controller.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/features/order/screens/order_details_screen.dart';
 
 class RunningOrderViewWidget extends StatelessWidget {
-  final List<OrderModel> reversOrder;
+  final List<OrderData> reversOrder;
   final Function onOrderTap;
   const RunningOrderViewWidget({super.key, required this.reversOrder, required this.onOrderTap});
 
@@ -33,8 +33,8 @@ class RunningOrderViewWidget extends StatelessWidget {
               margin: const EdgeInsets.only(top: Dimensions.paddingSizeDefault),
               height: 3, width: 40,
               decoration: BoxDecoration(
-                  color: Theme.of(context).highlightColor,
-                  borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall)
+                color: Theme.of(context).highlightColor,
+                borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
               ),
             ),
            ),
@@ -48,8 +48,9 @@ class RunningOrderViewWidget extends StatelessWidget {
 
               bool isFirstOrder =  index == 0;
 
-              String? orderStatus = reversOrder[index].orderStatus;
+              String? orderStatus = reversOrder[index].status;
               int status = 0;
+              String orderType = reversOrder[index].orderType!;
 
               if(orderStatus == AppConstants.pending){
                 status = 1;
@@ -61,13 +62,26 @@ class RunningOrderViewWidget extends StatelessWidget {
 
               return InkWell(
                 onTap: () async {
-                  await Get.toNamed(
-                    RouteHelper.getOrderDetailsRoute(reversOrder[index].id),
-                    arguments: OrderDetailsScreen(
-                      orderId: reversOrder[index].id,
-                      orderModel: reversOrder[index],
-                    ),
-                  );
+                  // await Get.toNamed(
+                  //   RouteHelper.getOrderDetailsRoute(reversOrder[index].id),
+                  //   arguments: OrderDetailsScreen(
+                  //     orderId: reversOrder[index].id,
+                  //     orderModel: reversOrder[index],
+                  //   ),
+                  // );
+
+                  if(orderType == 'order') {
+                    await Get.toNamed(
+                      RouteHelper.getOrderDetailsRoute(reversOrder[index].id),
+                      // arguments: OrderDetailsScreen(
+                      //   orderId: reversOrder[index].id,
+                      //   orderModel: reversOrder[index],
+                      // ),
+                    );
+                  } else if(orderType == 'ride') {
+                    await Get.find<RideController>().getCurrentRideStatus(fromRefresh: true, showCustomLoader: true);
+                  }
+
                   if(orderController.showBottomSheet){
                     orderController.showRunningOrders();
                   }
@@ -99,8 +113,8 @@ class RunningOrderViewWidget extends StatelessWidget {
                             crossAxisAlignment: isFirstOrder ? CrossAxisAlignment.center : CrossAxisAlignment.start, children: [
                               Row( mainAxisAlignment: isFirstOrder ? MainAxisAlignment.center : MainAxisAlignment.start, children: [
 
-                                Flexible(child: Text('${'your_order_is'.tr} ', style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault), overflow: TextOverflow.ellipsis)),
-                                Flexible(child: Text(reversOrder[index].orderStatus!.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).primaryColor), overflow: TextOverflow.ellipsis)),
+                                Text('${'your'.tr} ${orderType.tr} ${'is'.tr} ', style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault)),
+                                Text(reversOrder[index].status!.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).primaryColor)),
                               ]) ,
                               const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 

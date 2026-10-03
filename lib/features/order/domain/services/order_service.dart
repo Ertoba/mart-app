@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sixam_mart/api/api_client.dart';
 import 'package:sixam_mart/common/models/ongoing_order_model.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/checkout/domain/models/payment_model.dart';
@@ -30,7 +32,10 @@ class OrderService implements OrderServiceInterface {
 
   @override
   Future<List<LastOrderModel>?> getLastOrders({required bool isHome, int? storeId}) async {
-    return await orderRepositoryInterface.getLastOrders(isHome: isHome, storeId: storeId);
+    final List<LastOrderModel>? orders = await orderRepositoryInterface.getLastOrders(isHome: isHome, storeId: storeId);
+    // The section exists to repeat an order, so one the backend refuses to repeat has
+    // nothing to offer there.
+    return orders?.where((LastOrderModel order) => order.canReorder ?? false).toList();
   }
 
   @override
@@ -82,27 +87,89 @@ class OrderService implements OrderServiceInterface {
   }
 
   @override
+  Future<List<LatLng>> getDirectionPolyline({required LatLng origin, required LatLng destination}) async {
+    List<LatLng> coordinates = [];
+    final Response? response = await orderRepositoryInterface.getDirection(origin: origin, destination: destination);
+    if (response != null && response.statusCode == 200) {
+      try {
+        final dynamic body = response.body;
+        String? encoded;
+        if (body is Map && body['routes'] is List && (body['routes'] as List).isNotEmpty) {
+          final dynamic route = body['routes'][0];
+          // Routes API v2 shape: routes[0].polyline.encodedPolyline
+          encoded = route['polyline']?['encodedPolyline'];
+          // Legacy Directions shape fallback: routes[0].overview_polyline.points
+          encoded ??= route['overview_polyline']?['points'];
+        }
+        if ((encoded == null || encoded.isEmpty) && body is Map) {
+          encoded = body['encoded_polyline'];
+        }
+        if (encoded != null && encoded.isNotEmpty) {
+          coordinates = _decodeEncodedPolyline(encoded);
+        }
+      } catch (_) {}
+    }
+    return coordinates;
+  }
+
+  /// Decodes a Google encoded polyline string into a list of [LatLng] points.
+  List<LatLng> _decodeEncodedPolyline(String encoded) {
+    List<LatLng> poly = [];
+    int index = 0, len = encoded.length;
+    int lat = 0, lng = 0;
+    while (index < len) {
+      int b, shift = 0, result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+      poly.add(LatLng((lat / 1E5).toDouble(), (lng / 1E5).toDouble()));
+    }
+    return poly;
+  }
+
+  @override
   Future<List<String?>?> getRefundReasons() async {
     return await orderRepositoryInterface.getList(isRefundReasons: true);
   }
 
   @override
-  Future<void> submitRefundRequest(int selectedReasonIndex, List<String?>? refundReasons, String note, String? orderId, XFile? refundImage) async {
+  Future<bool> submitRefundRequest(int selectedReasonIndex, List<String?>? refundReasons, String note, String? orderId, XFile? refundImage) async {
     if(selectedReasonIndex == -1) {
       showCustomSnackBar('please_select_reason'.tr);
-    } else {
-      Map<String, String> body = {};
-      body.addAll(<String, String>{
-        'customer_reason': refundReasons![selectedReasonIndex]!,
-        'order_id': orderId!,
-        'customer_note': note,
-      });
-      Response response = await orderRepositoryInterface.submitRefundRequest(body, refundImage);
-      if (response.statusCode == 200) {
-        showCustomSnackBar(response.body['message'], isError: false);
-        Get.offAllNamed(RouteHelper.getInitialRoute());
-      }
+      return false;
     }
+    Map<String, String> body = {};
+    body.addAll(<String, String>{
+      'customer_reason': refundReasons![selectedReasonIndex]!,
+      'order_id': orderId!,
+      'customer_note': note,
+    });
+    Response response = await orderRepositoryInterface.submitRefundRequest(body, refundImage);
+    // The request CREATES a refund request, so the API answers `201 Created`. Testing
+    // for 200 alone read a filed request as a failure, and since the failure path is
+    // handled upstream by ApiChecker there was nothing left to show — the button
+    // submitted the request and then appeared to do nothing at all.
+    if (!ApiClient.isSuccessCode(response.statusCode)) {
+      return false;
+    }
+    // The envelope keeps its `message` beside a null `content`, so it survives the
+    // unwrap; `statusText` carries it for the shapes where `content` is filled.
+    final dynamic message = response.body is Map ? response.body['message'] : null;
+    showCustomSnackBar(message is String ? message : response.statusText, isError: false);
+    return true;
   }
 
   @override

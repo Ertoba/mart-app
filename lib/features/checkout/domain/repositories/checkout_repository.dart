@@ -1,33 +1,35 @@
-import 'dart:convert';
-import 'dart:math';
+import 'dart:developer';
 
 import 'package:get/get_connect/connect.dart';
 import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixam_mart/api/api_client.dart';
-import 'package:sixam_mart/features/checkout/domain/models/surge_price_model.dart';
-import 'package:sixam_mart/features/checkout/domain/models/saved_prescription_model.dart';
-import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
-import 'package:sixam_mart/features/payment/domain/models/offline_method_model.dart';
+import 'package:sixam_mart/api/response_parser.dart';
+import 'package:sixam_mart/features/checkout/domain/models/checkout_summary_body_model.dart';
+import 'package:sixam_mart/features/checkout/domain/models/coverage_list_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/place_order_body_model.dart';
+import 'package:sixam_mart/features/checkout/domain/models/saved_prescription_model.dart';
 import 'package:sixam_mart/features/checkout/domain/repositories/checkout_repository_interface.dart';
+import 'package:sixam_mart/features/payment/domain/models/offline_method_model.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 
-class CheckoutRepository implements CheckoutRepositoryInterface {
-  static const String _checkoutIdempotencyPreference =
-      'checkout_idempotency_key';
+import '../../../../common/widgets/custom_snackbar.dart';
 
+class CheckoutRepository implements CheckoutRepositoryInterface {
   final ApiClient apiClient;
   final SharedPreferences sharedPreferences;
-  CheckoutRepository({required this.apiClient, required this.sharedPreferences});
+  CheckoutRepository({ required this.apiClient, required this.sharedPreferences});
 
   @override
   Future<int> getDmTipMostTapped() async {
     int mostDmTipAmount = 0;
     Response response = await apiClient.getData(AppConstants.mostTipsUri);
     if (response.statusCode == 200) {
-      mostDmTipAmount = response.body['most_tips_amount'];
+      // The server sends this as a number it may format either way — `10` or `10.0` —
+      // and a double assigned straight into an int throws at runtime. Parsing through
+      // double covers both, plus a numeric string.
+      mostDmTipAmount = double.tryParse('${response.body['most_tips_amount']}')?.round() ?? 0;
     }
     return mostDmTipAmount;
   }
@@ -61,73 +63,20 @@ class CheckoutRepository implements CheckoutRepositoryInterface {
     return extraCharge;
   }
 
+
+
   @override
-  Future<Response> placeOrder(PlaceOrderBodyModel orderBody, List<MultipartBody>? orderAttachment, [List<String>? savedImages]) async {
-    final String idempotencyKey = await _getOrCreateCheckoutIdempotencyKey();
-    final Map<String, String> headers = Map<String, String>.from(
-      apiClient.getHeader(),
-    )..['Idempotency-Key'] = idempotencyKey;
-
-    final Map<String, String> body = orderBody.toJson().map((key, value) => MapEntry(key, value.toString()));
-    final List<String> cleanedSavedImages = (savedImages ?? <String>[]).map((image) => image.trim()).where((image) => image.isNotEmpty).toList();
-    if (cleanedSavedImages.isNotEmpty) {
-      body['saved_images'] = jsonEncode(cleanedSavedImages);
-      for (int index = 0; index < cleanedSavedImages.length; index++) {
-        body['saved_images[$index]'] = cleanedSavedImages[index];
-      }
-    }
-
-    final Response response = await apiClient.postMultipartData(
-      AppConstants.placeOrderUri,
-      body,
-      orderAttachment ?? [],
-      headers: headers,
-      handleError: false,
-    );
-
-    final bool isTransportFailure =
-        response.statusCode == null ||
-        response.statusCode == 0 ||
-        response.statusCode == 1;
-    final bool isStillProcessing =
-        response.statusCode == 409 &&
-        response.body is Map &&
-        response.body['errors'] is List &&
-        response.body['errors'].isNotEmpty &&
-        response.body['errors'][0]['code'] == 'checkout_in_progress';
-
-    if (!isTransportFailure && !isStillProcessing) {
-      await sharedPreferences.remove(_checkoutIdempotencyPreference);
-    }
-
-    return response;
-  }
-
-  Future<String> _getOrCreateCheckoutIdempotencyKey() async {
-    final String? existing = sharedPreferences.getString(
-      _checkoutIdempotencyPreference,
-    );
-    if (existing != null && existing.isNotEmpty) {
-      return existing;
-    }
-
-    final Random random = Random.secure();
-    final List<int> bytes = List<int>.generate(
-      32,
-      (_) => random.nextInt(256),
-      growable: false,
-    );
-    final String generated = base64UrlEncode(bytes).replaceAll('=', '');
-    await sharedPreferences.setString(
-      _checkoutIdempotencyPreference,
-      generated,
-    );
-    return generated;
+  Future<Response> placeOrder(PlaceOrderBodyModel orderBody, List<MultipartBody>? orderAttachment, List<String>? savedImages) async {
+    Map<String, String> body = orderBody.toJson();
+    // _attachSavedImages(body, savedImages);
+    log("order Attachment (key -> file): ${orderAttachment?.map((e) => '${e.key} -> ${e.file?.name}').toList()}");
+    log("Order Body: $body");
+    return await apiClient.postMultipartData(AppConstants.placeOrderUri, body, orderAttachment ?? [], handleError: false);
   }
 
   @override
   Future<Response> placePrescriptionOrder(int? storeId, double? distance, String address, String longitude, String latitude, String note,
-      List<MultipartBody> orderAttachment, String dmTips, String deliveryInstruction, {List<String>? savedImages}) async {
+      List<MultipartBody> orderAttachment, List<String> savedImages, String dmTips, String deliveryInstruction) async {
 
     Map<String, String> body = {
       'store_id': storeId.toString(),
@@ -141,40 +90,49 @@ class CheckoutRepository implements CheckoutRepositoryInterface {
       'payment_method': 'cash_on_delivery',
       'order_type': 'delivery',
     };
-    final List<String> cleanedSavedImages = (savedImages ?? <String>[]).map((image) => image.trim()).where((image) => image.isNotEmpty).toList();
-    if (cleanedSavedImages.isNotEmpty) {
-      body['saved_images'] = jsonEncode(cleanedSavedImages);
-      for (int index = 0; index < cleanedSavedImages.length; index++) {
-        body['saved_images[$index]'] = cleanedSavedImages[index];
-      }
-    }
+    // _attachSavedImages(body, savedImages);
     return await apiClient.postMultipartData(AppConstants.placePrescriptionOrderUri, body, orderAttachment, handleError: false);
   }
 
   @override
   Future<List<SavedPrescriptionModel>?> getSavedPrescriptionImages() async {
-    final Response response = await apiClient.getData(AppConstants.savedFilesUri, handleError: false);
-    if (response.statusCode != 200 || response.body == null || response.body['saved_files'] is! List) {
+    Response response = await apiClient.getData(AppConstants.savedFilesUri, handleError: false);
+    if (response.statusCode != 200) {
       return null;
     }
-    return (response.body['saved_files'] as List)
-        .whereType<Map>()
-        .map((file) => SavedPrescriptionModel.fromJson(Map<String, dynamic>.from(file)))
-        .toList();
+
+    // ApiClient unwraps the envelope to `content` before this point, so the list arrives
+    // either still under `saved_files` or as the bare list itself. listOf() takes both —
+    // and, unlike naming the key directly, does not throw when the body is a list.
+    final List<dynamic>? rawFiles = ResponseParser.listOf(response.body, legacyKey: 'saved_files');
+    if (rawFiles == null) {
+      log('saved-files: 200 but no list in body -> ${response.body}');
+      return null;
+    }
+
+    final List<SavedPrescriptionModel> savedFiles = [];
+    for (final savedFile in rawFiles) {
+      if (savedFile is Map) {
+        savedFiles.add(SavedPrescriptionModel.fromJson(Map<String, dynamic>.from(savedFile)));
+      }
+    }
+    return savedFiles;
   }
 
   @override
   Future<Response> storeSavedPrescriptionImages(List<MultipartBody> images) async {
-    final Response response = await apiClient.postMultipartData(AppConstants.storeSavedFilesUri, <String, String>{}, images, handleError: false);
+    final response = await apiClient.postMultipartData(AppConstants.storeSavedFilesUri, {}, images, handleError: false);
+
     if (response.statusCode == 400 && response.statusText == 'connection_to_api_server_failed'.tr) {
       showCustomSnackBar('max_file_size_2mb'.tr);
+      return response;
     }
     return response;
   }
 
   @override
   Future<Response> deleteSavedPrescriptionImages() async {
-    return apiClient.deleteData(AppConstants.deleteSavedFilesUri, handleError: false);
+    return await apiClient.deleteData(AppConstants.deleteSavedFilesUri, handleError: false);
   }
 
   @override
@@ -193,7 +151,7 @@ class CheckoutRepository implements CheckoutRepositoryInterface {
   }
 
   @override
-  Future<List<OfflineMethodModel>?> getList({int? offset}) async{
+  Future getList({int? offset}) async{
     return await _getOfflineMethodList();
   }
 
@@ -202,7 +160,9 @@ class CheckoutRepository implements CheckoutRepositoryInterface {
     Response response = await apiClient.getData(AppConstants.offlineMethodListUri);
     if (response.statusCode == 200) {
       offlineMethodList = [];
-      response.body.forEach((method) => offlineMethodList!.add(OfflineMethodModel.fromJson(method)));
+      for (final dynamic method in ResponseParser.listOrEmpty(response.body)) {
+        offlineMethodList.add(OfflineMethodModel.fromJson(method));
+      }
     }
     return offlineMethodList;
   }
@@ -218,20 +178,33 @@ class CheckoutRepository implements CheckoutRepositoryInterface {
     return response;
   }
 
+  /// The whole checkout quote in one call.
+  ///
+  /// `handleError: false` on purpose: this refires on every coupon, tip and
+  /// address change, so routing failures through [ApiChecker] would pop a
+  /// snackbar at the customer on each one. The controller decides which codes
+  /// are actionable and silently falls back to the client-side figures for the
+  /// rest.
   @override
-  Future<SurgePriceModel?> getSurgePrice({required String zoneId, required String moduleId, required String dateTime, String? guestId}) async {
-    SurgePriceModel? surgePrice;
-    Map<String, dynamic> body = {
-      'zone_id': zoneId,
-      'module_id': moduleId,
-      'date_time': dateTime,
-      'guest_id': guestId ?? '',
-    };
-    Response response = await apiClient.postData(AppConstants.getSurgePriceUri, body);
-    if (response.statusCode == 200) {
-      surgePrice = SurgePriceModel.fromJson(response.body);
-    }
-    return surgePrice;
+  Future<Response> getCheckoutSummary(CheckoutSummaryBodyModel body) async {
+    return await apiClient.postData(AppConstants.checkoutSummaryUri, body.toJson(), handleError: false);
   }
-  
+
+  /// What the customer must pick from, for a `(zone, module)`.
+  ///
+  /// `module_id` is sent explicitly rather than left to the `moduleId` header:
+  /// the header is not enforced on this path, and a request answered against the
+  /// wrong module returns a different rule.
+  @override
+  Future<CoverageListModel?> getCoverageList({required int zoneId, int? moduleId}) async {
+    final String moduleQuery = moduleId != null ? '&module_id=$moduleId' : '';
+    final Response response = await apiClient.getData(
+      '${AppConstants.deliveryChargeCoverageListUri}?zone_id=$zoneId$moduleQuery',
+      handleError: false,
+    );
+    if (response.statusCode == 200 && response.body is Map) {
+      return CoverageListModel.fromJson(Map<String, dynamic>.from(response.body as Map));
+    }
+    return null;
+  }
 }

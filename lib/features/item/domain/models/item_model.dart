@@ -1,57 +1,93 @@
+import 'package:sixam_mart/api/json_reader.dart';
 import 'package:get/get.dart';
+import 'package:sixam_mart/api/response_parser.dart';
+import 'package:sixam_mart/common/models/pagination_model.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/item/domain/models/basic_medicine_model.dart';
 
 class ItemModel {
   int? totalSize;
+  int? minPrice;
+  int? maxPrice;
   String? limit;
   int? offset;
   List<Item>? items;
   List<Categories>? categories;
-  double? minPrice;
-  double? maxPrice;
 
-  ItemModel({this.totalSize, this.limit, this.offset, this.items, this.categories, this.minPrice, this.maxPrice});
+  ItemModel({this.totalSize, this.limit, this.offset, this.items, this.categories});
 
   ItemModel.fromJson(Map<String, dynamic> json) {
-    totalSize = json['total_size'];
-    limit = json['limit'].toString();
-    offset = (json['offset'] != null && json['offset'].toString().trim().isNotEmpty) ? int.parse(json['offset'].toString()) : null;
-    minPrice = (json['min_price'] as num?)?.toDouble();
-    maxPrice = (json['max_price'] as num?)?.toDouble();
-    if (json['products'] != null) {
+    // Paging arrives either flat (`total_size`/`limit`/`offset`) or nested under
+    // `pagination`. These field names stay as they are — the app treats `offset`
+    // as a 1-based page number, which `current_page` maps onto directly.
+    final PaginationModel pagination = PaginationModel.fromJson(json);
+    totalSize = pagination.totalSize;
+    limit = pagination.limit?.toString();
+    offset = pagination.offset;
+    minPrice = json['min_price'];
+    maxPrice = json['max_price'];
+
+    // `products` (unfiltered) and `items` (filtered) were the legacy keys; both
+    // are now `data`. The filter is applied to `data`, since it only drops items
+    // whose variation data this build cannot render correctly — showing one of
+    // those is worse than omitting it.
+    if (json['products'] is List) {
       items = [];
-      json['products'].forEach((v) {
+      for (final dynamic v in json['products'] as List<dynamic>) {
         items!.add(Item.fromJson(v));
-      });
+      }
     }
-    if (json['items'] != null) {
+    final List<dynamic>? renderable = (json['items'] is List)
+        ? json['items'] as List<dynamic>
+        : (json['products'] is List ? null : ResponseParser.listOf(json));
+    if (renderable != null) {
       items = [];
-      json['items'].forEach((v) {
-        if (v['module_type'] == null ||
-          !Get.find<SplashController>().getModuleConfig(v['module_type']).newVariation! ||
-          v['variations'] == null ||
-          v['variations'].isEmpty ||
-          (v['food_variations'] != null && v['food_variations'].isNotEmpty)) {
+      for (final dynamic v in renderable) {
+        if (_isRenderable(v)) {
           items!.add(Item.fromJson(v));
         }
-      });
+      }
     }
-    if (json['categories'] != null) {
+
+    // `categories` sits beside the item list in the same body (see
+    // `categories/featured/items`), so it is read by name — never via `data`.
+    final List<dynamic> categoryJson = ResponseParser.namedListOf(json, 'categories');
+    if (categoryJson.isNotEmpty) {
       categories = <Categories>[];
-      json['categories'].forEach((v) {
+      for (final dynamic v in categoryJson) {
         categories!.add(Categories.fromJson(v));
-      });
+      }
     }
+  }
+
+  /// Excludes items whose variations this build cannot render — a module on the
+  /// new variation format whose item carries `variations` but no `food_variations`.
+  ///
+  /// Fails open: if the module config cannot be resolved (no [SplashController]
+  /// registered yet, or config not loaded) the item is kept. Dropping items
+  /// because config happened to be unavailable would empty a whole home section
+  /// for a reason that has nothing to do with the item.
+  static bool _isRenderable(dynamic v) {
+    if (v is! Map) return false;
+    if (v['module_type'] == null) return true;
+    bool newVariation;
+    try {
+      newVariation = Get.find<SplashController>().getModuleConfig(v['module_type']).newVariation ?? false;
+    } catch (_) {
+      return true;
+    }
+    if (!newVariation) return true;
+    if (v['variations'] is! List || (v['variations'] as List).isEmpty) return true;
+    return v['food_variations'] is List && (v['food_variations'] as List).isNotEmpty;
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['total_size'] = totalSize;
-    data['limit'] = limit;
-    data['offset'] = offset;
     data['min_price'] = minPrice;
     data['max_price'] = maxPrice;
+    data['limit'] = limit;
+    data['offset'] = offset;
     if (items != null) {
       data['products'] = items!.map((v) => v.toJson()).toList();
     }
@@ -94,7 +130,6 @@ class Item {
   String? availableTimeEnds;
   int? storeId;
   String? storeName;
-  bool? verifiedSeller;
   int? zoneId;
   bool? scheduleOrder;
   double? avgRating;
@@ -116,10 +151,13 @@ class Item {
   List<String>? genericName;
   StoreDetails? storeDetails;
   String? slug;
+  int? verifiedSeller;
   String? storeImageFullUrl;
   String? storeLogoFullUrl;
   bool? freeDelivery;
   String? offerLabel;
+  int? brandId;
+  String? brandName;
 
   Item({
     this.id,
@@ -153,7 +191,6 @@ class Item {
     this.availableTimeEnds,
     this.storeId,
     this.storeName,
-    this.verifiedSeller,
     this.zoneId,
     this.scheduleOrder,
     this.avgRating,
@@ -174,10 +211,14 @@ class Item {
     this.genericName,
     this.storeDetails,
     this.slug,
+    this.verifiedSeller,
+    // new
     this.storeImageFullUrl,
     this.storeLogoFullUrl,
     this.freeDelivery,
     this.offerLabel,
+    this.brandId,
+    this.brandName,
   });
 
   Item.fromJson(Map<String, dynamic> json) {
@@ -224,16 +265,25 @@ class Item {
         foodVariations!.add(FoodVariation.fromJson(v));
       });
     }
-    if (json['add_ons'] != null) {
+    // `add_ons` is the legacy key; the current API sends `addons` and, on some
+    // payloads, omits `add_ons` entirely — the cart's embedded item is one
+    // (`/customer/cart/list` returns `addons: []` and no `add_ons`).
+    //
+    // The `addons` fallback used to be nested inside `if (json['add_ons'] != null)`,
+    // so it was unreachable in exactly the case that needed it: `addOns` stayed null
+    // and the cart item widget threw on `item!.addOns!`. Either key now populates it.
+    final dynamic legacyAddOns = json['add_ons'];
+    final dynamic newAddOns = json['addons'];
+    // `add_ons` wins when it actually carries entries. It has been seen arriving as
+    // the string "[]" rather than a list, which is what the first-element check
+    // guards against — that case falls through to `addons` as before.
+    final List<dynamic>? addOnSource = (legacyAddOns is List && legacyAddOns.isNotEmpty && legacyAddOns[0] != '[')
+        ? legacyAddOns
+        : (newAddOns is List ? newAddOns : (legacyAddOns is List ? legacyAddOns : null));
+    if (addOnSource != null) {
       addOns = [];
-      if (json['add_ons'].length > 0 && json['add_ons'][0] != '[') {
-        json['add_ons'].forEach((v) {
-          addOns!.add(AddOns.fromJson(v));
-        });
-      } else if (json['addons'] != null) {
-        json['addons'].forEach((v) {
-          addOns!.add(AddOns.fromJson(v));
-        });
+      for (final dynamic v in addOnSource) {
+        addOns!.add(AddOns.fromJson(v));
       }
     }
     if (json['choice_options'] != null) {
@@ -242,20 +292,19 @@ class Item {
         choiceOptions!.add(ChoiceOptions.fromJson(v));
       });
     }
-    price = (json['price'] as num?)?.toDouble() ?? 0;
+    price = JsonReader.toDouble(json['price']);
     tax = json['tax']?.toDouble();
-    discount = (json['discount'] as num?)?.toDouble() ?? 0;
+    discount = JsonReader.toDouble(json['discount']);
     discountType = json['discount_type'];
     availableTimeStarts = json['available_time_starts'];
     availableTimeEnds = json['available_time_ends'];
     storeId = json['store_id'];
     storeName = json['store_name'];
-    verifiedSeller = json['verified_seller'] == true || json['verified_seller'].toString() == '1';
     zoneId = json['zone_id'];
     scheduleOrder = json['schedule_order'];
-    avgRating = json['avg_rating']?.toDouble();
+    avgRating = json['avg_rating']?.toDouble()??0;
     ratingCount = json['rating_count'];
-    moduleId = json['module_id'];
+    moduleId = json['module_id'] is String ? int.tryParse(json['module_id']) : json['module_id'];
     moduleType = json['module_type'];
     veg = json['veg'] != null ? int.parse(json['veg'].toString()) : 0;
     stock = json['stock'];
@@ -274,10 +323,13 @@ class Item {
         ? StoreDetails.fromJson(json['store_details'])
         : null;
     slug = json['slug'];
+    verifiedSeller = json['verified_seller'];
     storeImageFullUrl = json['store_image_full_url'];
     storeLogoFullUrl = json['store_logo_full_url'];
     freeDelivery = json['free_delivery'];
     offerLabel = json['offer_label'];
+    brandId = json['brand_id'];
+    brandName = json['brand_name'];
   }
 
   Map<String, dynamic> toJson() {
@@ -323,7 +375,6 @@ class Item {
     data['available_time_ends'] = availableTimeEnds;
     data['store_id'] = storeId;
     data['store_name'] = storeName;
-    data['verified_seller'] = verifiedSeller;
     data['zone_id'] = zoneId;
     data['schedule_order'] = scheduleOrder;
     data['avg_rating'] = avgRating;
@@ -347,10 +398,13 @@ class Item {
       data['store_details'] = storeDetails!.toJson();
     }
     data['slug'] = slug;
+    data['verified_seller'] = verifiedSeller;
     data['store_image_full_url'] = storeImageFullUrl;
     data['store_logo_full_url'] = storeLogoFullUrl;
     data['free_delivery'] = freeDelivery;
     data['offer_label'] = offerLabel;
+    data['brand_id'] = brandId;
+    data['brand_name'] = brandName;
     return data;
   }
 }
@@ -383,8 +437,9 @@ class Variation {
 
   Variation.fromJson(Map<String, dynamic> json) {
     type = json['type'];
-    price = json['price']?.toDouble();
-    stock = int.parse(json['stock'] != null ? json['stock'].toString() : '0');
+    // The cart returns this price as a string ("500"), so `.toDouble()` on it threw.
+    price = JsonReader.toDouble(json['price']);
+    stock = JsonReader.toInt(json['stock']) ?? 0;
   }
 
   Map<String, dynamic> toJson() {
@@ -410,7 +465,7 @@ class AddOns {
   AddOns.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     name = json['name'];
-    price = (json['price'] as num?)?.toDouble() ?? 0;
+    price = JsonReader.toDouble(json['price']);
   }
 
   Map<String, dynamic> toJson() {
@@ -534,7 +589,7 @@ class StoreDetails {
     email = json['email'];
     slug = json['slug'];
     zoneId = json['zone_id'];
-    showLowStockCount = json['show_low_stock_count'];
+    showLowStockCount = (json['show_low_stock_count'] == 1 || json['show_low_stock_count'] == true) ? true : false ;
     minimumStockForWarning = json['minimum_stock_for_warning'];
   }
 

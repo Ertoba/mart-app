@@ -1,10 +1,15 @@
+import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/common/widgets/custom_ink_well.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
 import 'package:sixam_mart/features/rental_module/rental_order/controllers/taxi_order_controller.dart';
 import 'package:sixam_mart/features/rental_module/rental_order/widgets/trip_order_view_widget.dart';
+import 'package:sixam_mart/features/ride_share_module/ride_order/controllers/ride_controller.dart';
+import 'package:sixam_mart/features/ride_share_module/ride_order/widgets/ride_order_view_widget.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/taxi_helper.dart';
+import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
 import 'package:sixam_mart/common/widgets/custom_app_bar.dart';
@@ -15,8 +20,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class OrderScreen extends StatefulWidget {
-  final int? index;
-  const OrderScreen({super.key, this.index = 0});
+  final String? index;
+  const OrderScreen({super.key, this.index = 'orders'});
 
   @override
   OrderScreenState createState() => OrderScreenState();
@@ -25,31 +30,84 @@ class OrderScreen extends StatefulWidget {
 class OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin {
   TabController? _tabController;
   bool _isLoggedIn = AuthHelper.isLoggedIn();
-  List<String> type = ['orders', 'trips'];
-  int selectTypeIndex = 0;
+  List<String> type = [];
+  String selectType = 'orders';
   bool haveTaxiModule = false;
+  ScrollController? scrollController;
 
   @override
   void initState() {
     super.initState();
+    scrollController = ScrollController();
+    initSetup();
+  }
+
+  void initSetup() {
+    _isLoggedIn = AuthHelper.isLoggedIn();
+
+    if(_isLoggedIn) {
+      type = ['orders', 'trips', 'rides'];
+      if(!TaxiHelper.haveTaxiModule()) {
+        type.remove('trips');
+      }
+      if(!TaxiHelper.haveRideModule()) {
+        type.remove('rides');
+      }
+    }else {
+      type = ['orders', 'trips'];
+    }
+
+    if(!TaxiHelper.haveTaxiServiceRideModules()) {
+      type = ['orders',];
+    } else if (!TaxiHelper.haveTaxiServiceRideModules() && !AuthHelper.isLoggedIn()) {
+      type = ['orders'];
+    } else if (!TaxiHelper.haveTaxiServiceRideModules() && AuthHelper.isLoggedIn()) {
+      type = ['orders',];
+    }
 
     _tabController = TabController(length: 2, initialIndex: 0, vsync: this);
-    selectTypeIndex = widget.index!;
-    haveTaxiModule = TaxiHelper.haveTaxiModule();
+    selectType = widget.index!;
+    haveTaxiModule = TaxiHelper.haveTaxiServiceRideModules();
 
     initCall();
   }
 
   void initCall(){
+    _ensureCachedModule();
     if(AuthHelper.isLoggedIn()) {
-      if(selectTypeIndex == 0) {
-        Get.find<OrderController>().getRunningOrders(1);
-        Get.find<OrderController>().getHistoryOrders(1);
-      } else {
+      if(selectType == "orders") {
+        Get.find<OrderController>().getOrders(OrderListType.running, 1);
+        Get.find<OrderController>().getOrders(OrderListType.previous, 1);
+      } else if(selectType == 'trips') {
         Get.find<TaxiOrderController>().getTripList(1, isRunning: true);
         Get.find<TaxiOrderController>().getTripList(1, isRunning: false);
       }
+      else if(selectType == 'rides') {
+        Get.find<RideController>().getRideList(1, isRunning: true);
+        Get.find<RideController>().getRideList(1, isRunning: false);
+      }
     }
+  }
+
+  void _ensureCachedModule() {
+    final splash = Get.find<SplashController>();
+    if(splash.getCacheModule() != null) return;
+
+    final List<ModuleModel>? list = splash.moduleList;
+    if(list == null || list.isEmpty) return;
+
+    final ModuleModel fallback = list.firstWhere(
+      (m) => m.moduleType != AppConstants.taxi && m.moduleType != AppConstants.ride,
+      orElse: () => list.first,
+    );
+    splash.setModule(fallback, notify: false);
+  }
+
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    scrollController?.dispose();
+    super.dispose();
   }
 
   @override
@@ -83,7 +141,7 @@ class OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin 
                           itemCount: type.length,
                           scrollDirection: Axis.horizontal,
                           itemBuilder: (context, index) {
-                            bool selected = index == selectTypeIndex;
+                            bool selected = type[index] == selectType;
                             return Container(
                               decoration: BoxDecoration(
                                 color: selected ? Theme.of(context).primaryColor : Theme.of(context).cardColor,
@@ -95,7 +153,7 @@ class OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin 
                               child: CustomInkWell(
                                 onTap: () {
                                   setState(() {
-                                    selectTypeIndex = index;
+                                    selectType = type[index];
                                   });
                                   initCall();
                                 },
@@ -170,22 +228,33 @@ class OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin 
                       ),
                     ]),
 
-                   selectTypeIndex == 0 ? Expanded(child: TabBarView(
+                    selectType == 'orders' ? Expanded(child: TabBarView(
                       controller: _tabController,
                       children: const [
                         OrderViewWidget(isRunning: true),
                         OrderViewWidget(isRunning: false),
                       ],
-                    )) : Expanded(child: TabBarView(
+                    )) : selectType == 'trips' ? Expanded(child: TabBarView(
                      controller: _tabController,
                      children: const [
                        TripOrderViewWidget(isRunning: true),
                        TripOrderViewWidget(isRunning: false),
                      ],
-                   )),
+                   )) : Expanded(child: TabBarView(
+                      controller: _tabController,
+                      children: const [
+                        RideOrderViewWidget(isRunning: true),
+                        RideOrderViewWidget(isRunning: false),
+                      ],
+                    )),
 
                   ]),
-                ) : GuestTrackOrderInputViewWidget(selectType: selectTypeIndex),
+                ) : GuestTrackOrderInputViewWidget(selectType: selectType,  callBack: (success) {
+                  if(success) {
+                    initSetup();
+                    setState(() {});
+                  }
+                }),
               ],
             );
           },

@@ -23,7 +23,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<int> insertCacheResponse(CacheResponseCompanion entry) async {
-    return await into(cacheResponse).insertOnConflictUpdate(entry);
+    return await into(cacheResponse).insert(entry);
   }
 
 

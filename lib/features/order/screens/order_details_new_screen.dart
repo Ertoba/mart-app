@@ -17,12 +17,9 @@ import 'package:sixam_mart/features/location/domain/models/zone_response_model.d
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
 import 'package:sixam_mart/features/order/domain/models/order_details_model.dart';
 import 'package:sixam_mart/features/order/domain/models/order_model.dart';
-import 'package:sixam_mart/features/order/widgets/cancellation_dialogue_widget.dart';
-import 'package:sixam_mart/features/order/widgets/parcel_cancelation/cancellation_reason_bottom_sheet.dart';
-import 'package:sixam_mart/features/order/widgets/parcel_cancelation/slider_button_widget.dart';
-import 'package:sixam_mart/features/pro/domain/models/pro_active_offer_model.dart';
-import 'package:sixam_mart/features/pro/widgets/pro_savings_banner_widget.dart';
+import 'package:sixam_mart/features/order/helper/reviewable_items_helper.dart';
 import 'package:sixam_mart/features/order/model/billing_value.dart';
+import 'package:sixam_mart/features/order/widgets/cancellation_dialogue_widget.dart';
 import 'package:sixam_mart/features/order/widgets/order_details_info_widgets/addess_section.dart';
 import 'package:sixam_mart/features/order/widgets/order_details_info_widgets/billing_summery_section.dart';
 import 'package:sixam_mart/features/order/widgets/order_details_info_widgets/deliveryman_section.dart';
@@ -31,13 +28,19 @@ import 'package:sixam_mart/features/order/widgets/order_details_info_widgets/not
 import 'package:sixam_mart/features/order/widgets/order_details_info_widgets/order_item_status_section.dart';
 import 'package:sixam_mart/features/order/widgets/order_details_info_widgets/parcel_type_section.dart';
 import 'package:sixam_mart/features/order/widgets/order_details_info_widgets/payment_method_section.dart';
+import 'package:sixam_mart/features/order/widgets/order_details_info_widgets/payment_retry_section.dart';
+import 'package:sixam_mart/features/order/widgets/order_details_info_widgets/prescription_section.dart';
 import 'package:sixam_mart/features/order/widgets/order_details_info_widgets/scheduled_order_banner.dart';
 import 'package:sixam_mart/features/order/widgets/order_status_history_sheet.dart';
+import 'package:sixam_mart/features/order/widgets/parcel_cancelation/cancellation_reason_bottom_sheet.dart';
+import 'package:sixam_mart/features/order/widgets/parcel_cancelation/slider_button_widget.dart';
+import 'package:sixam_mart/features/pro/domain/models/pro_active_offer_model.dart';
 import 'package:sixam_mart/features/review/screens/rate_review_screen.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/date_converter.dart';
+import 'package:sixam_mart/helper/image_cache_helper.dart';
 import 'package:sixam_mart/helper/marker_helper.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
@@ -65,11 +68,23 @@ class OrderDetailsNewScreen extends StatefulWidget {
 class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
   Timer? _timer;
   final ScrollController scrollController = ScrollController();
+  final DraggableScrollableController _sheetController = DraggableScrollableController();
   GoogleMapController? _mapController;
   Set<Marker> _markers = HashSet<Marker>();
   bool _mapLoading = true;
 
+  static const double _sheetExpandedSize = 0.92;
+
+  Future<void> _expandSheet() async {
+    if (!_sheetController.isAttached || _sheetController.size >= _sheetExpandedSize) return;
+    await _sheetController.animateTo(
+      _sheetExpandedSize, duration: const Duration(milliseconds: 250), curve: Curves.easeOut,
+    );
+  }
+
   void _loadData(BuildContext context, bool reload) async {
+    Get.find<OrderController>().setActiveTrackOrder(widget.orderId.toString());
+    Get.find<OrderController>().clearRoutePolyline();
     Get.find<OrderController>().getPaymentFailedDetails(widget.orderId.toString());
     await Get.find<OrderController>().trackOrder(widget.orderId.toString(), reload ? null : widget.orderModel, false, contactNumber: widget.contactNumber).then((value) {
       if (widget.fromOfflinePayment) {
@@ -83,6 +98,10 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
   void _startApiCall() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
       await Get.find<OrderController>().timerTrackOrder(widget.orderId.toString(), contactNumber: widget.contactNumber);
     });
   }
@@ -168,6 +187,13 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
           icon: dmIcon,
           infoWindow: InfoWindow(title: 'delivery_man'.tr),
         ));
+
+        if (order.deliveryAddress?.latitude != null && order.deliveryAddress?.longitude != null) {
+          Get.find<OrderController>().getDirectionPolyline(
+            origin: LatLng(double.parse(dmLat), double.parse(dmLng)),
+            destination: LatLng(double.parse(order.deliveryAddress!.latitude!), double.parse(order.deliveryAddress!.longitude!)),
+          );
+        }
       }
 
       if (_mapController != null
@@ -206,7 +232,13 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    final orderController = Get.find<OrderController>();
+    if (orderController.activeTrackOrderId == widget.orderId.toString()) {
+      orderController.setActiveTrackOrder(null);
+    }
     _mapController?.dispose();
+    scrollController.dispose();
+    _sheetController.dispose();
     super.dispose();
   }
 
@@ -241,12 +273,16 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
         bool ongoing = false;
         bool isCashOnDeliveryActive = false;
         double? maxCodOrderAmount;
+        bool isHappyHour = false;
+        double happyHourPercentage = 0;
+        bool isStoreDiscount = false;
 
         if (orderController.orderDetails != null && order != null) {
           parcel = order.orderType == 'parcel';
           prescriptionOrder = order.prescriptionOrder!;
           deliveryCharge = order.deliveryCharge!;
           couponDiscount = order.couponDiscountAmount!;
+          
           discount = order.storeDiscountAmount! + order.flashAdminDiscountAmount! + order.flashStoreDiscountAmount!;
           tax = order.totalTaxAmount!;
           dmTips = order.dmTips!;
@@ -263,8 +299,19 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
             itemsPrice = (orderAmount + discount) - ((taxIncluded ? 0 : tax) + deliveryCharge) - dmTips - additionalCharge;
           } else {
             for (OrderDetailsModel orderDetails in orderController.orderDetails!) {
-              for (AddOn addOn in orderDetails.addOns!) {addOns = addOns + (addOn.price! * addOn.quantity!);}
-              itemsPrice = itemsPrice + (orderDetails.price! * orderDetails.quantity!);
+              if (orderDetails.isHappyHour) {
+                isHappyHour = true;
+                happyHourPercentage = orderDetails.discountPercentage ?? happyHourPercentage;
+              }
+              if (orderDetails.isStoreDiscount) {
+                isStoreDiscount = true;
+              }
+              if (orderDetails.isBogoBundle) {
+                itemsPrice = itemsPrice + (orderDetails.bogoDetails?.totalPrice ?? 0);
+                continue;
+              }
+              for (AddOn addOn in orderDetails.addOns ?? <AddOn>[]) {addOns = addOns + (addOn.price! * addOn.quantity!);}
+              itemsPrice = itemsPrice + ((orderDetails.price ?? 0) * (orderDetails.quantity ?? 0));
             }
           }
 
@@ -282,7 +329,8 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
         final billing = BillingValues(parcel: parcel,  prescriptionOrder: prescriptionOrder, itemsPrice: itemsPrice, addOns: addOns,
           subTotal: subTotal, discount: discount, couponDiscount: couponDiscount, referrerBonusAmount: referrerBonusAmount,
           additionalCharge: additionalCharge, tax: tax, taxIncluded: taxIncluded, dmTips: dmTips, extraPackagingCharge: extraPackagingCharge,
-          deliveryCharge: deliveryCharge, deliveryTypeCharge: deliveryTypeCharge, total: total);
+          deliveryCharge: deliveryCharge, deliveryTypeCharge: deliveryTypeCharge, total: total,
+          isHappyHour: isHappyHour, happyHourPercentage: happyHourPercentage, isStoreDiscount: isStoreDiscount);
 
         final bool hasDeliveryMan = order?.deliveryMan != null;
 
@@ -305,6 +353,13 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
                           zoom: 15,
                         ),
                         markers: _markers,
+                        polylines: orderController.routePolyline.length > 1 ? {
+                          Polyline(
+                            polylineId: const PolylineId('order_route'),
+                            points: orderController.routePolyline,
+                            width: 2,
+                          ),
+                        } : <Polyline>{},
                         zoomControlsEnabled: false,
                         onMapCreated: (controller) {
                           _mapController = controller;
@@ -319,11 +374,12 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
                     if (_mapLoading) const Center(child: CircularProgressIndicator()),
 
                     Positioned.fill(child: DraggableScrollableSheet(
+                      controller: _sheetController,
                       initialChildSize: 0.45,
                       minChildSize: 0.25,
                       maxChildSize: 1,
                       snap: true,
-                      snapSizes: const [0.45, 0.92],
+                      snapSizes: const [0.45, _sheetExpandedSize],
                       builder: (ctx, sheetScrollController) => CustomScrollView(
                         controller: sheetScrollController,
                         physics: const ClampingScrollPhysics(),
@@ -355,6 +411,7 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
                                     orderDetails: orderController.orderDetails ?? const [],
                                     billing: billing,
                                     isDragable: true,
+                                    onExpandSheet: _expandSheet,
                                   ),
                                 ],
                               ),

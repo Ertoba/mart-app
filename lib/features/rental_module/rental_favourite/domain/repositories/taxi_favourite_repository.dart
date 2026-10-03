@@ -5,24 +5,36 @@ import 'package:sixam_mart/features/rental_module/rental_favourite/domain/reposi
 class TaxiFavouriteRepository implements TaxiFavouriteRepositoryInterface {
   final ApiClient apiClient;
   final SharedPreferences sharedPreferences;
-
-  TaxiFavouriteRepository({
-    required this.apiClient,
-    required this.sharedPreferences,
-  });
+  TaxiFavouriteRepository({required this.sharedPreferences, required this.apiClient});
+  
 
   @override
-  Future add(value) async {}
+  Future get(String? id) {
+    // TODO: implement get
+    throw UnimplementedError();
+  }
 
   @override
-  Future delete(int? id) async {}
+  Future update(Map<String, dynamic> body, int? id) {
+    // TODO: implement update
+    throw UnimplementedError();
+  }
 
   @override
-  Future get(String? id) async {}
+  Future add(value) {
+    // TODO: implement add
+    throw UnimplementedError();
+  }
 
   @override
-  Future getList({int? offset}) async => const [];
+  Future delete(int? id) {
+    // TODO: implement delete
+    throw UnimplementedError();
+  }
 
   @override
-  Future update(Map<String, dynamic> body, int? id) async {}
+  Future getList({int? offset}) {
+    // TODO: implement getList
+    throw UnimplementedError();
+  }
 }

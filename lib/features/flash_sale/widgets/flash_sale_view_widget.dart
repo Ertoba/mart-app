@@ -61,7 +61,7 @@ class _FlashSaleViewWidgetState extends State<FlashSaleViewWidget> {
                   Text('limited_time_offer'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor)),
                 ]),
 
-                Text('see_all'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor, decoration: TextDecoration.none, decorationColor: Theme.of(context).disabledColor, decorationThickness: 1.5)),
+                Text('see_all'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor, decoration: TextDecoration.underline, decorationColor: Theme.of(context).disabledColor, decorationThickness: 1.5)),
 
               ]),
             ),

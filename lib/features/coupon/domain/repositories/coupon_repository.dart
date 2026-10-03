@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
 import 'package:sixam_mart/api/api_client.dart';
+import 'package:sixam_mart/api/response_parser.dart';
 import 'package:sixam_mart/features/coupon/domain/models/coupon_model.dart';
 import 'package:sixam_mart/features/coupon/domain/repositories/coupon_repository_interface.dart';
 import 'package:sixam_mart/util/app_constants.dart';
@@ -10,24 +11,30 @@ class CouponRepository implements CouponRepositoryInterface {
   CouponRepository({required this.apiClient});
 
   @override
-  Future getList({int? offset, bool couponList = false, bool taxiCouponList = false}) async {
+  Future getList({int? offset, bool couponList = false, bool taxiCouponList = false, int? customerId, int? storeId, int? zoneId}) async {
     if(couponList) {
-      return await _getCouponList();
+      return await _getCouponList(customerId: customerId, storeId: storeId, zoneId: zoneId);
     } else if(taxiCouponList) {
       return await _getTaxiCouponList();
     }
   }
 
-  Future<List<CouponModel>?> _getCouponList() async {
+  Future<List<CouponModel>?> _getCouponList({int? customerId, int? storeId, int? zoneId}) async {
     List<CouponModel>? couponList;
-    Response response = await apiClient.getData(AppConstants.couponUri);
+    // Send customer_id / store_id / zone_id only when provided (checkout passes them).
+    final List<String> queryParams = [];
+    if (customerId != null) queryParams.add('customer_id=$customerId');
+    if (storeId != null) queryParams.add('store_id=$storeId');
+    if (zoneId != null) queryParams.add('zone_id=[$zoneId]');
+    final String query = queryParams.isEmpty ? '' : '?${queryParams.join('&')}';
+    Response response = await apiClient.getData('${AppConstants.couponUri}$query');
     if (response.statusCode == 200) {
       couponList = [];
-      response.body.forEach((category) {
+      for (final dynamic category in ResponseParser.listOrEmpty(response.body)) {
         CouponModel coupon = CouponModel.fromJson(category);
         coupon.toolTip = JustTheController();
-        couponList!.add(coupon);
-      });
+        couponList.add(coupon);
+      }
     }
     return couponList;
   }
@@ -37,15 +44,17 @@ class CouponRepository implements CouponRepositoryInterface {
     Response response = await apiClient.getData(AppConstants.taxiCouponUri);
     if (response.statusCode == 200) {
       taxiCouponList = [];
-      response.body.forEach((category) => taxiCouponList!.add(CouponModel.fromJson(category)));
+      for (final dynamic category in ResponseParser.listOrEmpty(response.body)) {
+        taxiCouponList.add(CouponModel.fromJson(category));
+      }
     }
     return taxiCouponList;
   }
 
   @override
-  Future<CouponModel?> applyCoupon(String couponCode, int? storeID) async {
+  Future<CouponModel?> applyCoupon(String couponCode, int? storeID, double? orderAmount) async {
     CouponModel? couponModel;
-    Response response = await apiClient.getData('${AppConstants.couponApplyUri}$couponCode&store_id=$storeID');
+    Response response = await apiClient.getData('${AppConstants.couponApplyUri}$couponCode&store_id=$storeID&order_amount=$orderAmount');
     if (response.statusCode == 200) {
       couponModel = CouponModel.fromJson(response.body);
     }

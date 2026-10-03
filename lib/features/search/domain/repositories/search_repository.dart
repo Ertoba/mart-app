@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixam_mart/api/api_client.dart';
+import 'package:sixam_mart/api/response_parser.dart';
 import 'package:sixam_mart/features/brands/domain/models/brands_model.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
 import 'package:sixam_mart/features/search/domain/models/popular_categories_model.dart';
@@ -11,6 +12,7 @@ import 'package:sixam_mart/features/search/domain/models/search_suggestion_model
 import 'package:sixam_mart/features/search/domain/models/top_category_model.dart';
 import 'package:sixam_mart/features/search/domain/models/trending_search_model.dart';
 import 'package:sixam_mart/features/search/domain/repositories/search_repository_interface.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 
@@ -31,16 +33,12 @@ class SearchRepository implements SearchRepositoryInterface {
     final List<String> encoded = searchHistories
         .map((RecentSearchEntry entry) => jsonEncode(entry.toJson()))
         .toList();
-    return await sharedPreferences.setStringList(
-      _historyKey(moduleKey),
-      encoded,
-    );
+    return await sharedPreferences.setStringList(_historyKey(moduleKey), encoded);
   }
 
   @override
   List<RecentSearchEntry> getSearchAddress({String moduleKey = ''}) {
-    final List<String> stored =
-        sharedPreferences.getStringList(_historyKey(moduleKey)) ?? [];
+    final List<String> stored = sharedPreferences.getStringList(_historyKey(moduleKey)) ?? [];
     final List<RecentSearchEntry> entries = [];
     for (final String value in stored) {
       try {
@@ -50,7 +48,7 @@ class SearchRepository implements SearchRepositoryInterface {
           continue;
         }
       } catch (_) {}
-      // Legacy plain-string history â€” treat as a free-text keyword.
+      // Legacy plain-string history — treat as a free-text keyword.
       entries.add(RecentSearchEntry.keyword(value));
     }
     return entries;
@@ -88,13 +86,7 @@ class SearchRepository implements SearchRepositoryInterface {
     if (isSuggestedItems) {
       return await _getSuggestedItems();
     } else {
-      return await _getSearchData(
-        query,
-        isStore!,
-        offset ?? 1,
-        moduleId: moduleId,
-        filterParams: filterParams,
-      );
+      return await _getSearchData(query, isStore!, offset ?? 1, moduleId: moduleId, filterParams: filterParams);
     }
   }
 
@@ -103,9 +95,9 @@ class SearchRepository implements SearchRepositoryInterface {
     Response response = await apiClient.getData(AppConstants.suggestedItemUri);
     if (response.statusCode == 200) {
       suggestedItemList = [];
-      response.body.forEach(
-        (suggestedItem) => suggestedItemList!.add(Item.fromJson(suggestedItem)),
-      );
+      for (final dynamic suggestedItem in ResponseParser.listOrEmpty(response.body)) {
+        suggestedItemList.add(Item.fromJson(suggestedItem));
+      }
     }
     return suggestedItemList;
   }
@@ -122,8 +114,14 @@ class SearchRepository implements SearchRepositoryInterface {
     final Map<String, String>? headers = moduleId != null
         ? {...apiClient.getHeader(), AppConstants.moduleId: moduleId.toString()}
         : null;
+    // Service module exposes item search under a dedicated path; provider/store
+    // search is left on the default route.
+    final bool isServiceModule = Get.find<SplashController>().module?.moduleType == AppConstants.service;
+    final String searchPath = (isServiceModule && !isStore)
+        ? AppConstants.serviceSearchUri
+        : '${AppConstants.searchUri}${isStore ? 'stores' : 'items'}/search';
     final StringBuffer uri = StringBuffer(
-      '${AppConstants.searchUri}${isStore ? 'stores' : 'items'}/search?name=$query&offset=$offset&limit=10',
+      '$searchPath?name=${Uri.encodeQueryComponent(query ?? '')}&offset=$offset&limit=10',
     );
     // Apply the filter params (category_ids, filter, rating_counts, min_price,
     // max_price) to the search request. Values are appended raw so list brackets
@@ -131,6 +129,7 @@ class SearchRepository implements SearchRepositoryInterface {
     filterParams?.forEach((String key, String value) {
       uri.write('&$key=$value');
     });
+
     return await apiClient.getData(uri.toString(), headers: headers);
   }
 
@@ -140,17 +139,19 @@ class SearchRepository implements SearchRepositoryInterface {
   }
 
   @override
-  Future<SearchSuggestionModel?> getSearchSuggestions(
-    String searchText, {
-    bool isGlobal = false,
-  }) async {
+  Future<SearchSuggestionModel?> getSearchSuggestions(String searchText, {bool isGlobal = false}) async {
     SearchSuggestionModel? searchSuggestionModel;
-    // Global suggestions span all modules â€” drop the module_id header so the
+    // Global suggestions span all modules — drop the module_id header so the
     // backend isn't scoped to the active module, and flag it with is_global.
     final Map<String, String> headers = {...apiClient.getHeader()};
-
+    if (isGlobal) {
+      headers.remove(AppConstants.moduleId);
+    }
+    // Service module exposes the same response under a different path.
+    final bool isServiceModule = Get.find<SplashController>().module?.moduleType == AppConstants.service;
+    final String baseUri = isServiceModule ? AppConstants.serviceItemOrStoreSearchUri : AppConstants.searchSuggestionsUri;
     Response response = await apiClient.getData(
-      '${AppConstants.searchSuggestionsUri}?name=$searchText&is_global=${isGlobal ? 1 : 0}',
+      '$baseUri?name=$searchText&is_global=${isGlobal ? 1 : 0}',
       headers: headers,
     );
     if (response.statusCode == 200) {
@@ -167,9 +168,9 @@ class SearchRepository implements SearchRepositoryInterface {
     );
     if (response.statusCode == 200) {
       popularCategoryList = [];
-      response.body.forEach((category) {
-        popularCategoryList!.add(PopularCategoryModel.fromJson(category));
-      });
+      for (final dynamic category in ResponseParser.listOrEmpty(response.body)) {
+        popularCategoryList.add(PopularCategoryModel.fromJson(category));
+      }
     }
     return popularCategoryList;
   }
@@ -192,9 +193,9 @@ class SearchRepository implements SearchRepositoryInterface {
     );
     if (response.statusCode == 200) {
       brandList = [];
-      response.body.forEach(
-        (brand) => brandList!.add(BrandModel.fromJson(brand)),
-      );
+      for (final dynamic brand in ResponseParser.listOrEmpty(response.body)) {
+        brandList.add(BrandModel.fromJson(brand));
+      }
     }
     return brandList;
   }
@@ -210,18 +211,32 @@ class SearchRepository implements SearchRepositoryInterface {
   }
 
   @override
-  Future<List<TrendingSearch>?> getTrendingSearches({
-    bool isGlobal = false,
-  }) async {
-    // Current backend does not expose /api/v1/trending-searches.
-    // Keep search usable without generating a 404 request.
-    return <TrendingSearch>[];
+  Future<List<TrendingSearch>?> getTrendingSearches({bool isGlobal = false}) async {
+    List<TrendingSearch>? trendingSearches;
+    // In global search, fetch trending across all modules by dropping module_id.
+    final Map<String, String>? headers = isGlobal
+        ? ({...apiClient.getHeader()}..remove(AppConstants.moduleId))
+        : null;
+    Response response = await apiClient.getData('${AppConstants.trendingSearchesUri}${isGlobal ? '?is_global=true' : ''}', headers: headers);
+    if (response.statusCode == 200) {
+      trendingSearches = TrendingSearchModel.fromJson(response.body).trendingSearches;
+    }
+    return trendingSearches;
   }
 
   @override
   Future<List<TopCategory>?> getTopCategories({int offset = 1}) async {
-    // Current backend does not expose /api/v1/categories/top.
-    // Return an empty section instead of generating a 404 request.
-    return <TopCategory>[];
+    List<TopCategory>? categories;
+    // Top categories are shown only in global search — fetch across all modules
+    // by dropping the module_id header for this call.
+    final Map<String, String> headers = {...apiClient.getHeader()}..remove(AppConstants.moduleId);
+    Response response = await apiClient.getData(
+      '${AppConstants.topCategoriesUri}?limit=10&offset=$offset',
+      headers: headers,
+    );
+    if (response.statusCode == 200) {
+      categories = TopCategoryModel.fromJson(response.body).categories;
+    }
+    return categories;
   }
 }

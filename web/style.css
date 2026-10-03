@@ -19,14 +19,14 @@ body.theme-dark {
   position: fixed;
   inline-size: 100%;
   block-size: 100%;
-  background-color: #FFF;
+  background-color: #fff;
   display: grid;
   place-items: center;
 }
 
 .theme-dark .preloader {
-  background-color: #FFF;
-  color: #1A1A1A;
+  background-color: #111;
+  color: #FFF;
 }
 
 @media (max-width: 1199px) {.header {display: none}}
@@ -45,18 +45,18 @@ body.theme-dark {
   height: 0.25rem;
   display: inline-block;
   position: relative;
-  background: rgba(0, 0, 0, 0.14);
+  background: rgba(0, 0, 0, 0.15);
   overflow: hidden;
   border-radius: 50rem;
 }
 .theme-dark .preloader .loader {
-  background: rgba(0, 0, 0, 0.14);
+  background: rgba(255, 255, 255, 0.15);
 }
 .preloader .loader::after {
   content: "";
   width: 30px;
   height: 4.8px;
-  background: #F57C00;
+  background: #000;
   position: absolute;
   top: 0;
   left: 0;
@@ -65,7 +65,7 @@ body.theme-dark {
   border-radius: 50rem;
 }
 .theme-dark .preloader .loader::after {
-  background: #FF9A1F;
+  background: #FFF;
 }
 .header {
   position: fixed;
@@ -74,33 +74,33 @@ body.theme-dark {
   inline-size: 100%;
 }
 .theme-dark .header {
-  background-color: transparent;
+  background-color: #222;
   color: #FFF;
 }
 .header-container {
   max-inline-size: 1200px;
   margin-inline: auto;
   padding: 1.28rem 1.6rem;
-  background-color: #FFF;
-  box-shadow: 0px 12px 28px -12px rgba(0, 0, 0, 0.18);
+  background-color: #fff;
+  box-shadow: 0px 6px 12px -3px rgba(4, 97, 165, 0.1);
   border-radius: 0 0 0.625rem 0.625rem;
 }
 
 .theme-dark .header-container {
-  background-color: #FFF;
-  color: #1A1A1A;
+  background-color: #222;
+  color: #FFF;
 }
 .header .logo {
-  max-height: 36px;
+  max-height: 30px;
 }
 .placeholder {
   block-size: 0.825rem;
   inline-size: 3rem;
-  background-color: rgba(0, 0, 0, 0.10);
+  background-color: #F5F5F5;
   border-radius: 0.3rem;
 }
 .theme-dark .placeholder {
-  background-color: rgba(0, 0, 0, 0.10);
+  background-color: #555;
 }
 .placeholder-wide {
   inline-size: 12rem;
@@ -180,7 +180,7 @@ body {
   width: 120px;
   height: 22px;
   border-radius: 40px;
-  color: #F57C00;
+  color: #039D55;
   border: 2px solid;
   position: relative;
   overflow: hidden;

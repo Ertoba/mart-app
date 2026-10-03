@@ -3,7 +3,10 @@ import 'package:get/get.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
+import 'package:sixam_mart/features/order/domain/models/order_model.dart';
+import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
+import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
@@ -104,6 +107,8 @@ class _OrderSuccessfulDialogState extends State<OrderSuccessfulDialog> {
                   textAlign: TextAlign.center,
                 ),
               ),
+
+              _ProSavingsView(success: success),
               // const SizedBox(height: Dimensions.paddingSizeExtraLarge),
               //
               // Padding(
@@ -114,6 +119,40 @@ class _OrderSuccessfulDialogState extends State<OrderSuccessfulDialog> {
           ])),
         ) : const Center(child: CircularProgressIndicator());
       }),
+    );
+  }
+}
+
+// Shows the amount the user saved as a pro member on this order.
+// Visible only when the pro feature is enabled, the user is a pro member,
+// the order succeeded and the order carries a positive pro saving.
+class _ProSavingsView extends StatelessWidget {
+  final bool success;
+  const _ProSavingsView({required this.success});
+
+  @override
+  Widget build(BuildContext context) {
+    final OrderModel? order = Get.find<OrderController>().trackModel;
+    final double proSavings = (order?.proDiscount ?? 0) + (order?.deliveryFeeReductionAmount ?? 0);
+    final bool isProUser = Get.find<ProfileController>().proStatus;
+
+    if (!success || !isProUser || proSavings <= 0) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge, vertical: Dimensions.paddingSizeSmall),
+      child: Row(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
+        Image.asset(Images.proPlanCrown, height: 18, width: 18, color: const Color(0xFFFFC107)),
+        const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+        Flexible(
+          child: Text(
+            '${'you_saved'.tr} ${PriceConverter.convertPrice(proSavings)} ${'with_pro'.tr}',
+            textAlign: TextAlign.center,
+            style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Colors.deepPurpleAccent),
+          ),
+        ),
+      ]),
     );
   }
 }

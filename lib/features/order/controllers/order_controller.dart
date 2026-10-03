@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/common/models/ongoing_order_model.dart';
@@ -59,6 +60,18 @@ class OrderController extends GetxController implements GetxService {
 
   OrderModel? _trackModel;
   OrderModel? get trackModel => _trackModel;
+
+  // Id of the order whose details screen is currently visible. Used to discard stale
+  // `timerTrackOrder` responses when another order's details screen is opened on top.
+  String? _activeTrackOrderId;
+  String? get activeTrackOrderId => _activeTrackOrderId;
+
+  void setActiveTrackOrder(String? orderID) {
+    _activeTrackOrderId = orderID;
+  }
+
+  List<LatLng> _routePolyline = [];
+  List<LatLng> get routePolyline => _routePolyline;
 
   ResponseModel? _responseModel;
   ResponseModel? get responseModel => _responseModel;
@@ -130,6 +143,13 @@ class OrderController extends GetxController implements GetxService {
       return;
     }
 
+    // A BOGO order cannot be repeated — its bundles are priced by the offer, not the cart,
+    // and the offer may no longer be running. The UI hides the button; this is the backstop.
+    if(order.isBogo ?? false) {
+      showCustomSnackBar('reorder_failed'.tr);
+      return;
+    }
+
     if(_reorderingOrderId != null) return;
 
     _reorderingOrderId = orderId;
@@ -156,7 +176,7 @@ class OrderController extends GetxController implements GetxService {
       Get.dialog(ConfirmationDialog(
         icon: Images.warning,
         title: 'are_you_sure_to_reset'.tr,
-        description: 'if_you_continue'.tr,
+        description: _resetCartDescription(order.moduleType),
         onYesPressed: () async {
           if(Get.isDialogOpen ?? false) Get.back();
           final bool removed = await cartController.removeStoreCart(storeId!);
@@ -171,6 +191,16 @@ class OrderController extends GetxController implements GetxService {
     await _performReorder(orderId);
   }
 
+  String _resetCartDescription(String? moduleType) {
+    bool showRestaurantText = true;
+    if(moduleType != null) {
+      try {
+        showRestaurantText = Get.find<SplashController>().getModuleConfig(moduleType).showRestaurantText ?? true;
+      } catch (_) {}
+    }
+    return showRestaurantText ? 'if_you_continue'.tr : 'if_you_continue_store'.tr;
+  }
+
   Future<void> _performReorder(int orderId) async {
     _reorderingOrderId = orderId;
     update();
@@ -179,10 +209,10 @@ class OrderController extends GetxController implements GetxService {
     update();
 
     if(response != null) {
-      String statusMessage = _buildReorderStatusMessage(response);
-      showCustomSnackBar(statusMessage, isError: response.unavailableItems?.isNotEmpty ?? false ? true : false);
-
       final bool hasAdded = response.addedCount != null && response.addedCount! > 0;
+      final bool hasUnavailable = response.unavailableItems?.isNotEmpty ?? false;
+      showCustomSnackBar(_buildReorderStatusMessage(response), isError: hasUnavailable || !hasAdded);
+
       if(hasAdded) {
         await Get.find<CartController>().getAllCarts();
         Get.toNamed(RouteHelper.getGlobalCartRoute(initialModuleId: Get.find<SplashController>().getCacheModule()?.id));
@@ -194,15 +224,27 @@ class OrderController extends GetxController implements GetxService {
     final hasAdded = response.addedCount != null && response.addedCount! > 0;
     final hasUnavailable = response.unavailableItems != null && response.unavailableItems!.isNotEmpty;
 
+    String unavailableLabel = '';
+    if (hasUnavailable) {
+      final List<String> details = response.unavailableItems!
+          .map((item) {
+            final String name = item.name ?? '';
+            final String message = item.message ?? 'items_unavailable'.tr;
+            return name.isNotEmpty ? '$name $message' : message;
+          }).where((detail) => detail.isNotEmpty).toList();
+      unavailableLabel = details.isNotEmpty ? details.join(', ') : '${response.unavailableItems!.length} ${'items_unavailable'.tr}';
+    }
+
     if (hasAdded && hasUnavailable) {
-      return '${response.addedCount} ${'items_added_to_cart'.tr}, ${response.unavailableItems!.length} ${'items_unavailable'.tr}';
+      return '${response.addedCount} ${'items_added_to_cart'.tr}, $unavailableLabel';
     } else if (hasAdded) {
       return '${response.addedCount} ${'items_added_to_cart'.tr}';
     } else if (hasUnavailable) {
-      return 'items_unavailable'.tr;
+      return unavailableLabel;
     }
 
-    return 'reorder_completed'.tr;
+    // Nothing added and nothing named: the server's own reason is all there is to show.
+    return (response.message ?? '').isNotEmpty ? response.message! : 'reorder_completed'.tr;
   }
 
 
@@ -270,12 +312,13 @@ class OrderController extends GetxController implements GetxService {
     update();
   }
 
-  Future<void> submitRefundRequest(String note, String? orderId)async {
+  Future<bool> submitRefundRequest(String note, String? orderId)async {
     _isLoading = true;
     update();
-    await orderServiceInterface.submitRefundRequest(_selectedReasonIndex, _refundReasons, note, orderId, _refundImage);
+    final bool success = await orderServiceInterface.submitRefundRequest(_selectedReasonIndex, _refundReasons, note, orderId, _refundImage);
     _isLoading = false;
     update();
+    return success;
   }
 
   Future<void> getSupportReasons() async {
@@ -320,11 +363,25 @@ class OrderController extends GetxController implements GetxService {
     }
   }
 
-  Future<void> getRunningOrders(int offset, {bool isUpdate = false, bool fromDashboard = false}) =>
-      getOrders(OrderListType.running, offset, isUpdate: isUpdate);
+  void syncOrderStatusInLists(int? orderId, String? orderStatus) {
+    if(orderId == null || orderStatus == null) {
+      return;
+    }
+    // The lists are fetched once and kept while the customer is away on the details
+    // screen, so a status changed there leaves the row behind it reading the old one.
+    for(final PaginatedOrderModel? model in <PaginatedOrderModel?>[_allOrderModel, _runningOrderModel, _historyOrderModel]) {
+      for(final OrderModel order in model?.orders ?? const <OrderModel>[]) {
+        if(order.id == orderId) {
+          order.orderStatus = orderStatus;
+        }
+      }
+    }
+    update();
+  }
 
-  Future<void> getHistoryOrders(int offset, {bool isUpdate = false}) =>
-      getOrders(OrderListType.previous, offset, isUpdate: isUpdate);
+  void clearLastOrders() {
+    _lastOrders = null;
+  }
 
   Future<void> getLastOrders({bool reload = true, required bool isHome}) async {
     if(isHome){
@@ -416,6 +473,15 @@ class OrderController extends GetxController implements GetxService {
     return _orderDetails;
   }
 
+  Future<void> getDirectionPolyline({required LatLng origin, required LatLng destination}) async {
+    _routePolyline = await orderServiceInterface.getDirectionPolyline(origin: origin, destination: destination);
+    update();
+  }
+
+  void clearRoutePolyline() {
+    _routePolyline = [];
+  }
+
   Future<ResponseModel?> trackOrder(String? orderID, OrderModel? orderModel, bool fromTracking, {String? contactNumber, bool? fromGuestInput = false}) async {
     _trackModel = null;
     _responseModel = null;
@@ -451,6 +517,13 @@ class OrderController extends GetxController implements GetxService {
       orderID, AuthHelper.isLoggedIn() ? null : AuthHelper.getGuestId(),
       contactNumber: contactNumber,
     );
+
+    // Another order's details screen became active while this request was in-flight.
+    // Drop this stale response so it can't overwrite the currently visible order.
+    if (_activeTrackOrderId != null && _activeTrackOrderId != orderID) {
+      return _responseModel;
+    }
+
     if (response.statusCode == 200) {
       _trackModel = OrderModel.fromJson(response.body);
       _responseModel = ResponseModel(true, response.body.toString());

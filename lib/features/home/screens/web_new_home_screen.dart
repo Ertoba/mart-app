@@ -7,6 +7,7 @@ import 'package:sixam_mart/features/home/widgets/web/web_top_offers_near_me.dart
 import 'package:sixam_mart/features/item/controllers/campaign_controller.dart';
 import 'package:sixam_mart/features/category/controllers/category_controller.dart';
 import 'package:sixam_mart/features/location/controllers/location_controller.dart';
+import 'package:sixam_mart/features/reels/widgets/reels_section_widget.dart';
 import 'package:sixam_mart/features/store/controllers/store_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/home/widgets/web/middle_section_multiple_banner_view_widget.dart';
@@ -100,6 +101,8 @@ class _WebNewHomeScreenState extends State<WebNewHomeScreen> {
                       : categoryController.categoryList!.isEmpty ? const SizedBox() : WebCategoryViewWidget(categoryController: categoryController);
                 }),
 
+                const ReelsSectionWidget(),
+
                 _isLogin ?  WebVisitAgainView(fromFood: isFood) : const SizedBox(),
 
                 isPharmacy ? const WebBasicMedicineNearbyViewWidget()
@@ -175,7 +178,7 @@ class _WebNewHomeScreenState extends State<WebNewHomeScreen> {
                     totalSize: storeController.storeModel?.totalSize,
                     offset: storeController.storeModel?.offset,
                     onPaginate: (int? offset) async => await storeController.getStoreList(offset!, false),
-                    gridColumns: 3, // Desktop grid has 3 columns for stores
+                    gridColumns: 3,
                     itemView: ItemsView(
                       isStore: true, items: null,
                       stores: storeController.storeModel?.stores,

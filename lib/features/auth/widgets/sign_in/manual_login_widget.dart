@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/custom_button.dart';
-import 'package:sixam_mart/features/auth/widgets/mili_auth_ui.dart';
 import 'package:sixam_mart/common/widgets/custom_ink_well.dart';
 import 'package:sixam_mart/common/widgets/custom_text_field.dart';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
@@ -12,11 +11,12 @@ import 'package:sixam_mart/features/verification/screens/forget_pass_screen.dart
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/helper/validate_check.dart';
+import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
 
-class ManualLoginWidget extends StatelessWidget {
+class ManualLoginNewWidget extends StatelessWidget {
   final TextEditingController phoneController;
   final TextEditingController passwordController;
   final FocusNode phoneFocus;
@@ -26,61 +26,56 @@ class ManualLoginWidget extends StatelessWidget {
   final bool socialEnable;
   final Function()? onOtpViewClick;
   final bool backFromThis;
-  const ManualLoginWidget({
-    super.key,
-    required this.phoneController,
-    required this.phoneFocus,
-    required this.onClickLoginButton,
-    required this.passwordController,
-    required this.passwordFocus,
-    this.onWebSubmit,
-    this.socialEnable = false,
-    this.onOtpViewClick,
-    required this.backFromThis,
+  const ManualLoginNewWidget({
+    super.key, required this.phoneController, required this.phoneFocus, required this.onClickLoginButton, required this.passwordController,
+    required this.passwordFocus, this.onWebSubmit, this.socialEnable = false, this.onOtpViewClick, required this.backFromThis,
   });
 
   @override
   Widget build(BuildContext context) {
     bool isDesktop = ResponsiveHelper.isDesktop(context);
-    return GetBuilder<AuthController>(
-      builder: (authController) {
-        if (isDesktop) {
-          return webView(isDesktop, context, authController);
-        }
+    return GetBuilder<AuthController>(builder: (authController) {
+      
+      if(isDesktop) {
+        return webView(isDesktop, context, authController);
+      }
+      
+      return Column(mainAxisAlignment: MainAxisAlignment.start, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('login_with_email_phone'.tr, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeExtraLarge)),
+        Text('use_your_registered_email_phone_number_to_login'.tr, 
+        style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor)),
+        const SizedBox(height: Dimensions.paddingSizeLarge),
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            MiliAuthIntro(
-              title: 'auth_ui_title'.tr,
-              subtitle: 'auth_ui_manual_subtitle'.tr,
-            ),
-            MiliAuthField(
-              onCountryChanged: (countryCode) =>
-                  authController.countryDialCode = countryCode.dialCode!,
-              countryDialCode: authController.isNumberLogin
-                  ? authController.countryDialCode
-                  : null,
-              label: 'email_or_phone'.tr,
-              hint: 'enter_email_or_phone'.tr,
+        Container(
+          padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+             borderRadius: const BorderRadius.all(Radius.circular(Dimensions.radiusLarge)),
+              boxShadow: [BoxShadow(color: Colors.grey[Get.isDarkMode ? 400 : 200]!, spreadRadius: 1, blurRadius: 5, offset: const Offset(2, 2))],
+          ),
+          child: Column( mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
+            const SizedBox(height: Dimensions.paddingSizeSmall - 5),
+            CustomTextField(
+              onCountryChanged: (countryCode) => authController.countryDialCode = countryCode.dialCode!,
+              countryDialCode: authController.isNumberLogin ? authController.countryDialCode : null,
+              labelText: 'email_or_phone'.tr,
+              titleText: 'type_your_number_or_mail'.tr,
               controller: phoneController,
               focusNode: phoneFocus,
               nextFocus: passwordFocus,
               inputType: TextInputType.emailAddress,
-              onChanged: (String text) {
+              // prefixImage: authController.isNumberLogin ? null : Images.emailWithPhoneIcon,
+              onChanged: (String text){
                 final numberRegExp = RegExp(r'^[+]?[0-9]+$');
                 final notNumberRegExp = RegExp(r'[^0-9+]');
-
-                if (text.isEmpty && authController.isNumberLogin) {
+            
+                if(text.isEmpty && authController.isNumberLogin){
                   authController.toggleIsNumberLogin();
                 }
-                if (text.startsWith(numberRegExp) &&
-                    !text.contains(notNumberRegExp) &&
-                    !authController.isNumberLogin) {
+                if(text.startsWith(numberRegExp) && !text.contains(notNumberRegExp) && !authController.isNumberLogin ){
                   authController.toggleIsNumberLogin();
-
-                  if (GetPlatform.isWeb) {
+            
+                  if(GetPlatform.isWeb) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       phoneController.text = text.replaceAll("+", "");
                       phoneController.selection = TextSelection.fromPosition(
@@ -92,477 +87,374 @@ class ManualLoginWidget extends StatelessWidget {
                   }
                 }
                 final emailRegExp = RegExp(r'@');
-                if ((text.contains(emailRegExp) ||
-                        text.contains(notNumberRegExp)) &&
-                    authController.isNumberLogin) {
+                if((text.contains(emailRegExp) || text.contains(notNumberRegExp)) && authController.isNumberLogin){
                   authController.toggleIsNumberLogin();
                 }
+            
               },
-              validator: (String? value) {
-                if (authController.isNumberLogin &&
-                    ValidateCheck.getValidPhone(
-                          authController.countryDialCode + value!,
-                        ) ==
-                        "") {
+              validator: (String? value){
+            
+                if(authController.isNumberLogin && ValidateCheck.getValidPhone(authController.countryDialCode+value!) == ""){
                   return "enter_valid_phone_number".tr;
                 }
-                return (GetUtils.isPhoneNumber(
-                          authController.countryDialCode + value!.tr,
-                        ) ||
-                        GetUtils.isEmail(value.tr))
-                    ? null
-                    : 'enter_email_address_or_phone_number'.tr;
+                return (GetUtils.isPhoneNumber(authController.countryDialCode+value!.tr) || GetUtils.isEmail(value.tr)) ? null : 'enter_email_address_or_phone_number'.tr;
               },
             ),
+            const SizedBox(height: Dimensions.paddingSizeExtraLarge),
 
-            const SizedBox(height: 18),
-            MiliAuthField(
-              label: 'password'.tr,
-              hint: 'enter_password'.tr,
+            CustomTextField(
+              titleText: 'password_hint'.tr,
               controller: passwordController,
               focusNode: passwordFocus,
               inputAction: TextInputAction.done,
               inputType: TextInputType.visiblePassword,
+              // prefixIcon: Icons.lock,
               isPassword: true,
-              onSubmit: (_) {
-                if (!authController.isLoading) onClickLoginButton();
-              },
-              validator: (value) => ValidateCheck.validateEmptyText(
-                value,
-                'please_enter_password'.tr,
+              onSubmit: (text) => (GetPlatform.isWeb) ? onWebSubmit : null,
+              labelText: 'password'.tr,
+              required: true,
+              validator: (value) => ValidateCheck.validateEmptyText(value, "please_enter_password".tr),
+            ),
+            SizedBox(height: ResponsiveHelper.isDesktop(context) ? Dimensions.paddingSizeDefault : Dimensions.paddingSizeExtraSmall),
+
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              InkWell(
+                onTap: () => authController.toggleRememberMe(),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 24, width: 24,
+                      child: Checkbox(
+                        side: BorderSide(color: Theme.of(context).hintColor),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        activeColor: Theme.of(context).primaryColor,
+                        value: authController.isActiveRememberMe,
+                        onChanged: (bool? isChecked) => authController.toggleRememberMe(),
+                      ),
+                    ),
+                    const SizedBox(width: Dimensions.paddingSizeSmall),
+
+                    Text('remember_me'.tr, style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color?.withAlpha(130))),
+                  ],
+                ),
               ),
-            ),
-            MiliAuthOptions(
-              remember: authController.isActiveRememberMe,
-              onRemember: authController.toggleRememberMe,
-              onForgot: () => Get.toNamed(RouteHelper.getForgotPassRoute()),
-            ),
-            MiliAuthSubmit(
-              loading: authController.isLoading,
-              label: 'login'.tr,
+
+              TextButton(
+                style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                onPressed: () {
+                  Get.toNamed(RouteHelper.getForgotPassRoute());
+                },
+                child: Text('${'forgot_password'.tr}?', style: robotoRegular.copyWith(color: Colors.blueAccent)),
+              ),
+            ]),
+
+            const SizedBox(height: Dimensions.paddingSizeSmall),
+
+            // const ConditionCheckBoxWidget(forSignUp: true),
+            // const SizedBox(height: Dimensions.paddingSizeExtraLarge),
+
+            CustomButton(
+              height: isDesktop ? 50 : null,
+              width:  isDesktop ? 250 : null,
+              buttonText: 'continue_to_login'.tr,
+              radius: isDesktop ? Dimensions.radiusSmall : Dimensions.radiusLarge,
+              isBold: isDesktop ? false : true,
+              isLoading: authController.isLoading,
               onPressed: onClickLoginButton,
             ),
-            if (onOtpViewClick != null)
-              MiliAuthSecondary(
-                label: 'auth_ui_use_code'.tr,
-                icon: Icons.sms_outlined,
-                onPressed: onOtpViewClick,
-              ),
-            if (socialEnable)
-              SocialLoginWidget(
-                onlySocialLogin: false,
-                backFromThis: backFromThis,
-              ),
-            MiliAuthSecondary(
-              label: 'sign_up'.tr,
-              description: 'do_not_have_account'.tr,
-              onPressed: authController.isLoading
-                  ? null
-                  : () => Get.toNamed(RouteHelper.getSignUpRoute()),
+          ]),
+        ),
+        const SizedBox(height: Dimensions.paddingSizeLarge),
+
+        if (onOtpViewClick != null)...[ 
+          Center(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+              Text('or'.tr, style: robotoRegular.copyWith(color: Theme.of(context).disabledColor)),
+              const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+            
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                Text('sign_in_with'.tr, style: robotoRegular.copyWith(color: Theme.of(context).disabledColor)),
+                const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+            
+                InkWell(
+                  onTap: onOtpViewClick,
+                  child: Text('otp'.tr, style: robotoRegular.copyWith(color: Colors.blueAccent, decoration: TextDecoration.underline)),
+                ),
+              ]),
+            ]),
+          ),
+          SizedBox(height: isDesktop ? Dimensions.paddingSizeLarge : Dimensions.paddingSizeExtraLarge),
+        ],
+
+        if (socialEnable)...[
+          SocialLoginWidget(onlySocialLogin: false, backFromThis: backFromThis),
+          SizedBox(height: isDesktop ? Dimensions.paddingSizeLarge : Dimensions.paddingSizeExtraLarge),
+        ],
+
+
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Text('new_to_6amMart'.trParams({'appName': AppConstants.appName}), style: robotoRegular.copyWith(color: Theme.of(context).hintColor)),
+
+          InkWell(
+            onTap: authController.isLoading ? null : () {
+              Get.toNamed(RouteHelper.getSignUpRoute());
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
+              child: Text('sign_up'.tr, style: robotoMedium.copyWith(color: Colors.blueAccent)),
             ),
-          ],
-        );
-      },
-    );
+          ),
+        ]),
+
+      ]);
+    });
   }
 
-  Widget webView(
-    bool isDesktop,
-    BuildContext context,
-    AuthController authController,
-  ) {
+  Widget webView(bool isDesktop, BuildContext context, AuthController authController) {
     bool onlyManualLoginEnable = onOtpViewClick == null && !socialEnable;
     return Padding(
       padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            flex: 6,
-            child: Column(
-              children: [
-                const _LoginHeader(),
-                const SizedBox(height: Dimensions.paddingSizeDefault),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
 
-                CustomTextField(
-                  onCountryChanged: (countryCode) =>
-                      authController.countryDialCode = countryCode.dialCode!,
-                  countryDialCode: authController.isNumberLogin
-                      ? authController.countryDialCode
-                      : null,
-                  labelText: 'email_or_phone'.tr,
-                  titleText: 'enter_email_or_phone'.tr,
-                  controller: phoneController,
-                  focusNode: phoneFocus,
-                  nextFocus: passwordFocus,
-                  prefixImage: authController.isNumberLogin
-                      ? null
-                      : Images.emailWithPhoneIcon,
-                  inputType: TextInputType.emailAddress,
-                  onChanged: (String text) {
-                    final numberRegExp = RegExp(r'^[+]?[0-9]+$');
+        Expanded(
+          flex: 6,
+          child: Column(children: [
+            Align(
+              alignment: Alignment.topLeft,
+              child: Text('continue_to_login'.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeExtraLarge)),
+            ),
+            const SizedBox(height: Dimensions.paddingSizeDefault),
 
-                    // Toggle isNumberLogin flag based on input
-                    if (text.isEmpty && authController.isNumberLogin) {
-                      authController.toggleIsNumberLogin();
-                    } else if (text.startsWith(numberRegExp) &&
-                        !authController.isNumberLogin) {
-                      authController.toggleIsNumberLogin();
-                      // Store the cleaned number temporarily
-                      final cleanedText = text.replaceAll("+", "");
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        phoneController.text = cleanedText;
-                        phoneController.selection = TextSelection.fromPosition(
-                          TextPosition(offset: phoneController.text.length),
-                        );
-                      });
-                    } else if (text.contains('@') &&
-                        authController.isNumberLogin) {
-                      authController.toggleIsNumberLogin();
-                    }
-                  },
-                  validator: (String? value) {
-                    if (authController.isNumberLogin &&
-                        ValidateCheck.getValidPhone(
-                              authController.countryDialCode + value!,
-                            ) ==
-                            "") {
-                      return "enter_valid_phone_number".tr;
-                    }
-                    return (GetUtils.isPhoneNumber(value!.tr) ||
-                            GetUtils.isEmail(value.tr))
-                        ? null
-                        : 'enter_email_address_or_phone_number'.tr;
-                  },
-                ),
-                const SizedBox(height: Dimensions.paddingSizeExtraLarge),
+            CustomTextField(
+              onCountryChanged: (countryCode) => authController.countryDialCode = countryCode.dialCode!,
+              countryDialCode: authController.isNumberLogin ? authController.countryDialCode : null,
+              labelText: 'email_or_phone'.tr,
+              titleText: 'enter_email_or_phone'.tr,
+              controller: phoneController,
+              focusNode: phoneFocus,
+              nextFocus: passwordFocus,
+              prefixImage: authController.isNumberLogin ? null : Images.emailWithPhoneIcon,
+              inputType: TextInputType.emailAddress,
+              onChanged: (String text){
+                final numberRegExp = RegExp(r'^[+]?[0-9]+$');
 
-                CustomTextField(
-                  titleText: '8_character'.tr,
-                  controller: passwordController,
-                  focusNode: passwordFocus,
-                  inputAction: TextInputAction.done,
-                  inputType: TextInputType.visiblePassword,
-                  prefixIcon: Icons.lock,
-                  isPassword: true,
-                  onSubmit: (text) => (GetPlatform.isWeb) ? onWebSubmit : null,
-                  labelText: 'password'.tr,
-                  required: true,
-                  validator: (value) => ValidateCheck.validateEmptyText(
-                    value,
-                    "please_enter_password".tr,
-                  ),
-                ),
-                SizedBox(
-                  height: ResponsiveHelper.isDesktop(context)
-                      ? Dimensions.paddingSizeDefault
-                      : Dimensions.paddingSizeExtraSmall,
-                ),
+                // Toggle isNumberLogin flag based on input
+                if (text.isEmpty && authController.isNumberLogin) {
+                  authController.toggleIsNumberLogin();
+                } else if (text.startsWith(numberRegExp) && !authController.isNumberLogin) {
+                  authController.toggleIsNumberLogin();
+                  // Store the cleaned number temporarily
+                  final cleanedText = text.replaceAll("+", "");
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    phoneController.text = cleanedText;
+                    phoneController.selection = TextSelection.fromPosition(
+                      TextPosition(offset: phoneController.text.length),
+                    );
+                  });
+                } else if (text.contains('@') && authController.isNumberLogin) {
+                  authController.toggleIsNumberLogin();
+                }
 
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              },
+              validator: (String? value){
+
+                if(authController.isNumberLogin && ValidateCheck.getValidPhone(authController.countryDialCode+value!) == ""){
+                  return "enter_valid_phone_number".tr;
+                }
+                return (GetUtils.isPhoneNumber(value!.tr) || GetUtils.isEmail(value.tr)) ? null : 'enter_email_address_or_phone_number'.tr;
+              },
+            ),
+            const SizedBox(height: Dimensions.paddingSizeExtraLarge),
+
+            CustomTextField(
+              titleText: '8_character'.tr,
+              controller: passwordController,
+              focusNode: passwordFocus,
+              inputAction: TextInputAction.done,
+              inputType: TextInputType.visiblePassword,
+              prefixIcon: Icons.lock,
+              isPassword: true,
+              onSubmit: (text) => (GetPlatform.isWeb) ? onWebSubmit : null,
+              labelText: 'password'.tr,
+              required: true,
+              validator: (value) => ValidateCheck.validateEmptyText(value, "please_enter_password".tr),
+            ),
+            SizedBox(height: ResponsiveHelper.isDesktop(context) ? Dimensions.paddingSizeDefault : Dimensions.paddingSizeExtraSmall),
+
+
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              InkWell(
+                onTap: () => authController.toggleRememberMe(),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Flexible(
-                      child: InkWell(
-                        onTap: () => authController.toggleRememberMe(),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: Checkbox(
-                                side: BorderSide(
-                                  color: Theme.of(context).hintColor,
-                                ),
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                                activeColor: Theme.of(context).primaryColor,
-                                value: authController.isActiveRememberMe,
-                                onChanged: (bool? isChecked) =>
-                                    authController.toggleRememberMe(),
-                              ),
-                            ),
-                            const SizedBox(width: Dimensions.paddingSizeSmall),
-
-                            Flexible(
-                              child: Text(
-                                'remember_me'.tr,
-                                style: robotoRegular.copyWith(
-                                  fontSize: Dimensions.fontSizeSmall,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
+                    SizedBox(
+                      height: 24, width: 24,
+                      child: Checkbox(
+                        side: BorderSide(color: Theme.of(context).hintColor),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        activeColor: Theme.of(context).primaryColor,
+                        value: authController.isActiveRememberMe,
+                        onChanged: (bool? isChecked) => authController.toggleRememberMe(),
                       ),
                     ),
+                    const SizedBox(width: Dimensions.paddingSizeSmall),
 
-                    TextButton(
-                      style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                      onPressed: () {
-                        if (isDesktop) {
-                          Get.back();
-                          Get.dialog(
-                            const Center(
-                              child: ForgetPassScreen(fromDialog: true),
-                            ),
-                          );
-                        } else {
-                          Get.toNamed(RouteHelper.getForgotPassRoute());
-                        }
-                      },
-                      child: Text(
-                        '${'forgot_password'.tr}?',
-                        style: robotoRegular.copyWith(
-                          fontSize: Dimensions.fontSizeSmall,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-                    ),
+                    Text('remember_me'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)),
                   ],
                 ),
+              ),
 
-                const SizedBox(height: Dimensions.paddingSizeLarge),
+              TextButton(
+                style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                onPressed: () {
+                  if(isDesktop) {
+                    Get.back();
+                    Get.dialog(const Center(child: ForgetPassScreen(fromDialog: true)));
+                  } else {
+                    Get.toNamed(RouteHelper.getForgotPassRoute());
+                  }
+                },
+                child: Text('${'forgot_password'.tr}?', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor)),
+              ),
+            ]),
 
-                const ConditionCheckBoxWidget(forSignUp: true),
-                const SizedBox(height: Dimensions.paddingSizeExtraLarge),
+            const SizedBox(height: Dimensions.paddingSizeLarge),
 
-                CustomButton(
-                  buttonText: 'login'.tr,
-                  radius: Dimensions.radiusDefault,
-                  isBold: isDesktop ? false : true,
-                  isLoading: authController.isLoading,
-                  onPressed: onClickLoginButton,
-                  fontSize: Dimensions.fontSizeSmall,
+            const ConditionCheckBoxWidget(forSignUp: true),
+            const SizedBox(height: Dimensions.paddingSizeExtraLarge),
+
+            CustomButton(
+              buttonText: 'login'.tr,
+              radius: Dimensions.radiusDefault,
+              isBold: isDesktop ? false : true,
+              isLoading: authController.isLoading,
+              onPressed: onClickLoginButton,
+              fontSize: Dimensions.fontSizeSmall,
+            ),
+
+            onlyManualLoginEnable ? Padding(
+              padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text('new_to_6amMart'.trParams({'appName': AppConstants.appName}), style: robotoRegular.copyWith(color: Theme.of(context).hintColor)),
+
+                InkWell(
+                  onTap: () {
+                    Get.back();
+                    Get.dialog(
+                      SizedBox(
+                        width: 700,
+                        child: Dialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Dimensions.radiusSmall)),
+                          backgroundColor: Theme.of(context).cardColor,
+                          insetPadding: EdgeInsets.zero,
+                          child: const SignUpWidget(),
+                        ),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
+                    child: Text('sign_up'.tr, style: robotoMedium.copyWith(color: Theme.of(context).primaryColor)),
+                  ),
                 ),
+              ]),
+            ) : const SizedBox(),
+            const SizedBox(height: Dimensions.paddingSizeLarge),
+          ]),
+        ),
 
-                onlyManualLoginEnable
-                    ? Padding(
-                        padding: const EdgeInsets.only(
-                          top: Dimensions.paddingSizeSmall,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'do_not_have_account'.tr,
-                              style: robotoRegular.copyWith(
-                                color: Theme.of(context).hintColor,
-                              ),
-                            ),
-
-                            InkWell(
-                              onTap: () {
-                                Get.back();
-                                Get.dialog(
-                                  SizedBox(
-                                    width: 700,
-                                    child: Dialog(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          Dimensions.radiusSmall,
-                                        ),
-                                      ),
-                                      backgroundColor: Theme.of(
-                                        context,
-                                      ).cardColor,
-                                      insetPadding: EdgeInsets.zero,
-                                      child: const SignUpWidget(),
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(
-                                  Dimensions.paddingSizeExtraSmall,
-                                ),
-                                child: Text(
-                                  'sign_up'.tr,
-                                  style: robotoMedium.copyWith(
-                                    color: Theme.of(context).primaryColor,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : const SizedBox(),
-                const SizedBox(height: Dimensions.paddingSizeLarge),
-              ],
+        !onlyManualLoginEnable ? Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraOverLarge, vertical: Dimensions.paddingSizeLarge),
+            child: RotatedBox(
+              quarterTurns: 3,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: 1,
+                    child: Container(
+                      color: Theme.of(context).disabledColor,
+                      width: 100,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text(
+                      'or_login_with'.tr,
+                      style: robotoMedium.copyWith(color: Theme.of(context).disabledColor),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 1,
+                    child: Container(
+                      color: Theme.of(context).disabledColor,
+                      width: 100,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
+        ) : const SizedBox(),
 
-          !onlyManualLoginEnable
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: Dimensions.paddingSizeExtraOverLarge,
-                      vertical: Dimensions.paddingSizeLarge,
-                    ),
-                    child: RotatedBox(
-                      quarterTurns: 3,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            height: 1,
-                            child: Container(
-                              color: Theme.of(context).disabledColor,
-                              width: 100,
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0,
-                            ),
-                            child: Text(
-                              'or_login_with'.tr,
-                              style: robotoMedium.copyWith(
-                                color: Theme.of(context).disabledColor,
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            height: 1,
-                            child: Container(
-                              color: Theme.of(context).disabledColor,
-                              width: 100,
-                            ),
-                          ),
-                        ],
-                      ),
+        !onlyManualLoginEnable ? Expanded(flex: 5, child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+
+          socialEnable ? SocialLoginWidget(onlySocialLogin: true, showWelcomeText: false, backFromThis: backFromThis) : const SizedBox(),
+
+          onOtpViewClick != null ? Container(
+            height: 50,
+            padding: const EdgeInsets.all(1),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: const BorderRadius.all(Radius.circular(Dimensions.radiusDefault)),
+              boxShadow: [BoxShadow(color: Colors.grey[Get.isDarkMode ? 700 : 300]!, spreadRadius: 1, blurRadius: 5, offset: const Offset(2, 2))],
+            ),
+            child: CustomInkWell(
+              onTap: onOtpViewClick!,
+              radius: Dimensions.radiusDefault,
+              child: Padding(
+                padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Image.asset(Images.otp, height: 20, width: 20),
+                  const SizedBox(width: Dimensions.paddingSizeSmall),
+
+                  Text('otp_sign_in'.tr, style: robotoMedium.copyWith()),
+                ]),
+              ),
+            ),
+          ) : const SizedBox(),
+          const SizedBox(height: Dimensions.paddingSizeLarge),
+
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Text('do_not_have_account'.tr, style: robotoRegular.copyWith(color: Theme.of(context).hintColor)),
+
+            InkWell(
+              onTap: () {
+                Get.back();
+                Get.dialog(
+                  SizedBox(
+                    width: 700,
+                    child: Dialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Dimensions.radiusLarge)),
+                      backgroundColor: Theme.of(context).cardColor,
+                      insetPadding: EdgeInsets.zero,
+                      child: const SignUpWidget(),
                     ),
                   ),
-                )
-              : const SizedBox(),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
+                child: Text('sign_up'.tr, style: robotoMedium.copyWith(color: Theme.of(context).primaryColor)),
+              ),
+            ),
+          ]),
+        ])) : const SizedBox(),
 
-          !onlyManualLoginEnable
-              ? Expanded(
-                  flex: 5,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      socialEnable
-                          ? SocialLoginWidget(
-                              onlySocialLogin: true,
-                              showWelcomeText: false,
-                              backFromThis: backFromThis,
-                            )
-                          : const SizedBox(),
-
-                      onOtpViewClick != null
-                          ? Container(
-                              height: 50,
-                              padding: const EdgeInsets.all(1),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).cardColor,
-                                borderRadius: const BorderRadius.all(
-                                  Radius.circular(Dimensions.radiusDefault),
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors
-                                        .grey[Get.isDarkMode ? 700 : 300]!,
-                                    spreadRadius: 1,
-                                    blurRadius: 5,
-                                    offset: const Offset(2, 2),
-                                  ),
-                                ],
-                              ),
-                              child: CustomInkWell(
-                                onTap: onOtpViewClick!,
-                                radius: Dimensions.radiusDefault,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(
-                                    Dimensions.paddingSizeSmall,
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Image.asset(
-                                        Images.otp,
-                                        height: 20,
-                                        width: 20,
-                                      ),
-                                      const SizedBox(
-                                        width: Dimensions.paddingSizeSmall,
-                                      ),
-
-                                      Text(
-                                        'otp_sign_in'.tr,
-                                        style: robotoMedium.copyWith(),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            )
-                          : const SizedBox(),
-                      const SizedBox(height: Dimensions.paddingSizeLarge),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'do_not_have_account'.tr,
-                            style: robotoRegular.copyWith(
-                              color: Theme.of(context).hintColor,
-                            ),
-                          ),
-
-                          InkWell(
-                            onTap: () {
-                              Get.back();
-                              Get.dialog(
-                                SizedBox(
-                                  width: 700,
-                                  child: Dialog(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                        Dimensions.radiusLarge,
-                                      ),
-                                    ),
-                                    backgroundColor: Theme.of(
-                                      context,
-                                    ).cardColor,
-                                    insetPadding: EdgeInsets.zero,
-                                    child: const SignUpWidget(),
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.all(
-                                Dimensions.paddingSizeExtraSmall,
-                              ),
-                              child: Text(
-                                'sign_up'.tr,
-                                style: robotoMedium.copyWith(
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                )
-              : const SizedBox(),
-        ],
-      ),
+      ]),
     );
   }
-}
-
-class _LoginHeader extends StatelessWidget {
-  const _LoginHeader();
-  @override
-  Widget build(BuildContext context) => MiliAuthIntro(
-    title: 'auth_ui_title'.tr,
-    subtitle: 'auth_ui_manual_subtitle'.tr,
-  );
 }

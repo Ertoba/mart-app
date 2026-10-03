@@ -2,9 +2,10 @@ import 'package:sixam_mart/common/enums/data_source_enum.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/interfaces/repository_interface.dart';
 
+import '../models/app_download_section_model.dart';
+
 abstract class SplashRepositoryInterface extends RepositoryInterface {
   Future<dynamic> getConfigData({required DataSourceEnum source});
-  Future<dynamic> getLandingPageData({required DataSourceEnum source});
   Future<ModuleModel?> initSharedData();
   void disableIntro();
   bool? showIntro();
@@ -27,4 +28,6 @@ abstract class SplashRepositoryInterface extends RepositoryInterface {
   Future<void> saveReferBottomSheetStatus(bool data);
   bool getPaymentIncompleteBottomSheetStatus();
   Future<void> savePaymentIncompleteBottomSheetStatus(bool data);
+  Future<AppDownloadSectionModel?> getAppDownloadSection();
+  bool handleInitialTopicSubscription();
 }

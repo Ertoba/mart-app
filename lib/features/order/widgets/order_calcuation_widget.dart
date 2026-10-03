@@ -3,18 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/custom_asset_image_widget.dart';
 import 'package:sixam_mart/common/widgets/custom_card.dart';
-import 'package:sixam_mart/features/order/widgets/support_reason_bottom_sheet.dart';
-import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
 import 'package:sixam_mart/features/order/domain/models/order_model.dart';
+import 'package:sixam_mart/features/order/widgets/order_item_widget.dart';
+import 'package:sixam_mart/features/order/widgets/support_reason_bottom_sheet.dart';
+import 'package:sixam_mart/features/parcel/widgets/details_widget.dart';
+// import 'package:sixam_mart/features/pro/domain/models/pro_active_offer_model.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/features/order/widgets/order_item_widget.dart';
-import 'package:sixam_mart/features/parcel/widgets/details_widget.dart';
 
 class OrderCalculationWidget extends StatelessWidget {
   final OrderController orderController;
@@ -35,28 +36,31 @@ class OrderCalculationWidget extends StatelessWidget {
   final Widget bottomView;
   final double extraPackagingAmount;
   final double referrerBonusAmount;
+  final double deliveryTypeCharge;
   final Function timerCancel;
   final Function startApiCall;
-  
+
   const OrderCalculationWidget({
     super.key, required this.orderController, required this.order, required this.ongoing,
     required this.parcel, required this.prescriptionOrder, required this.deliveryCharge,
     required this.itemsPrice, required this.discount, required this.couponDiscount, required this.tax,
     required this.addOns, required this.dmTips, required this.taxIncluded, required this.subTotal,
-    required this.total, required this.bottomView, required this.extraPackagingAmount, required this.referrerBonusAmount, required this.timerCancel, required this.startApiCall,
+    required this.total, required this.bottomView, required this.extraPackagingAmount, required this.referrerBonusAmount,
+    required this.deliveryTypeCharge, required this.timerCancel, required this.startApiCall,
   });
 
   @override
   Widget build(BuildContext context) {
 
     bool isDesktop = ResponsiveHelper.isDesktop(context);
-    
+    final bool showDeliveryTypeCharge = (order.deliveryType == 'slightly_delay' || order.deliveryType == 'express') && deliveryTypeCharge != 0;
+    print("------------pro discount> ${order.proDiscount}");
     return Column(children: [
       Padding(
         padding: EdgeInsets.only(top: isDesktop ? Dimensions.paddingSizeExtraLarge : Dimensions.paddingSizeSmall),
         child: CustomCard(
           borderRadius: isDesktop ? Dimensions.radiusDefault : 0, isBorder: false,
-          padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             (isDesktop && orderController.orderDetails!.isNotEmpty) ? Container(
               decoration: BoxDecoration(
@@ -120,7 +124,7 @@ class OrderCalculationWidget extends StatelessWidget {
                   Expanded(child: Text(Get.find<SplashController>().configModel!.additionalChargeName!, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
                   maxLines: 1, overflow: TextOverflow.ellipsis,
                   )),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
 
                   Text('(+) ${PriceConverter.convertPrice(order.additionalCharge)}', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall), textDirection: TextDirection.ltr),
                 ]) : const SizedBox(),
@@ -157,6 +161,26 @@ class OrderCalculationWidget extends StatelessWidget {
                 ]),
                 const SizedBox(height: 10),
 
+                /// Pro pricing rows are implemented in redesign billing_summery_section.dart
+                // (order.benefitType == ProBenefitType.discount && (order.proDiscount ?? 0) > 0) ? Column(children: [
+                //   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                //     Text('discount_pro'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)),
+                //     Text('(-) ${PriceConverter.convertPrice(order.proDiscount)}', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall), textDirection: TextDirection.ltr),
+                //   ]),
+                //   const SizedBox(height: 10),
+                // ]) : const SizedBox(),
+
+                // (order.benefitType == ProBenefitType.coupon && (couponDiscount > 0 || (order.couponDiscountAmount ?? 0) > 0)) ? Column(children: [
+                //   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                //     Text('coupon_discount_pro'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)),
+                //     Text(
+                //       '(-) ${PriceConverter.convertPrice((order.couponDiscountAmount ?? 0) > 0 ? order.couponDiscountAmount : couponDiscount)}',
+                //       style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall), textDirection: TextDirection.ltr,
+                //     ),
+                //   ]),
+                //   const SizedBox(height: 10),
+                // ]) :
+
                 couponDiscount > 0 ? Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   Text('coupon_discount'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)),
                   Text(
@@ -170,7 +194,7 @@ class OrderCalculationWidget extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('referral_discount'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)),
-                    Text('(+) ${PriceConverter.convertPrice(referrerBonusAmount)}', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall), textDirection: TextDirection.ltr),
+                    Text('(-) ${PriceConverter.convertPrice(referrerBonusAmount)}', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall), textDirection: TextDirection.ltr),
                   ],
                 ) : const SizedBox(),
                 SizedBox(height: referrerBonusAmount > 0 ? 10 : 0),
@@ -179,7 +203,7 @@ class OrderCalculationWidget extends StatelessWidget {
                   Expanded(
                     child: Text(Get.find<SplashController>().configModel!.additionalChargeName!, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall), maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
 
                   Text('(+) ${PriceConverter.convertPrice(order.additionalCharge)}', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall), textDirection: TextDirection.ltr),
                 ]) : const SizedBox(),
@@ -215,6 +239,29 @@ class OrderCalculationWidget extends StatelessWidget {
                     '(+) ${PriceConverter.convertPrice(deliveryCharge)}', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall), textDirection: TextDirection.ltr,
                   ) : Text('free'.tr, style: robotoRegular.copyWith( fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor)),
                 ]),
+
+                /// Pro delivery fee discount is implemented in redesign billing_summery_section.dart
+                // (order.benefitType == ProBenefitType.deliveryFee && (order.deliveryFeeReductionAmount ?? 0) > 0) ? Padding(
+                //   padding: const EdgeInsets.only(top: 10),
+                //   child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                //     Text('delivery_fee_discount_pro'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)),
+                //     Text('(-) ${PriceConverter.convertPrice(order.deliveryFeeReductionAmount)}', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall), textDirection: TextDirection.ltr),
+                //   ]),
+                // ) : const SizedBox(),
+
+                showDeliveryTypeCharge ? Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    Text(
+                      '${order.deliveryType!.replaceAll('_', ' ').capitalize} ${'delivery'.tr}',
+                      style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
+                    ),
+                    Text(
+                      '${deliveryTypeCharge < 0 ? '(-)' : '(+)'} ${PriceConverter.convertPrice(deliveryTypeCharge.abs())}',
+                      style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall), textDirection: TextDirection.ltr,
+                    ),
+                  ]),
+                ) : const SizedBox(),
               ]),
             ]),
             Divider(height: Dimensions.paddingSizeLarge, color: Theme.of(context).disabledColor.withValues(alpha: 0.5)),
@@ -256,13 +303,10 @@ class OrderCalculationWidget extends StatelessWidget {
                   const SizedBox(height: 10),
 
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Expanded(child: Text(
+                    Text(
                       '${order.payments?[1].paymentStatus == 'paid' ? 'paid_by'.tr : 'due_amount'.tr} (${order.payments?[1].paymentMethod?.tr})',
                       style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 2,
-                    )),
-                    const SizedBox(width: Dimensions.paddingSizeSmall),
+                    ),
                     Text(
                       PriceConverter.convertPrice(order.payments?[1].amount ?? 0),
                       style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall),
@@ -345,7 +389,7 @@ class OrderCalculationWidget extends StatelessWidget {
                 Text(PriceConverter.convertPrice(total + order.parcelCancellation!.returnFee!), style: robotoBold, textDirection: TextDirection.ltr),
               ]),
             ]) : const SizedBox(),
-            order.parcelCancellation?.returnFee != null && order.parcelCancellation!.returnFee! > 0 ? SizedBox(height: isDesktop ? Dimensions.paddingSizeDefault : Dimensions.paddingSizeSmall) : SizedBox(),
+            order.parcelCancellation?.returnFee != null && order.parcelCancellation!.returnFee! > 0 ? SizedBox(height: isDesktop ? Dimensions.paddingSizeDefault : Dimensions.paddingSizeSmall) : const SizedBox(),
 
             isDesktop ? bottomView : const SizedBox(),
             SizedBox(height: isDesktop ? Dimensions.paddingSizeDefault : 0),

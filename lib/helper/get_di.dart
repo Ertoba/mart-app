@@ -1,9 +1,12 @@
-import 'dart:convert';
 
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixam_mart/api/api_client.dart';
+import 'package:sixam_mart/features/happy_hour/controllers/happy_hour_controller.dart';
+import 'package:sixam_mart/features/happy_hour/domain/repositories/happy_hour_repository.dart';
+import 'package:sixam_mart/features/happy_hour/domain/repositories/happy_hour_repository_interface.dart';
+import 'package:sixam_mart/features/happy_hour/domain/services/happy_hour_service.dart';
+import 'package:sixam_mart/features/happy_hour/domain/services/happy_hour_service_interface.dart';
 import 'package:sixam_mart/common/controllers/theme_controller.dart';
 import 'package:sixam_mart/features/address/controllers/address_controller.dart';
 import 'package:sixam_mart/features/address/domain/repositories/address_repository.dart';
@@ -75,6 +78,17 @@ import 'package:sixam_mart/features/favourite/domain/repositories/favourite_repo
 import 'package:sixam_mart/features/favourite/domain/repositories/favourite_repository_interface.dart';
 import 'package:sixam_mart/features/favourite/domain/services/favourite_service.dart';
 import 'package:sixam_mart/features/favourite/domain/services/favourite_service_interface.dart';
+import 'package:sixam_mart/features/bundle/controllers/bundle_controller.dart';
+import 'package:sixam_mart/features/bundle/domain/repositories/bundle_repository.dart';
+import 'package:sixam_mart/features/bundle/domain/repositories/bundle_repository_interface.dart';
+import 'package:sixam_mart/features/bundle/domain/services/bundle_service.dart';
+import 'package:sixam_mart/features/bundle/domain/services/bundle_service_interface.dart';
+import 'package:sixam_mart/features/bogo_offer/controllers/bogo_offer_controller.dart';
+import 'package:sixam_mart/features/bogo_offer/controllers/bogo_offer_details_controller.dart';
+import 'package:sixam_mart/features/bogo_offer/domain/repositories/bogo_offer_repository.dart';
+import 'package:sixam_mart/features/bogo_offer/domain/repositories/bogo_offer_repository_interface.dart';
+import 'package:sixam_mart/features/bogo_offer/domain/services/bogo_offer_service.dart';
+import 'package:sixam_mart/features/bogo_offer/domain/services/bogo_offer_service_interface.dart';
 import 'package:sixam_mart/features/flash_sale/controllers/flash_sale_controller.dart';
 import 'package:sixam_mart/features/flash_sale/domain/repositories/flash_sale_repository.dart';
 import 'package:sixam_mart/features/flash_sale/domain/repositories/flash_sale_repository_interface.dart';
@@ -106,7 +120,7 @@ import 'package:sixam_mart/features/item/domain/services/campaign_service_interf
 import 'package:sixam_mart/features/item/domain/services/item_service.dart';
 import 'package:sixam_mart/features/item/domain/services/item_service_interface.dart';
 import 'package:sixam_mart/features/language/controllers/language_controller.dart';
-import 'package:sixam_mart/features/language/domain/models/language_model.dart';
+import 'package:sixam_mart/helper/language_loader.dart';
 import 'package:sixam_mart/features/language/domain/repository/language_repository.dart';
 import 'package:sixam_mart/features/language/domain/repository/language_repository_interface.dart';
 import 'package:sixam_mart/features/language/domain/service/language_service.dart';
@@ -161,6 +175,15 @@ import 'package:sixam_mart/features/offer/domain/repositories/offer_repository.d
 import 'package:sixam_mart/features/offer/domain/repositories/offer_repository_interface.dart';
 import 'package:sixam_mart/features/offer/domain/services/offer_service.dart';
 import 'package:sixam_mart/features/offer/domain/services/offer_service_interface.dart';
+import 'package:sixam_mart/features/service_module/custom_service_request/controllers/custom_service_request_controller.dart';
+import 'package:sixam_mart/features/service_module/custom_service_request/domain/repositories/custom_service_request_repository.dart';
+import 'package:sixam_mart/features/service_module/custom_service_request/domain/repositories/custom_service_request_repository_interface.dart';
+import 'package:sixam_mart/features/service_module/custom_service_request/domain/services/custom_service_request_service.dart';
+import 'package:sixam_mart/features/service_module/custom_service_request/domain/services/custom_service_request_service_interface.dart';
+import 'package:sixam_mart/features/service_module/service_category/domain/repositories/service_category_repository.dart';
+import 'package:sixam_mart/features/service_module/service_category/domain/repositories/service_category_repository_interface.dart';
+import 'package:sixam_mart/features/service_module/service_category/domain/services/service_category_service.dart';
+import 'package:sixam_mart/features/service_module/service_category/domain/services/service_category_service_interface.dart';
 import 'package:sixam_mart/features/rental_module/vendor/controllers/verified_provider_controller.dart';
 import 'package:sixam_mart/features/rental_module/vendor/domain/repositories/verified_provider_repository.dart';
 import 'package:sixam_mart/features/rental_module/vendor/domain/repositories/verified_provider_repository_interface.dart';
@@ -172,14 +195,39 @@ import 'package:sixam_mart/features/service_module/service_details/domain/reposi
 import 'package:sixam_mart/features/service_module/service_details/domain/services/service_details_service.dart';
 import 'package:sixam_mart/features/service_module/service_details/domain/services/service_details_service_interface.dart';
 import 'package:sixam_mart/features/service_module/provider_details/controllers/provider_data_controller.dart';
-import 'package:sixam_mart/features/service_module/service_category_screen/controllers/service_category_controller.dart';
 import 'package:sixam_mart/features/service_module/provider_details/domain/repositories/provider_details_repository.dart';
 import 'package:sixam_mart/features/service_module/provider_details/domain/repositories/provider_details_repository_interface.dart';
 import 'package:sixam_mart/features/service_module/provider_details/domain/services/provider_details_service.dart';
 import 'package:sixam_mart/features/service_module/provider_details/domain/services/provider_details_service_interface.dart';
+import 'package:sixam_mart/features/service_module/request_service/controllers/requested_service_controller.dart';
+import 'package:sixam_mart/features/service_module/booking_details/controllers/booking_controller.dart';
+import 'package:sixam_mart/features/service_module/booking_details/domain/repositories/booking_repository.dart';
+import 'package:sixam_mart/features/service_module/booking_details/domain/repositories/booking_repository_interface.dart';
+import 'package:sixam_mart/features/service_module/booking_details/domain/services/booking_service.dart';
+import 'package:sixam_mart/features/service_module/booking_details/domain/services/booking_service_interface.dart';
+import 'package:sixam_mart/features/service_module/service_review/controllers/service_review_controller.dart';
+import 'package:sixam_mart/features/service_module/service_review/domain/repositories/service_review_repository.dart';
+import 'package:sixam_mart/features/service_module/service_review/domain/repositories/service_review_repository_interface.dart';
+import 'package:sixam_mart/features/service_module/service_review/domain/services/service_review_service.dart';
+import 'package:sixam_mart/features/service_module/service_review/domain/services/service_review_service_interface.dart';
+import 'package:sixam_mart/features/service_module/request_service/domain/repositories/requested_service_repository.dart';
+import 'package:sixam_mart/features/service_module/request_service/domain/repositories/requested_service_repository_interface.dart';
+import 'package:sixam_mart/features/service_module/request_service/domain/services/requested_service_service.dart';
+import 'package:sixam_mart/features/service_module/request_service/domain/services/requested_service_service_interface.dart';
+import 'package:sixam_mart/features/service_module/service_cart/controllers/service_cart_controller.dart';
+import 'package:sixam_mart/features/service_module/service_cart/domain/repositories/service_cart_repository.dart';
+import 'package:sixam_mart/features/service_module/service_cart/domain/repositories/service_cart_repository_interface.dart';
+import 'package:sixam_mart/features/service_module/service_cart/domain/services/service_cart_service.dart';
+import 'package:sixam_mart/features/service_module/service_cart/domain/services/service_cart_service_interface.dart';
+import 'package:sixam_mart/features/service_module/service_checkout/controllers/service_checkout_controller.dart';
+import 'package:sixam_mart/features/service_module/service_checkout/domain/repositories/service_checkout_repository.dart';
+import 'package:sixam_mart/features/service_module/service_checkout/domain/repositories/service_checkout_repository_interface.dart';
+import 'package:sixam_mart/features/service_module/service_checkout/domain/services/service_checkout_service.dart';
+import 'package:sixam_mart/features/service_module/service_checkout/domain/services/service_checkout_service_interface.dart';
 import 'package:sixam_mart/features/service_module/service_home/controllers/service_controller.dart';
 import 'package:sixam_mart/features/service_module/service_home/controllers/service_explore_controller.dart';
 import 'package:sixam_mart/features/service_module/service_home/controllers/service_verified_provider_controller.dart';
+import 'package:sixam_mart/features/service_module/service_campaign/controllers/service_campaign_controller.dart';
 import 'package:sixam_mart/features/service_module/service_home/domain/repositories/service_repository.dart';
 import 'package:sixam_mart/features/service_module/service_home/domain/repositories/service_repository_interface.dart';
 import 'package:sixam_mart/features/service_module/service_home/domain/services/service_service.dart';
@@ -286,748 +334,490 @@ import 'package:sixam_mart/features/wallet/domain/repositories/wallet_repository
 import 'package:sixam_mart/features/wallet/domain/services/wallet_service.dart';
 import 'package:sixam_mart/features/wallet/domain/services/wallet_service_interface.dart';
 import 'package:sixam_mart/util/app_constants.dart';
+import 'package:sixam_mart/features/service_module/service_category/controllers/service_category_controller.dart';
+
+
+
 
 Future<Map<String, Map<String, String>>> init() async {
   /// Core
   final sharedPreferences = await SharedPreferences.getInstance();
   Get.lazyPut(() => sharedPreferences);
-  Get.lazyPut(
-    () => ApiClient(
-      appBaseUrl: AppConstants.baseUrl,
-      sharedPreferences: Get.find(),
-    ),
-  );
+  Get.lazyPut(() => ApiClient(appBaseUrl: AppConstants.baseUrl, sharedPreferences: Get.find()));
 
   /// Repository interface
-  CheckoutRepositoryInterface checkoutRepositoryInterface = CheckoutRepository(
-    apiClient: Get.find(),
-    sharedPreferences: Get.find(),
-  );
+  CheckoutRepositoryInterface checkoutRepositoryInterface = CheckoutRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => checkoutRepositoryInterface);
 
-  AuthRepositoryInterface authRepositoryInterface = AuthRepository(
-    apiClient: Get.find(),
-    sharedPreferences: Get.find(),
-  );
+  AuthRepositoryInterface authRepositoryInterface = AuthRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => authRepositoryInterface);
 
-  LocationRepositoryInterface locationRepositoryInterface = LocationRepository(
-    apiClient: Get.find(),
-    sharedPreferences: Get.find(),
-  );
+  LocationRepositoryInterface locationRepositoryInterface = LocationRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => locationRepositoryInterface);
 
-  DeliverymanRegistrationRepositoryInterface
-  deliverymanRegistrationRepositoryInterface =
-      DeliverymanRegistrationRepository(
-        apiClient: Get.find(),
-        sharedPreferences: Get.find(),
-      );
+  DeliverymanRegistrationRepositoryInterface deliverymanRegistrationRepositoryInterface = DeliverymanRegistrationRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => deliverymanRegistrationRepositoryInterface);
 
-  StoreRegistrationRepositoryInterface storeRegistrationRepositoryInterface =
-      StoreRegistrationRepository(apiClient: Get.find());
+  StoreRegistrationRepositoryInterface storeRegistrationRepositoryInterface = StoreRegistrationRepository(apiClient: Get.find());
   Get.lazyPut(() => storeRegistrationRepositoryInterface);
 
-  ParcelRepositoryInterface parcelRepositoryInterface = ParcelRepository(
-    apiClient: Get.find(),
-  );
+  ParcelRepositoryInterface parcelRepositoryInterface = ParcelRepository(apiClient: Get.find());
   Get.lazyPut(() => parcelRepositoryInterface);
 
-  AddressRepositoryInterface addressRepositoryInterface = AddressRepository(
-    apiClient: Get.find(),
-  );
+  AddressRepositoryInterface addressRepositoryInterface = AddressRepository(apiClient: Get.find());
   Get.lazyPut(() => addressRepositoryInterface);
 
-  OrderRepositoryInterface orderRepositoryInterface = OrderRepository(
-    apiClient: Get.find(),
-  );
+  OrderRepositoryInterface orderRepositoryInterface = OrderRepository(apiClient: Get.find());
   Get.lazyPut(() => orderRepositoryInterface);
 
-  OfferRepositoryInterface offerRepositoryInterface = OfferRepository(
-    apiClient: Get.find(),
-  );
+  OfferRepositoryInterface offerRepositoryInterface = OfferRepository(apiClient: Get.find());
   Get.lazyPut(() => offerRepositoryInterface);
 
-  PaymentRepositoryInterface paymentRepositoryInterface = PaymentRepository(
-    apiClient: Get.find(),
-    sharedPreferences: Get.find(),
-  );
+  PaymentRepositoryInterface paymentRepositoryInterface = PaymentRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => paymentRepositoryInterface);
 
-  CampaignRepositoryInterface campaignRepositoryInterface = CampaignRepository(
-    apiClient: Get.find(),
-  );
+  CampaignRepositoryInterface campaignRepositoryInterface = CampaignRepository(apiClient: Get.find());
   Get.lazyPut(() => campaignRepositoryInterface);
 
-  ChatRepositoryInterface chatRepositoryInterface = ChatRepository(
-    apiClient: Get.find(),
-    sharedPreferences: Get.find(),
-  );
+  ChatRepositoryInterface chatRepositoryInterface = ChatRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => chatRepositoryInterface);
 
-  CouponRepositoryInterface couponRepositoryInterface = CouponRepository(
-    apiClient: Get.find(),
-  );
+  CouponRepositoryInterface couponRepositoryInterface = CouponRepository(apiClient: Get.find());
   Get.lazyPut(() => couponRepositoryInterface);
 
-  FavouriteRepositoryInterface favouriteRepositoryInterface =
-      FavouriteRepository(apiClient: Get.find());
+  FavouriteRepositoryInterface favouriteRepositoryInterface = FavouriteRepository(apiClient: Get.find());
   Get.lazyPut(() => favouriteRepositoryInterface);
 
-  FlashSaleRepositoryInterface flashSaleRepositoryInterface =
-      FlashSaleRepository(apiClient: Get.find());
+  BogoOfferRepositoryInterface bogoOfferRepositoryInterface = BogoOfferRepository(apiClient: Get.find());
+  Get.lazyPut(() => bogoOfferRepositoryInterface, fenix: true);
+  BundleRepositoryInterface bundleRepositoryInterface = BundleRepository(apiClient: Get.find());
+  Get.lazyPut(() => bundleRepositoryInterface, fenix: true);
+  HappyHourRepositoryInterface happyHourRepositoryInterface = HappyHourRepository(apiClient: Get.find());
+  Get.lazyPut(() => happyHourRepositoryInterface, fenix: true);
+  FlashSaleRepositoryInterface flashSaleRepositoryInterface = FlashSaleRepository(apiClient: Get.find());
   Get.lazyPut(() => flashSaleRepositoryInterface);
 
-  HomeRepositoryInterface homeRepositoryInterface = HomeRepository(
-    apiClient: Get.find(),
-    sharedPreferences: Get.find(),
-  );
+  HomeRepositoryInterface homeRepositoryInterface = HomeRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => homeRepositoryInterface);
 
-  ReelsRepositoryInterface reelsRepositoryInterface = ReelsRepository(
-    apiClient: Get.find(),
-  );
+  ReelsRepositoryInterface reelsRepositoryInterface = ReelsRepository(apiClient: Get.find());
   Get.lazyPut(() => reelsRepositoryInterface);
 
-  BannerRepositoryInterface bannerRepositoryInterface = BannerRepository(
-    apiClient: Get.find(),
-  );
+  BannerRepositoryInterface bannerRepositoryInterface = BannerRepository(apiClient: Get.find());
   Get.lazyPut(() => bannerRepositoryInterface);
 
-  SmartBannerRepositoryInterface smartBannerRepositoryInterface =
-      SmartBannerRepository(apiClient: Get.find());
+  SmartBannerRepositoryInterface smartBannerRepositoryInterface = SmartBannerRepository(apiClient: Get.find());
   Get.lazyPut(() => smartBannerRepositoryInterface);
 
-  HtmlRepositoryInterface htmlRepositoryInterface = HtmlRepository(
-    apiClient: Get.find(),
-  );
+  HtmlRepositoryInterface htmlRepositoryInterface = HtmlRepository(apiClient: Get.find());
   Get.lazyPut(() => htmlRepositoryInterface);
 
-  LanguageRepositoryInterface languageRepositoryInterface = LanguageRepository(
-    apiClient: Get.find(),
-    sharedPreferences: Get.find(),
-  );
+  LanguageRepositoryInterface languageRepositoryInterface = LanguageRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => languageRepositoryInterface);
 
-  NotificationRepositoryInterface notificationRepositoryInterface =
-      NotificationRepository(
-        sharedPreferences: Get.find(),
-        apiClient: Get.find(),
-      );
+  NotificationRepositoryInterface notificationRepositoryInterface = NotificationRepository(sharedPreferences: Get.find(), apiClient: Get.find());
   Get.lazyPut(() => notificationRepositoryInterface);
 
   OnboardRepositoryInterface onboardRepositoryInterface = OnboardRepository();
   Get.lazyPut(() => onboardRepositoryInterface);
 
-  ProfileRepositoryInterface profileRepositoryInterface = ProfileRepository(
-    apiClient: Get.find(),
-  );
+  ProfileRepositoryInterface profileRepositoryInterface = ProfileRepository(apiClient: Get.find());
   Get.lazyPut(() => profileRepositoryInterface);
 
-  SearchRepositoryInterface searchRepositoryInterface = SearchRepository(
-    apiClient: Get.find(),
-    sharedPreferences: Get.find(),
-  );
+  SearchRepositoryInterface searchRepositoryInterface = SearchRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => searchRepositoryInterface);
 
-  SplashRepositoryInterface splashRepositoryInterface = SplashRepository(
-    sharedPreferences: Get.find(),
-    apiClient: Get.find(),
-  );
+  SplashRepositoryInterface splashRepositoryInterface = SplashRepository(sharedPreferences: Get.find(), apiClient: Get.find());
   Get.lazyPut(() => splashRepositoryInterface);
 
-  ReviewRepositoryInterface reviewRepositoryInterface = ReviewRepository(
-    apiClient: Get.find(),
-  );
+  ReviewRepositoryInterface reviewRepositoryInterface = ReviewRepository(apiClient: Get.find());
   Get.lazyPut(() => reviewRepositoryInterface);
 
-  StoreRepositoryInterface storeRepositoryInterface = StoreRepository(
-    sharedPreferences: Get.find(),
-    apiClient: Get.find(),
-  );
+  StoreRepositoryInterface storeRepositoryInterface = StoreRepository(sharedPreferences: Get.find(), apiClient: Get.find());
   Get.lazyPut(() => storeRepositoryInterface);
 
-  WalletRepositoryInterface walletRepositoryInterface = WalletRepository(
-    sharedPreferences: Get.find(),
-    apiClient: Get.find(),
-  );
+  WalletRepositoryInterface walletRepositoryInterface = WalletRepository(sharedPreferences: Get.find(), apiClient: Get.find());
   Get.lazyPut(() => walletRepositoryInterface);
 
-  ItemRepositoryInterface itemRepositoryInterface = ItemRepository(
-    apiClient: Get.find(),
-  );
+  ItemRepositoryInterface itemRepositoryInterface = ItemRepository(apiClient: Get.find());
   Get.lazyPut(() => itemRepositoryInterface);
 
-  CategoryRepositoryInterface categoryRepositoryInterface = CategoryRepository(
-    apiClient: Get.find(),
-  );
+  CategoryRepositoryInterface categoryRepositoryInterface = CategoryRepository(apiClient: Get.find());
   Get.lazyPut(() => categoryRepositoryInterface);
 
-  LoyaltyRepositoryInterface loyaltyRepositoryInterface = LoyaltyRepository(
-    apiClient: Get.find(),
-  );
+  LoyaltyRepositoryInterface loyaltyRepositoryInterface = LoyaltyRepository(apiClient: Get.find());
   Get.lazyPut(() => loyaltyRepositoryInterface);
 
-  CartRepositoryInterface cartRepositoryInterface = CartRepository(
-    apiClient: Get.find(),
-    sharedPreferences: Get.find(),
-  );
+  CartRepositoryInterface cartRepositoryInterface = CartRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => cartRepositoryInterface);
 
-  VerificationRepositoryInterface verificationRepositoryInterface =
-      VerificationRepository(
-        apiClient: Get.find(),
-        sharedPreferences: Get.find(),
-      );
+  VerificationRepositoryInterface verificationRepositoryInterface = VerificationRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => verificationRepositoryInterface);
 
-  BrandsRepositoryInterface brandsRepositoryInterface = BrandsRepository(
-    apiClient: Get.find(),
-  );
+  BrandsRepositoryInterface brandsRepositoryInterface = BrandsRepository(apiClient: Get.find());
   Get.lazyPut(() => brandsRepositoryInterface);
 
-  BusinessRepoInterface businessRepoInterface = BusinessRepo(
-    apiClient: Get.find(),
-  );
+  BusinessRepoInterface businessRepoInterface = BusinessRepo(apiClient: Get.find());
   Get.lazyPut(() => businessRepoInterface);
 
-  ProRepositoryInterface proRepositoryInterface = ProRepository(
-    apiClient: Get.find(),
-    sharedPreferences: Get.find(),
-  );
+  ProRepositoryInterface proRepositoryInterface = ProRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => proRepositoryInterface);
 
-  AdvertisementRepositoryInterface advertisementRepositoryInterface =
-      AdvertisementRepository(apiClient: Get.find());
+  AdvertisementRepositoryInterface advertisementRepositoryInterface = AdvertisementRepository(apiClient: Get.find());
   Get.lazyPut(() => advertisementRepositoryInterface);
 
-  TaxiRepositoryInterface taxiRepositoryInterface = TaxiRepository(
-    apiClient: Get.find(),
-    sharedPreferences: Get.find(),
-  );
+  TaxiRepositoryInterface taxiRepositoryInterface = TaxiRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => taxiRepositoryInterface);
-
-  TaxiHomeRepositoryInterface taxiHomeRepositoryInterface = TaxiHomeRepository(
-    apiClient: Get.find(),
-    sharedPreferences: Get.find(),
-  );
+  
+  TaxiHomeRepositoryInterface taxiHomeRepositoryInterface = TaxiHomeRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => taxiHomeRepositoryInterface);
 
-  TaxiCartRepositoryInterface taxiCartRepositoryInterface = TaxiCartRepository(
-    apiClient: Get.find(),
-  );
+  TaxiCartRepositoryInterface taxiCartRepositoryInterface = TaxiCartRepository(apiClient: Get.find());
   Get.lazyPut(() => taxiCartRepositoryInterface);
 
-  TaxiVendorRepositoryInterface taxiVendorRepositoryInterface =
-      TaxiVendorRepository(apiClient: Get.find());
+  TaxiVendorRepositoryInterface taxiVendorRepositoryInterface = TaxiVendorRepository(apiClient: Get.find());
   Get.lazyPut(() => taxiVendorRepositoryInterface);
 
-  VerifiedProviderRepositoryInterface verifiedProviderRepositoryInterface =
-      VerifiedProviderRepository(apiClient: Get.find());
+  VerifiedProviderRepositoryInterface verifiedProviderRepositoryInterface = VerifiedProviderRepository(apiClient: Get.find());
   Get.lazyPut(() => verifiedProviderRepositoryInterface);
 
-  TaxiOrderRepositoryInterface taxiOrderRepositoryInterface =
-      TaxiOrderRepository(apiClient: Get.find());
+  TaxiOrderRepositoryInterface taxiOrderRepositoryInterface = TaxiOrderRepository(apiClient: Get.find());
   Get.lazyPut(() => taxiOrderRepositoryInterface);
 
-  TaxiFavouriteRepositoryInterface taxiFavouriteRepositoryInterface =
-      TaxiFavouriteRepository(
-        apiClient: Get.find(),
-        sharedPreferences: Get.find(),
-      );
+  TaxiFavouriteRepositoryInterface taxiFavouriteRepositoryInterface = TaxiFavouriteRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => taxiFavouriteRepositoryInterface);
 
-  SearchLocationRepositoryInterface searchLocationRepositoryInterface =
-      SearchLocationRepository(
-        apiClient: Get.find(),
-        sharedPreferences: Get.find(),
-      );
+  SearchLocationRepositoryInterface searchLocationRepositoryInterface = SearchLocationRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => searchLocationRepositoryInterface);
 
-  RideHomeRepositoryInterface rideHomeRepositoryInterface = RideHomeRepository(
-    apiClient: Get.find(),
-  );
+  RideHomeRepositoryInterface rideHomeRepositoryInterface = RideHomeRepository(apiClient: Get.find());
   Get.lazyPut(() => rideHomeRepositoryInterface);
 
-  RideOrderRepositoryInterface rideOrderRepositoryInterface =
-      RideOrderRepository(apiClient: Get.find(), sharedPreferences: Get.find());
+  RideOrderRepositoryInterface rideOrderRepositoryInterface = RideOrderRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => rideOrderRepositoryInterface);
 
-  TripRepositoryInterface tripRepositoryInterface = TripRepository(
-    apiClient: Get.find(),
-  );
+
+
+  TripRepositoryInterface tripRepositoryInterface = TripRepository(apiClient: Get.find());
   Get.lazyPut(() => tripRepositoryInterface);
 
-  SafetyAlertRepositoryInterface safetyAlertRepositoryInterface =
-      SafetyAlertRepository(apiClient: Get.find());
+  SafetyAlertRepositoryInterface safetyAlertRepositoryInterface = SafetyAlertRepository(apiClient: Get.find());
   Get.lazyPut(() => safetyAlertRepositoryInterface);
 
-  RidePaymentRepositoryInterface ridePaymentRepositoryInterface =
-      RidePaymentRepository(
-        apiClient: Get.find(),
-        sharedPreferences: Get.find(),
-      );
+  RidePaymentRepositoryInterface ridePaymentRepositoryInterface = RidePaymentRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => ridePaymentRepositoryInterface);
 
-  AiChatBotRepositoryInterface aiChatBotRepositoryInterface =
-      AiChatBotRepository(apiClient: Get.find());
+  AiChatBotRepositoryInterface aiChatBotRepositoryInterface = AiChatBotRepository(apiClient: Get.find());
   Get.lazyPut(() => aiChatBotRepositoryInterface);
 
+
   /// Service Interface
-  CheckoutServiceInterface checkoutServiceInterface = CheckoutService(
-    checkoutRepositoryInterface: Get.find(),
-  );
+  CheckoutServiceInterface checkoutServiceInterface = CheckoutService(checkoutRepositoryInterface: Get.find());
   Get.lazyPut(() => checkoutServiceInterface);
 
-  AuthServiceInterface authServiceInterface = AuthService(
-    authRepositoryInterface: Get.find(),
-  );
+  AuthServiceInterface authServiceInterface = AuthService(authRepositoryInterface: Get.find());
   Get.lazyPut(() => authServiceInterface);
 
-  LocationServiceInterface locationServiceInterface = LocationService(
-    locationRepoInterface: Get.find(),
-  );
+  LocationServiceInterface locationServiceInterface = LocationService(locationRepoInterface: Get.find());
   Get.lazyPut(() => locationServiceInterface);
 
-  DeliverymanRegistrationServiceInterface
-  deliverymanRegistrationServiceInterface = DeliverymanRegistrationService(
-    deliverymanRegistrationRepoInterface: Get.find(),
-    authRepositoryInterface: Get.find(),
-  );
+  DeliverymanRegistrationServiceInterface deliverymanRegistrationServiceInterface = DeliverymanRegistrationService(deliverymanRegistrationRepoInterface: Get.find(), authRepositoryInterface: Get.find());
   Get.lazyPut(() => deliverymanRegistrationServiceInterface);
 
-  StoreRegistrationServiceInterface storeRegistrationServiceInterface =
-      StoreRegistrationService(
-        deliverymanRegistrationRepositoryInterface: Get.find(),
-        storeRegistrationRepoInterface: Get.find(),
-      );
+  StoreRegistrationServiceInterface storeRegistrationServiceInterface = StoreRegistrationService(deliverymanRegistrationRepositoryInterface: Get.find(), storeRegistrationRepoInterface: Get.find());
   Get.lazyPut(() => storeRegistrationServiceInterface);
 
-  ReelsServiceInterface reelsServiceInterface = ReelsService(
-    reelsRepositoryInterface: Get.find(),
-  );
+  ReelsServiceInterface reelsServiceInterface = ReelsService(reelsRepositoryInterface: Get.find());
   Get.lazyPut(() => reelsServiceInterface, fenix: true);
 
-  ParcelServiceInterface parcelServiceInterface = ParcelService(
-    parcelRepositoryInterface: Get.find(),
-    checkoutRepositoryInterface: Get.find(),
-  );
+  ParcelServiceInterface parcelServiceInterface = ParcelService(parcelRepositoryInterface: Get.find(), checkoutRepositoryInterface: Get.find());
   Get.lazyPut(() => parcelServiceInterface);
 
-  AddressServiceInterface addressServiceInterface = AddressService(
-    addressRepoInterface: Get.find(),
-  );
+  AddressServiceInterface addressServiceInterface = AddressService(addressRepoInterface: Get.find());
   Get.lazyPut(() => addressServiceInterface);
 
-  OrderServiceInterface orderServiceInterface = OrderService(
-    orderRepositoryInterface: Get.find(),
-  );
+  OrderServiceInterface orderServiceInterface = OrderService(orderRepositoryInterface: Get.find());
   Get.lazyPut(() => orderServiceInterface);
 
-  OfferServiceInterface offerServiceInterface = OfferService(
-    offerRepositoryInterface: Get.find(),
-  );
+  OfferServiceInterface offerServiceInterface = OfferService(offerRepositoryInterface: Get.find());
   Get.lazyPut(() => offerServiceInterface);
 
-  PaymentServiceInterface paymentServiceInterface = PaymentService(
-    paymentRepositoryInterface: Get.find(),
-  );
+  PaymentServiceInterface paymentServiceInterface = PaymentService(paymentRepositoryInterface: Get.find());
   Get.lazyPut(() => paymentServiceInterface);
 
-  CampaignServiceInterface campaignServiceInterface = CampaignService(
-    campaignRepositoryInterface: Get.find(),
-  );
+  CampaignServiceInterface campaignServiceInterface = CampaignService(campaignRepositoryInterface: Get.find());
   Get.lazyPut(() => campaignServiceInterface);
 
-  ChatServiceInterface chatServiceInterface = ChatService(
-    chatRepositoryInterface: Get.find(),
-  );
+  ChatServiceInterface chatServiceInterface = ChatService(chatRepositoryInterface: Get.find());
   Get.lazyPut(() => chatServiceInterface);
 
-  CouponServiceInterface couponServiceInterface = CouponService(
-    couponRepositoryInterface: Get.find(),
-  );
+  CouponServiceInterface couponServiceInterface = CouponService(couponRepositoryInterface: Get.find());
   Get.lazyPut(() => couponServiceInterface);
 
-  FavouriteServiceInterface favouriteServiceInterface = FavouriteService(
-    favouriteRepositoryInterface: Get.find(),
-  );
+  FavouriteServiceInterface favouriteServiceInterface = FavouriteService(favouriteRepositoryInterface: Get.find());
   Get.lazyPut(() => favouriteServiceInterface);
 
-  HomeServiceInterface homeServiceInterface = HomeService(
-    homeRepositoryInterface: Get.find(),
-  );
+  HomeServiceInterface homeServiceInterface = HomeService(homeRepositoryInterface: Get.find());
   Get.lazyPut(() => homeServiceInterface);
 
-  FlashSaleServiceInterface flashSaleServiceInterface = FlashSaleService(
-    flashSaleRepositoryInterface: Get.find(),
-  );
+
+  BogoOfferServiceInterface bogoOfferServiceInterface = BogoOfferService(bogoOfferRepositoryInterface: Get.find());
+  Get.lazyPut(() => bogoOfferServiceInterface, fenix: true);
+  BundleServiceInterface bundleServiceInterface = BundleService(bundleRepositoryInterface: Get.find());
+  Get.lazyPut(() => bundleServiceInterface, fenix: true);
+  HappyHourServiceInterface happyHourServiceInterface = HappyHourService(happyHourRepositoryInterface: Get.find());
+  Get.lazyPut(() => happyHourServiceInterface, fenix: true);
+  FlashSaleServiceInterface flashSaleServiceInterface = FlashSaleService(flashSaleRepositoryInterface: Get.find());
   Get.lazyPut(() => flashSaleServiceInterface);
 
-  BannerServiceInterface bannerServiceInterface = BannerService(
-    bannerRepositoryInterface: Get.find(),
-  );
+  BannerServiceInterface bannerServiceInterface = BannerService(bannerRepositoryInterface: Get.find());
   Get.lazyPut(() => bannerServiceInterface);
 
-  SmartBannerServiceInterface smartBannerServiceInterface = SmartBannerService(
-    smartBannerRepositoryInterface: Get.find(),
-  );
+  SmartBannerServiceInterface smartBannerServiceInterface = SmartBannerService(smartBannerRepositoryInterface: Get.find());
   Get.lazyPut(() => smartBannerServiceInterface);
 
-  HtmlServiceInterface htmlServiceInterface = HtmlService(
-    htmlRepositoryInterface: Get.find(),
-  );
+  HtmlServiceInterface htmlServiceInterface = HtmlService(htmlRepositoryInterface: Get.find());
   Get.lazyPut(() => htmlServiceInterface);
 
-  LanguageServiceInterface languageServiceInterface = LanguageService(
-    languageRepositoryInterface: Get.find(),
-  );
+  LanguageServiceInterface languageServiceInterface = LanguageService(languageRepositoryInterface: Get.find());
   Get.lazyPut(() => languageServiceInterface);
 
-  NotificationServiceInterface notificationServiceInterface =
-      NotificationService(notificationRepositoryInterface: Get.find());
+  NotificationServiceInterface notificationServiceInterface = NotificationService(notificationRepositoryInterface: Get.find());
   Get.lazyPut(() => notificationServiceInterface);
 
-  OnboardServiceInterface onboardServiceInterface = OnboardService(
-    onboardRepositoryInterface: Get.find(),
-  );
+  OnboardServiceInterface onboardServiceInterface = OnboardService(onboardRepositoryInterface: Get.find());
   Get.lazyPut(() => onboardServiceInterface);
 
-  ProfileServiceInterface profileServiceInterface = ProfileService(
-    profileRepositoryInterface: Get.find(),
-  );
+  ProfileServiceInterface profileServiceInterface = ProfileService(profileRepositoryInterface: Get.find());
   Get.lazyPut(() => profileServiceInterface);
 
-  SearchServiceInterface searchServiceInterface = SearchService(
-    searchRepositoryInterface: Get.find(),
-  );
+  SearchServiceInterface searchServiceInterface = SearchService(searchRepositoryInterface: Get.find());
   Get.lazyPut(() => searchServiceInterface);
 
-  SplashServiceInterface splashServiceInterface = SplashService(
-    splashRepositoryInterface: Get.find(),
-  );
+  SplashServiceInterface splashServiceInterface = SplashService(splashRepositoryInterface: Get.find());
   Get.lazyPut(() => splashServiceInterface);
 
-  ReviewServiceInterface reviewServiceInterface = ReviewService(
-    reviewRepositoryInterface: Get.find(),
-  );
+  ReviewServiceInterface reviewServiceInterface = ReviewService(reviewRepositoryInterface: Get.find());
   Get.lazyPut(() => reviewServiceInterface);
 
-  StoreServiceInterface storeServiceInterface = StoreService(
-    storeRepositoryInterface: Get.find(),
-  );
+  StoreServiceInterface storeServiceInterface = StoreService(storeRepositoryInterface: Get.find());
   Get.lazyPut(() => storeServiceInterface);
 
-  WalletServiceInterface walletServiceInterface = WalletService(
-    walletRepositoryInterface: Get.find(),
-  );
+  WalletServiceInterface walletServiceInterface = WalletService(walletRepositoryInterface: Get.find());
   Get.lazyPut(() => walletServiceInterface);
 
-  ItemServiceInterface itemServiceInterface = ItemService(
-    itemRepositoryInterface: Get.find(),
-  );
+  ItemServiceInterface itemServiceInterface = ItemService(itemRepositoryInterface: Get.find());
   Get.lazyPut(() => itemServiceInterface);
 
-  CategoryServiceInterface categoryServiceInterface = CategoryService(
-    categoryRepositoryInterface: Get.find(),
-  );
-  Get.lazyPut(() => categoryServiceInterface);
+  CategoryServiceInterface categoryServiceInterface = CategoryService(categoryRepositoryInterface: Get.find());
+  Get.lazyPut(() => categoryServiceInterface, fenix: true);
 
-  LoyaltyServiceInterface loyaltyServiceInterface = LoyaltyService(
-    loyaltyRepositoryInterface: Get.find(),
-  );
+  LoyaltyServiceInterface loyaltyServiceInterface = LoyaltyService(loyaltyRepositoryInterface: Get.find());
   Get.lazyPut(() => loyaltyServiceInterface);
 
-  CartServiceInterface cartServiceInterface = CartService(
-    cartRepositoryInterface: Get.find(),
-  );
+  CartServiceInterface cartServiceInterface = CartService(cartRepositoryInterface: Get.find());
   Get.lazyPut(() => cartServiceInterface);
 
-  VerificationServiceInterface verificationServiceInterface =
-      VerificationService(
-        verificationRepoInterface: Get.find(),
-        authRepoInterface: Get.find(),
-      );
+  VerificationServiceInterface verificationServiceInterface = VerificationService(verificationRepoInterface: Get.find(), authRepoInterface: Get.find());
   Get.lazyPut(() => verificationServiceInterface);
 
-  BrandsServiceInterface brandsServiceInterface = BrandsService(
-    brandsRepositoryInterface: Get.find(),
-  );
+  BrandsServiceInterface brandsServiceInterface = BrandsService(brandsRepositoryInterface: Get.find());
   Get.lazyPut(() => brandsServiceInterface);
 
-  BusinessServiceInterface businessServiceInterface = BusinessService(
-    businessRepoInterface: Get.find(),
-  );
+  BusinessServiceInterface businessServiceInterface = BusinessService(businessRepoInterface: Get.find());
   Get.lazyPut(() => businessServiceInterface);
 
-  ProServiceInterface proServiceInterface = ProService(
-    proRepositoryInterface: Get.find(),
-  );
+  ProServiceInterface proServiceInterface = ProService(proRepositoryInterface: Get.find());
   Get.lazyPut(() => proServiceInterface);
 
-  AdvertisementServiceInterface advertisementServiceInterface =
-      AdvertisementService(advertisementRepositoryInterface: Get.find());
+  AdvertisementServiceInterface advertisementServiceInterface = AdvertisementService(advertisementRepositoryInterface: Get.find());
   Get.lazyPut(() => advertisementServiceInterface);
 
-  TaxiLocationServiceInterface taxiLocationServiceInterface =
-      TaxiLocationService(taxiRepositoryInterface: Get.find());
+  TaxiLocationServiceInterface taxiLocationServiceInterface = TaxiLocationService(taxiRepositoryInterface: Get.find());
   Get.lazyPut(() => taxiLocationServiceInterface);
 
-  TaxiHomeServiceInterface taxiHomeServiceInterface = TaxiHomeService(
-    taxiHomeRepositoryInterface: Get.find(),
-  );
+  TaxiHomeServiceInterface taxiHomeServiceInterface = TaxiHomeService(taxiHomeRepositoryInterface: Get.find());
   Get.lazyPut(() => taxiHomeServiceInterface);
 
-  TaxiCartServiceInterface taxiCartServiceInterface = TaxiCartService(
-    taxiCartRepositoryInterface: Get.find(),
-  );
+  TaxiCartServiceInterface taxiCartServiceInterface = TaxiCartService(taxiCartRepositoryInterface: Get.find());
   Get.lazyPut(() => taxiCartServiceInterface);
 
-  TaxiVendorServiceInterface taxiVendorServiceInterface = TaxiVendorService(
-    taxiVendorRepositoryInterface: Get.find(),
-  );
+  TaxiVendorServiceInterface taxiVendorServiceInterface = TaxiVendorService(taxiVendorRepositoryInterface: Get.find());
   Get.lazyPut(() => taxiVendorServiceInterface);
 
-  VerifiedProviderServiceInterface verifiedProviderServiceInterface =
-      VerifiedProviderService(verifiedProviderRepositoryInterface: Get.find());
+  VerifiedProviderServiceInterface verifiedProviderServiceInterface = VerifiedProviderService(verifiedProviderRepositoryInterface: Get.find());
   Get.lazyPut(() => verifiedProviderServiceInterface);
 
-  TaxiOrderServiceInterface taxiOrderServiceInterface = TaxiOrderService(
-    taxiOrderRepositoryInterface: Get.find(),
-  );
+  TaxiOrderServiceInterface taxiOrderServiceInterface = TaxiOrderService(taxiOrderRepositoryInterface: Get.find());
   Get.lazyPut(() => taxiOrderServiceInterface);
 
-  TaxiFavouriteServiceInterface taxiFavouriteServiceInterface =
-      TaxiFavouriteService(taxiFavouriteRepositoryInterface: Get.find());
+  TaxiFavouriteServiceInterface taxiFavouriteServiceInterface = TaxiFavouriteService(taxiFavouriteRepositoryInterface: Get.find());
   Get.lazyPut(() => taxiFavouriteServiceInterface);
 
-  SearchLocationServiceInterface searchLocationServiceInterface =
-      SearchLocationService(searchLocationRepositoryInterface: Get.find());
+  SearchLocationServiceInterface searchLocationServiceInterface = SearchLocationService(searchLocationRepositoryInterface: Get.find());
   Get.lazyPut(() => searchLocationServiceInterface);
 
-  RideHomeServiceInterface rideHomeServiceInterface = RideHomeService(
-    rideHomeRepositoryInterface: Get.find(),
-  );
+  RideHomeServiceInterface rideHomeServiceInterface = RideHomeService(rideHomeRepositoryInterface: Get.find());
   Get.lazyPut(() => rideHomeServiceInterface);
 
-  RideOrderServiceInterface rideOrderServiceInterface = RideOrderService(
-    rideOrderRepositoryInterface: Get.find(),
-  );
+  RideOrderServiceInterface rideOrderServiceInterface = RideOrderService(rideOrderRepositoryInterface: Get.find());
   Get.lazyPut(() => rideOrderServiceInterface);
 
-  TripServiceInterface tripServiceInterface = TripService(
-    tripRepositoryInterface: Get.find(),
-  );
+
+
+  TripServiceInterface tripServiceInterface = TripService(tripRepositoryInterface: Get.find());
   Get.lazyPut(() => tripServiceInterface);
 
-  SafetyAlertServiceInterface safetyAlertServiceInterface = SafetyAlertService(
-    safetyAlertRepositoryInterface: Get.find(),
-  );
+  SafetyAlertServiceInterface safetyAlertServiceInterface = SafetyAlertService(safetyAlertRepositoryInterface: Get.find());
   Get.lazyPut(() => safetyAlertServiceInterface);
 
-  RidePaymentServiceInterface ridePaymentServiceInterface = RidePaymentService(
-    ridePaymentRepositoryInterface: Get.find(),
-  );
+  RidePaymentServiceInterface ridePaymentServiceInterface = RidePaymentService(ridePaymentRepositoryInterface: Get.find());
   Get.lazyPut(() => ridePaymentServiceInterface);
 
-  AiChatBotServiceInterface aiChatBotServiceInterface = AiChatBotService(
-    aiChatBotRepositoryInterface: Get.find(),
-  );
+  AiChatBotServiceInterface aiChatBotServiceInterface = AiChatBotService(aiChatBotRepositoryInterface: Get.find());
   Get.lazyPut(() => aiChatBotServiceInterface);
+
 
   /// Controller
   Get.lazyPut(() => ThemeController(sharedPreferences: Get.find()));
   Get.lazyPut(() => SplashController(splashServiceInterface: Get.find()));
   Get.lazyPut(() => AddressController(addressServiceInterface: Get.find()));
-  Get.lazyPut(
-    () =>
-        LocationController(locationServiceInterface: locationServiceInterface),
-  );
-  Get.lazyPut(
-    () => LocalizationController(languageServiceInterface: Get.find()),
-  );
+  Get.lazyPut(() => LocationController(locationServiceInterface: locationServiceInterface));
+  Get.lazyPut(() => LocalizationController(languageServiceInterface: Get.find()));
   Get.lazyPut(() => OnBoardingController(onboardServiceInterface: Get.find()));
   Get.lazyPut(() => AuthController(authServiceInterface: Get.find()));
-  Get.lazyPut(
-    () => DeliverymanRegistrationController(
-      deliverymanRegistrationServiceInterface: Get.find(),
-    ),
-  );
-  Get.lazyPut(
-    () => StoreRegistrationController(
-      storeRegistrationServiceInterface: Get.find(),
-      locationServiceInterface: locationServiceInterface,
-    ),
-  );
+  Get.lazyPut(() => DeliverymanRegistrationController(deliverymanRegistrationServiceInterface: Get.find()));
+  Get.lazyPut(() => StoreRegistrationController(storeRegistrationServiceInterface: Get.find(), locationServiceInterface: locationServiceInterface));
   Get.lazyPut(() => ProfileController(profileServiceInterface: Get.find()));
   Get.lazyPut(() => BannerController(bannerServiceInterface: Get.find()));
-  Get.lazyPut(
-    () => SmartBannerController(smartBannerServiceInterface: Get.find()),
-  );
-  Get.lazyPut(() => CategoryController(categoryServiceInterface: Get.find()));
+  Get.lazyPut(() => SmartBannerController(smartBannerServiceInterface: Get.find()));
+  Get.lazyPut(() => CategoryController(categoryServiceInterface: Get.find()), fenix: true);
   Get.lazyPut(() => ItemController(itemServiceInterface: Get.find()));
   Get.lazyPut(() => CartController(cartServiceInterface: Get.find()));
-  Get.lazyPut(
-    () => StoreController(storeServiceInterface: storeServiceInterface),
-  );
+  Get.lazyPut(() => StoreController(storeServiceInterface: storeServiceInterface));
   Get.lazyPut(() => FavouriteController(favouriteServiceInterface: Get.find()));
   Get.lazyPut(() => HomeController(homeServiceInterface: Get.find()));
-  Get.lazyPut(
-    () => ReelsController(reelsServiceInterface: Get.find()),
-    fenix: true,
-  );
+  Get.lazyPut(() => ReelsController(reelsServiceInterface: Get.find()), fenix: true);
   Get.lazyPut(() => SearchController(searchServiceInterface: Get.find()));
   Get.lazyPut(() => CouponController(couponServiceInterface: Get.find()));
   Get.lazyPut(() => OrderController(orderServiceInterface: Get.find()));
   Get.lazyPut(() => OfferController(offerServiceInterface: Get.find()));
-  Get.lazyPut(
-    () => NotificationController(notificationServiceInterface: Get.find()),
-  );
+  Get.lazyPut(() => NotificationController(notificationServiceInterface: Get.find()));
   Get.lazyPut(() => CampaignController(campaignServiceInterface: Get.find()));
   Get.lazyPut(() => ParcelController(parcelServiceInterface: Get.find()));
   Get.lazyPut(() => WalletController(walletServiceInterface: Get.find()));
   Get.lazyPut(() => ChatController(chatServiceInterface: Get.find()));
+  Get.lazyPut(() => BogoOfferController(bogoOfferServiceInterface: Get.find()));
+  Get.lazyPut(() => BundleController(bundleServiceInterface: Get.find()));
+  Get.lazyPut(() => BogoOfferDetailsController(bogoOfferServiceInterface: Get.find()));
+  Get.lazyPut(() => HappyHourController(happyHourServiceInterface: Get.find()), fenix: true);
   Get.lazyPut(() => FlashSaleController(flashSaleServiceInterface: Get.find()));
   Get.lazyPut(() => CheckoutController(checkoutServiceInterface: Get.find()));
   Get.lazyPut(() => PaymentController(paymentServiceInterface: Get.find()));
   Get.lazyPut(() => HtmlController(htmlServiceInterface: Get.find()));
   Get.lazyPut(() => ReviewController(reviewServiceInterface: Get.find()));
+  Get.lazyPut(() => CategoryController(categoryServiceInterface: Get.find()));
   Get.lazyPut(() => LoyaltyController(loyaltyServiceInterface: Get.find()));
-  Get.lazyPut(
-    () => VerificationController(verificationServiceInterface: Get.find()),
-  );
+  Get.lazyPut(() => VerificationController(verificationServiceInterface: Get.find()));
   Get.lazyPut(() => BrandsController(brandsServiceInterface: Get.find()));
   Get.lazyPut(() => BusinessController(businessServiceInterface: Get.find()));
   Get.lazyPut(() => ProController(proServiceInterface: Get.find()));
-  Get.lazyPut(
-    () => AdvertisementController(advertisementServiceInterface: Get.find()),
-  );
-  Get.lazyPut(
-    () => TaxiLocationController(taxiLocationServiceInterface: Get.find()),
-  );
+  Get.lazyPut(() => AdvertisementController(advertisementServiceInterface: Get.find()));
+  Get.lazyPut(() => TaxiLocationController(taxiLocationServiceInterface: Get.find()));
   Get.lazyPut(() => TaxiHomeController(taxiHomeServiceInterface: Get.find()));
   Get.lazyPut(() => TaxiCartController(taxiCartServiceInterface: Get.find()));
-  Get.lazyPut(
-    () => TaxiVendorController(taxiVendorServiceInterface: Get.find()),
-  );
-  Get.lazyPut(
-    () => VerifiedProviderController(
-      verifiedProviderServiceInterface: Get.find(),
-    ),
-  );
+  Get.lazyPut(() => TaxiVendorController(taxiVendorServiceInterface: Get.find()));
+  Get.lazyPut(() => VerifiedProviderController(verifiedProviderServiceInterface: Get.find()));
   Get.lazyPut(() => TaxiOrderController(taxiOrderServiceInterface: Get.find()));
-  Get.lazyPut(
-    () => TaxiFavouriteController(taxiFavouriteServiceInterface: Get.find()),
-  );
+  Get.lazyPut(() => TaxiFavouriteController(taxiFavouriteServiceInterface: Get.find()));
 
   /// Ride Module
-  Get.lazyPut(
-    () => SearchLocationController(
-      searchLocationServiceInterface: Get.find(),
-      locationServiceInterface: Get.find(),
-    ),
-  );
+  Get.lazyPut(() => SearchLocationController(searchLocationServiceInterface: Get.find(), locationServiceInterface: Get.find()));
   Get.lazyPut(() => RideHomeController(rideHomeServiceInterface: Get.find()));
   Get.lazyPut(() => MapController());
   Get.lazyPut(() => RideController(rideOrderServiceInterface: Get.find()));
   Get.lazyPut(() => TripController(tripServiceInterface: Get.find()));
-  Get.lazyPut(
-    () => SafetyAlertController(safetyAlertServiceInterface: Get.find()),
-  );
-  Get.lazyPut(
-    () => RidePaymentController(ridePaymentServiceInterface: Get.find()),
-  );
+  Get.lazyPut(() => SafetyAlertController(safetyAlertServiceInterface: Get.find()));
+  Get.lazyPut(() => RidePaymentController(ridePaymentServiceInterface: Get.find()));
 
   /// AI Chat Bot
   Get.lazyPut(() => AiChatBotController(aiChatBotServiceInterface: Get.find()));
 
+
   /// Service Module (addon — removable; delete this block with the folder)
-  // fenix: true keeps these registrations alive under SmartManagement.full —
-  // ServiceController and ServiceExploreController share serviceServiceInterface,
-  // so disposing one must not cascade-delete the interface the other needs.
-  ServiceRepositoryInterface serviceRepositoryInterface = ServiceRepository(
-    apiClient: Get.find(),
-  );
-  Get.lazyPut(() => serviceRepositoryInterface, fenix: true);
-  ServiceServiceInterface serviceServiceInterface = ServiceService(
-    serviceRepositoryInterface: Get.find(),
-  );
+  ServiceRepositoryInterface serviceRepositoryInterface = ServiceRepository(apiClient: Get.find());
+  Get.lazyPut(() => serviceRepositoryInterface);
+  ServiceServiceInterface serviceServiceInterface = ServiceService(serviceRepositoryInterface: Get.find());
   Get.lazyPut(() => serviceServiceInterface, fenix: true);
-  Get.lazyPut(
-    () => ServiceController(serviceServiceInterface: Get.find()),
-    fenix: true,
-  );
-  Get.lazyPut(
-    () => ServiceExploreController(serviceServiceInterface: Get.find()),
-    fenix: true,
-  );
-  Get.lazyPut(
-    () =>
-        ServiceVerifiedProviderController(serviceServiceInterface: Get.find()),
-    fenix: true,
-  );
+  Get.lazyPut(() => ServiceController(serviceServiceInterface: Get.find(), bookingServiceInterface: Get.find()), fenix: true);
+  Get.lazyPut(() => ServiceExploreController(serviceServiceInterface: Get.find()), fenix: true);
+  Get.lazyPut(() => ServiceVerifiedProviderController(serviceServiceInterface: Get.find()), fenix: true);
+  Get.lazyPut(() => ServiceCampaignController(serviceServiceInterface: Get.find()), fenix: true);
 
-  ServiceDetailsRepositoryInterface serviceDetailsRepositoryInterface =
-      ServiceDetailsRepository(apiClient: Get.find());
-  Get.lazyPut(() => serviceDetailsRepositoryInterface, fenix: true);
-  ServiceDetailsServiceInterface serviceDetailsServiceInterface =
-      ServiceDetailsService(serviceDetailsRepositoryInterface: Get.find());
-  Get.lazyPut(() => serviceDetailsServiceInterface, fenix: true);
-  Get.lazyPut(
-    () => ServiceDetailsController(serviceDetailsServiceInterface: Get.find()),
-    fenix: true,
-  );
-  ProviderDetailsRepositoryInterface providerDetailsRepositoryInterface =
-      ProviderDetailsRepository(apiClient: Get.find());
+  ServiceDetailsRepositoryInterface serviceDetailsRepositoryInterface = ServiceDetailsRepository(apiClient: Get.find());
+  Get.lazyPut(() => serviceDetailsRepositoryInterface);
+  ServiceDetailsServiceInterface serviceDetailsServiceInterface = ServiceDetailsService(serviceDetailsRepositoryInterface: Get.find());
+  Get.lazyPut(() => serviceDetailsServiceInterface);
+  Get.lazyPut(() => ServiceDetailsController(serviceDetailsServiceInterface: Get.find()));
+  ProviderDetailsRepositoryInterface providerDetailsRepositoryInterface = ProviderDetailsRepository(apiClient: Get.find());
   Get.lazyPut(() => providerDetailsRepositoryInterface, fenix: true);
-  ProviderDetailsServiceInterface providerDetailsServiceInterface =
-      ProviderDetailsService(providerDetailsRepositoryInterface: Get.find());
+  ProviderDetailsServiceInterface providerDetailsServiceInterface = ProviderDetailsService(providerDetailsRepositoryInterface: Get.find());
   Get.lazyPut(() => providerDetailsServiceInterface, fenix: true);
-  Get.lazyPut(
-    () => ProviderDataController(providerDetailsServiceInterface: Get.find()),
-    fenix: true,
-  );
-  Get.lazyPut(() => ServiceCategoryController());
+  Get.lazyPut(() => ProviderDataController(providerDetailsServiceInterface: Get.find(), bookingServiceInterface: Get.find()), fenix: true);
+  ServiceCategoryRepositoryInterface serviceCategoryRepositoryInterface = ServiceCategoryRepository(apiClient: Get.find());
+  Get.lazyPut(() => serviceCategoryRepositoryInterface, fenix: true);
+  ServiceCategoryServiceInterface serviceCategoryServiceInterface = ServiceCategoryService(serviceCategoryRepositoryInterface: Get.find());
+  Get.lazyPut(() => serviceCategoryServiceInterface, fenix: true);
+  Get.lazyPut(() => ServiceCategoryController(serviceCategoryServiceInterface: Get.find()), fenix: true);
 
-  /// Retrieving localized data
-  ///
-  /// English is always loaded as the base fallback.
-  /// The selected language is overlaid on top of it.
-  /// Missing translation keys therefore show readable English
-  /// instead of RAW_TRANSLATION_KEYS.
-  Map<String, Map<String, String>> languages = {};
+  ServiceCartRepositoryInterface serviceCartRepositoryInterface = ServiceCartRepository(apiClient: Get.find());
+  Get.lazyPut(() => serviceCartRepositoryInterface, fenix: true);
+  ServiceCartServiceInterface serviceCartServiceInterface = ServiceCartService(serviceCartRepositoryInterface: Get.find());
+  Get.lazyPut(() => serviceCartServiceInterface, fenix: true);
+  Get.lazyPut(() => ServiceCartController(serviceCartServiceInterface: Get.find()), fenix: true);
 
-  final String fallbackJsonString = await rootBundle.loadString(
-    'assets/language/en.json',
-  );
+  ServiceCheckoutRepositoryInterface serviceCheckoutRepositoryInterface = ServiceCheckoutRepository(apiClient: Get.find());
+  Get.lazyPut(() => serviceCheckoutRepositoryInterface, fenix: true);
+  ServiceCheckoutServiceInterface serviceCheckoutServiceInterface = ServiceCheckoutService(serviceCheckoutRepositoryInterface: Get.find());
+  Get.lazyPut(() => serviceCheckoutServiceInterface, fenix: true);
+  Get.lazyPut(() => ServiceCheckoutController(serviceCheckoutServiceInterface: Get.find()), fenix: true);
 
-  final Map<String, dynamic> fallbackMappedJson = jsonDecode(
-    fallbackJsonString,
-  );
+  CustomServiceRequestRepositoryInterface customServiceRequestRepositoryInterface =
+      CustomServiceRequestRepository(apiClient: Get.find());
+  Get.lazyPut(() => customServiceRequestRepositoryInterface, fenix: true);
+  CustomServiceRequestServiceInterface customServiceRequestServiceInterface =
+      CustomServiceRequestService(customServiceRequestRepositoryInterface: Get.find());
+  Get.lazyPut(() => customServiceRequestServiceInterface, fenix: true);
+  Get.lazyPut(() => CustomServiceRequestController(
+    categoryServiceInterface: Get.find(),
+    customServiceRequestServiceInterface: Get.find(),
+  ), fenix: true);
 
-  final Map<String, String> fallbackJson = {};
+  RequestedServiceRepositoryInterface requestedServiceRepositoryInterface = RequestedServiceRepository(apiClient: Get.find());
+  Get.lazyPut(() => requestedServiceRepositoryInterface, fenix: true);
+  RequestedServiceServiceInterface requestedServiceServiceInterface = RequestedServiceService(requestedServiceRepositoryInterface: Get.find());
+  Get.lazyPut(() => requestedServiceServiceInterface, fenix: true);
+  Get.lazyPut(() => RequestedServiceController(
+    categoryServiceInterface: Get.find(),
+    requestedServiceServiceInterface: Get.find(),
+  ), fenix: true);
 
-  fallbackMappedJson.forEach((key, value) {
-    fallbackJson[key] = value.toString();
-  });
+  /// Service Module (addon — removable; delete this block with the folder)
+  BookingRepositoryInterface bookingRepositoryInterface = BookingRepository(apiClient: Get.find());
+  Get.lazyPut(() => bookingRepositoryInterface, fenix: true);
+  BookingServiceInterface bookingServiceInterface = BookingService(bookingRepositoryInterface: Get.find());
+  Get.lazyPut(() => bookingServiceInterface, fenix: true);
+  Get.lazyPut(() => BookingController(bookingServiceInterface: Get.find()), fenix: true);
 
-  for (LanguageModel languageModel in AppConstants.languages) {
-    final String jsonStringValues = await rootBundle.loadString(
-      'assets/language/${languageModel.languageCode}.json',
-    );
+  ServiceReviewRepositoryInterface serviceReviewRepositoryInterface = ServiceReviewRepository(apiClient: Get.find());
+  Get.lazyPut(() => serviceReviewRepositoryInterface, fenix: true);
+  ServiceReviewServiceInterface serviceReviewServiceInterface = ServiceReviewService(serviceReviewRepositoryInterface: Get.find());
+  Get.lazyPut(() => serviceReviewServiceInterface, fenix: true);
+  Get.lazyPut(() => ServiceReviewController(serviceReviewServiceInterface: Get.find()), fenix: true);
 
-    final Map<String, dynamic> mappedJson = jsonDecode(jsonStringValues);
-
-    final Map<String, String> json = Map<String, String>.from(fallbackJson);
-
-    mappedJson.forEach((key, value) {
-      json[key] = value.toString();
-    });
-
-    languages['${languageModel.languageCode}_${languageModel.countryCode}'] =
-        json;
-  }
-
-  return languages;
+  /// Retrieving localized data — only the locales the first frame can render.
+  /// The other languages are appended after startup by
+  /// [LanguageLoader.loadRemaining], called from `MyApp`'s post-frame callback,
+  /// so ~650 KB of JSON no longer blocks `runApp`.
+  return LanguageLoader.loadInitial(sharedPreferences.getString(AppConstants.languageCode));
 }

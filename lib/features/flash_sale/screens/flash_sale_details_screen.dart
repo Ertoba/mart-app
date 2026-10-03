@@ -4,12 +4,11 @@ import 'package:shimmer_animation/shimmer_animation.dart';
 import 'package:sixam_mart/features/flash_sale/controllers/flash_sale_controller.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
-import 'package:sixam_mart/util/styles.dart';
 import 'package:sixam_mart/common/widgets/custom_app_bar.dart';
 import 'package:sixam_mart/common/widgets/footer_view.dart';
 import 'package:sixam_mart/common/widgets/paginated_list_view.dart';
 import 'package:sixam_mart/features/flash_sale/widgets/flash_product_card_widget.dart';
-import 'package:sixam_mart/features/flash_sale/widgets/flash_sale_timer_view_widget.dart';
+import 'package:sixam_mart/features/flash_sale/widgets/flash_sale_header_banner.dart';
 
 class FlashSaleDetailsScreen extends StatefulWidget {
   final int id;
@@ -31,8 +30,8 @@ class _FlashSaleDetailsScreenState extends State<FlashSaleDetailsScreen> {
 
   @override
   void dispose() {
-    super.dispose();
     _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -44,30 +43,14 @@ class _FlashSaleDetailsScreenState extends State<FlashSaleDetailsScreen> {
             builder: (flashSaleController) {
               return Column(children: [
                 SizedBox(height: ResponsiveHelper.isDesktop(context) ? Dimensions.paddingSizeDefault : 0),
-                Container(
+                SizedBox(
                   width: Dimensions.webMaxWidth,
-                  padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(ResponsiveHelper.isDesktop(context) ? Dimensions.radiusDefault : 0),
-                    border: Border.symmetric(
-                      horizontal: BorderSide(color: Theme.of(context).primaryColor.withValues(alpha: 0.2), width: 2),
-                      vertical: BorderSide(color: ResponsiveHelper.isDesktop(context) ? Theme.of(context).primaryColor.withValues(alpha: 0.2) : Theme.of(context).primaryColor.withValues(alpha: 0.2), width: 2),
+                  child: FlashSaleHeaderBackground(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
+                      child: FlashSaleHeaderBanner(duration: flashSaleController.duration),
                     ),
                   ),
-                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('flash_sale'.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
-                      const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-
-                      Text(
-                        'limited_time_offer'.tr,
-                        style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor),
-                      ),
-                    ]),
-
-                    FlashSaleTimerView(eventDuration: flashSaleController.duration),
-                  ]),
                 ),
 
                 Expanded(

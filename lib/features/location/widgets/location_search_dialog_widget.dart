@@ -1,88 +1,209 @@
 import 'package:sixam_mart/features/location/controllers/location_controller.dart';
 import 'package:sixam_mart/features/location/domain/models/prediction_model.dart';
 import 'package:sixam_mart/features/parcel/controllers/parcel_controller.dart';
-import 'package:sixam_mart/helper/responsive_helper.dart';
+import 'package:sixam_mart/features/ride_share_module/ride_location/controllers/search_location_controller.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:sixam_mart/util/styles.dart';
 
-class LocationSearchDialogWidget extends StatelessWidget {
+class LocationSearchDialogWidget extends StatefulWidget {
   final GoogleMapController? mapController;
   final bool? isPickedUp;
   final bool isFrom;
-  const LocationSearchDialogWidget({super.key, required this.mapController, this.isPickedUp, this.isFrom = false});
+  final LocationType? locationType;
+  final bool showEmptyState;
+  final Widget? child;
+  final String? pickedLocation;
+  final Function(Position position)? callBack;
+  final bool fromAddress;
+  final VoidCallback? onOpen;
+  final VoidCallback? onClose;
+  final Widget? leading;
+  final bool fullWidthBar;
+  final Function(PredictionModel suggestion)? onSelected;
+  const LocationSearchDialogWidget({super.key,
+    required this.mapController, this.isPickedUp, this.isFrom = false, this.locationType, this.showEmptyState = false,
+    this.child, this.pickedLocation, this.callBack, this.fromAddress = false, this.onOpen,
+    this.onClose, this.leading, this.fullWidthBar = false, this.onSelected,
+  });
+
+  @override
+  State<LocationSearchDialogWidget> createState() => _LocationSearchDialogWidgetState();
+}
+
+class _LocationSearchDialogWidgetState extends State<LocationSearchDialogWidget> {
+  final SearchController _searchController = SearchController();
+  bool _isOpen = false;
+  String? _searchingWithQuery;
+  Iterable<Widget> _lastOptions = <Widget>[];
+  List<PredictionModel> _predictionList = [];
+  List<String> _predictList = <String>[];
+
+  @override
+  void initState() {
+    super.initState();
+
+    _searchController.text = widget.pickedLocation ?? '';
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 500,
-      margin: EdgeInsets.only(
-        top: ResponsiveHelper.isDesktop(context) ? 180 : 0,
-      ),
-      padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-      alignment: Alignment.topCenter,
-      child: Material(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Dimensions.radiusSmall)),
-        child: SizedBox(width: ResponsiveHelper.isDesktop(context) ? 600 : Dimensions.webMaxWidth, child: TypeAheadField(
-          hideOnEmpty: true,
-          builder: (context, controller, focusNode) {
-            return TextField(
-              controller: controller,
-              textInputAction: TextInputAction.search,
-              focusNode: focusNode,
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
-              keyboardType: TextInputType.streetAddress,
-              decoration: InputDecoration(
-                hintText: 'search_location'.tr,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(style: BorderStyle.none, width: 0),
-                ),
-                hintStyle: Theme.of(context).textTheme.displayMedium!.copyWith(
-                  fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).disabledColor,
-                ),
-                filled: true, fillColor: Theme.of(context).cardColor,
-              ),
-              style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                color: Theme.of(context).textTheme.bodyLarge!.color, fontSize: Dimensions.fontSizeLarge,
-              ),
-            );
+    if (_searchController.isAttached && !_searchController.isOpen) {
+      _searchController.text = widget.pickedLocation ?? '';
+    }
+    return GetBuilder<LocationController>(
+      builder: (locationController) {
+        return SearchAnchor(
+          searchController: _searchController,
+          viewSurfaceTintColor: Theme.of(context).cardColor,
+          isFullScreen: false,
+          viewLeading: IconButton(onPressed: () => _searchController.closeView(''), icon: const Icon(Icons.arrow_back)),
+          viewTrailing: [
+            IconButton(
+              onPressed: () {
+                if (_searchController.text.isNotEmpty) {
+                  _searchController.text = '';
+                } else {
+                  _searchController.closeView('');
+                }
+              },
+              icon: const Icon(Icons.clear),
+            ),
+          ],
+          viewConstraints: const BoxConstraints(minHeight: 100, maxHeight: 300),
+          viewOnOpen: () {
+            setState(() => _isOpen = true);
+            widget.onOpen?.call();
+          },
+          viewOnClose: () {
+            setState(() => _isOpen = false);
+            widget.onClose?.call();
           },
 
-          suggestionsCallback: (pattern) async {
-            return await Get.find<LocationController>().searchLocation(context, pattern);
-          },
-          itemBuilder: (context, PredictionModel suggestion) {
-            return Padding(
-              padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-              child: Row(children: [
-                const Icon(Icons.location_on),
-                Expanded(
-                  child: Text(suggestion.description ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                    color: Theme.of(context).textTheme.bodyLarge!.color, fontSize: Dimensions.fontSizeLarge,
+          builder: (BuildContext context, SearchController controller) {
+            final Widget pill = InkWell(
+              onTap: () {
+                if (widget.isPickedUp != null) {
+                  Get.find<ParcelController>().setIsPickedUp(widget.isPickedUp, true);
+                }
+                controller.openView();
+              },
+              child: widget.child ?? Container(
+                height: 50, width: 500,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                  border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.3)),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
+                child: Row(children: [
+
+                  Icon(Icons.location_on, size: 25, color: Theme.of(context).primaryColor),
+                  const SizedBox(width: Dimensions.paddingSizeSmall),
+
+                  Expanded(child: Text(
+                    controller.text.isNotEmpty ? controller.text : 'search_location'.tr,
+                    style: robotoRegular.copyWith(color: controller.text.isEmpty ? Theme.of(context).disabledColor : Theme.of(context).textTheme.bodyMedium!.color),
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
                   )),
-                ),
-              ]),
+
+                  Icon(Icons.search, color: Theme.of(context).disabledColor),
+                ]),
+              ),
             );
-          },
-          onSelected: (PredictionModel suggestion) {
-            if(isPickedUp == null) {
-              Get.find<LocationController>().setLocation(suggestion.placeId, suggestion.description, mapController);
-            }else {
-              Get.find<ParcelController>().setLocationFromPlace(suggestion.placeId, suggestion.description, isPickedUp);
+
+            // Other usages render the pill as-is. The map bar spans the anchor to
+            // the full width so the floating search view also opens full width,
+            // with the optional leading (back button) animating away when open.
+            if (!widget.fullWidthBar) {
+              return pill;
             }
-            Get.back();
+
+            return Row(children: [
+
+              if (widget.leading != null)
+                ClipRect(
+                  child: AnimatedSize(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    child: _isOpen ? const SizedBox.shrink() : Padding(
+                      padding: const EdgeInsets.only(right: Dimensions.paddingSizeSmall),
+                      child: widget.leading!,
+                    ),
+                  ),
+                ),
+
+              Expanded(child: pill),
+            ]);
           },
 
-          errorBuilder : (_,value) {
-            return const SizedBox();
-          },
+          suggestionsBuilder: (BuildContext context, SearchController controller) async {
+            _searchingWithQuery = controller.text;
+            final List<String> options = (await _search(context, _searchingWithQuery!, locationController)).toList();
+            if (_searchingWithQuery != controller.text) {
+              return _lastOptions;
+            }
 
-        )),
-      ),
+            _lastOptions = List<ListTile>.generate(options.length, (int index) {
+              final String location = options[index];
+              return ListTile(
+                leading: const Icon(Icons.location_on),
+                title: Text(location, maxLines: 1, overflow: TextOverflow.ellipsis),
+                onTap: () async {
+                  if (_predictionList.isEmpty) {
+                    controller.closeView('');
+                    return;
+                  }
+                  final int selectedIndex = _predictList.indexOf(location);
+                  if (selectedIndex < 0 || selectedIndex >= _predictionList.length) {
+                    controller.closeView('');
+                    return;
+                  }
+                  final PredictionModel suggestion = _predictionList[selectedIndex];
+                  if (widget.onSelected != null) {
+                    widget.onSelected!(suggestion);
+                  } else if (widget.isPickedUp == null) {
+                    await Get.find<LocationController>().setLocation(suggestion.placeId, suggestion.description, widget.mapController);
+                    if (widget.fromAddress && widget.callBack != null) {
+                      widget.callBack!(Get.find<LocationController>().pickPosition);
+                    }
+                  } else {
+                    Get.find<ParcelController>().setLocationFromPlace(suggestion.placeId, suggestion.description, widget.isPickedUp);
+                  }
+                  controller.closeView(location);
+                },
+              );
+            });
+
+            return _lastOptions;
+          },
+        );
+      },
     );
+  }
+
+  Future<Iterable<String>> _search(BuildContext context, String query, LocationController locationController) async {
+    _predictionList = await locationController.searchLocation(context, query);
+
+    if (query.isEmpty) {
+      return const Iterable<String>.empty();
+    }
+    _predictList = [];
+    for (var prediction in _predictionList) {
+      _predictList.add(prediction.description ?? '');
+    }
+    if (_predictList.isEmpty && widget.showEmptyState) {
+      _predictList.add('no_address_found'.tr);
+    }
+    return _predictList;
   }
 }

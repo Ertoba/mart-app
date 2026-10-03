@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/common/widgets/custom_app_bar.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/common/widgets/menu_drawer.dart';
@@ -9,6 +10,7 @@ import 'package:sixam_mart/features/ai_chat_bot/controllers/ai_chat_bot_controll
 import 'package:sixam_mart/features/ai_chat_bot/domain/models/ai_chat_message_model.dart';
 import 'package:sixam_mart/features/ai_chat_bot/widgets/ai_chat_message_bubble_widget.dart';
 import 'package:sixam_mart/features/ai_chat_bot/widgets/ai_chat_suggestion_chips_widget.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
 
@@ -31,11 +33,17 @@ class _AiChatDetailsScreenState extends State<AiChatDetailsScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _inputController = TextEditingController();
   int? _activeConversationId;
+  // Module active when the chat opened. Tapping a metadata card (product/store/
+  // category) may silently switch the module for its detail page; restore the
+  // entry module on close so taps back on the home/module page don't run against
+  // the module left behind by the chat (same pattern as GlobalCartScreen).
+  ModuleModel? _entryModule;
 
   @override
   void initState() {
     super.initState();
     _activeConversationId = widget.conversationId;
+    _entryModule = Get.find<SplashController>().module;
     _initCall();
   }
 
@@ -57,6 +65,10 @@ class _AiChatDetailsScreenState extends State<AiChatDetailsScreen> {
 
   @override
   void dispose() {
+    final SplashController splash = Get.find<SplashController>();
+    if (splash.module?.id != _entryModule?.id) {
+      splash.setModule(_entryModule, notify: false);
+    }
     _scrollController.dispose();
     _inputController.dispose();
     super.dispose();

@@ -5,10 +5,11 @@ import 'package:sixam_mart/common/models/response_model.dart';
 import 'package:sixam_mart/features/splash/domain/models/landing_model.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
 
+import '../models/app_download_section_model.dart';
+
 abstract class SplashServiceInterface {
   Future<Response> getConfigData({required DataSourceEnum source});
   ConfigModel? prepareConfigData(Response response);
-  Future<LandingModel?> getLandingPageData({required DataSourceEnum source});
   Future<ModuleModel?> initSharedData();
   void disableIntro();
   bool? showIntro();
@@ -31,4 +32,6 @@ abstract class SplashServiceInterface {
   Future<void> saveReferBottomSheetStatus(bool data);
   bool getPaymentIncompleteBottomSheetStatus();
   Future<void> savePaymentIncompleteBottomSheetStatus(bool data);
+  Future<AppDownloadSectionModel?> getAppDownloadSection();
+  bool handleInitialTopicSubscription();
 }

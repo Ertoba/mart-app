@@ -1,17 +1,15 @@
 import 'package:get/get.dart';
-import 'package:sixam_mart/features/rental_module/common/models/taxi_stub_models.dart';
 import 'package:sixam_mart/features/rental_module/common/models/trip_model.dart';
 import 'package:sixam_mart/features/rental_module/rental_order/domain/services/taxi_order_service_interface.dart';
+import 'package:sixam_mart/features/rental_module/common/models/trip_details_model.dart';
 
 class TaxiOrderController extends GetxController implements GetxService {
   final TaxiOrderServiceInterface taxiOrderServiceInterface;
+
   TaxiOrderController({required this.taxiOrderServiceInterface});
 
-  bool _isLoading = false;
+  final bool _isLoading = false;
   bool get isLoading => _isLoading;
-
-  TaxiTripDetails? _tripDetails;
-  TaxiTripDetails? get tripDetails => _tripDetails;
 
   TripModel? _tripModel;
   TripModel? get tripModel => _tripModel;
@@ -19,21 +17,13 @@ class TaxiOrderController extends GetxController implements GetxService {
   TripModel? _tripHistoryModel;
   TripModel? get tripHistoryModel => _tripHistoryModel;
 
-  Future<void> getTripList(int offset, {bool isUpdate = false, bool isRunning = true, bool fromHome = false}) async {
-    _isLoading = true;
-    update();
-    await taxiOrderServiceInterface.getTripList(offset, isRunning: isRunning);
-    _isLoading = false;
-    update();
-  }
+  TripDetailsModel? _tripDetailsModel;
+  TripDetailsModel? get tripDetailsModel => _tripDetailsModel;
+
+  Future<void> getTripList(int offset, {bool isUpdate = false, bool isRunning = true, bool fromHome = false}) async {}
 
   Future<bool> getTripDetails(int id, {bool willUpdate = true, String? phone}) async {
-    _isLoading = true;
-    update();
-    _tripDetails = await taxiOrderServiceInterface.getTripDetails(id, phone: phone, willUpdate: willUpdate);
-    _isLoading = false;
-    update();
-    return _tripDetails != null;
+    return false;
   }
 
   Future<bool> deleteTrip(int? id) async {
@@ -41,5 +31,16 @@ class TaxiOrderController extends GetxController implements GetxService {
   }
 
   void removeTripFromList(int? id) {
+  }
+
+  Future<bool> cancelTrip({required int id}) async {
+    return false;
+  }
+
+  void refreshRunningOrders() {
+  }
+
+  Future<bool> retryTripPayment({required int tripId, required String paymentMethod, String? gatewayName}) async {
+    return false;
   }
 }

@@ -58,7 +58,12 @@ class DeliverymanRegistrationService implements DeliverymanRegistrationServiceIn
     bool success = await deliverymanRegistrationRepoInterface.registerDeliveryMan(deliveryManBody, multiParts);
     if(success) {
       Get.offAllNamed(RouteHelper.getInitialRoute());
-      showCustomSnackBar('delivery_man_registration_successful'.tr, isError: false);
+      if(deliveryManBody.type == "is_delivery"){
+        showCustomSnackBar('delivery_man_registration_successful'.tr, isError: false);
+      }else{
+        showCustomSnackBar('rider_registration_successful'.tr, isError: false);
+      }
+
     }
   }
 

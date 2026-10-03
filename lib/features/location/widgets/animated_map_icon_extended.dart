@@ -18,7 +18,18 @@ class _AnimatedMapIconExtendedState extends State<AnimatedMapIconExtended>  {
   Widget build(BuildContext context) {
     return GetBuilder<LocationController>(builder: (locationController){
       return Center(
-        child: Stack( alignment: AlignmentDirectional.center, children: [
+        child: Stack(clipBehavior: Clip.none, alignment: AlignmentDirectional.center, children: [
+          Positioned(
+            top: -30,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+                borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+              ),
+              child: Text('is_this_your_location'.tr, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+            ),
+          ),
           Lottie.asset(Images.mapIconExtended , repeat: false, height: Dimensions.pickMapIconSize,
             delegates: LottieDelegates(
               values: [

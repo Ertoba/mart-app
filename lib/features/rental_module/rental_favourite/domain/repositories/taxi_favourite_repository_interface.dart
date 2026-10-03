@@ -1,3 +1,5 @@
 import 'package:sixam_mart/interfaces/repository_interface.dart';
 
-abstract class TaxiFavouriteRepositoryInterface extends RepositoryInterface {}
+abstract class TaxiFavouriteRepositoryInterface extends RepositoryInterface {
+
+}

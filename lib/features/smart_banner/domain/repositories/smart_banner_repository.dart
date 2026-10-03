@@ -11,7 +11,7 @@ class SmartBannerRepository implements SmartBannerRepositoryInterface {
   @override
   Future<SmartBannerModel?> getList({int? offset}) async {
     SmartBannerModel? smartBannerModel;
-    Response response = await apiClient.getData(AppConstants.smartBannerUri, handleError: false);
+    Response response = await apiClient.getData(AppConstants.smartBannerUri);
     if (response.statusCode == 200 && response.body is Map) {
       smartBannerModel = SmartBannerModel.fromJson(response.body);
     }

@@ -41,6 +41,32 @@ class AddressModel {
     this.email,
   });
 
+  AddressModel copyWith({
+    String? contactPersonName,
+    String? contactPersonNumber,
+  }) {
+    return AddressModel(
+      id: id,
+      addressType: addressType,
+      contactPersonNumber: contactPersonNumber ?? this.contactPersonNumber,
+      address: address,
+      additionalAddress: additionalAddress,
+      latitude: latitude,
+      longitude: longitude,
+      zoneId: zoneId,
+      rideZoneId: rideZoneId,
+      zoneIds: zoneIds,
+      method: method,
+      contactPersonName: contactPersonName ?? this.contactPersonName,
+      streetNumber: streetNumber,
+      house: house,
+      floor: floor,
+      zoneData: zoneData,
+      areaIds: areaIds,
+      email: email,
+    );
+  }
+
   AddressModel.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     addressType = json['address_type'];

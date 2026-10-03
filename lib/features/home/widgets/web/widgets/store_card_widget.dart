@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
+import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/common/widgets/add_favourite_view.dart';
+import 'package:sixam_mart/common/widgets/custom_image.dart';
 import 'package:sixam_mart/common/widgets/custom_ink_well.dart';
+import 'package:sixam_mart/common/widgets/discount_tag.dart';
+import 'package:sixam_mart/common/widgets/hover/on_hover.dart';
 import 'package:sixam_mart/common/widgets/hover/text_hover.dart';
+import 'package:sixam_mart/common/widgets/not_available_widget.dart';
 import 'package:sixam_mart/features/language/controllers/language_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
-import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/common/widgets/custom_image.dart';
-import 'package:sixam_mart/common/widgets/discount_tag.dart';
-import 'package:sixam_mart/common/widgets/hover/on_hover.dart';
-import 'package:sixam_mart/common/widgets/not_available_widget.dart';
+
 import 'package:sixam_mart/features/store/screens/store_screen.dart';
 
 class StoreCardWidget extends StatelessWidget {
@@ -28,6 +29,7 @@ class StoreCardWidget extends StatelessWidget {
     double? discount = store!.discount != null ? store!.discount!.discount : 0;
     String? discountType = store!.discount != null ? store!.discount!.discountType : 'percent';
     bool isAvailable = store!.open == 1 && store!.active!;
+    bool hasFreeDelivery = store!.freeDelivery ?? false;
     return OnHover(
       isItem: true,
       child: TextHover(
@@ -72,9 +74,7 @@ class StoreCardWidget extends StatelessWidget {
                           height: 120, width: double.infinity, fit: BoxFit.cover,
                         ),
                       ),
-                      DiscountTag(
-                        discount: discount, discountType: discountType,
-                      ),
+                      DiscountTag(discount: discount, discountType: discountType),
                       isAvailable ? const SizedBox() : NotAvailableWidget(isStore: true, store: store, fontSize: Dimensions.fontSizeExtraSmall, isAllSideRound: false),
 
                       AddFavouriteView(
@@ -94,7 +94,7 @@ class StoreCardWidget extends StatelessWidget {
                             boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5, spreadRadius: 1)],
                           ),
                           child: Row(children: [
-                            Icon(Icons.star, size: 15, color: Colors.orange),
+                            const Icon(Icons.star, size: 15, color: Colors.orange),
                             const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                             Text(
@@ -116,14 +116,15 @@ class StoreCardWidget extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                          SizedBox(
-                            width: context.width * 0.7,
-                            child: Text(
-                              store!.name ?? '',
+                        
+                          Row(children: [
+                            Text(store!.name ?? '',
                               style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault),
                               maxLines: 1, overflow: TextOverflow.ellipsis,
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            store?.verifiedSeller == 1 ? Image.asset(Images.verifiedBadge, width: 16, height: 16) : const SizedBox.shrink()
+                          ]),
                           const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
                           Row(children: [
@@ -141,7 +142,7 @@ class StoreCardWidget extends StatelessWidget {
                           const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
                           Row(children: [
-                            store!.freeDelivery! ? Row(children: [
+                            hasFreeDelivery ? Row(children: [
                               Image.asset(Images.deliveryIcon, height: 15, width: 15, color: Theme.of(context).textTheme.bodyLarge!.color),
                               const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
@@ -150,7 +151,7 @@ class StoreCardWidget extends StatelessWidget {
                                 style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).disabledColor),
                               ),
                             ]) : const SizedBox(),
-                            SizedBox(width: store!.freeDelivery! ? Dimensions.paddingSizeSmall : 0),
+                            SizedBox(width: hasFreeDelivery ? Dimensions.paddingSizeSmall : 0),
 
                             Row(children: [
                               Icon(Icons.timer, size: 15, color: Theme.of(context).textTheme.bodyLarge!.color),

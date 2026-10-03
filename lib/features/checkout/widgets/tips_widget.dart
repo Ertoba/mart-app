@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
 
@@ -13,56 +12,54 @@ class TipsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: Dimensions.paddingSizeSmall, top: Dimensions.paddingSizeExtraSmall, bottom: 0),
-      child: Column(children: [
+    final Color selectedColor = Theme.of(context).primaryColor;
+    final Color unselectedBg = Theme.of(context).disabledColor.withValues(alpha: 0.12);
 
-        InkWell(
-          onTap: onTap as void Function()?,
-          child: Container(
-            width: ResponsiveHelper.isDesktop(context) ? null : 56,
-            height: ResponsiveHelper.isDesktop(context) ? null : 42,
-            padding: EdgeInsets.zero,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-              border: Border.all(color: ResponsiveHelper.isDesktop(context) ? Theme.of(context).primaryColor : Theme.of(context).cardColor),
-              boxShadow: ResponsiveHelper.isDesktop(context) ? [] : const [BoxShadow(color: Colors.black12, spreadRadius: 0.5, blurRadius: 0.5)],
-            ),
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Padding(
-                padding: ResponsiveHelper.isDesktop(context) ? EdgeInsets.only(
-                    top: !isSuggested ? Dimensions.fontSizeSmall : Dimensions.paddingSizeExtraSmall,
-                    left: Dimensions.paddingSizeSmall, right: Dimensions.paddingSizeSmall,
-                ) : EdgeInsets.zero,
-                child: Text(
-                  title, textDirection: TextDirection.ltr,
-                  style: robotoRegular.copyWith(
-                    color: isSelected ? Theme.of(context).cardColor : ResponsiveHelper.isDesktop(context)
-                        ? Theme.of(context).primaryColor : Theme.of(context).disabledColor,
-                  ),
+    return Padding(
+      padding: const EdgeInsets.only(right: Dimensions.paddingSizeSmall),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap as void Function()?,
+            borderRadius: BorderRadius.circular(Dimensions.radiusExtraLarge),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: Dimensions.paddingSizeLarge,
+                vertical: Dimensions.paddingSizeSmall,
+              ),
+              decoration: BoxDecoration(
+                color: isSelected ? selectedColor : unselectedBg,
+                borderRadius: BorderRadius.circular(Dimensions.radiusExtraLarge),
+              ),
+              child: Text(
+                title,
+                textDirection: TextDirection.ltr,
+                style: robotoMedium.copyWith(
+                  fontSize: Dimensions.fontSizeDefault,
+                  color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
-
-              isSuggested && ResponsiveHelper.isDesktop(context) ? Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(Dimensions.radiusSmall)),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall, vertical: 3),
-                child: Text(
-                  'most_tipped'.tr, style: robotoRegular.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeOverSmall),
-                ),
-              ) : SizedBox(height: ResponsiveHelper.isDesktop(context) ? 10 : 0),
-            ]),
+            ),
           ),
         ),
-        const SizedBox(height: Dimensions.paddingSizeExtraSmall -1),
+        const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
-        isSuggested && !ResponsiveHelper.isDesktop(context) ? Text(
-          'most_tipped'.tr, style: robotoMedium.copyWith(color: Theme.of(context).primaryColor, fontSize: Dimensions.fontSizeExtraSmall),
-        ) : const SizedBox(),
+        SizedBox(
+          height: 18,
+          child: isSuggested
+              ? Text(
+                  'most_used'.tr,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: robotoMedium.copyWith(
+                    color: Theme.of(context).primaryColor,
+                    fontSize: Dimensions.fontSizeExtraSmall,
+                  ),
+                )
+              : null,
+        ),
       ]),
     );
   }

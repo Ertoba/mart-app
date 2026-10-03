@@ -53,10 +53,17 @@ class _ReceiverViewWidgetState extends State<ReceiverViewWidget> {
 
   @override
   void dispose() {
-    super.dispose();
+    _nameController.dispose();
+    _phoneController.dispose();
+    _streetNode.dispose();
+    _houseNode.dispose();
+    _floorNode.dispose();
+    _nameNode.dispose();
+    _phoneNode.dispose();
     _streetNumberController.dispose();
     _houseController.dispose();
     _floorController.dispose();
+    super.dispose();
   }
   @override
   Widget build(BuildContext context) {
@@ -83,7 +90,7 @@ class _ReceiverViewWidgetState extends State<ReceiverViewWidget> {
                   buttonText: 'set_from_map'.tr,
                   onPressed: () {
                     if(ResponsiveHelper.isDesktop(Get.context)) {
-                      showGeneralDialog(context: context, pageBuilder: (_,__,___) {
+                      showGeneralDialog(context: context, pageBuilder: (_,_,_) {
                         return SizedBox(
                             height: 300, width: 300,
                             child: PickMapScreen(fromSignUp: false, canRoute: false, fromAddAddress: false, route:'', onPicked: (AddressModel address) {

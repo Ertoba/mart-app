@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:sixam_mart/features/item/controllers/item_controller.dart';
-import 'package:sixam_mart/features/language/controllers/language_controller.dart';
 import 'package:sixam_mart/features/home/widgets/web/web_basic_medicine_nearby_view_widget.dart';
 import 'package:sixam_mart/features/home/widgets/web/widgets/medicine_item_card.dart';
+import 'package:sixam_mart/features/item/controllers/item_controller.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
@@ -20,10 +19,10 @@ class CommonConditionView extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Padding(
-              padding: EdgeInsets.only(
+              padding: const EdgeInsets.only(
                 top: Dimensions.paddingSizeDefault,
-                left: Get.find<LocalizationController>().isLtr ? Dimensions.paddingSizeDefault : 0,
-                right: Get.find<LocalizationController>().isLtr ? 0 : Dimensions.paddingSizeDefault,
+                left:  Dimensions.paddingSizeDefault,
+                right: Dimensions.paddingSizeDefault,
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('common_condition'.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),

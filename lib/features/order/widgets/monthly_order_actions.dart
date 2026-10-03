@@ -31,20 +31,21 @@ class MonthlyOrderActions {
 
   static void addToCart(MonthlyOrder order) {
     final int? orderId = order.orderId;
-    final int? moduleId = order.moduleId;
-    final int? storeId = order.store?.id;
     if(orderId == null) {
       showCustomSnackBar('sorry_something_went_wrong'.tr);
       return;
     }
-
-    Get.find<OrderController>().reorder(
-      OrderModel(
-        id: orderId,
-        moduleId: moduleId,
-        store: storeId != null ? Store(id: storeId) : null,
-      ),
-    );
+    // reorder() already navigates to the global cart (with the correct module
+    // pre-selected) and refreshes the cart once the add succeeds — matching every
+    // other reorder call site. Navigating again here duplicated the cart screen
+    // and its getAllCarts() fetch, showing stacked loaders.
+    // store/moduleId must be passed through so reorder() can detect an existing
+    // cart for another store and show the reset-confirmation dialog instead of
+    // silently clearing it.
+    Get.find<OrderController>().reorder(OrderModel(
+      id: orderId, moduleId: order.moduleId, moduleType: order.moduleType,
+      store: order.store?.id != null ? Store(id: order.store!.id) : null,
+    ));
   }
 
   static void confirmRemove(MonthlyOrder order, {VoidCallback? onRemoved}) {

@@ -6,7 +6,6 @@ import 'package:sixam_mart/features/location/controllers/location_controller.dar
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/api/api_client.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
-import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_data_model.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
 import 'package:sixam_mart/features/auth/domain/models/delivery_man_body.dart';
@@ -14,8 +13,6 @@ import 'package:sixam_mart/features/auth/domain/models/delivery_man_vehicles_mod
 import 'package:sixam_mart/features/auth/domain/services/deliveryman_registration_service_interface.dart';
 
 class DeliverymanRegistrationController extends GetxController implements GetxService {
-  static const int _maxRegistrationImageBytes = 5 * 1024 * 1024;
-
   final DeliverymanRegistrationServiceInterface deliverymanRegistrationServiceInterface;
 
   DeliverymanRegistrationController({required this.deliverymanRegistrationServiceInterface});
@@ -119,22 +116,10 @@ class DeliverymanRegistrationController extends GetxController implements GetxSe
       _pickedIdentities = [];
     }else {
       if (isLogo) {
-        final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
-        if (pickedImage == null) {
-          return;
-        }
-        if (await pickedImage.length() > _maxRegistrationImageBytes) {
-          showCustomSnackBar('please_upload_image_within_5_mb'.tr);
-          return;
-        }
-        _pickedImage = pickedImage;
+        _pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
       } else {
         XFile? xFile = await ImagePicker().pickImage(source: ImageSource.gallery);
         if(xFile != null) {
-          if (await xFile.length() > _maxRegistrationImageBytes) {
-            showCustomSnackBar('please_upload_image_within_5_mb'.tr);
-            return;
-          }
           _pickedIdentities.add(xFile);
         }
       }

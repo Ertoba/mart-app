@@ -9,7 +9,8 @@ import 'package:sixam_mart/features/parcel/widgets/deliver_item_card_widget.dart
 
 class ParcelBottomSheetWidget extends StatelessWidget {
   final List<ParcelCategoryModel>? parcelCategoryList;
-  const ParcelBottomSheetWidget({super.key, this.parcelCategoryList});
+  final void Function(ParcelCategoryModel category)? onCategorySelected;
+  const ParcelBottomSheetWidget({super.key, this.parcelCategoryList, this.onCategorySelected});
 
   @override
   Widget build(BuildContext context) {
@@ -71,8 +72,13 @@ class ParcelBottomSheetWidget extends StatelessWidget {
                           itemName: parcelCategoryList![index].name!,
                           description: parcelCategoryList![index].description!,
                           onTap: () {
+                            final selected = parcelCategoryList![index];
                             Get.back();
-                            Get.toNamed(RouteHelper.getParcelLocationRoute(parcelCategoryList![index]));
+                            if (onCategorySelected != null) {
+                              onCategorySelected!(selected);
+                            } else {
+                              Get.toNamed(RouteHelper.getParcelLocationRoute(selected));
+                            }
                           },
                         );
                       },

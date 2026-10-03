@@ -2,21 +2,23 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
-import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
-import 'package:sixam_mart/features/wallet/controllers/wallet_controller.dart';
-import 'package:sixam_mart/features/wallet/widgets/bonus_banner_widget.dart';
-import 'package:sixam_mart/helper/auth_helper.dart';
-import 'package:sixam_mart/helper/responsive_helper.dart';
-import 'package:sixam_mart/helper/route_helper.dart';
-import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/common/widgets/custom_app_bar.dart';
+import 'package:sixam_mart/common/widgets/custom_dialog.dart';
 import 'package:sixam_mart/common/widgets/footer_view.dart';
 import 'package:sixam_mart/common/widgets/menu_drawer.dart';
 import 'package:sixam_mart/common/widgets/not_logged_in_screen.dart';
 import 'package:sixam_mart/common/widgets/web_page_title_widget.dart';
+import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
+import 'package:sixam_mart/features/wallet/controllers/wallet_controller.dart';
+import 'package:sixam_mart/features/wallet/widgets/bonus_banner_widget.dart';
+import 'package:sixam_mart/features/wallet/widgets/fund_status_dialog_widget.dart';
 import 'package:sixam_mart/features/wallet/widgets/wallet_card_widget.dart';
 import 'package:sixam_mart/features/wallet/widgets/wallet_history_widget.dart';
 import 'package:sixam_mart/features/wallet/widgets/web_bonus_banner_widget.dart';
+import 'package:sixam_mart/helper/auth_helper.dart';
+import 'package:sixam_mart/helper/responsive_helper.dart';
+import 'package:sixam_mart/helper/route_helper.dart';
+import 'package:sixam_mart/util/dimensions.dart';
 
 class WalletScreen extends StatefulWidget {
   final String? fundStatus;
@@ -48,18 +50,9 @@ class _WalletScreenState extends State<WalletScreen> {
 
       if((widget.fundStatus == 'success' || widget.fundStatus == 'fail' || widget.fundStatus == 'cancel') && Get.find<WalletController>().getWalletAccessToken() != widget.token){
         Future.delayed(const Duration(seconds: 2), () {
-
-          Get.showSnackbar(GetSnackBar(
-            backgroundColor: widget.fundStatus == 'fail' || widget.fundStatus == 'cancel' ? Colors.red : Colors.green,
-            message: widget.fundStatus == 'success' ? 'fund_successfully_added_to_wallet'.tr : 'fund_not_added_to_wallet'.tr,
-            maxWidth: 500,
-            duration: const Duration(seconds: 3),
-            snackStyle: SnackStyle.FLOATING,
-            margin: const EdgeInsets.all(Dimensions.paddingSizeExtremeLarge),
-            borderRadius: Dimensions.radiusExtraLarge,
-            isDismissible: true,
-            dismissDirection: DismissDirection.horizontal,
-          ));
+          if(mounted) {
+            showAnimatedDialog(context, FundStatusDialogWidget(isSuccess: widget.fundStatus == 'success'), dismissible: true);
+          }
         }).then((value) {
           Get.find<WalletController>().setWalletAccessToken(widget.token ?? '');
         });
@@ -68,6 +61,9 @@ class _WalletScreenState extends State<WalletScreen> {
 
       Get.find<WalletController>().getWalletBonusList(isUpdate: false);
 
+      if (kDebugMode) {
+        print('====> WalletScreen: requesting filter type = ${Get.find<WalletController>().type}');
+      }
       Get.find<WalletController>().getWalletTransactionList('1', false, Get.find<WalletController>().type);
 
       Get.find<WalletController>().setOffset(1);
@@ -91,9 +87,9 @@ class _WalletScreenState extends State<WalletScreen> {
   }
   @override
   void dispose() {
-    super.dispose();
 
     scrollController.dispose();
+    super.dispose();
   }
 
   @override

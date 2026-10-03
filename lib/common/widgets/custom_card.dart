@@ -9,8 +9,9 @@ class CustomCard extends StatelessWidget {
   final double? borderRadius;
   final EdgeInsetsGeometry? margin;
   final EdgeInsetsGeometry? padding;
+  final Color? color;
   final bool isBorder;
-  const CustomCard({super.key, this.child, this.width, this.height, this.borderRadius, this.margin, this.padding, this.isBorder = true});
+  const CustomCard({super.key, this.child, this.width, this.height, this.borderRadius, this.margin, this.padding, this.isBorder = true, this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +19,7 @@ class CustomCard extends StatelessWidget {
       width: width ?? double.infinity, height: height,
       margin: margin, padding: padding,
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: color ?? Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(borderRadius ?? Dimensions.radiusDefault),
         border: isBorder ? Border.all(color: Get.isDarkMode ? const Color(0xff171515) : const Color(0xffF2F2F2), width: 1) : null,
         boxShadow: [BoxShadow(color: Get.isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05), blurRadius: 20, spreadRadius: 0, offset: const Offset(0, 5))],

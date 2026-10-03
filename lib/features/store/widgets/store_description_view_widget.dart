@@ -1,7 +1,11 @@
-import 'package:sixam_mart/features/store/controllers/store_controller.dart';
-import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
-import 'package:sixam_mart/features/favourite/controllers/favourite_controller.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:sixam_mart/common/widgets/custom_image.dart';
+import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/address/domain/models/address_model.dart';
+import 'package:sixam_mart/features/favourite/controllers/favourite_controller.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
+import 'package:sixam_mart/features/store/controllers/store_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
@@ -11,11 +15,6 @@ import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/common/widgets/custom_image.dart';
-import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
-import 'package:sixam_mart/common/widgets/verified_seller_badge.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 class StoreDescriptionViewWidget extends StatelessWidget {
   final Store? store;
@@ -23,8 +22,9 @@ class StoreDescriptionViewWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isAvailable = Get.find<StoreController>().isStoreOpenNow(store!.active!, store!.schedules);
+    bool isAvailable = Get.find<StoreController>().isStoreOpen(store!);
     Color? textColor = ResponsiveHelper.isDesktop(context) ? Colors.white : null;
+
     // Module? moduleData;
     // for(ZoneData zData in AddressHelper.getUserAddressFromSharedPref()!.zoneData!) {
     //   for(Modules m in zData.modules!) {
@@ -63,15 +63,13 @@ class StoreDescriptionViewWidget extends StatelessWidget {
         const SizedBox(width: Dimensions.paddingSizeDefault),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Expanded(child: Text(
+            Text(
               store!.name!, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge, color: textColor),
               maxLines: 1, overflow: TextOverflow.ellipsis,
-            )),
-            if (store!.verifiedSeller == 1) ...[
-              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-              const VerifiedSellerBadge(verified: true),
-            ],
-            const SizedBox(width: Dimensions.paddingSizeSmall),
+            ),
+            const SizedBox(width: 8),
+            store?.verifiedSeller == 1 ? Image.asset(Images.verifiedBadge, width: 24, height: 24) : const SizedBox.shrink(),
+            const Spacer(),
 
             // ResponsiveHelper.isDesktop(context) ? InkWell(
             //   onTap: () => Get.toNamed(RouteHelper.getSearchStoreItemRoute(store!.id)),
@@ -138,8 +136,8 @@ class StoreDescriptionViewWidget extends StatelessWidget {
           ]),
           SizedBox(height: ResponsiveHelper.isDesktop(context) ? Dimensions.paddingSizeSmall : 0),
 
-          Row(children: [
-            Text('minimum_order_amount'.tr, style: robotoRegular.copyWith(
+          store!.minimumOrder != null && store!.minimumOrder! > 0.0 ? Row(children: [
+            Text('${'minimum_order_amount_is'.tr}:', style: robotoRegular.copyWith(
               fontSize: Dimensions.fontSizeExtraSmall, color: Theme.of(context).disabledColor,
             )),
             const SizedBox(width: Dimensions.paddingSizeExtraSmall),
@@ -147,7 +145,7 @@ class StoreDescriptionViewWidget extends StatelessWidget {
               PriceConverter.convertPrice(store!.minimumOrder), textDirection: TextDirection.ltr,
               style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeExtraSmall, color: Theme.of(context).primaryColor),
             )),
-          ]),
+          ]) : const SizedBox.shrink(),
         ])),
 
       ]) : const SizedBox(),
@@ -161,7 +159,7 @@ class StoreDescriptionViewWidget extends StatelessWidget {
            onTap: () => Get.toNamed(RouteHelper.getStoreReviewRoute(store!.id, store!.name, store!, slug: store!.slug ?? store!.name!)),
            child: Column(children: [
              Row(children: [
-               Icon(Icons.star, color: Colors.orange, size: 20),
+               const Icon(Icons.star, color: Colors.orange, size: 20),
                const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                Text(
                  store!.avgRating!.toStringAsFixed(1),
@@ -170,7 +168,7 @@ class StoreDescriptionViewWidget extends StatelessWidget {
              ]),
              const SizedBox(height: Dimensions.paddingSizeExtraSmall),
              Text(
-               '${store!.ratingCount} + ${'ratings'.tr}',
+               '${store!.ratingCount ?? 0} ${(store!.ratingCount ?? 0) < 1 ? '' : '+'} ${(store!.ratingCount ?? 0) < 1 ? 'rating'.tr : 'ratings'.tr}',
                style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: textColor),
              ),
            ]),
@@ -184,7 +182,7 @@ class StoreDescriptionViewWidget extends StatelessWidget {
            onTap: () => Get.toNamed(RouteHelper.getMapRoute(
                AddressModel(id: store!.id, address: store!.address, latitude: store!.latitude,
                  longitude: store!.longitude, contactPersonNumber: '', contactPersonName: '', addressType: '',
-               ), 'store', Get.find<SplashController>().getModuleConfig(Get.find<SplashController>().module!.moduleType!).newVariation!,
+               ), 'store_new', Get.find<SplashController>().getModuleConfig(Get.find<SplashController>().module!.moduleType!).newVariation!,
              storeName: store!.name, slug: store!.slug??store!.name!,
            )),
            child: Column(children: [
@@ -205,11 +203,11 @@ class StoreDescriptionViewWidget extends StatelessWidget {
            Text(store!.deliveryTime!, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: textColor)),
          ]),
 
-         (store!.delivery! && store!.freeDelivery!) ? const Expanded(child: SizedBox()) : const SizedBox(),
-         (store!.delivery! && store!.freeDelivery!) ? const VerticalDivider(color: Colors.white, thickness: 1) : const SizedBox(),
-         (store!.delivery! && store!.freeDelivery!) ? const Expanded(child: SizedBox()) : const SizedBox(),
+         ((store!.delivery ?? false) && (store!.freeDelivery ?? false)) ? const Expanded(child: SizedBox()) : const SizedBox(),
+         ((store!.delivery ?? false) && (store!.freeDelivery ?? false)) ? const VerticalDivider(color: Colors.white, thickness: 1) : const SizedBox(),
+         ((store!.delivery ?? false) && (store!.freeDelivery ?? false)) ? const Expanded(child: SizedBox()) : const SizedBox(),
 
-         (store!.delivery! && store!.freeDelivery!) ? Column(children: [
+         ((store!.delivery ?? false) && (store!.freeDelivery ?? false)) ? Column(children: [
            Icon(Icons.money_off, color: Theme.of(context).primaryColor, size: 20),
            const SizedBox(width: Dimensions.paddingSizeExtraSmall),
            Text('free_delivery'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: textColor)),
@@ -223,7 +221,7 @@ class StoreDescriptionViewWidget extends StatelessWidget {
          onTap: () => Get.toNamed(RouteHelper.getStoreReviewRoute(store!.id, store!.name, store!, slug: store!.slug ?? store!.name!)),
          child: Column(children: [
            Row(children: [
-             Icon(Icons.star, color: Colors.orange, size: 20),
+             const Icon(Icons.star, color: Colors.orange, size: 20),
              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
              Text(
                store!.avgRating!.toStringAsFixed(1),
@@ -244,7 +242,7 @@ class StoreDescriptionViewWidget extends StatelessWidget {
          onTap: () => Get.toNamed(RouteHelper.getMapRoute(
            AddressModel(id: store!.id, address: store!.address, latitude: store!.latitude,
              longitude: store!.longitude, contactPersonNumber: '', contactPersonName: '', addressType: '',
-           ), 'store', Get.find<SplashController>().getModuleConfig(Get.find<SplashController>().module!.moduleType!).newVariation!,
+           ), 'store_new', Get.find<SplashController>().getModuleConfig(Get.find<SplashController>().module!.moduleType!).newVariation!,
            storeName: store!.name, slug: store!.slug??store!.name!,
          )),
          child: Column(children: [
@@ -267,8 +265,8 @@ class StoreDescriptionViewWidget extends StatelessWidget {
          const SizedBox(width: Dimensions.paddingSizeExtraSmall),
          Text('delivery_time'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: textColor)),
        ]),
-       (store!.delivery! && store!.freeDelivery!) ? const Expanded(child: SizedBox()) : const SizedBox(),
-       (store!.delivery! && store!.freeDelivery!) ? Column(children: [
+       ((store!.delivery ?? false) && (store!.freeDelivery ?? false)) ? const Expanded(child: SizedBox()) : const SizedBox(),
+       ((store!.delivery ?? false) && (store!.freeDelivery ?? false)) ? Column(children: [
          Icon(Icons.money_off, color: Theme.of(context).primaryColor, size: 20),
          const SizedBox(width: Dimensions.paddingSizeExtraSmall),
          Text('free_delivery'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: textColor)),

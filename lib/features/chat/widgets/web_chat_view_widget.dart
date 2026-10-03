@@ -59,6 +59,15 @@ class _WebChatViewWidgetState extends State<WebChatViewWidget> with TickerProvid
 
 
   @override
+  void dispose() {
+    _inputMessageController.dispose();
+    _scrollControllerChat.dispose();
+    _scrollController1.dispose();
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
@@ -231,12 +240,12 @@ class _WebChatViewWidgetState extends State<WebChatViewWidget> with TickerProvid
                                   unselectedLabelStyle: robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault),
                                   tabAlignment: TabAlignment.start,
                                   tabs: [
-                                    Tab(text: 'store'.tr),
+                                    Tab(text: 'store_new'.tr),
                                     Tab(text: 'delivery_man'.tr),
                                   ],
                                   onTap: (int index){
                                     if(index == 0){
-                                      widget.chatController.setType('vendor1');
+                                      widget.chatController.setType(UserType.vendor.name);
                                       widget.chatController.setTabSelect();
                                     } else {
                                       widget.chatController.setType('delivery_man');
@@ -262,7 +271,7 @@ class _WebChatViewWidgetState extends State<WebChatViewWidget> with TickerProvid
                                       chatController: widget.chatController,
                                       conversation: widget.conversation,
                                       scrollController: _scrollController1,
-                                      type: 'vendor1',
+                                      type: UserType.vendor.name,
                                     ),
 
                                     /// Delivery Man

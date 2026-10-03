@@ -36,6 +36,12 @@ class _LoyaltyBottomSheetWidgetState extends State<LoyaltyBottomSheetWidget> {
   }
 
   @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
 
     return Stack(
@@ -102,7 +108,7 @@ class _LoyaltyBottomSheetWidgetState extends State<LoyaltyBottomSheetWidget> {
                       if(Get.isBottomSheetOpen!){
                         Get.back();
                       }
-                      showCustomSnackBar('input_field_is_empty'.tr);
+                      showCustomSnackBar('input_field_is_empty'.tr, getXSnackBar: true);
                     }else{
                       int amount = int.parse(_amountController.text.trim());
                       int? point = Get.find<ProfileController>().userInfoModel!.loyaltyPoint;
@@ -111,12 +117,12 @@ class _LoyaltyBottomSheetWidgetState extends State<LoyaltyBottomSheetWidget> {
                         if(Get.isBottomSheetOpen!){
                           Get.back();
                         }
-                        showCustomSnackBar('${'please_exchange_more_then'.tr} $minimumExchangePoint ${'points'.tr}');
+                        showCustomSnackBar('${'please_exchange_more_then'.tr} $minimumExchangePoint ${'points'.tr}', getXSnackBar: true);
                       }else if(point! < amount){
                         if(Get.isBottomSheetOpen!){
                           Get.back();
                         }
-                        showCustomSnackBar('you_do_not_have_enough_point_to_exchange'.tr);
+                        showCustomSnackBar('you_do_not_have_enough_point_to_exchange'.tr, getXSnackBar: true);
                       } else {
                         walletController.pointToWallet(amount);
                       }

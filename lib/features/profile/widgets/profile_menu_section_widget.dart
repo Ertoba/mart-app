@@ -26,6 +26,7 @@ class ProfileMenuSectionWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(Dimensions.radiusLarge),
+        // boxShadow: lightShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,25 +46,18 @@ class ProfileMenuSectionWidget extends StatelessWidget {
               ),
             ),
           ),
-
           ...List.generate(items.length, (index) {
-            final bool isLast = index == items.length - 1;
-
+            final isLast = index == items.length - 1;
             return Column(
               children: [
                 _ProfileMenuTile(item: items[index]),
-
                 if (!isLast)
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: Dimensions.paddingSizeDefault,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
                     child: Divider(
                       height: 1,
                       thickness: 1,
-                      color: Theme.of(
-                        context,
-                      ).disabledColor.withValues(alpha: 0.15),
+                      color: Theme.of(context).disabledColor.withValues(alpha: 0.15),
                     ),
                   ),
               ],
@@ -77,15 +71,11 @@ class ProfileMenuSectionWidget extends StatelessWidget {
 
 class _ProfileMenuTile extends StatelessWidget {
   final ProfileMenuItem item;
-
   const _ProfileMenuTile({required this.item});
 
   @override
   Widget build(BuildContext context) {
-    final Color textColor =
-        item.color ??
-        Theme.of(context).textTheme.bodyLarge?.color ??
-        Colors.black;
+    final Color textColor = item.color ?? Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
 
     return InkWell(
       onTap: () {
@@ -95,13 +85,11 @@ class _ProfileMenuTile extends StatelessWidget {
           Get.toNamed(item.route!);
         }
       },
-
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: Dimensions.paddingSizeDefault,
           vertical: Dimensions.paddingSizeDefault,
         ),
-
         child: Row(
           children: [
             Image.asset(
@@ -109,13 +97,9 @@ class _ProfileMenuTile extends StatelessWidget {
               width: 16,
               height: 16,
               fit: BoxFit.contain,
-              color: Theme.of(
-                context,
-              ).textTheme.bodyLarge!.color!.withValues(alpha: 0.6),
+              color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: 0.6),
             ),
-
             const SizedBox(width: Dimensions.paddingSizeDefault),
-
             Expanded(
               child: Text(
                 item.titleKey.tr,
@@ -125,6 +109,11 @@ class _ProfileMenuTile extends StatelessWidget {
                 ),
               ),
             ),
+            // Icon(
+            //   Icons.arrow_forward_ios_rounded,
+            //   size: 14,
+            //   color: Theme.of(context).disabledColor,
+            // ),
           ],
         ),
       ),

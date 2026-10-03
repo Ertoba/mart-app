@@ -1,16 +1,21 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixam_mart/api/local_client.dart';
+import 'package:sixam_mart/api/response_parser.dart';
 import 'package:sixam_mart/common/enums/data_source_enum.dart';
 import 'package:sixam_mart/common/models/response_model.dart';
 import 'package:sixam_mart/api/api_client.dart';
 import 'package:sixam_mart/features/splash/domain/models/landing_model.dart';
 import 'dart:convert';
+import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/features/splash/domain/repositories/splash_repository_interface.dart';
+
+import '../models/app_download_section_model.dart';
 
 class SplashRepository implements SplashRepositoryInterface {
   final ApiClient apiClient;
@@ -27,38 +32,16 @@ class SplashRepository implements SplashRepositoryInterface {
         Response response = await apiClient.getData(AppConstants.configUri);
         if (response.statusCode == 200) {
           responseData = Response(statusCode: 200, body: response.body);
-          LocalClient.organize(source, cacheId, jsonEncode(response.body), apiClient.getHeader());
+          LocalClient.organize(source, cacheId, response.bodyString ?? '', apiClient.getHeader());
         }
 
       case DataSourceEnum.local:
         String? cacheResponseData = await LocalClient.organize(source, cacheId, null, null);
         if(cacheResponseData != null) {
-          responseData = Response(statusCode: 200, body: jsonDecode(cacheResponseData));
+          responseData = Response(statusCode: 200, body: ResponseParser.payloadOf(jsonDecode(cacheResponseData)));
         }
     }
     return responseData;
-  }
-
-  @override
-  Future<LandingModel?> getLandingPageData({required DataSourceEnum source}) async {
-    LandingModel? landingModel;
-    String cacheId = AppConstants.landingPageUri;
-
-    switch(source) {
-      case DataSourceEnum.client:
-        Response response = await apiClient.getData(AppConstants.landingPageUri);
-        if(response.statusCode == 200) {
-          landingModel = LandingModel.fromJson(response.body);
-          LocalClient.organize(source, cacheId, jsonEncode(response.body), apiClient.getHeader());
-        }
-
-      case DataSourceEnum.local:
-        String? cacheResponseData = await LocalClient.organize(source, cacheId, null, null);
-        if(cacheResponseData != null) {
-          landingModel = LandingModel.fromJson(jsonDecode(cacheResponseData));
-        }
-    }
-    return landingModel;
   }
 
   @override
@@ -133,12 +116,7 @@ class SplashRepository implements SplashRepositoryInterface {
 
   @override
   Future<void> setStoreCategory(int storeCategoryID) async {
-    AddressModel? addressModel;
-    try {
-      addressModel = AddressModel.fromJson(jsonDecode(sharedPreferences.getString(AppConstants.userAddress)!));
-    }catch(e) {
-      debugPrint('Did not get shared Preferences address . Note: $e');
-    }
+    final AddressModel? addressModel = AddressHelper.getUserAddressFromSharedPref();
     apiClient.updateHeader(
       sharedPreferences.getString(AppConstants.token), addressModel?.zoneIds,
       addressModel?.areaIds, sharedPreferences.getString(AppConstants.languageCode),
@@ -155,16 +133,23 @@ class SplashRepository implements SplashRepositoryInterface {
       case DataSourceEnum.client:
         Response response = await apiClient.getData(AppConstants.moduleUri, headers: headers);
         if (response.statusCode == 200) {
+          final List<dynamic> modulesJson = ResponseParser.listOrEmpty(response.body);
           moduleList = [];
-          response.body.forEach((storeCategory) => moduleList!.add(ModuleModel.fromJson(storeCategory)));
-          LocalClient.organize(source, cacheId, jsonEncode(response.body), apiClient.getHeader());
+          for (final dynamic storeCategory in modulesJson) {
+            moduleList.add(ModuleModel.fromJson(storeCategory));
+          }
+          // Cache the extracted list, not the raw body, so the local branch below
+          // decodes the same shape whichever response format the client branch saw.
+          LocalClient.organize(source, cacheId, jsonEncode(modulesJson), apiClient.getHeader());
         }
 
       case DataSourceEnum.local:
         String? cacheResponseData = await LocalClient.organize(source, cacheId, null, null);
         if(cacheResponseData != null) {
           moduleList = [];
-          jsonDecode(cacheResponseData).forEach((storeCategory) => moduleList!.add(ModuleModel.fromJson(storeCategory)));
+          for (final dynamic storeCategory in ResponseParser.listOrEmpty(jsonDecode(cacheResponseData))) {
+            moduleList.add(ModuleModel.fromJson(storeCategory));
+          }
         }
     }
 
@@ -173,16 +158,13 @@ class SplashRepository implements SplashRepositoryInterface {
 
   @override
   Future<void> setModule(ModuleModel? module) async {
-    AddressModel? addressModel;
-    try {
-      addressModel = AddressModel.fromJson(jsonDecode(sharedPreferences.getString(AppConstants.userAddress)!));
-    }catch(e) {
-      debugPrint('Did not get shared Preferences address . Note: $e');
-    }
+    final AddressModel? addressModel = AddressHelper.getUserAddressFromSharedPref();
+
     apiClient.updateHeader(
       sharedPreferences.getString(AppConstants.token), addressModel?.zoneIds, addressModel?.areaIds,
       sharedPreferences.getString(AppConstants.languageCode), module?.id?.toString(),
-      addressModel?.latitude, addressModel?.longitude, null,
+      addressModel?.latitude, addressModel?.longitude,
+      (module != null && module.moduleType.toString() == AppConstants.ride) ? addressModel?.rideZoneId : null,
       fromModule: true,
     );
     if(module != null) {
@@ -332,6 +314,31 @@ class SplashRepository implements SplashRepositoryInterface {
   @override
   Future update(Map<String, dynamic> body, int? id) {
     throw UnimplementedError();
+  }
+
+  @override
+  Future<AppDownloadSectionModel?> getAppDownloadSection() async {
+    AppDownloadSectionModel? appDownloadSectionModel;
+    Response response = await apiClient.getData(AppConstants.appDownloadSectionUri);
+    if(response.statusCode == 200 && response.body != null) {
+      appDownloadSectionModel = AppDownloadSectionModel.fromJson(response.body);
+    }
+    return appDownloadSectionModel;
+  }
+
+  @override
+  bool handleInitialTopicSubscription() {
+    try{
+      if(!GetPlatform.isWeb) {
+        FirebaseMessaging.instance.subscribeToTopic(AppConstants.topic);
+        FirebaseMessaging.instance.subscribeToTopic(AppConstants.maintenanceModeTopic);
+      }
+      print('====Topic Subscription Successful');
+      return true;
+    }catch(e) {
+      debugPrint('Topic Subscription Failed, $e');
+      return false;
+    }
   }
 
 }

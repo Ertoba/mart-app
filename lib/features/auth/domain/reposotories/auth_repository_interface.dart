@@ -26,6 +26,10 @@ abstract class AuthRepositoryInterface extends RepositoryInterface{
   String getUserCountryCode();
   String getUserPassword();
   Future<bool> clearUserNumberAndPassword();
+  Future<void> saveOtpUserNumber(String number, String countryCode);
+  String getOtpUserNumber();
+  String getOtpUserCountryCode();
+  Future<bool> clearOtpUserNumber();
   String getUserToken();
   Future<Response> updateZone();
   Future<bool> saveGuestContactNumber(String number);

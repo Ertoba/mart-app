@@ -1,45 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:dotted_border/dotted_border.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
-import 'package:sixam_mart/features/checkout/widgets/guest_create_account.dart';
-import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
+import 'package:sixam_mart/common/models/config_model.dart';
+import 'package:sixam_mart/common/widgets/custom_dropdown.dart';
 import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/features/cart/domain/models/cart_model.dart';
-import 'package:sixam_mart/common/models/config_model.dart';
 import 'package:sixam_mart/features/checkout/controllers/checkout_controller.dart';
-import 'package:sixam_mart/helper/auth_helper.dart';
-import 'package:sixam_mart/helper/responsive_helper.dart';
-import 'package:sixam_mart/util/dimensions.dart';
-import 'package:sixam_mart/util/app_constants.dart';
-import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/common/widgets/custom_dropdown.dart';
-import 'package:sixam_mart/features/cart/widgets/delivery_option_button_widget.dart';
-import 'package:sixam_mart/features/cart/widgets/add_to_monthly_widget.dart';
 import 'package:sixam_mart/features/checkout/widgets/coupon_section.dart';
-import 'package:sixam_mart/features/checkout/widgets/delivery_instruction_view.dart';
 import 'package:sixam_mart/features/checkout/widgets/delivery_section.dart';
 import 'package:sixam_mart/features/checkout/widgets/deliveryman_tips_section.dart';
+import 'package:sixam_mart/features/checkout/widgets/guest_create_account.dart';
 import 'package:sixam_mart/features/checkout/widgets/payment_section.dart';
 import 'package:sixam_mart/features/checkout/widgets/saver_delivery_time_widget.dart';
 import 'package:sixam_mart/features/checkout/widgets/time_slot_section.dart';
-import 'package:sixam_mart/features/checkout/widgets/web_delivery_instruction_view.dart';
-import 'package:sixam_mart/features/store/widgets/camera_button_sheet_widget.dart';
-import 'dart:io';
+import 'package:sixam_mart/features/checkout/widgets_new/custom_card_checkout.dart';
+import 'package:sixam_mart/features/checkout/widgets_new/delivery_type_section.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
+import 'package:sixam_mart/helper/auth_helper.dart';
+import 'package:sixam_mart/helper/responsive_helper.dart';
+import 'package:sixam_mart/util/dimensions.dart';
 
 class TopSection extends StatelessWidget {
   final CheckoutController checkoutController;
   final double charge;
   final double deliveryCharge;
-  final double saverBaseDeliveryCharge;
   final List<DropdownItem<int>> addressList;
   final bool tomorrowClosed;
   final bool todayClosed;
   final Module? module;
-  final  double price;
+  final double subTotal;
   final double discount;
-  final double addOns;
   final int? storeId;
   final List<AddressModel> address;
   final List<CartModel?>? cartList;
@@ -60,14 +50,14 @@ class TopSection extends StatelessWidget {
   final TextEditingController guestConfirmPasswordController;
   final FocusNode guestPasswordNode;
   final FocusNode guestConfirmPasswordNode;
-  final double variationPrice;
   final String deliveryChargeForView;
   final double badWeatherCharge;
   final double extraChargeForToolTip;
+  final bool proFreeDelivery;
 
   const TopSection({
-    super.key, required this.deliveryCharge, required this.saverBaseDeliveryCharge, required  this.charge, required this.tomorrowClosed,
-    required this.todayClosed, required this.price, required this.discount, required this.addOns,
+    super.key, required this.deliveryCharge, required  this.charge, required this.tomorrowClosed,
+    required this.todayClosed, required this.subTotal, required this.discount,
     required this.addressList, required this.checkoutController,
     this.module, this.storeId, required this.address, required this.cartList,
     required this.isCashOnDeliveryActive, required this.isDigitalPaymentActive, required this.isWalletActive,
@@ -75,8 +65,8 @@ class TopSection extends StatelessWidget {
     required this.guestNumberTextEditingController, required this.guestNumberNode,
     required this.guestEmailController, required this.guestEmailNode, required this.tooltipController1,
     required this.tooltipController2, required this.dmTipsTooltipController, required this.guestPasswordController, required this.guestConfirmPasswordController,
-    required this.guestPasswordNode, required this.guestConfirmPasswordNode, required this.variationPrice, required this.deliveryChargeForView,
-    required this.badWeatherCharge, required this.extraChargeForToolTip,
+    required this.guestPasswordNode, required this.guestConfirmPasswordNode, required this.deliveryChargeForView,
+    required this.badWeatherCharge, required this.extraChargeForToolTip, this.proFreeDelivery = false,
   });
 
   @override
@@ -84,172 +74,63 @@ class TopSection extends StatelessWidget {
     bool takeAway = (checkoutController.orderType == 'take_away');
     bool isDesktop = ResponsiveHelper.isDesktop(context);
     bool isGuestLoggedIn = AuthHelper.isGuestLoggedIn();
-    final String? moduleType =
-        Get.find<SplashController>().module?.moduleType?.toString();
-    final bool showMonthlyReorder = AuthHelper.isLoggedIn() &&
-        storeId == null &&
-        Get.find<SplashController>().configModel?.monthlyOrderRemainder == 1 &&
-        (moduleType == AppConstants.grocery ||
-            moduleType == AppConstants.pharmacy);
 
     return Container(
       decoration: ResponsiveHelper.isDesktop(context) ? BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5, spreadRadius: 1)],
       ) : null,
       child: Column(children: [
 
-        storeId != null ? Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withValues(alpha: 0.05), blurRadius: 10)],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge, vertical: Dimensions.paddingSizeSmall),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
-            Row(children: [
-              Text('your_prescription'.tr, style: robotoMedium),
-              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-
-              JustTheTooltip(
-                backgroundColor: Colors.black87,
-                controller: tooltipController1,
-                preferredDirection: AxisDirection.right,
-                tailLength: 14,
-                tailBaseWidth: 20,
-                content: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text('prescription_tool_tip'.tr, style: robotoRegular.copyWith(color: Colors.white)),
-                ),
-                child: InkWell(
-                  onTap: () => tooltipController1.showTooltip(),
-                  child: const Icon(Icons.info_outline),
-                ),
-              ),
-            ]),
-            const SizedBox(height: Dimensions.paddingSizeSmall),
-
-            SizedBox(
-              height: 100,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                itemCount: checkoutController.pickedPrescriptions.length+1,
-                padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeExtraSmall),
-                itemBuilder: (context, index) {
-                  XFile? file = index == checkoutController.pickedPrescriptions.length ? null : checkoutController.pickedPrescriptions[index];
-                  if(index < 5 && index == checkoutController.pickedPrescriptions.length) {
-                    return InkWell(
-                      onTap: () {
-                        if (ResponsiveHelper.isDesktop(context) || GetPlatform.isIOS){
-                          checkoutController.pickPrescriptionImage(isRemove: false, isCamera: false);
-                        } else {
-                          Get.bottomSheet(const CameraButtonSheetWidget());
-                        }
-                      },
-                      child: DottedBorder(
-                        options: RoundedRectDottedBorderOptions(
-                          color: Theme.of(context).primaryColor,
-                          strokeWidth: 1,
-                          strokeCap: StrokeCap.butt,
-                          dashPattern: const [5, 5],
-                          padding: const EdgeInsets.all(0),
-                          radius: const Radius.circular(Dimensions.radiusDefault),
-                        ),
-                        child: Container(
-                          height: 98, width: 98, alignment: Alignment.center, decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-                        ),
-                          child:  Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                            Icon(Icons.cloud_upload, color: Theme.of(context).disabledColor, size: 32),
-                            Text('upload_your_prescription'.tr, style: robotoRegular.copyWith(color: Theme.of(context).disabledColor, fontSize: Dimensions.fontSizeSmall), textAlign: TextAlign.center,),
-                          ]),
-                        ),
-                      ),
-                    );
-                  }
-                  return file != null ? Container(
-                    margin: const EdgeInsets.only(right: Dimensions.paddingSizeSmall),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-                    ),
-                    child: DottedBorder(
-                      options: RoundedRectDottedBorderOptions(
-                        color: Theme.of(context).primaryColor,
-                        strokeWidth: 1,
-                        strokeCap: StrokeCap.butt,
-                        dashPattern: const [5, 5],
-                        padding: const EdgeInsets.all(0),
-                        radius: const Radius.circular(Dimensions.radiusDefault),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(5.0),
-                        child: Stack(children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                            child: GetPlatform.isWeb ? Image.network(
-                              file.path, width: 98, height: 98, fit: BoxFit.cover,
-                            ) : Image.file(
-                              File(file.path), width: 98, height: 98, fit: BoxFit.cover,
-                            ),
-                          ),
-                          Positioned(
-                            right: 0, top: 0,
-                            child: InkWell(
-                              onTap: () => checkoutController.removePrescriptionImage(index),
-                              child: const Padding(
-                                padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
-                                child: Icon(Icons.delete_forever, color: Colors.red),
-                              ),
-                            ),
-                          ),
-                        ]),
-                      ),
-                    ),
-                  ) : const SizedBox();
-                },
-              ),
-            ),
-          ]),
-        ) : const SizedBox(),
-        const SizedBox(height: Dimensions.paddingSizeSmall),
+        const SizedBox(height: Dimensions.paddingSizeLarge),
 
         // delivery option
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withValues(alpha: 0.05), blurRadius: 10)],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge, vertical: Dimensions.paddingSizeSmall),
-          width: double.infinity,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('delivery_type'.tr, style: robotoMedium),
-              const SizedBox(height: Dimensions.paddingSizeSmall),
-
-              storeId != null ? DeliveryOptionButtonWidget(
-                value: 'delivery', title: 'home_delivery'.tr, charge: charge,
-                isFree: checkoutController.store!.freeDelivery, fromWeb: true, total: total,
-                deliveryChargeForView: deliveryChargeForView, badWeatherCharge: badWeatherCharge, extraChargeForToolTip: extraChargeForToolTip,
-              ) : SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
-                Get.find<SplashController>().configModel!.homeDeliveryStatus == 1 && checkoutController.store!.delivery! ? DeliveryOptionButtonWidget(
-                  value: 'delivery', title: 'home_delivery'.tr, charge: charge,
-                  isFree: checkoutController.store!.freeDelivery,  fromWeb: true, total: total,
-                  deliveryChargeForView: deliveryChargeForView, badWeatherCharge: badWeatherCharge, extraChargeForToolTip: extraChargeForToolTip,
-                ) : const SizedBox(),
-                const SizedBox(width: Dimensions.paddingSizeDefault),
-
-                Get.find<SplashController>().configModel!.takeawayStatus == 1 && checkoutController.store!.takeAway! ? DeliveryOptionButtonWidget(
-                  value: 'take_away', title: 'take_away'.tr, charge: deliveryCharge, isFree: true,  fromWeb: true, total: total,
-                  deliveryChargeForView: deliveryChargeForView, badWeatherCharge: badWeatherCharge, extraChargeForToolTip: extraChargeForToolTip,
-                ) : const SizedBox(),
-              ]),
-              ),
-            ],
-          ),
+        DeliveryTypeSection(
+          homeDeliveryEnabled: storeId != null
+              || (Get.find<SplashController>().configModel!.homeDeliveryStatus == 1 && (checkoutController.store!.delivery ?? true)),
+          takeAwayEnabled: storeId == null
+              && Get.find<SplashController>().configModel!.takeawayStatus == 1
+              && (checkoutController.store!.takeAway ?? false),
+          total: total,
+          charge: charge,
         ),
-        const SizedBox(height: Dimensions.paddingSizeLarge),
+
+        /// Time Slot (with optional embedded Saver delivery options)
+        GetBuilder<CheckoutController>(builder: (controller) {
+          final bool showTimeSlot = TimeSlotSection.shouldRender(
+            storeId: storeId, checkoutController: controller, cartList: cartList,
+          );
+          final bool showSaver = controller.isInstantDelivery && SaverDeliveryTimeWidget.canShow(controller: controller);
+
+          if(showTimeSlot) {
+            return Column(
+              children: [
+                TimeSlotSection(
+                  storeId: storeId, checkoutController: controller, cartList: cartList, tooltipController2: tooltipController2,
+                  tomorrowClosed: tomorrowClosed, todayClosed: todayClosed, module: module,
+                  trailingContent: showSaver ? SaverDeliveryTimeWidget(
+                    checkoutController: controller, deliveryCharge: deliveryCharge, originalDeliveryCharge: charge, proFreeDelivery: proFreeDelivery,
+                  ) : null,
+                ),
+                const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+              ],
+            );
+          }
+
+          if(showSaver) {
+            return Column(children: [
+              CustomCardCheckout(
+                padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+                child: SaverDeliveryTimeWidget(
+                  checkoutController: controller, deliveryCharge: deliveryCharge, originalDeliveryCharge: charge, proFreeDelivery: proFreeDelivery,
+                ),
+              ),
+              const SizedBox(height: Dimensions.paddingSizeLarge),
+            ]);
+          }
+
+          return const SizedBox();
+        }),
 
         ///delivery section
         DeliverySection(checkoutController: checkoutController, address: address, addressList: addressList,
@@ -257,7 +138,7 @@ class TopSection extends StatelessWidget {
           guestNumberNode: guestNumberNode, guestEmailController: guestEmailController, guestEmailNode: guestEmailNode,
         ),
 
-        SizedBox(height: !takeAway ? isDesktop ? Dimensions.paddingSizeLarge : Dimensions.paddingSizeSmall : 0),
+        SizedBox(height: !takeAway ? isDesktop ? Dimensions.paddingSizeLarge : Dimensions.paddingSizeLarge : takeAway && isGuestLoggedIn ? Dimensions.paddingSizeLarge : 0),
 
         ///Create Account with existing info
         isGuestLoggedIn && Get.find<SplashController>().configModel!.centralizeLoginSetup!.manualLoginStatus! ? GuestCreateAccount(
@@ -266,20 +147,10 @@ class TopSection extends StatelessWidget {
         ) : const SizedBox(),
         SizedBox(height: isGuestLoggedIn && Get.find<SplashController>().configModel!.centralizeLoginSetup!.manualLoginStatus! ? Dimensions.paddingSizeSmall : 0),
 
-        ///delivery instruction
-        !takeAway ? isDesktop ? const WebDeliveryInstructionView() : const DeliveryInstructionView() : const SizedBox(),
-        SizedBox(height: !takeAway ? isDesktop ? Dimensions.paddingSizeLarge : Dimensions.paddingSizeSmall : 0),
-
-        /// Time Slot
-        TimeSlotSection(
-          storeId: storeId, checkoutController: checkoutController, cartList: cartList, tooltipController2: tooltipController2,
-          tomorrowClosed: tomorrowClosed, todayClosed: todayClosed, module: module,
-        ),
-
         /// Coupon..
         !isDesktop && !isGuestLoggedIn ? CouponSection(
-          storeId: storeId, checkoutController: checkoutController, total: total, price: price,
-          discount: discount, addOns: addOns, deliveryCharge: deliveryCharge, variationPrice: variationPrice,
+          storeId: storeId, checkoutController: checkoutController, total: total, subTotal: subTotal,
+          discount: discount, deliveryCharge: deliveryCharge,
         ) : const SizedBox(),
 
         ///DmTips..
@@ -287,47 +158,15 @@ class TopSection extends StatelessWidget {
           takeAway: takeAway, tooltipController3: dmTipsTooltipController,
           totalPrice: total, onTotalChange: (double price) => total + price, storeId: storeId,
         ),
-
-        if(showMonthlyReorder) ...[
-          const MonthlyReorderSection(),
-          SizedBox(height: isDesktop ? Dimensions.paddingSizeLarge : Dimensions.paddingSizeSmall),
-        ],
-
-        if(SaverDeliveryTimeWidget.canShow(
-          controller: checkoutController,
-          deliveryCharge: saverBaseDeliveryCharge,
-          originalDeliveryCharge: charge,
-        )) ...[
-          Container(
-            color: Theme.of(context).cardColor,
-            padding: const EdgeInsets.symmetric(
-              horizontal: Dimensions.paddingSizeLarge,
-              vertical: Dimensions.paddingSizeSmall,
-            ),
-            child: SaverDeliveryTimeWidget(
-              checkoutController: checkoutController,
-              deliveryCharge: saverBaseDeliveryCharge,
-              originalDeliveryCharge: charge,
-            ),
-          ),
-          SizedBox(height: isDesktop ? Dimensions.paddingSizeLarge : Dimensions.paddingSizeSmall),
-        ],
+        SizedBox(height: !takeAway && Get.find<SplashController>().configModel!.dmTipsStatus == 1 ? Dimensions.paddingSizeLarge : 0),
 
         ///Payment..
-        Container(
-          decoration: isDesktop ? const BoxDecoration() : BoxDecoration(
-            color: Theme.of(context).cardColor,
-            boxShadow: [BoxShadow(color: Theme.of(context).primaryColor.withValues(alpha: 0.05), blurRadius: 10)],
+        CustomCardCheckout(
+          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+          child: PaymentSection(
+            storeId: storeId, isCashOnDeliveryActive: isCashOnDeliveryActive, isDigitalPaymentActive: isDigitalPaymentActive,
+            isWalletActive: isWalletActive, total: total, checkoutController: checkoutController, isOfflinePaymentActive: isOfflinePaymentActive,
           ),
-          padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeLarge, horizontal: Dimensions.paddingSizeLarge),
-          child: Column(children: [
-
-            PaymentSection(
-              storeId: storeId, isCashOnDeliveryActive: isCashOnDeliveryActive, isDigitalPaymentActive: isDigitalPaymentActive,
-              isWalletActive: isWalletActive, total: total, checkoutController: checkoutController, isOfflinePaymentActive: isOfflinePaymentActive,
-            ),
-
-          ]),
         ),
         SizedBox(height: isDesktop ? Dimensions.paddingSizeLarge : 0),
 

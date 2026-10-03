@@ -14,7 +14,6 @@ class LandingModel {
   String? joinDeliveryManSubTitle;
   String? joinDeliveryManButtonName;
   String? joinDeliveryManButtonUrl;
-  int? downloadUserAppSectionStatus;
   String? downloadUserAppTitle;
   String? downloadUserAppSubTitle;
   String? downloadUserAppImageFullUrl;
@@ -44,7 +43,6 @@ class LandingModel {
     this.joinDeliveryManSubTitle,
     this.joinDeliveryManButtonName,
     this.joinDeliveryManButtonUrl,
-    this.downloadUserAppSectionStatus,
     this.downloadUserAppTitle,
     this.downloadUserAppSubTitle,
     this.downloadUserAppImageFullUrl,
@@ -75,7 +73,6 @@ class LandingModel {
     joinDeliveryManSubTitle = json['join_delivery_man_sub_title'];
     joinDeliveryManButtonName = json['join_delivery_man_button_name'];
     joinDeliveryManButtonUrl = json['join_delivery_man_button_url'];
-    downloadUserAppSectionStatus = int.tryParse(json['download_user_app_section_status']?.toString() ?? '0');
     downloadUserAppTitle = json['download_user_app_title'];
     downloadUserAppSubTitle = json['download_user_app_sub_title'];
     downloadUserAppImageFullUrl = json['download_user_app_image_full_url'];
@@ -117,7 +114,6 @@ class LandingModel {
     data['join_delivery_man_sub_title'] = joinDeliveryManSubTitle;
     data['join_delivery_man_button_name'] = joinDeliveryManButtonName;
     data['join_delivery_man_button_url'] = joinDeliveryManButtonUrl;
-    data['download_user_app_section_status'] = downloadUserAppSectionStatus;
     data['download_user_app_title'] = downloadUserAppTitle;
     data['download_user_app_sub_title'] = downloadUserAppSubTitle;
     data['download_user_app_image_full_url'] = downloadUserAppImageFullUrl;

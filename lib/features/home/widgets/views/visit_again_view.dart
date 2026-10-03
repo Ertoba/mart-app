@@ -6,7 +6,6 @@ import 'package:sixam_mart/common/widgets/card_design/visit_again_card.dart';
 import 'package:sixam_mart/features/store/controllers/store_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/features/home/widgets/components/custom_triangle_shape.dart';
-import 'package:sixam_mart/helper/module_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
 
@@ -41,13 +40,9 @@ class _VisitAgainViewState extends State<VisitAgainView> {
                 Text(widget.fromFood! ? "wanna_try_again".tr : "visit_again".tr, style: robotoBold.copyWith(color: Theme.of(context).cardColor)),
                 const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge),
-                  child: Text(
-                    ModuleHelper.recentPurchasePrompt,
-                    textAlign: TextAlign.center,
-                    style: robotoRegular.copyWith(color: Theme.of(context).cardColor, fontSize: Dimensions.fontSizeSmall),
-                  ),
+                Text(
+                  'get_your_recent_purchase_from_the_shop_you_recently_ordered'.tr,
+                  style: robotoRegular.copyWith(color: Theme.of(context).cardColor, fontSize: Dimensions.fontSizeSmall),
                 ),
                 const SizedBox(height: Dimensions.paddingSizeSmall),
 
@@ -55,7 +50,6 @@ class _VisitAgainViewState extends State<VisitAgainView> {
                   itemCount: stores.length,
                   options: CarouselOptions(
                     aspectRatio: 2.0,
-                    enableInfiniteScroll: stores.length > 1,
                     enlargeCenterPage: true,
                     disableCenter: true,
                   ),

@@ -30,8 +30,10 @@ class _DeliveryOptionButtonWidgetState extends State<DeliveryOptionButtonWidget>
     super.initState();
 
     Future.delayed(const Duration(milliseconds: 200), (){
+      // `delivery` is absent from the store payload now, so it reads null.
+      // Unknown means delivery, the same fallback getStoreDetails uses.
       Get.find<CheckoutController>().setOrderType(Get.find<SplashController>().configModel!.homeDeliveryStatus == 1
-          && Get.find<CheckoutController>().store!.delivery! ? 'delivery' : 'take_away', notify: true);
+          && (Get.find<CheckoutController>().store!.delivery ?? true) ? 'delivery' : 'take_away', notify: true);
     });
   }
   @override
@@ -88,7 +90,7 @@ class _DeliveryOptionButtonWidgetState extends State<DeliveryOptionButtonWidget>
                 Text(widget.title, style: robotoMedium.copyWith(color: select ? Theme.of(context).primaryColor : Theme.of(context).textTheme.bodyMedium!.color)),
 
                 Row(children: [
-                  Text(widget.value == 'delivery' ? '${'charge'.tr}: +${widget.deliveryChargeForView}' : 'free'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).textTheme.bodyMedium!.color)),
+                  Text((widget.value == 'delivery' && !(widget.isFree ?? false)) ? '${'charge'.tr}: +${widget.deliveryChargeForView}' : 'free'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).textTheme.bodyMedium!.color)),
                   const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                   widget.deliveryChargeForView != PriceConverter.convertPrice(0) && widget.value == 'delivery' && checkoutController.extraCharge != null && (widget.deliveryChargeForView != '0') && widget.extraChargeForToolTip > 0 ? CustomToolTip(

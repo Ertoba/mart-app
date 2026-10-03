@@ -33,7 +33,7 @@ class OfflinePaymentButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
           border: Border.all(color: forParcel ? Colors.transparent : Theme.of(context).disabledColor, width: 0.3),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeLarge),
+        padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
         margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
         child: Column(children: [
           Row(children: [

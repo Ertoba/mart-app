@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:sixam_mart/api/json_reader.dart';
 import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
+import 'package:sixam_mart/helper/type_converter_helper.dart';
 
 class PlaceOrderBodyModel {
   List<OnlineCart>? _cart;
@@ -41,8 +43,28 @@ class PlaceOrderBodyModel {
   String? _password;
   bool? isPrescriptionOrder;
   double? _bringChangeAmount;
-  int _monthlySubscribe = 0;
-  String? _deliveryType;
+  bool? _monthlySubscribe;
+  String? _saverDeliveryType;
+  /// The coverage pick, when the zone's delivery rule is area- or ZIP-based.
+  /// Whatever was posted to `checkout-summary` must be posted here too — the
+  /// fee moves with it, so sending it to only one of the two is how the quote
+  /// and the charge come apart.
+  int? _areaId;
+  int? _zipCodeId;
+
+  /// The weight band and size class the parcel was quoted at. Same rule as the
+  /// coverage pick above: whatever was posted to `checkout-summary` must be
+  /// posted here, or the quote and the charge come apart.
+  int? _weightId;
+  int? _dimensionId;
+
+  /// Seconds the routing API estimated for the leg, from the same
+  /// `config/distance-api` response `_distance` was read from.
+  ///
+  /// Omitted when that call did not answer: the straight-line fallback behind
+  /// `_distance` yields no duration, and a fabricated one would be indistinguishable
+  /// from a routed estimate once stored.
+  int? _deliveryDuration;
 
   PlaceOrderBodyModel({
     required List<OnlineCart> cart,
@@ -83,8 +105,9 @@ class PlaceOrderBodyModel {
     required String? password,
     this.isPrescriptionOrder = false,
     double? bringChangeAmount,
-    int monthlySubscribe = 0,
-    String? deliveryType,
+    bool? monthlySubscribe,
+    String? saverDeliveryType, int? areaId, int? zipCodeId, int? weightId, int? dimensionId,
+    int? deliveryDuration,
   }) {
     _cart = cart;
     _couponDiscountAmount = couponDiscountAmount;
@@ -125,7 +148,12 @@ class PlaceOrderBodyModel {
     isPrescriptionOrder = isPrescriptionOrder ?? false;
     _bringChangeAmount = bringChangeAmount;
     _monthlySubscribe = monthlySubscribe;
-    _deliveryType = deliveryType;
+    _saverDeliveryType = saverDeliveryType;
+    _areaId = areaId;
+    _zipCodeId = zipCodeId;
+    _weightId = weightId;
+    _dimensionId = dimensionId;
+    _deliveryDuration = deliveryDuration;
   }
 
   List<OnlineCart>? get cart => _cart;
@@ -148,6 +176,9 @@ class PlaceOrderBodyModel {
   String? get contactPersonName => _contactPersonName;
   String? get contactPersonNumber => _contactPersonNumber;
   String? get parcelCategoryId => _parcelCategoryId;
+  int? get weightId => _weightId;
+  int? get dimensionId => _dimensionId;
+  int? get deliveryDuration => _deliveryDuration;
   String? get chargePayer => _chargePayer;
   String? get streetNumber => _streetNumber;
   String? get house => _house;
@@ -165,8 +196,10 @@ class PlaceOrderBodyModel {
   String? get password => _password;
   bool? get isPrescription => isPrescriptionOrder;
   double? get bringChangeAmount => _bringChangeAmount;
-  int get monthlySubscribe => _monthlySubscribe;
-  String? get deliveryType => _deliveryType;
+  bool? get monthlySubscribe => _monthlySubscribe;
+  String? get saverDeliveryType => _saverDeliveryType;
+  int? get areaId => _areaId;
+  int? get zipCodeId => _zipCodeId;
 
   PlaceOrderBodyModel.fromJson(Map<String, dynamic> json) {
     if (json['cart'] != null) {
@@ -196,6 +229,9 @@ class PlaceOrderBodyModel {
     _contactPersonNumber = json['contact_person_number'];
     _addressType = json['address_type'];
     _parcelCategoryId = json['parcel_category_id'];
+    _weightId = JsonReader.toInt(json['weight_id']);
+    _dimensionId = JsonReader.toInt(json['dimension_id']);
+    _deliveryDuration = JsonReader.toInt(json['delivery_duration']);
     _chargePayer = json['charge_payer'];
     _streetNumber = json['road'];
     _house = json['apartment'];
@@ -213,8 +249,10 @@ class PlaceOrderBodyModel {
     _password = json['password'];
     isPrescriptionOrder = json['is_prescription'] != null ? json['is_prescription'] == 'true' : false;
     _bringChangeAmount = json['bring_change_amount'] != null ? double.parse(json['bring_change_amount'].toString()) : null;
-    _monthlySubscribe = int.tryParse(json['monthly_subscribe']?.toString() ?? '0') ?? 0;
-    _deliveryType = json['delivery_type'];
+    _monthlySubscribe = TypeConverterHelper.getBool(json['monthly_subscribe']);
+    _saverDeliveryType = json['delivery_type'];
+    _areaId = JsonReader.toInt(json['area_id']);
+    _zipCodeId = JsonReader.toInt(json['zip_code_id']);
   }
 
   Map<String, String> toJson() {
@@ -258,6 +296,19 @@ class PlaceOrderBodyModel {
     if (_parcelCategoryId != null) {
       data['parcel_category_id'] = _parcelCategoryId!;
     }
+    if (_weightId != null) {
+      data['weight_id'] = _weightId.toString();
+    }
+    if (_dimensionId != null) {
+      data['dimension_id'] = _dimensionId.toString();
+    }
+    // Seconds as a bare number — the routing API's own `"11508s"` with the unit
+    // stripped, so the value carries no suffix for the server to strip again.
+    // Stringified like every other numeric field here, because this whole body
+    // is form-encoded. Absent rather than zero when the route was not measured.
+    if (_deliveryDuration != null) {
+      data['delivery_duration'] = _deliveryDuration.toString();
+    }
     if (_chargePayer != null) {
       data['charge_payer'] = _chargePayer!;
     }
@@ -287,9 +338,17 @@ class PlaceOrderBodyModel {
     if(_bringChangeAmount != null) {
       data['bring_change_amount'] = _bringChangeAmount.toString();
     }
-    data['monthly_subscribe'] = _monthlySubscribe.toString();
-    if(_deliveryType != null) {
-      data['delivery_type'] = _deliveryType!;
+    if(_monthlySubscribe != null) {
+      data['monthly_subscribe'] = _monthlySubscribe! ? 'true' : 'false';
+    }
+    if(_saverDeliveryType != null) {
+      data['delivery_type'] = _saverDeliveryType!;
+    }
+    if(_areaId != null) {
+      data['area_id'] = _areaId.toString();
+    }
+    if(_zipCodeId != null) {
+      data['zip_code_id'] = _zipCodeId.toString();
     }
     return data;
   }

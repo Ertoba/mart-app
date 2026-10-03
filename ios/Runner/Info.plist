@@ -31,7 +31,14 @@
 			<array>
 				<string>com.googleusercontent.apps.1000163153346-tmf9s0kpekc5mum4ubpga4a8gguk2592</string>
 				<string>fb380903914182154</string>
-			</array>
+			<dict>
+<key>CFBundleTypeRole</key>
+<string>Editor</string>
+<key>CFBundleURLSchemes</key>
+<array>
+<string>mili-customer</string>
+</array>
+</dict></array>
 		</dict>
 		<dict>
 			<key>CFBundleTypeRole</key>

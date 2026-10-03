@@ -1,5 +1,13 @@
 class Images {
   static const String logo = 'assets/image/logo.png';
+  static const String keepzCredo = 'assets/image/keepz/credo.png';
+  static const String keepzBog = 'assets/image/keepz/bog.png';
+  static const String keepzTbc = 'assets/image/keepz/tbc.png';
+  static const String keepzLiberty = 'assets/image/keepz/liberty.png';
+  static const String keepzGooglePay = 'assets/image/keepz/google_pay.png';
+  static const String keepzInstallment = 'assets/image/keepz/installment.png';
+  static const String keepzCrypto = 'assets/image/keepz/crypto.png';
+  static const String keepzCard = 'assets/image/keepz/card.png';
   static const String placeholder = 'assets/image/placeholder.jpg';
   static const String notificationPlaceholder = 'assets/image/notification_placeholder.jpg';
   static const String arabic = 'assets/image/arabic.jpg';

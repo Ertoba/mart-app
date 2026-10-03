@@ -33,6 +33,7 @@ import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
 import 'package:sixam_mart/features/location/controllers/location_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
+import 'package:sixam_mart/features/order/domain/models/order_model.dart';
 import 'package:sixam_mart/features/payment/domain/models/offline_method_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/place_order_body_model.dart';
 import 'package:sixam_mart/features/checkout/domain/models/timeslote_model.dart';
@@ -49,6 +50,8 @@ import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/payment/domain/models/keepz_payment_option.dart';
+import 'package:sixam_mart/features/payment/screens/keepz_native_payment_screen.dart';
+import 'package:sixam_mart/features/payment/services/keepz_order_payment_service.dart';
 import 'package:universal_html/html.dart' as html;
 
 class CheckoutController extends GetxController implements GetxService {
@@ -196,6 +199,8 @@ class CheckoutController extends GetxController implements GetxService {
 
   KeepzPaymentOption? get selectedKeepzPaymentOption =>
       KeepzPaymentOption.fromKey(_keepzPaymentOptionKey);
+
+  PaymentModel? _pendingKeepzPayment;
 
   List<SavedPrescriptionModel>? _savedPrescriptions;
   List<SavedPrescriptionModel>? get savedPrescriptions => _savedPrescriptions;
@@ -688,6 +693,8 @@ class CheckoutController extends GetxController implements GetxService {
     _addressIndex = 0;
     _acceptTerms = true;
     _paymentMethodIndex = -1;
+    _digitalPaymentName = null;
+    _keepzPaymentOptionKey = null;
     _selectedDateSlot = 0;
     _selectedTimeSlot = 0;
     _orderAttachment = null;
@@ -1376,6 +1383,30 @@ class CheckoutController extends GetxController implements GetxService {
 
   Future<String> placeOrder(PlaceOrderBodyModel placeOrderBody, int? zoneID, double amount, double? maximumCodOrderAmount, bool fromCart,
       bool isCashOnDeliveryActive, List<XFile>? orderAttachment, {bool isOfflinePay = false}) async {
+    final PaymentModel? pendingKeepzPayment = _pendingKeepzPayment;
+    final bool canResumePendingKeepz =
+        pendingKeepzPayment != null &&
+        !isOfflinePay &&
+        (paymentMethodIndex == 0 ||
+            (paymentMethodIndex == 2 && _digitalPaymentName == 'keepz'));
+
+    if (canResumePendingKeepz) {
+      _isLoading = true;
+      update();
+
+      try {
+        await paymentAfterDigitalCancel(
+          pendingKeepzPayment,
+          false,
+        );
+      } finally {
+        _isLoading = false;
+        update();
+      }
+
+      return pendingKeepzPayment.orderID ?? '';
+    }
+
     List<MultipartBody>? multiParts = [];
     final List<XFile> attachments = orderAttachment ?? [];
     // Every prescription goes up the same way. A media-library pick is already a real
@@ -1480,10 +1511,19 @@ class CheckoutController extends GetxController implements GetxService {
       String userID) async {
 
     if(isSuccess) {
-      if(fromCart) {
+      final bool deferKeepzCartClear =
+          fromCart &&
+          paymentMethodIndex == 2 &&
+          _digitalPaymentName == 'keepz' &&
+          !GetPlatform.isWeb;
+
+      if(fromCart && !deferKeepzCartClear) {
         Get.find<CartController>().clearCartList();
       }
-      setGuestAddress(null);
+
+      if(!deferKeepzCartClear) {
+        setGuestAddress(null);
+      }
       if(!Get.find<OrderController>().showBottomSheet){
         Get.find<OrderController>().showRunningOrders(canUpdate: false);
       }
@@ -1503,12 +1543,73 @@ class CheckoutController extends GetxController implements GetxService {
               '&payment_method=$digitalPaymentName&payment_platform=web&&callback=$protocol//$hostname${RouteHelper.orderSuccess}?id=$orderID&status=';
 
           html.window.open(selectedUrl,"_self");
-        } else{
-          Get.offNamed(RouteHelper.getPaymentRoute(
-            orderID, Get.find<ProfileController>().userInfoModel?.id ?? (userID.isNotEmpty ? int.parse(userID) : 0), orderType, amount,
-            isCashOnDeliveryActive, digitalPaymentName, guestId: userID.isNotEmpty ? userID : AuthHelper.getGuestId(),
-            contactNumber: contactNumber, createAccount: _isCreateAccount,
-          ));
+        } else if(_digitalPaymentName == 'keepz') {
+          final String effectiveGuestId =
+              userID.isNotEmpty ? userID : AuthHelper.getGuestId();
+
+          _pendingKeepzPayment = PaymentModel(
+            orderID: orderID,
+            orderType: orderType,
+            orderAmount: amount,
+            maxCodOrderAmount: maximumCodOrderAmount,
+            isCashOnDeliveryActive: isCashOnDeliveryActive,
+            isDigitalPaymentActive: true,
+            guestId: effectiveGuestId,
+            contactNumber: contactNumber ?? '',
+            zoneId: zoneID,
+            paymentMethod: 'keepz',
+            userId:
+                Get.find<ProfileController>().userInfoModel?.id ??
+                int.tryParse(userID),
+          );
+
+          final String? keepzStatus =
+              await KeepzPaymentLauncher.show(
+            orderModel: OrderModel(
+              id: int.parse(orderID),
+              orderType: orderType,
+              userId:
+                  Get.find<ProfileController>().userInfoModel?.id ??
+                  (int.tryParse(userID) ?? 0),
+              orderAmount: amount,
+            ),
+            isCashOnDelivery: isCashOnDeliveryActive,
+            paymentMethod: digitalPaymentName ?? 'keepz',
+            guestId: effectiveGuestId,
+            contactNumber: contactNumber ?? '',
+            createAccount: _isCreateAccount,
+            keepzMethodKey: _keepzPaymentOptionKey,
+            onPaymentSuccess: fromCart
+                ? () => Get.find<CartController>().clearCartList()
+                : null,
+          );
+
+          if(keepzStatus != 'success') {
+            update();
+            return;
+          }
+
+          _pendingKeepzPayment = null;
+          setGuestAddress(null);
+
+        } else {
+          Get.offNamed(
+            RouteHelper.getPaymentRoute(
+              orderID,
+              Get.find<ProfileController>().userInfoModel?.id ??
+                  (int.tryParse(userID) ?? 0),
+              orderType,
+              amount,
+              isCashOnDeliveryActive,
+              digitalPaymentName,
+              guestId:
+                  userID.isNotEmpty
+                      ? userID
+                      : AuthHelper.getGuestId(),
+              contactNumber: contactNumber,
+              createAccount: _isCreateAccount,
+            ),
+          );
         }
       } else {
         double total = ((amount / 100) * Get.find<SplashController>().configModel!.loyaltyPointItemPurchasePoint!);
@@ -1560,7 +1661,33 @@ class CheckoutController extends GetxController implements GetxService {
       return;
     }
     if(paymentMethodIndex == 0) {
-      bool isSuccess = await Get.find<OrderController>().switchToCOD(paymentData.orderID, guestId: paymentData.guestId);
+      bool isSuccess;
+
+      if(paymentData.paymentMethod == 'keepz') {
+        final KeepzOrderActionResult result =
+            await KeepzOrderPaymentService.switchToCod(
+          orderId: paymentData.orderID!,
+          guestId: paymentData.guestId ?? '',
+        );
+
+        isSuccess = result.isSuccess || result.isPaid;
+
+        if(!isSuccess) {
+          showCustomSnackBar(result.message);
+          return;
+        }
+
+        _pendingKeepzPayment = null;
+        Get.find<CartController>().clearCartList();
+
+      } else {
+        isSuccess =
+            await Get.find<OrderController>().switchToCOD(
+          paymentData.orderID,
+          guestId: paymentData.guestId,
+        );
+      }
+
       if(isSuccess) {
         _closePaymentSheet();
         _redirection(paymentData, fromHome);
@@ -1582,12 +1709,48 @@ class CheckoutController extends GetxController implements GetxService {
             '&payment_method=$digitalPaymentName&payment_platform=web&&callback=$protocol//$hostname${RouteHelper.orderSuccess}?id=${paymentData.orderID}&status=';
 
         html.window.open(selectedUrl,"_self");
-      } else{
-        Get.offNamed(RouteHelper.getPaymentRoute(
-          paymentData.orderID!, Get.find<ProfileController>().userInfoModel?.id ?? 0, paymentData.orderType, paymentData.orderAmount!,
-          paymentData.isCashOnDeliveryActive, digitalPaymentName, guestId: AuthHelper.getGuestId(),
-          contactNumber: paymentData.contactNumber,
-        ));
+      } else if(_digitalPaymentName == 'keepz') {
+        final String? keepzStatus =
+            await KeepzPaymentLauncher.show(
+          orderModel: OrderModel(
+            id: int.parse(paymentData.orderID!),
+            orderType: paymentData.orderType,
+            userId:
+                Get.find<ProfileController>().userInfoModel?.id ?? 0,
+            orderAmount: paymentData.orderAmount,
+          ),
+          isCashOnDelivery:
+              paymentData.isCashOnDeliveryActive ?? false,
+          paymentMethod: digitalPaymentName ?? 'keepz',
+          guestId:
+              paymentData.guestId ?? AuthHelper.getGuestId(),
+          contactNumber: paymentData.contactNumber ?? '',
+          createAccount: false,
+          keepzMethodKey: _keepzPaymentOptionKey,
+          onPaymentSuccess:
+              () => Get.find<CartController>().clearCartList(),
+        );
+
+        if(keepzStatus != 'success') {
+          update();
+          return;
+        }
+
+        _pendingKeepzPayment = null;
+
+      } else {
+        Get.offNamed(
+          RouteHelper.getPaymentRoute(
+            paymentData.orderID!,
+            Get.find<ProfileController>().userInfoModel?.id ?? 0,
+            paymentData.orderType,
+            paymentData.orderAmount!,
+            paymentData.isCashOnDeliveryActive,
+            digitalPaymentName,
+            guestId: AuthHelper.getGuestId(),
+            contactNumber: paymentData.contactNumber,
+          ),
+        );
       }
     } else if(paymentMethodIndex == 3) {
       debugPrint('------offline selected');

@@ -291,8 +291,20 @@ class _PaymentRowHelper {
       case 1:
         return 'wallet_payment'.tr;
       case 2:
-        final String name = c.digitalPaymentName?.replaceAll('_', ' ').toTitleCase() ?? '';
+        if (c.digitalPaymentName == 'keepz') {
+          final String keepzName =
+              c.selectedKeepzPaymentOption?.title ?? 'digital_payment'.tr;
+
+          return c.isPartialPay
+              ? '$keepzName (${'partial'.tr})'
+              : keepzName;
+        }
+
+        final String name =
+            c.digitalPaymentName?.replaceAll('_', ' ').toTitleCase() ?? '';
+
         if (name.isEmpty) return 'digital_payment'.tr;
+
         return c.isPartialPay ? '$name (${'partial'.tr})' : name;
       case 3:
         final List? methods = c.offlineMethodList;

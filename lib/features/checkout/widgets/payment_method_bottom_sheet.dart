@@ -18,6 +18,7 @@ import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
+import 'package:sixam_mart/features/payment/domain/models/keepz_payment_option.dart';
 
 class PaymentMethodBottomSheet extends StatefulWidget {
   final bool isCashOnDeliveryActive;
@@ -191,24 +192,110 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             padding: EdgeInsets.zero,
-                            itemBuilder: (context, index){
-                              bool isSelected = checkoutController.paymentMethodIndex == 2 && Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWay! == checkoutController.digitalPaymentName;
+                            itemBuilder: (context, index) {
+                              final activePaymentMethod =
+                                  Get.find<SplashController>()
+                                      .configModel!
+                                      .activePaymentMethodList![index];
+
+                              final bool isKeepz =
+                                  activePaymentMethod.getWay == 'keepz';
+
+                              if (isKeepz) {
+                                return Column(
+                                  children: List<Widget>.generate(
+                                    KeepzPaymentOption.values.length,
+                                    (int optionIndex) {
+                                      final KeepzPaymentOption option =
+                                          KeepzPaymentOption.values[optionIndex];
+
+                                      final bool isLast =
+                                          optionIndex ==
+                                                  KeepzPaymentOption.values.length - 1 &&
+                                              index ==
+                                                  Get.find<SplashController>()
+                                                          .configModel!
+                                                          .activePaymentMethodList!
+                                                          .length -
+                                                      1;
+
+                                      final bool isSelected =
+                                          checkoutController.paymentMethodIndex == 2 &&
+                                              checkoutController.digitalPaymentName ==
+                                                  'keepz' &&
+                                              checkoutController
+                                                      .keepzPaymentOptionKey ==
+                                                  option.key;
+
+                                      return paymentButtonView(
+                                        padding: EdgeInsets.only(
+                                          bottom: isLast
+                                              ? 0
+                                              : Dimensions.paddingSizeSmall,
+                                        ),
+                                        disablePayments: disablePayments,
+                                        onTap: disablePayments
+                                            ? null
+                                            : () {
+                                                checkoutController.setPaymentMethod(
+                                                  2,
+                                                  isUpdate: false,
+                                                );
+                                                checkoutController
+                                                    .changeKeepzPaymentOption(
+                                                  option,
+                                                );
+
+                                                if (showChangeAmount) {
+                                                  setState(() {
+                                                    showChangeAmount = false;
+                                                  });
+                                                }
+                                              },
+                                        title: option.title,
+                                        isSelected: isSelected,
+                                        assetImage: option.iconAsset,
+                                      );
+                                    },
+                                  ),
+                                );
+                              }
+
+                              final bool isSelected =
+                                  checkoutController.paymentMethodIndex == 2 &&
+                                      activePaymentMethod.getWay ==
+                                          checkoutController.digitalPaymentName;
 
                               return paymentButtonView(
-                                padding: EdgeInsets.only(bottom: index == Get.find<SplashController>().configModel!.activePaymentMethodList!.length - 1 ? 0 : Dimensions.paddingSizeSmall),
+                                padding: EdgeInsets.only(
+                                  bottom: index ==
+                                          Get.find<SplashController>()
+                                                  .configModel!
+                                                  .activePaymentMethodList!
+                                                  .length -
+                                              1
+                                      ? 0
+                                      : Dimensions.paddingSizeSmall,
+                                ),
                                 disablePayments: disablePayments,
-                                onTap: disablePayments ? null : () {
-                                  checkoutController.setPaymentMethod(2);
-                                  checkoutController.changeDigitalPaymentName(Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWay!);
-                                  if(showChangeAmount) {
-                                    setState(() {
-                                      showChangeAmount = false;
-                                    });
-                                  }
-                                },
-                                title: Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWayTitle!,
+                                onTap: disablePayments
+                                    ? null
+                                    : () {
+                                        checkoutController.setPaymentMethod(2);
+                                        checkoutController
+                                            .changeDigitalPaymentName(
+                                          activePaymentMethod.getWay!,
+                                        );
+
+                                        if (showChangeAmount) {
+                                          setState(() {
+                                            showChangeAmount = false;
+                                          });
+                                        }
+                                      },
+                                title: activePaymentMethod.getWayTitle!,
                                 isSelected: isSelected,
-                                image: Get.find<SplashController>().configModel!.activePaymentMethodList![index].getWayImageFullUrl,
+                                image: activePaymentMethod.getWayImageFullUrl,
                               );
                             },
                           ),
@@ -339,24 +426,51 @@ class _PaymentMethodBottomSheetState extends State<PaymentMethodBottomSheet> {
     ]);
   }
 
-  Widget paymentButtonView({required String title, String? image, required bool isSelected, required Function? onTap, bool disablePayments = false, bool isDigitalPayment = false, required EdgeInsetsGeometry padding}) {
+  Widget paymentButtonView({
+    required String title,
+    String? image,
+    String? assetImage,
+    required bool isSelected,
+    required Function? onTap,
+    bool disablePayments = false,
+    bool isDigitalPayment = false,
+    required EdgeInsetsGeometry padding,
+  }) {
     return Padding(
       padding: padding,
       child: InkWell(
         onTap: onTap as void Function()?,
         child: Container(
-          decoration: image != null ? null : BoxDecoration(
+          decoration: image != null || assetImage != null ? null : BoxDecoration(
             borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
             border: Border.all(color: isSelected && isDigitalPayment ? Theme.of(context).primaryColor.withValues(alpha: 0.2) : Theme.of(context).disabledColor.withValues(alpha: 0.2)),
           ),
           padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
           child: Row(children: [
 
-            image != null ? CustomImage(
-              height: 15, fit: BoxFit.contain,
-              image: image, color: disablePayments ? Theme.of(context).disabledColor : null,
-              cacheWidth: ImageCacheHelper.pixels(context, 300),
-            ) : const SizedBox(),
+            assetImage != null
+                ? SizedBox(
+                    width: 40,
+                    child: Opacity(
+                      opacity: disablePayments ? 0.35 : 1,
+                      child: Image.asset(
+                        assetImage,
+                        height: 22,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  )
+                : image != null
+                ? CustomImage(
+                    height: 15,
+                    fit: BoxFit.contain,
+                    image: image,
+                    color: disablePayments
+                        ? Theme.of(context).disabledColor
+                        : null,
+                    cacheWidth: ImageCacheHelper.pixels(context, 300),
+                  )
+                : const SizedBox(),
             const SizedBox(width: Dimensions.paddingSizeSmall),
 
             Expanded(

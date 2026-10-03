@@ -48,6 +48,7 @@ import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
+import 'package:sixam_mart/features/payment/domain/models/keepz_payment_option.dart';
 import 'package:universal_html/html.dart' as html;
 
 class CheckoutController extends GetxController implements GetxService {
@@ -189,6 +190,12 @@ class CheckoutController extends GetxController implements GetxService {
 
   String? _digitalPaymentName;
   String? get digitalPaymentName => _digitalPaymentName;
+
+  String? _keepzPaymentOptionKey;
+  String? get keepzPaymentOptionKey => _keepzPaymentOptionKey;
+
+  KeepzPaymentOption? get selectedKeepzPaymentOption =>
+      KeepzPaymentOption.fromKey(_keepzPaymentOptionKey);
 
   List<SavedPrescriptionModel>? _savedPrescriptions;
   List<SavedPrescriptionModel>? get savedPrescriptions => _savedPrescriptions;
@@ -572,9 +579,28 @@ class CheckoutController extends GetxController implements GetxService {
     }
   }
 
-  void changeDigitalPaymentName(String name, {bool willUpdate = true}){
+  void changeDigitalPaymentName(String name, {bool willUpdate = true}) {
     _digitalPaymentName = name;
-    if(willUpdate) {
+
+    if (name == 'keepz') {
+      _keepzPaymentOptionKey ??= KeepzPaymentOption.defaultOption.key;
+    } else {
+      _keepzPaymentOptionKey = null;
+    }
+
+    if (willUpdate) {
+      update();
+    }
+  }
+
+  void changeKeepzPaymentOption(
+    KeepzPaymentOption option, {
+    bool willUpdate = true,
+  }) {
+    _digitalPaymentName = 'keepz';
+    _keepzPaymentOptionKey = option.key;
+
+    if (willUpdate) {
       update();
     }
   }

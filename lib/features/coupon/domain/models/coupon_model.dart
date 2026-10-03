@@ -1,3 +1,4 @@
+import 'package:sixam_mart/api/json_reader.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
 
 class CouponModel {
@@ -45,9 +46,9 @@ class CouponModel {
     code = json['code'];
     startDate = json['start_date'];
     expireDate = json['expire_date'];
-    minPurchase = json['min_purchase'].toDouble();
-    maxDiscount = json['max_discount'].toDouble();
-    discount = json['discount'].toDouble();
+    minPurchase = JsonReader.toDouble(json['min_purchase']);
+    maxDiscount = JsonReader.toDouble(json['max_discount']);
+    discount = JsonReader.toDouble(json['discount']);
     discountType = json['discount_type'];
     couponType = json['coupon_type'];
     limit = json['limit'];
@@ -55,8 +56,8 @@ class CouponModel {
     storeId = json['store_id'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
-    if (json['store'] != null) {
-      store = Store.fromJson(json['store']);
+    if (json['store_new'] != null) {
+      store = Store.fromJson(json['store_new']);
     }
   }
 
@@ -84,18 +85,21 @@ class CouponModel {
 class Store {
   int? id;
   String? name;
+  int? verifiedSeller;
 
-  Store({this.id, this.name});
+  Store({this.id, this.name, this.verifiedSeller});
 
   Store.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     name = json['name'];
+    verifiedSeller = json['verified_seller'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
     data['name'] = name;
+    data['verified_seller'] = verifiedSeller;
     return data;
   }
 }

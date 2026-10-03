@@ -55,17 +55,22 @@ class ChatController extends GetxController implements GetxService {
   
   ConversationsModel? _searchConversationModel;
   ConversationsModel? get searchConversationModel => _searchConversationModel;
-  
-  bool _hasAdmin = true;
-  bool get hasAdmin => _hasAdmin;
+
+  ConversationsModel? _adminConversationModel;
+  ConversationsModel? get adminConversationModel => _adminConversationModel;
+
+  bool get hasAdmin => adminConversationModel?.conversations?.isNotEmpty ?? false;
+
+  String _conversationType = UserType.vendor.name;
+  String get conversationType => _conversationType;
   
   NotificationBodyModel? _notificationBody;
   NotificationBodyModel? get notificationBody => _notificationBody;
   
   int? _selectedIndex;
   int? get selectedIndex => _selectedIndex;
-  
-  String _type = 'vendor1';
+
+  String _type = UserType.vendor.name;
   String? get type => _type;
   
   bool _clickTab = false;
@@ -80,10 +85,12 @@ class ChatController extends GetxController implements GetxService {
     _clickTab = !_clickTab;
   }
 
-  Future<void> getConversationList(int offset, {String type = ''}) async {
-    _hasAdmin = true;
+  Future<void> getConversationList(int offset, {String? type}) async {
+    if(type != null && type.isNotEmpty) {
+      _conversationType = type;
+    }
     _searchConversationModel = null;
-    ConversationsModel? conversationModel = await chatServiceInterface.getConversationList(offset, type);
+    ConversationsModel? conversationModel = await chatServiceInterface.getConversationList(offset, _conversationType);
 
     if(conversationModel != null) {
       if(offset == 1) {
@@ -95,9 +102,7 @@ class ChatController extends GetxController implements GetxService {
       }
       int index0 = chatServiceInterface.setIndex(_conversationModel!.conversations);
       bool sender = chatServiceInterface.checkSender(_conversationModel!.conversations);
-      _hasAdmin = false;
       if(index0 != -1 && !ResponsiveHelper.isDesktop(Get.context)) {
-        _hasAdmin = true;
         if(sender) {
           _conversationModel!.conversations![index0]!.sender = User(
             id: 0, fName: Get.find<SplashController>().configModel!.businessName, lName: '',
@@ -113,6 +118,33 @@ class ChatController extends GetxController implements GetxService {
         }
       }
     }
+    update();
+  }
+
+  List<Conversation?> conversationsOfType(List<Conversation?>? conversations, String type) {
+    return chatServiceInterface.conversationsOfType(conversations, type);
+  }
+
+  Future<void> getAdminConversation() async {
+    ConversationsModel? conversationModel = await chatServiceInterface.getConversationList(1, UserType.admin.name);
+
+    if(conversationModel != null && conversationModel.conversations != null && conversationModel.conversations!.isNotEmpty) {
+      Conversation adminConversation = conversationModel.conversations!.first!;
+      if(adminConversation.receiverType == UserType.admin.name && adminConversation.receiver == null) {
+        adminConversation.receiver = User(
+          id: 0, fName: Get.find<SplashController>().configModel!.businessName, lName: '',
+          phone: Get.find<SplashController>().configModel!.phone, email: Get.find<SplashController>().configModel!.email,
+          imageFullUrl: Get.find<SplashController>().configModel!.logoFullUrl,
+        );
+      }else if(adminConversation.senderType == UserType.admin.name && adminConversation.sender == null) {
+        adminConversation.sender = User(
+          id: 0, fName: Get.find<SplashController>().configModel!.businessName, lName: '',
+          phone: Get.find<SplashController>().configModel!.phone, email: Get.find<SplashController>().configModel!.email,
+          imageFullUrl: Get.find<SplashController>().configModel!.logoFullUrl,
+        );
+      }
+    }
+    _adminConversationModel = conversationModel;
     update();
   }
 
@@ -196,7 +228,7 @@ class ChatController extends GetxController implements GetxService {
       response = await chatServiceInterface.getMessages(offset, notificationBody.restaurantId, UserType.vendor.name, conversationID);
     }
 
-    if (response != null && response.body['messages'] != {} && response.statusCode == 200) {
+    if (response != null && ApiClient.isSuccessCode(response.statusCode) && response.body is Map<String, dynamic>) {
       if (offset == 1) {
         /// Unread-read
         if(conversationID != null && _conversationModel != null && !ResponsiveHelper.isDesktop(Get.context)) {
@@ -221,9 +253,11 @@ class ChatController extends GetxController implements GetxService {
         }
         _sortMessage(notificationBody!.adminId);
       }else {
-        _messageModel!.totalSize = ChatModel.fromJson(response.body).totalSize;
-        _messageModel!.offset = ChatModel.fromJson(response.body).offset;
-        _messageModel!.messages!.addAll(ChatModel.fromJson(response.body).messages!);
+        final ChatModel page = ChatModel.fromJson(response.body);
+        _messageModel!.totalSize = page.totalSize;
+        _messageModel!.offset = page.offset;
+        _messageModel!.messages ??= <Message>[];
+        _messageModel!.messages!.addAll(page.messages ?? <Message>[]);
       }
     }
     update();
@@ -276,24 +310,30 @@ class ChatController extends GetxController implements GetxService {
     } else if(conversationID != null) {
       response = await chatServiceInterface.sendMessage(message, '', myImages, notificationBody.restaurantId, UserType.vendor.name, conversationID);
     }
-    if (response!.statusCode == 200) {
+    if (response != null && ApiClient.isSuccessCode(response.statusCode)) {
       _chatImage = [];
       _chatRawImage = [];
       _isSendButtonActive = false;
       _isLoading = false;
       _messageModel = ChatModel.fromJson(response.body);
-      if(index != null && _searchConversationModel != null) {
-        _searchConversationModel!.conversations![index]!.lastMessageTime = DateConverter.isoStringToLocalString(_messageModel!.messages![0].createdAt!);
-      }else if(index != null && _conversationModel != null) {
-        _conversationModel!.conversations![index]!.lastMessageTime = DateConverter.isoStringToLocalString(_messageModel!.messages![0].createdAt!);
+      final String? latestCreatedAt = (_messageModel?.messages?.isNotEmpty ?? false)
+          ? _messageModel!.messages!.first.createdAt : null;
+      if(latestCreatedAt != null) {
+        final String latestTime = DateConverter.isoStringToLocalString(latestCreatedAt);
+        if(index != null && _searchConversationModel != null) {
+          _searchConversationModel!.conversations![index]!.lastMessageTime = latestTime;
+        }else if(index != null && _conversationModel != null) {
+          _conversationModel!.conversations![index]!.lastMessageTime = latestTime;
+        }
       }
-      if(_conversationModel != null && !_hasAdmin && (_messageModel!.conversation!.senderType == UserType.admin.name || _messageModel!.conversation!.receiverType == UserType.admin.name)
+      final Conversation? sentConversation = _messageModel?.conversation;
+      if(!hasAdmin && sentConversation != null
+          && (sentConversation.senderType == UserType.admin.name || sentConversation.receiverType == UserType.admin.name)
           && !ResponsiveHelper.isDesktop(Get.context)) {
-        _conversationModel!.conversations!.add(_messageModel!.conversation);
-        _hasAdmin = true;
+        await getAdminConversation();
       }
-      if(Get.find<ProfileController>().userInfoModel!.userInfo == null) {
-        Get.find<ProfileController>().updateUserWithNewData(_messageModel!.conversation!.sender);
+      if(Get.find<ProfileController>().userInfoModel?.userInfo == null && sentConversation?.sender != null) {
+        Get.find<ProfileController>().updateUserWithNewData(sentConversation!.sender);
       }
       _sortMessage(notificationBody!.adminId);
       Future.delayed(const Duration(seconds: 2),() {
@@ -305,14 +345,18 @@ class ChatController extends GetxController implements GetxService {
   }
 
   void _sortMessage(int? adminId) {
-    if(_messageModel!.conversation != null && (_messageModel!.conversation!.receiverType == UserType.user.name
-        || _messageModel!.conversation!.receiverType == UserType.customer.name)) {
-      User? receiver = _messageModel!.conversation!.receiver;
-      _messageModel!.conversation!.receiver = _messageModel!.conversation!.sender;
-      _messageModel!.conversation!.sender = receiver;
+    final Conversation? conversation = _messageModel?.conversation;
+    if(conversation == null) {
+      return;
+    }
+    if(conversation.receiverType == UserType.user.name
+        || conversation.receiverType == UserType.customer.name) {
+      User? receiver = conversation.receiver;
+      conversation.receiver = conversation.sender;
+      conversation.sender = receiver;
     }
     if(adminId != null) {
-      _messageModel!.conversation!.receiver = User(
+      conversation.receiver = User(
         id: 0, fName: Get.find<SplashController>().configModel!.businessName, lName: '',
         imageFullUrl: Get.find<SplashController>().configModel!.logoFullUrl,
       );

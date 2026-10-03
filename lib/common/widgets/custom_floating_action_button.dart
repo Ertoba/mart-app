@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../util/dimensions.dart';
+import 'package:sixam_mart/util/dimensions.dart';
 
 class CustomFloatingActionButton extends StatelessWidget {
   final IconData icon;

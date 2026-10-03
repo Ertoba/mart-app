@@ -10,7 +10,6 @@ import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/features/checkout/controllers/checkout_controller.dart';
 import 'package:sixam_mart/features/location/controllers/location_controller.dart';
 import 'package:sixam_mart/features/location/widgets/permission_dialog_widget.dart';
-import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
@@ -39,7 +38,7 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
             padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20), bottom: Radius.circular(isDesktop ? 20 : 0)),
+              borderRadius: BorderRadius.vertical(top: const Radius.circular(20), bottom: Radius.circular(isDesktop ? 20 : 0)),
             ),
             child: Stack(children: [
               Padding(
@@ -96,7 +95,7 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
 
                         return Container(
                           margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
-                          padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
+                          padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
                           decoration: BoxDecoration(
                             color: isSelectedAddress ? Theme.of(context).primaryColor.withValues(alpha: 0.1) : Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
@@ -110,12 +109,9 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
 
                               checkoutController.insertAddresses(address, notify: true);
 
-                              checkoutController.getDistanceInKM(
-                                LatLng(
-                                  double.parse(address.latitude!),
-                                  double.parse(address.longitude!),
-                                ),
-                                LatLng(double.parse(checkoutController.store!.latitude!), double.parse(checkoutController.store!.longitude!)),
+                              _updateDistanceToStore(
+                                checkoutController,
+                                LatLng(double.parse(address.latitude!), double.parse(address.longitude!)),
                               );
                             },
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -128,7 +124,7 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                                 const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                                 Text(
-                                  AddressHelper.getAddressTypeLabel(address.addressType),
+                                  address.addressType!.tr,
                                   style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault),
                                 ),
                               ]),
@@ -147,10 +143,10 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                         );
                       },
                     ),
-                  ) : Center(child: Padding(
+                  ) : const Center(child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 100),
                     child: CustomAssetImageWidget(Images.emptyBox, height: 100, width: 100),
-                  )) : Center(child: Padding(
+                  )) : const Center(child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 100),
                     child: CircularProgressIndicator(),
                   )),
@@ -166,9 +162,9 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                           if(addressModel.zoneIds!.isNotEmpty) {
                             checkoutController.insertAddresses(addressModel, notify: true);
 
-                            checkoutController.getDistanceInKM(
+                            _updateDistanceToStore(
+                              checkoutController,
                               LatLng(locationController.position.latitude, locationController.position.longitude),
-                              LatLng(double.parse(checkoutController.store!.latitude!), double.parse(checkoutController.store!.longitude!)),
                             );
 
                             Get.back();
@@ -206,9 +202,9 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
 
                           checkoutController.insertAddresses(address, notify: true);
 
-                          checkoutController.getDistanceInKM(
-                            LatLng(double.parse(address.latitude), double.parse(address.longitude )),
-                            LatLng(double.parse(checkoutController.store!.latitude!), double.parse(checkoutController.store!.longitude!)),
+                          _updateDistanceToStore(
+                            checkoutController,
+                            LatLng(double.parse(address.latitude), double.parse(address.longitude)),
                           );
                         }
                       },
@@ -247,4 +243,20 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
     }
   }
 
+}
+
+/// Recalculates the delivery distance for a newly picked address.
+///
+/// `stores/details` stopped sending the store's coordinates, so
+/// `double.parse(store.latitude!)` threw the moment an address was tapped here.
+/// With no store location there is no distance to recompute — the charge the
+/// checkout already holds stands, exactly as it does when the store sits
+/// outside a mapped zone.
+void _updateDistanceToStore(CheckoutController checkoutController, LatLng from) {
+  final double? storeLat = double.tryParse(checkoutController.store?.latitude ?? '');
+  final double? storeLng = double.tryParse(checkoutController.store?.longitude ?? '');
+  if (storeLat == null || storeLng == null) {
+    return;
+  }
+  checkoutController.getDistanceInKM(from, LatLng(storeLat, storeLng));
 }

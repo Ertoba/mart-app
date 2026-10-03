@@ -1,17 +1,16 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:sixam_mart/common/widgets/custom_button.dart';
+import 'package:sixam_mart/features/search/widgets/custom_check_box_widget.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/store/controllers/store_controller.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/common/widgets/custom_button.dart';
-import 'package:sixam_mart/features/search/widgets/custom_check_box_widget.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 class FilterWidget extends StatelessWidget {
-  final double? maxValue;
-  const FilterWidget({super.key, required this.maxValue});
+  const FilterWidget({super.key,});
 
   @override
   Widget build(BuildContext context) {
@@ -25,9 +24,6 @@ class FilterWidget extends StatelessWidget {
         width: ResponsiveHelper.isDesktop(context) ? 400 : 600,
         padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
         child: GetBuilder<StoreController>(builder: (storeController) {
-
-          double lowerValue = storeController.lowerValue.clamp(0, maxValue!);
-          double upperValue = storeController.upperValue.clamp(0, maxValue!);
 
           return SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -62,13 +58,13 @@ class FilterWidget extends StatelessWidget {
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('price'.tr, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge)),
                 RangeSlider(
-                  values: RangeValues(lowerValue, upperValue),
-                  min: 0,
-                  max: maxValue!.toDouble(),
-                  divisions: maxValue!.toInt(),
+                  values: RangeValues(storeController.lowerValue, storeController.upperValue),
+                  min: storeController.getLowerLimit,
+                  max: storeController.getUpperLimit,
+                  divisions: storeController.priceDivisions,
                   activeColor: Theme.of(context).primaryColor,
                   inactiveColor: Theme.of(context).primaryColor.withValues(alpha: 0.3),
-                  labels: RangeLabels(lowerValue.toString(), upperValue.toString()),
+                  labels: RangeLabels(storeController.lowerValue.toString(), storeController.upperValue.toString()),
                   onChanged: (RangeValues rangeValues) {
                     storeController.setLowerAndUpperValue(lower: rangeValues.start, upper: rangeValues.end, reload: true);
                   },

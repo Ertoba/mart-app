@@ -14,6 +14,7 @@
 *.ipr
 *.iws
 .idea/
+* sync-branch.sh
 
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line
@@ -29,8 +30,6 @@
 .packages
 .pub-cache/
 .pub/
-**/.gradle/
-**/.kotlin/
 /build/
 .firebaserc
 firebase.json
@@ -40,6 +39,16 @@ changes.zip
 get_changed_files.sh
 changed_files.zip
 script.dart
+android/.kotlin/
+6ammart_user_build_app.sh
+rental_module.zip
+.claude
+.vscode
+git.sh
+sync-branch.sh
+ios/Runner.xcworkspace/xcshareddata/swiftpm/
+/docs/
+*.md
 
 # Web related
 
@@ -53,4 +62,3 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-*.hprof

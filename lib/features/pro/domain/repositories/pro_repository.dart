@@ -1,4 +1,5 @@
 import 'package:sixam_mart/api/api_client.dart';
+import 'package:sixam_mart/api/response_parser.dart';
 import 'package:sixam_mart/features/pro/domain/models/pro_active_offer_model.dart';
 import 'package:sixam_mart/features/pro/domain/models/pro_faq_model.dart';
 import 'package:sixam_mart/features/pro/domain/models/pro_plan_model.dart';
@@ -15,7 +16,7 @@ class ProRepository implements ProRepositoryInterface {
   @override
   Future<ProPlanModel?> getProPlans() async {
     ProPlanModel? model;
-    Response response = await apiClient.getData(AppConstants.proPlansUri, handleError: false);
+    Response response = await apiClient.getData(AppConstants.proPlansUri);
     if (response.statusCode == 200) {
       model = ProPlanModel.fromJson(response.body);
     }
@@ -25,12 +26,12 @@ class ProRepository implements ProRepositoryInterface {
   @override
   Future<List<ProFaqModel>?> getProFaqs() async {
     List<ProFaqModel>? faqs;
-    Response response = await apiClient.getData(AppConstants.proFaqsUri, handleError: false);
-    if (response.statusCode == 200 && response.body['faqs'] != null) {
+    Response response = await apiClient.getData(AppConstants.proFaqsUri);
+    if (response.statusCode == 200) {
       faqs = [];
-      response.body['faqs'].forEach((faq) {
-        faqs!.add(ProFaqModel.fromJson(faq));
-      });
+      for (final dynamic faq in ResponseParser.listOrEmpty(response.body, legacyKey: 'faqs')) {
+        faqs.add(ProFaqModel.fromJson(faq));
+      }
     }
     return faqs;
   }
@@ -42,7 +43,6 @@ class ProRepository implements ProRepositoryInterface {
       moduleType != null && moduleType.isNotEmpty
           ? '${AppConstants.proActiveOfferUri}?module_type=$moduleType'
           : AppConstants.proActiveOfferUri,
-      handleError: false,
     );
     if (response.statusCode == 200) {
       model = ProActiveOfferModel.fromJson(response.body);

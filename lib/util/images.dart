@@ -407,4 +407,13 @@ class Images {
   static const String eyeIcon = 'assets/image/service/eye_icon.svg';
   static const String circularCrossIcon = 'assets/image/service/circular_cross_icon.svg';
   static const String rebookingIcon = 'assets/image/service/re_booking_icon.svg';
+  static const String happyHours = 'assets/image/happy_hours.png';
+  static const String providerImage = 'assets/image/service/provider_image.svg';
+  static const String couponProBadge = 'assets/image/service/coupon_pro_badge.svg';
+  static const String couponPercentageBadge = 'assets/image/service/coupon_percentage_badge.svg';
+  static const String dropdownIcon = 'assets/image/service/drop_down_icon.svg';
+  static const String nearByIcon = 'assets/image/service/near_by_icon.png';
+  static const String bogoOfferIcon = 'assets/image/bogo_offer.png';
+  static const String bogoOffers = 'assets/image/bogo_offers.png';
+  static const String giftIcons = 'assets/image/gifts.png';
 }

@@ -1,12 +1,20 @@
+import 'package:sixam_mart/helper/image_cache_helper.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/common/widgets/cart_count_view.dart';
 import 'package:sixam_mart/common/widgets/custom_favourite_widget.dart';
+import 'package:sixam_mart/common/widgets/custom_image.dart';
+import 'package:sixam_mart/common/widgets/discount_tag.dart';
 import 'package:sixam_mart/common/widgets/hover/on_hover.dart';
 import 'package:sixam_mart/common/widgets/hover/text_hover.dart';
+import 'package:sixam_mart/common/widgets/not_available_widget.dart';
+import 'package:sixam_mart/common/widgets/organic_tag.dart';
+import 'package:sixam_mart/common/widgets/rating_bar.dart';
 import 'package:sixam_mart/features/favourite/controllers/favourite_controller.dart';
 import 'package:sixam_mart/features/item/controllers/item_controller.dart';
-import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
-import 'package:sixam_mart/common/models/module_model.dart';
+import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/features/store/domain/models/store_model.dart';
 import 'package:sixam_mart/helper/date_converter.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
@@ -15,15 +23,8 @@ import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/common/widgets/custom_image.dart';
-import 'package:sixam_mart/common/widgets/discount_tag.dart';
-import 'package:sixam_mart/common/widgets/not_available_widget.dart';
-import 'package:sixam_mart/common/widgets/organic_tag.dart';
-import 'package:sixam_mart/common/widgets/rating_bar.dart';
-import 'package:sixam_mart/common/widgets/verified_seller_badge.dart';
+
 import 'package:sixam_mart/features/store/screens/store_screen.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 class WebItemWidget extends StatelessWidget {
   final Item? item;
@@ -45,6 +46,17 @@ class WebItemWidget extends StatelessWidget {
     String? discountType;
     bool isAvailable;
     String genericName = '';
+
+    // Resolved once so the decode hint below cannot drift from the painted box.
+    final double thumbWidth = desktop ? isStore ? 275 : double.infinity : 80;
+    final double thumbHeight = desktop ? 140 : length == null ? 100 : 65;
+    // Exactly one axis is hinted, so ResizeImage derives the other from the source
+    // and keeps its aspect ratio for `BoxFit.cover` to crop. Two axes would make it
+    // decode to exactly those numbers ([ResizeImagePolicy.exact]) and stretch the
+    // photo. Width is preferred; where the thumbnail fills its parent
+    // (`double.infinity`) there is no width to hint, so the height axis carries it.
+    final int? thumbDecodeWidth = ImageCacheHelper.pixels(context, thumbWidth);
+    final int? thumbDecodeHeight = thumbDecodeWidth == null ? ImageCacheHelper.pixels(context, thumbHeight) : null;
 
     if(!isStore && item!.genericName != null && item!.genericName!.isNotEmpty) {
       for (String name in item!.genericName!) {
@@ -114,7 +126,8 @@ class WebItemWidget extends StatelessWidget {
                           child: CustomImage(
                             isHovered: hovered,
                             image: '${isStore ? store != null ? store!.logoFullUrl : '' : item!.imageFullUrl}',
-                            height: desktop ? 140 : length == null ? 100 : 65, width: desktop ? isStore ? 275 : double.infinity : 80, fit: BoxFit.cover,
+                            height: thumbHeight, width: thumbWidth, fit: BoxFit.cover,
+                            cacheWidth: thumbDecodeWidth, cacheHeight: thumbDecodeHeight,
                           ),
                         ),
 
@@ -125,13 +138,7 @@ class WebItemWidget extends StatelessWidget {
 
                         !isStore ? OrganicTag(item: item!, placeInImage: false, placeTop: false) : const SizedBox(),
 
-                        isStore ? const SizedBox() : Positioned(
-                          bottom: 10, right: 10,
-                          child: CartCountView(
-                            item: item!,
-                            index: index,
-                          ),
-                        ),
+                        isStore ? const SizedBox() : Positioned(bottom: 10, right: 10, child: CartCountView(item: item!, index: index)),
 
                         isAvailable ? const SizedBox() : NotAvailableWidget(isStore: isStore),
                       ]),
@@ -150,8 +157,8 @@ class WebItemWidget extends StatelessWidget {
                                   style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeExtraSmall),
                                   maxLines: desktop ? 1 : 1, overflow: TextOverflow.ellipsis,
                                 ),
-                                if (isStore && store!.verifiedSeller == true)
-                                  const VerifiedSellerBadge(verified: true, size: 14),
+                                isStore ? const SizedBox(width: Dimensions.paddingSizeSmall) : const SizedBox.shrink(),
+                                isStore && store?.verifiedSeller == 1 ? Image.asset(Images.verifiedBadge, width: 13, height: 13) : const SizedBox.shrink(),
                                 const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                                 (Get.find<SplashController>().configModel!.moduleConfig!.module!.vegNonVeg! && Get.find<SplashController>().configModel!.toggleVegNonVeg!)
@@ -172,14 +179,20 @@ class WebItemWidget extends StatelessWidget {
                                 ),
                               ) : const SizedBox(),
 
-                              (isStore ? store!.address != null : item!.storeName != null) ? Text(
-                                isStore ? store!.address ?? '' : item!.storeName ?? '',
-                                style: robotoRegular.copyWith(
-                                  fontWeight: FontWeight.w300,
-                                  fontSize: Dimensions.fontSizeOverSmall,
-                                  color: isStore ? Theme.of(context).disabledColor : Theme.of(context).primaryColor,
-                                ),
-                                maxLines: 1, overflow: TextOverflow.ellipsis,
+                              (isStore ? store!.address != null : item!.storeName != null) ? Row(
+                                children: [
+                                  Text(
+                                    isStore ? store!.address ?? '' : item!.storeName ?? '',
+                                    style: robotoRegular.copyWith(
+                                      fontWeight: FontWeight.w300,
+                                      fontSize: Dimensions.fontSizeOverSmall,
+                                      color: isStore ? Theme.of(context).disabledColor : Theme.of(context).primaryColor,
+                                    ),
+                                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  item?.verifiedSeller == 1 ? Image.asset(Images.verifiedBadge, width: 12, height: 12) : const SizedBox.shrink(),
+                                ],
                               ) : const SizedBox(),
                               SizedBox(height: ((desktop || isStore) && (isStore ? store!.address != null : item!.storeName != null)) ? 5 : 0),
 
@@ -216,7 +229,7 @@ class WebItemWidget extends StatelessWidget {
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.star, color: Colors.orange, size: 12),
+                                      const Icon(Icons.star, color: Colors.orange, size: 12),
                                       const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                                       Text(
                                         item!.ratingCount.toString(),

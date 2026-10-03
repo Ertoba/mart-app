@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/menu_drawer.dart';
 import 'package:sixam_mart/features/parcel/controllers/parcel_controller.dart';
+import 'package:sixam_mart/features/service_module/service_checkout/controllers/service_checkout_controller.dart';
 import 'package:sixam_mart/features/payment/controllers/payment_controller.dart';
 import 'package:sixam_mart/features/payment/domain/models/offline_method_model.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
+import 'package:sixam_mart/helper/string_extension.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
@@ -26,9 +28,22 @@ class OfflinePaymentScreen extends StatefulWidget {
   final bool forParcel;
   final String orderId;
   final String? contactNumber;
+  // Service-module booking mode: when true the collected method_id + customer
+  // inputs are submitted through [onServiceOfflineSubmit] (the unified
+  // service `booking/payment` endpoint) instead of the order offline endpoint,
+  // and success lands on the service booking-success screen.
+  final bool isServiceBooking;
+  final Future<bool> Function(String methodId, Map<String, dynamic> inputs, String customerNote)? onServiceOfflineSubmit;
+  // Paying an ALREADY-PLACED booking (from booking details) rather than settling a
+  // fresh placement: on success this screen just pops and hands back to the caller
+  // instead of navigating to the booking-success screen (and skips the loyalty
+  // save, which already happened when the booking was placed).
+  final VoidCallback? onServiceOfflineSuccess;
 
   const OfflinePaymentScreen({super.key, required this.zoneId, required this.total, required this.maxCodOrderAmount,
-    required this.fromCart, required this.isCashOnDeliveryActive, required this.forParcel, required this.orderId, this.contactNumber});
+    required this.fromCart, required this.isCashOnDeliveryActive, required this.forParcel, required this.orderId, this.contactNumber,
+    this.isServiceBooking = false, this.onServiceOfflineSubmit, this.onServiceOfflineSuccess,
+  });
 
   @override
   State<OfflinePaymentScreen> createState() => _OfflinePaymentScreenState();
@@ -65,6 +80,13 @@ class _OfflinePaymentScreenState extends State<OfflinePaymentScreen> {
   }
 
   @override
+  void dispose() {
+    _customerNoteController.dispose();
+    _customerNoteNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     bool isDesktop = ResponsiveHelper.isDesktop(context);
     return Scaffold(
@@ -89,38 +111,49 @@ class _OfflinePaymentScreenState extends State<OfflinePaymentScreen> {
                     padding: !isDesktop ? null : const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeLarge),
                     child: Center(
                       child: SizedBox(
-                        width: !isDesktop ? double.infinity : 400,
+                        width: !isDesktop ? double.infinity : 700,
                         child: Column(mainAxisSize: MainAxisSize.min, children: [
                           const SizedBox(height: Dimensions.paddingSizeLarge),
 
                           Image.asset(Images.offlinePayment, height: 100),
                           const SizedBox(height: Dimensions.paddingSizeDefault),
 
-                          Text('pay_your_bill_using_the_info'.tr, textAlign: TextAlign.center, style: robotoRegular.copyWith(
-                            fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodySmall?.color,
-                          )),
-                          const SizedBox(height: Dimensions.paddingSizeLarge),
-
-                          Text(
-                            '${'amount'.tr} '' ${PriceConverter.convertPrice(widget.total)}',
-                            style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge),
+                          SizedBox(
+                            width: 400,
+                            child: Text('pay_your_bill_using_the_info'.tr, textAlign: TextAlign.center, style: robotoRegular.copyWith(
+                              fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodySmall?.color,
+                            )),
                           ),
                           const SizedBox(height: Dimensions.paddingSizeLarge),
 
-                          SizedBox(
-                            height: 160,
-                            child: PageView.builder(
-                              onPageChanged: (int pageIndex) {
-                                paymentController.selectOfflineBank(pageIndex);
-                                paymentController.changesMethod();
-                              },
-                              scrollDirection: Axis.horizontal,
-                                controller: pageController,
-                                itemCount: paymentController.offlineMethodList!.length,
-                                itemBuilder: (context, index) {
-                                bool selected = paymentController.selectedOfflineBankIndex == index;
-                              return bankCard(context, paymentController.offlineMethodList, index, selected);
-                            }),
+                          Text(
+                            '${'amount'.tr} :'' ${PriceConverter.convertPrice(widget.total)}',
+                            style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge),
+                          ),
+                          const SizedBox(height: Dimensions.paddingSizeLarge),
+
+                          Container(
+                            width: !isDesktop ? double.infinity : 660,
+                            decoration: isDesktop ? BoxDecoration(
+                              color: Theme.of(context).disabledColor.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                            ) : null,
+                            padding: isDesktop ? const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraOverLarge * 2, vertical: Dimensions.paddingSizeDefault) : null,
+                            child: SizedBox(
+                              height: 160,
+                              child: PageView.builder(
+                                onPageChanged: (int pageIndex) {
+                                  paymentController.selectOfflineBank(pageIndex);
+                                  paymentController.changesMethod();
+                                },
+                                scrollDirection: Axis.horizontal,
+                                  controller: pageController,
+                                  itemCount: paymentController.offlineMethodList!.length,
+                                  itemBuilder: (context, index) {
+                                  bool selected = paymentController.selectedOfflineBankIndex == index;
+                                return bankCard(context, paymentController.offlineMethodList, index, selected);
+                              }),
+                            ),
                           ),
                           const SizedBox(height: Dimensions.paddingSizeExtraLarge),
 
@@ -142,7 +175,51 @@ class _OfflinePaymentScreenState extends State<OfflinePaymentScreen> {
                                 ) : null,
                                 padding: isDesktop ? const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge, vertical: Dimensions.paddingSizeExtraSmall) : null,
                                 margin: isDesktop ? const EdgeInsets.only(top: Dimensions.paddingSizeLarge) : null,
-                                child: Column(
+                                child: isDesktop ? Column(
+                                  children: [
+
+                                    GridView.builder(
+                                      itemCount: paymentController.informationControllerList.length + 1, // +1 for note field
+                                      shrinkWrap: true,
+                                      physics: const NeverScrollableScrollPhysics(),
+                                      padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
+                                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        crossAxisSpacing: Dimensions.paddingSizeSmall,
+                                        mainAxisSpacing: Dimensions.paddingSizeSmall,
+                                        mainAxisExtent: 60,
+                                      ),
+                                      itemBuilder: (context, i) {
+                                        // Last item → show note field
+                                        if (i == paymentController.informationControllerList.length) {
+                                          return CustomTextField(
+                                            titleText: 'write_your_note'.tr,
+                                            labelText: 'note'.tr,
+                                            controller: _customerNoteController,
+                                            focusNode: _customerNoteNode,
+                                            inputAction: TextInputAction.done,
+                                          );
+                                        }
+
+                                        // Regular info fields
+                                        return CustomTextField(
+                                          titleText: methodInformation[i].customerPlaceholder!,
+                                          controller: paymentController.informationControllerList[i],
+                                          focusNode: paymentController.informationFocusList[i],
+                                          nextFocus: i != paymentController.informationControllerList.length - 1
+                                              ? paymentController.informationFocusList[i + 1]
+                                              : _customerNoteNode,
+                                          labelText: methodInformation[i].customerPlaceholder!,
+                                          required: methodInformation[i].isRequired!,
+                                          onChanged: (value) {
+                                            setState(() {});
+                                          },
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(height: Dimensions.paddingSizeSmall),
+                                  ],
+                                )  : Column(
                                   children: [
                                     ListView.builder(
                                       itemCount: paymentController.informationControllerList.length,
@@ -218,7 +295,7 @@ class _OfflinePaymentScreenState extends State<OfflinePaymentScreen> {
       child: CustomButton(
         buttonText: 'complete'.tr,
         isLoading: paymentController.isLoading,
-        width: ResponsiveHelper.isDesktop(context) ? 400 : 500,
+        width: ResponsiveHelper.isDesktop(context) ? 500 : 500,
         onPressed: !allFieldsFilled ? null : () async {
           paymentController.changeLoadingStatus(true);
           bool complete = false;
@@ -239,6 +316,26 @@ class _OfflinePaymentScreenState extends State<OfflinePaymentScreen> {
 
           if(complete) {
             String methodId = paymentController.offlineMethodList![paymentController.selectedOfflineBankIndex].id.toString();
+
+            // Service booking: submit through the unified booking/payment endpoint.
+            if(widget.isServiceBooking && widget.onServiceOfflineSubmit != null) {
+              Map<String, dynamic> inputs = {};
+              for(int i=0; i<methodInformation.length; i++){
+                inputs[methodInformation[i].customerInput!] = paymentController.informationControllerList[i].text;
+              }
+              bool success = await widget.onServiceOfflineSubmit!(methodId, inputs, _customerNoteController.text);
+              paymentController.changeLoadingStatus(false);
+              if(success){
+                if(widget.onServiceOfflineSuccess != null) {
+                  Get.back();
+                  widget.onServiceOfflineSuccess!();
+                } else {
+                  Get.find<ServiceCheckoutController>().saveLoyaltyEarningPoint(widget.total);
+                  Get.offAllNamed(RouteHelper.getServiceBookingSuccessRoute(widget.orderId, createAccount: Get.find<ServiceCheckoutController>().isCreateAccount));
+                }
+              }
+              return;
+            }
 
             Map<String, String> data = {
               "_method": "put",
@@ -273,42 +370,44 @@ class _OfflinePaymentScreenState extends State<OfflinePaymentScreen> {
       decoration: BoxDecoration(
         color: selected ? Theme.of(context).cardColor : Theme.of(context).primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-        boxShadow: selected ? const [BoxShadow(color: Colors.black12, blurRadius: 5, spreadRadius: 1)] : [],
       ),
       padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
       margin: const EdgeInsets.all(Dimensions.paddingSizeSmall),
       child: SingleChildScrollView(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-          Row(children: [
-            Text('bank_info'.tr, style: robotoMedium.copyWith(color: Theme.of(context).primaryColor)),
-            const Spacer(),
+        child: Padding(
+          padding: const EdgeInsets.only(right: Dimensions.paddingSizeSmall),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            Row(children: [
+              Text('bank_info'.tr, style: robotoMedium),
+              const Spacer(),
 
-            selected ? Row(children: [
-              Text('pay_on_this_account'.tr, style: robotoMedium.copyWith(color: Theme.of(context).primaryColor),),
-              Icon(Icons.check_circle_rounded, size: 20, color: Theme.of(context).primaryColor),
-            ]) : const SizedBox(),
+              selected ? Row(children: [
+                Text('pay_on_this_account'.tr, style: robotoMedium.copyWith(color: Theme.of(context).primaryColor),),
+                Icon(Icons.check_circle_rounded, size: 20, color: Theme.of(context).primaryColor),
+              ]) : const SizedBox(),
+            ]),
+            const SizedBox(height: Dimensions.paddingSizeSmall),
+
+            ListView.builder(
+              itemCount: offlineMethodList![index].methodFields!.length,
+                addRepaintBoundaries: false,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemBuilder: (context, i) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeExtraSmall),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(
+                    '${offlineMethodList[index].methodFields![i].inputName!.toString().replaceAll('_', ' ')} : '.toCapitalized(),
+                    style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium!.color!.withValues(alpha: 0.5)),
+                  ),
+                  Flexible(child: Text(offlineMethodList[index].methodFields![i].inputData!, style: robotoMedium, maxLines: 2, overflow: TextOverflow.ellipsis)),
+                ]),
+              );
+            })
+
           ]),
-          const SizedBox(height: Dimensions.paddingSizeSmall),
-
-          ListView.builder(
-            itemCount: offlineMethodList![index].methodFields!.length,
-              addRepaintBoundaries: false,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemBuilder: (context, i) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeExtraSmall),
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(
-                  '${offlineMethodList[index].methodFields![i].inputName!.toString().replaceAll('_', ' ')} : ',
-                  style: robotoMedium.copyWith(color: Theme.of(context).textTheme.bodyMedium!.color!.withValues(alpha: 0.5)),
-                ),
-                Flexible(child: Text(offlineMethodList[index].methodFields![i].inputData!, style: robotoMedium, maxLines: 2, overflow: TextOverflow.ellipsis)),
-              ]),
-            );
-          })
-
-        ]),
+        ),
       ),
     );
   }

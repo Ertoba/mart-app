@@ -1,9 +1,12 @@
-import 'dart:convert';
 
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sixam_mart/api/api_client.dart';
+import 'package:sixam_mart/features/happy_hour/controllers/happy_hour_controller.dart';
+import 'package:sixam_mart/features/happy_hour/domain/repositories/happy_hour_repository.dart';
+import 'package:sixam_mart/features/happy_hour/domain/repositories/happy_hour_repository_interface.dart';
+import 'package:sixam_mart/features/happy_hour/domain/services/happy_hour_service.dart';
+import 'package:sixam_mart/features/happy_hour/domain/services/happy_hour_service_interface.dart';
 import 'package:sixam_mart/common/controllers/theme_controller.dart';
 import 'package:sixam_mart/features/address/controllers/address_controller.dart';
 import 'package:sixam_mart/features/address/domain/repositories/address_repository.dart';
@@ -75,6 +78,17 @@ import 'package:sixam_mart/features/favourite/domain/repositories/favourite_repo
 import 'package:sixam_mart/features/favourite/domain/repositories/favourite_repository_interface.dart';
 import 'package:sixam_mart/features/favourite/domain/services/favourite_service.dart';
 import 'package:sixam_mart/features/favourite/domain/services/favourite_service_interface.dart';
+import 'package:sixam_mart/features/bundle/controllers/bundle_controller.dart';
+import 'package:sixam_mart/features/bundle/domain/repositories/bundle_repository.dart';
+import 'package:sixam_mart/features/bundle/domain/repositories/bundle_repository_interface.dart';
+import 'package:sixam_mart/features/bundle/domain/services/bundle_service.dart';
+import 'package:sixam_mart/features/bundle/domain/services/bundle_service_interface.dart';
+import 'package:sixam_mart/features/bogo_offer/controllers/bogo_offer_controller.dart';
+import 'package:sixam_mart/features/bogo_offer/controllers/bogo_offer_details_controller.dart';
+import 'package:sixam_mart/features/bogo_offer/domain/repositories/bogo_offer_repository.dart';
+import 'package:sixam_mart/features/bogo_offer/domain/repositories/bogo_offer_repository_interface.dart';
+import 'package:sixam_mart/features/bogo_offer/domain/services/bogo_offer_service.dart';
+import 'package:sixam_mart/features/bogo_offer/domain/services/bogo_offer_service_interface.dart';
 import 'package:sixam_mart/features/flash_sale/controllers/flash_sale_controller.dart';
 import 'package:sixam_mart/features/flash_sale/domain/repositories/flash_sale_repository.dart';
 import 'package:sixam_mart/features/flash_sale/domain/repositories/flash_sale_repository_interface.dart';
@@ -106,7 +120,7 @@ import 'package:sixam_mart/features/item/domain/services/campaign_service_interf
 import 'package:sixam_mart/features/item/domain/services/item_service.dart';
 import 'package:sixam_mart/features/item/domain/services/item_service_interface.dart';
 import 'package:sixam_mart/features/language/controllers/language_controller.dart';
-import 'package:sixam_mart/features/language/domain/models/language_model.dart';
+import 'package:sixam_mart/helper/language_loader.dart';
 import 'package:sixam_mart/features/language/domain/repository/language_repository.dart';
 import 'package:sixam_mart/features/language/domain/repository/language_repository_interface.dart';
 import 'package:sixam_mart/features/language/domain/service/language_service.dart';
@@ -161,6 +175,15 @@ import 'package:sixam_mart/features/offer/domain/repositories/offer_repository.d
 import 'package:sixam_mart/features/offer/domain/repositories/offer_repository_interface.dart';
 import 'package:sixam_mart/features/offer/domain/services/offer_service.dart';
 import 'package:sixam_mart/features/offer/domain/services/offer_service_interface.dart';
+import 'package:sixam_mart/features/service_module/custom_service_request/controllers/custom_service_request_controller.dart';
+import 'package:sixam_mart/features/service_module/custom_service_request/domain/repositories/custom_service_request_repository.dart';
+import 'package:sixam_mart/features/service_module/custom_service_request/domain/repositories/custom_service_request_repository_interface.dart';
+import 'package:sixam_mart/features/service_module/custom_service_request/domain/services/custom_service_request_service.dart';
+import 'package:sixam_mart/features/service_module/custom_service_request/domain/services/custom_service_request_service_interface.dart';
+import 'package:sixam_mart/features/service_module/service_category/domain/repositories/service_category_repository.dart';
+import 'package:sixam_mart/features/service_module/service_category/domain/repositories/service_category_repository_interface.dart';
+import 'package:sixam_mart/features/service_module/service_category/domain/services/service_category_service.dart';
+import 'package:sixam_mart/features/service_module/service_category/domain/services/service_category_service_interface.dart';
 import 'package:sixam_mart/features/rental_module/vendor/controllers/verified_provider_controller.dart';
 import 'package:sixam_mart/features/rental_module/vendor/domain/repositories/verified_provider_repository.dart';
 import 'package:sixam_mart/features/rental_module/vendor/domain/repositories/verified_provider_repository_interface.dart';
@@ -172,14 +195,39 @@ import 'package:sixam_mart/features/service_module/service_details/domain/reposi
 import 'package:sixam_mart/features/service_module/service_details/domain/services/service_details_service.dart';
 import 'package:sixam_mart/features/service_module/service_details/domain/services/service_details_service_interface.dart';
 import 'package:sixam_mart/features/service_module/provider_details/controllers/provider_data_controller.dart';
-import 'package:sixam_mart/features/service_module/service_category_screen/controllers/service_category_controller.dart';
 import 'package:sixam_mart/features/service_module/provider_details/domain/repositories/provider_details_repository.dart';
 import 'package:sixam_mart/features/service_module/provider_details/domain/repositories/provider_details_repository_interface.dart';
 import 'package:sixam_mart/features/service_module/provider_details/domain/services/provider_details_service.dart';
 import 'package:sixam_mart/features/service_module/provider_details/domain/services/provider_details_service_interface.dart';
+import 'package:sixam_mart/features/service_module/request_service/controllers/requested_service_controller.dart';
+import 'package:sixam_mart/features/service_module/booking_details/controllers/booking_controller.dart';
+import 'package:sixam_mart/features/service_module/booking_details/domain/repositories/booking_repository.dart';
+import 'package:sixam_mart/features/service_module/booking_details/domain/repositories/booking_repository_interface.dart';
+import 'package:sixam_mart/features/service_module/booking_details/domain/services/booking_service.dart';
+import 'package:sixam_mart/features/service_module/booking_details/domain/services/booking_service_interface.dart';
+import 'package:sixam_mart/features/service_module/service_review/controllers/service_review_controller.dart';
+import 'package:sixam_mart/features/service_module/service_review/domain/repositories/service_review_repository.dart';
+import 'package:sixam_mart/features/service_module/service_review/domain/repositories/service_review_repository_interface.dart';
+import 'package:sixam_mart/features/service_module/service_review/domain/services/service_review_service.dart';
+import 'package:sixam_mart/features/service_module/service_review/domain/services/service_review_service_interface.dart';
+import 'package:sixam_mart/features/service_module/request_service/domain/repositories/requested_service_repository.dart';
+import 'package:sixam_mart/features/service_module/request_service/domain/repositories/requested_service_repository_interface.dart';
+import 'package:sixam_mart/features/service_module/request_service/domain/services/requested_service_service.dart';
+import 'package:sixam_mart/features/service_module/request_service/domain/services/requested_service_service_interface.dart';
+import 'package:sixam_mart/features/service_module/service_cart/controllers/service_cart_controller.dart';
+import 'package:sixam_mart/features/service_module/service_cart/domain/repositories/service_cart_repository.dart';
+import 'package:sixam_mart/features/service_module/service_cart/domain/repositories/service_cart_repository_interface.dart';
+import 'package:sixam_mart/features/service_module/service_cart/domain/services/service_cart_service.dart';
+import 'package:sixam_mart/features/service_module/service_cart/domain/services/service_cart_service_interface.dart';
+import 'package:sixam_mart/features/service_module/service_checkout/controllers/service_checkout_controller.dart';
+import 'package:sixam_mart/features/service_module/service_checkout/domain/repositories/service_checkout_repository.dart';
+import 'package:sixam_mart/features/service_module/service_checkout/domain/repositories/service_checkout_repository_interface.dart';
+import 'package:sixam_mart/features/service_module/service_checkout/domain/services/service_checkout_service.dart';
+import 'package:sixam_mart/features/service_module/service_checkout/domain/services/service_checkout_service_interface.dart';
 import 'package:sixam_mart/features/service_module/service_home/controllers/service_controller.dart';
 import 'package:sixam_mart/features/service_module/service_home/controllers/service_explore_controller.dart';
 import 'package:sixam_mart/features/service_module/service_home/controllers/service_verified_provider_controller.dart';
+import 'package:sixam_mart/features/service_module/service_campaign/controllers/service_campaign_controller.dart';
 import 'package:sixam_mart/features/service_module/service_home/domain/repositories/service_repository.dart';
 import 'package:sixam_mart/features/service_module/service_home/domain/repositories/service_repository_interface.dart';
 import 'package:sixam_mart/features/service_module/service_home/domain/services/service_service.dart';
@@ -286,6 +334,9 @@ import 'package:sixam_mart/features/wallet/domain/repositories/wallet_repository
 import 'package:sixam_mart/features/wallet/domain/services/wallet_service.dart';
 import 'package:sixam_mart/features/wallet/domain/services/wallet_service_interface.dart';
 import 'package:sixam_mart/util/app_constants.dart';
+import 'package:sixam_mart/features/service_module/service_category/controllers/service_category_controller.dart';
+
+
 
 Future<Map<String, Map<String, String>>> init() async {
   /// Core
@@ -888,11 +939,16 @@ Future<Map<String, Map<String, String>>> init() async {
   Get.lazyPut(() => ParcelController(parcelServiceInterface: Get.find()));
   Get.lazyPut(() => WalletController(walletServiceInterface: Get.find()));
   Get.lazyPut(() => ChatController(chatServiceInterface: Get.find()));
+  Get.lazyPut(() => BogoOfferController(bogoOfferServiceInterface: Get.find()));
+  Get.lazyPut(() => BundleController(bundleServiceInterface: Get.find()));
+  Get.lazyPut(() => BogoOfferDetailsController(bogoOfferServiceInterface: Get.find()));
+  Get.lazyPut(() => HappyHourController(happyHourServiceInterface: Get.find()), fenix: true);
   Get.lazyPut(() => FlashSaleController(flashSaleServiceInterface: Get.find()));
   Get.lazyPut(() => CheckoutController(checkoutServiceInterface: Get.find()));
   Get.lazyPut(() => PaymentController(paymentServiceInterface: Get.find()));
   Get.lazyPut(() => HtmlController(htmlServiceInterface: Get.find()));
   Get.lazyPut(() => ReviewController(reviewServiceInterface: Get.find()));
+  Get.lazyPut(() => CategoryController(categoryServiceInterface: Get.find()));
   Get.lazyPut(() => LoyaltyController(loyaltyServiceInterface: Get.find()));
   Get.lazyPut(
     () => VerificationController(verificationServiceInterface: Get.find()),

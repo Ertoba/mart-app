@@ -11,6 +11,7 @@ import 'package:sixam_mart/features/profile/controllers/profile_controller.dart'
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/module_helper.dart';
+import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
@@ -46,9 +47,9 @@ class ProController extends GetxController implements GetxService {
 
   // Per-module allow-list for pro benefit types. The active-offer API is module-scoped,
   // but a benefit type must also be applicable to the current module before it is shown:
-  //   parcel        -> delivery fee only (no item subtotal, so no discount/coupon)
-  //   rental / ride -> discount & coupon (trip-based, no delivery fee)
-  //   stores        -> all benefit types
+  //   parcel                  -> delivery fee only (no item subtotal, so no discount/coupon)
+  //   rental / ride / service -> discount & coupon (no delivery fee to discount)
+  //   stores                  -> all benefit types
   bool isBenefitAllowedForCurrentModule(ProBenefitType? type) {
     if (type == null) return false;
     final String? moduleType = _moduleType ?? ModuleHelper.getCacheModule()?.moduleType;
@@ -57,10 +58,29 @@ class ProController extends GetxController implements GetxService {
         return type == ProBenefitType.deliveryFee;
       case AppConstants.taxi:
       case AppConstants.ride:
+      case AppConstants.service:
         return type == ProBenefitType.discount || type == ProBenefitType.coupon;
       default:
         return true;
     }
+  }
+
+  /// Client-side Pro discount preview: a percentage of (subTotal - discount -
+  /// couponDiscount), capped by `max_amount` and gated by the benefit's min-order
+  /// rule. Only the `discount` benefit type applies; the server recomputes the
+  /// authoritative figure at placement.
+  double calculateProDiscount(double subTotal, double discount, double couponDiscount, ProActiveBenefit? benefit) {
+    if (benefit == null || benefit.type != ProBenefitType.discount) return 0;
+    final bool meetsMinOrder = benefit.minOrderStatus != true || subTotal >= (benefit.minOrderAmount ?? 0);
+    if (!meetsMinOrder) return 0;
+    final double base = subTotal - discount - couponDiscount;
+    if (base < 0) return 0;
+    double proDiscount = base * ((benefit.percentage ?? 0) / 100);
+    if (benefit.maxAmount != null && benefit.maxAmount! > 0 && proDiscount > benefit.maxAmount!) {
+      proDiscount = benefit.maxAmount!;
+    }
+    if (proDiscount > base) proDiscount = base;
+    return PriceConverter.toFixed(proDiscount);
   }
 
   Future<void> getProPlans() async {
@@ -158,8 +178,8 @@ class ProController extends GetxController implements GetxService {
 
   // Called from the global routingCallback on every settled route (Android, iOS, web alike).
   // Shows the expired-pro renew sheet on whatever page the user lands on once login is fully
-  // complete, instead of relying on a specific screen. Self-guarding + once-per-session, so it
-  // is safe to call on every navigation.
+  // complete, instead of relying on a specific screen. Self-guarding, so it is safe to call on
+  // every navigation.
   Future<void> maybeShowRenewOnRoute(String? route) async {
     if(!AuthHelper.isLoggedIn() || getRenewBottomSheetStatus()) return;
 
@@ -168,7 +188,15 @@ class ProController extends GetxController implements GetxService {
     final bool isFlowRoute = _renewSkipRoutes.any((r) => current == r || current.startsWith('$r/'));
     if(isFlowRoute) return;
 
-    await Get.find<ProfileController>().getUserInfo();
+    final ProfileController profileController = Get.find<ProfileController>();
+    // Only fetched when there is nothing to read. The persisted flag above latches solely for
+    // a customer who is actually shown the sheet, so refetching unconditionally here charged
+    // every other customer a `customer/info` round trip on every navigation of the session.
+    // `isExpired` reads the status the profile already carries, and every other path that
+    // refreshes it — sign-in, home load, wallet, an order — feeds this check for free.
+    if(profileController.userInfoModel == null) {
+      await profileController.getUserInfo();
+    }
     Future.delayed(const Duration(milliseconds: 600), () => showRenewProBottomSheet());
   }
 

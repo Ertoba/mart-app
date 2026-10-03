@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:sixam_mart/api/api_client.dart';
 import 'package:sixam_mart/features/location/domain/models/prediction_model.dart';
 import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
@@ -99,7 +100,7 @@ class LocationService implements LocationServiceInterface{
 
   @override
   void handleRoute(bool fromSignUp, String? route, bool canRoute) {
-    print('=====route: $route, canRoute: $canRoute');
+    debugPrint('=====route: $route, canRoute: $canRoute');
     if(canRoute && route == null) {
       Get.back();
     } else if(route != null && canRoute) {
@@ -133,19 +134,21 @@ class LocationService implements LocationServiceInterface{
 
   @override
   Future<List<PredictionModel>> searchLocation(String text) async {
-    List<PredictionModel> predictionList = [];
     Response response = await locationRepoInterface.searchLocation(text);
-    if (response.statusCode == 200) {
-      predictionList = [];
-      try {
-        response.body['suggestions'].forEach((prediction) => predictionList.add(PredictionModel.fromJson(prediction)));
-      } catch (e) {
-        log('$e');
-      }
-    } else {
-      showCustomSnackBar(response.body['error_message'] ?? response.bodyString);
+    // The proxy answers 200 even when Places failed, so the status code alone
+    // can't tell success from failure — see [PlaceAutocompleteResult].
+    if (!ApiClient.isSuccessCode(response.statusCode)) {
+      // handleError already surfaced this one; body is empty here.
+      return <PredictionModel>[];
     }
-    return predictionList;
+    final PlaceAutocompleteResult result = PlaceAutocompleteResult.fromBody(response.body);
+    if (result.hasError) {
+      // Previously swallowed by a bare `catch`, so an invalid API key looked
+      // identical to "no places matched" — an empty list and no explanation.
+      log('place-api-autocomplete failed: ${result.errorMessage}');
+      showCustomSnackBar(result.errorMessage ?? 'location_search_failed'.tr);
+    }
+    return result.predictions;
   }
 
   @override
@@ -167,7 +170,7 @@ class LocationService implements LocationServiceInterface{
   Future<void> authorizeNavigation(String page, List<AddressModel>? addressList, GoogleMapController? mapController, {bool offNamed = false, bool offAll = false}) async {
     if(addressList != null && addressList.isEmpty) {
       if(ResponsiveHelper.isDesktop(Get.context)) {
-        showGeneralDialog(context: Get.context!, pageBuilder: (_,__,___) {
+        showGeneralDialog(context: Get.context!, pageBuilder: (_,_,_) {
           return SizedBox(
             height: 300, width: 300,
             child: PickMapScreen(fromSignUp: (page == RouteHelper.signUp), canRoute: false, fromAddAddress: false, route: null, googleMapController: mapController),
@@ -190,7 +193,7 @@ class LocationService implements LocationServiceInterface{
   @override
   void defaultNavigation(String page, GoogleMapController? mapController) {
     if(ResponsiveHelper.isDesktop(Get.context)) {
-      showGeneralDialog(context: Get.context!, pageBuilder: (_,__,___) {
+      showGeneralDialog(context: Get.context!, pageBuilder: (_,_,_) {
         return SizedBox(
           height: Get.context!.height * 0.75, width: 300,
           child: PickMapScreen(
@@ -218,7 +221,7 @@ class LocationService implements LocationServiceInterface{
     }
     try {
       final List<dynamic> decoded = jsonDecode(raw) as List<dynamic>;
-      return decoded.map((dynamic value) => AddressModel.fromJson(value as Map<String, dynamic>)).toList();
+      return decoded.map((e) => AddressModel.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
       log('Recent delivery addresses decode error: $e');
       return [];
@@ -227,17 +230,17 @@ class LocationService implements LocationServiceInterface{
 
   @override
   Future<List<AddressModel>> addRecentDeliveryAddress(AddressModel address) async {
-    final List<AddressModel> addresses = getRecentDeliveryAddresses();
-    addresses.removeWhere((AddressModel savedAddress) =>
-        savedAddress.latitude == address.latitude
-        && savedAddress.longitude == address.longitude
-        && savedAddress.address == address.address);
-    addresses.insert(0, address);
-    final List<AddressModel> trimmed = addresses.length > AppConstants.recentDeliveryAddressesMax
-        ? addresses.sublist(0, AppConstants.recentDeliveryAddressesMax)
-        : addresses;
+    final List<AddressModel> list = getRecentDeliveryAddresses();
+    list.removeWhere((a) =>
+        a.latitude == address.latitude
+        && a.longitude == address.longitude
+        && a.address == address.address);
+    list.insert(0, address);
+    final List<AddressModel> trimmed = list.length > AppConstants.recentDeliveryAddressesMax
+        ? list.sublist(0, AppConstants.recentDeliveryAddressesMax)
+        : list;
     await locationRepoInterface.saveRecentDeliveryAddresses(
-      jsonEncode(trimmed.map((AddressModel savedAddress) => savedAddress.toJson()).toList()),
+      jsonEncode(trimmed.map((a) => a.toJson()).toList()),
     );
     return trimmed;
   }

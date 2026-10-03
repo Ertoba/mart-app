@@ -4,6 +4,7 @@ import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/item/domain/models/basic_medicine_model.dart';
 import 'package:sixam_mart/features/item/domain/models/common_condition_model.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
+import 'package:sixam_mart/features/item/domain/models/item_review_model.dart';
 import 'package:sixam_mart/features/cart/domain/models/cart_model.dart';
 import 'package:sixam_mart/features/item/domain/repositories/item_repository_interface.dart';
 import 'package:sixam_mart/features/item/domain/services/item_service_interface.dart';
@@ -132,8 +133,8 @@ class ItemService implements ItemServiceInterface {
   }
 
   @override
-  Future<List<CommonConditionModel>?> getCommonConditions() async {
-    return await itemRepositoryInterface.getList(isCommonConditions: true);
+  Future<List<CommonConditionModel>?> getCommonConditions({DataSourceEnum source = DataSourceEnum.client}) async {
+    return await itemRepositoryInterface.getList(isCommonConditions: true, source: source);
   }
 
   @override
@@ -215,6 +216,23 @@ class ItemService implements ItemServiceInterface {
       varIndex++;
     }
     return variationIndex;
+  }
+
+  int _selectedOptionIndex(List<String> options, String? type) {
+    if(type == null) {
+      return 0;
+    }
+    // A stored type has its spaces stripped and the options do not, so both are
+    // normalised rather than only the option side.
+    final String wanted = type.trim().replaceAll(' ', '');
+    for(int index = 0; index < options.length; index++) {
+      if(options[index].trim().replaceAll(' ', '') == wanted) {
+        return index;
+      }
+    }
+    // Falls back to the first option, exactly as an item opened outside the cart does —
+    // an unmatched type must still leave a selection the picker and the bill can read.
+    return 0;
   }
 
   @override

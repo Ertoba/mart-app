@@ -6,6 +6,7 @@ import 'package:sixam_mart/features/notification/domain/models/notification_body
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
+import 'package:sixam_mart/helper/maintance_helper.dart';
 import 'package:sixam_mart/helper/notification_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
@@ -14,7 +15,7 @@ import 'package:sixam_mart/util/app_constants.dart';
 
   void route({NotificationBodyModel? body}) {
     double? minimumVersion = _getMinimumVersion();
-    bool isMaintenanceMode = Get.find<SplashController>().configModel!.maintenanceMode!;
+    bool isMaintenanceMode = MaintenanceHelper.isMaintenanceEnable();
     bool needsUpdate = AppConstants.appVersion < minimumVersion!;
 
     if(needsUpdate || isMaintenanceMode) {
@@ -51,6 +52,30 @@ import 'package:sixam_mart/util/app_constants.dart';
       NotificationType.cashback: () => Get.toNamed(RouteHelper.getWalletRoute(fromNotification: true)),
       NotificationType.loyalty_point: () => Get.toNamed(RouteHelper.getLoyaltyRoute(fromNotification: true)),
       NotificationType.general: () => Get.toNamed(RouteHelper.getNotificationRoute(fromNotification: true)),
+      NotificationType.booking_status: () => Get.toNamed(RouteHelper.getBookingDetailsRoute(notificationBody!.orderId, fromNotification: true)),
+      NotificationType.booking_reschedule: () => Get.toNamed(RouteHelper.getBookingDetailsRoute(notificationBody!.orderId, fromNotification: true)),
+      NotificationType.booking_location: () => Get.toNamed(RouteHelper.getBookingDetailsRoute(notificationBody!.orderId, fromNotification: true)),
+      NotificationType.booking_edit: () => Get.toNamed(RouteHelper.getBookingDetailsRoute(notificationBody!.orderId, fromNotification: true)),
+      NotificationType.serviceman_assigned: () => Get.toNamed(RouteHelper.getBookingDetailsRoute(notificationBody!.orderId, fromNotification: true)),
+      NotificationType.custom_service_bid: () async => await NotificationHelper.customServiceBidRouteCheck(notificationBody!.orderId, notificationBody.moduleId),
+      NotificationType.custom_service_request_posted: () async => await NotificationHelper.customServiceBidRouteCheck(notificationBody!.orderId, notificationBody.moduleId),
+      NotificationType.custom_service_bid_withdrawn: () async => await NotificationHelper.customServiceBidRouteCheck(notificationBody!.orderId, notificationBody.moduleId),
+      NotificationType.bogo_offer: () => NotificationHelper.routeToBogoOffer(
+          notificationBody?.bogoOfferId, notificationBody?.moduleId),
+      NotificationType.ride_request: () async {
+        if(notificationBody != null) {
+          // Convert NotificationBodyModel to Map for notificationRouteCheck
+          Map<String, dynamic> notificationData = {
+            'type': 'ride_request',
+            'action': notificationBody.action,
+            'ride_request_id': notificationBody.rideRequestId,
+            'next_level': notificationBody.nextLevel,
+            'reward_amount': notificationBody.rewardAmount,
+            'reward_type': notificationBody.rewardType,
+          };
+          await NotificationHelper.rideNotificationRouteCheck(notificationData, formSplash: true);
+        }
+      },
     };
 
     notificationActions[notificationType]?.call();

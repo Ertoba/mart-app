@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sixam_mart/common/widgets/custom_button.dart';
+import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/common/widgets/custom_text_field.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/styles.dart';
-import 'package:sixam_mart/common/widgets/custom_button.dart';
-import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 
 class CancellationDialogueWidget extends StatefulWidget {
   final int? orderId;
@@ -24,6 +24,12 @@ class _CancellationDialogueWidgetState extends State<CancellationDialogueWidget>
   void initState() {
     super.initState();
     Get.find<OrderController>().getOrderCancelReasons();
+  }
+
+  @override
+  void dispose() {
+    commentController.dispose();
+    super.dispose();
   }
 
   @override
@@ -76,7 +82,7 @@ class _CancellationDialogueWidgetState extends State<CancellationDialogueWidget>
                         );
                       },
                     ),
-                  ) : SizedBox() : const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault), child: CircularProgressIndicator())),
+                  ) : const SizedBox() : const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault), child: CircularProgressIndicator())),
                   const SizedBox(height: Dimensions.paddingSizeSmall),
 
                   Text(
@@ -100,7 +106,7 @@ class _CancellationDialogueWidgetState extends State<CancellationDialogueWidget>
             ),
 
             Padding(
-              padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+              padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
               child: !orderController.isLoading ? Row(children: [
                 Expanded(child: CustomButton(
                   buttonText: 'cancel'.tr, color: Theme.of(context).disabledColor, radius: 50,

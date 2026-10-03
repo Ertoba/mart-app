@@ -1,42 +1,50 @@
 import 'dart:async';
 
+import 'package:get/get.dart';
+import 'package:sixam_mart/api/api_client.dart';
 import 'package:sixam_mart/common/enums/data_source_enum.dart';
+import 'package:sixam_mart/common/models/config_model.dart' hide DownloadUserAppLinks;
+import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/common/models/response_model.dart';
+import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
+import 'package:sixam_mart/features/address/controllers/address_controller.dart';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
 import 'package:sixam_mart/features/banner/controllers/banner_controller.dart';
 import 'package:sixam_mart/features/brands/controllers/brands_controller.dart';
 import 'package:sixam_mart/features/cart/controllers/cart_controller.dart';
 import 'package:sixam_mart/features/category/controllers/category_controller.dart';
+import 'package:sixam_mart/features/favourite/controllers/favourite_controller.dart';
 import 'package:sixam_mart/features/flash_sale/controllers/flash_sale_controller.dart';
 import 'package:sixam_mart/features/home/controllers/home_controller.dart';
+import 'package:sixam_mart/features/home/screens/home_screen.dart';
 import 'package:sixam_mart/features/item/controllers/campaign_controller.dart';
 import 'package:sixam_mart/features/item/controllers/item_controller.dart';
 import 'package:sixam_mart/features/notification/domain/models/notification_body_model.dart';
-import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
 import 'package:sixam_mart/features/pro/controllers/pro_controller.dart';
-import 'package:sixam_mart/features/favourite/controllers/favourite_controller.dart';
-import 'package:sixam_mart/api/api_client.dart';
-import 'package:sixam_mart/common/models/config_model.dart' hide DownloadUserAppLinks;
-import 'package:sixam_mart/common/models/module_model.dart';
-import 'package:get/get.dart';
-import 'package:sixam_mart/features/address/controllers/address_controller.dart';
+import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
 import 'package:sixam_mart/features/rental_module/rental_cart_screen/controllers/taxi_cart_controller.dart';
 import 'package:sixam_mart/features/rental_module/rental_favourite/controllers/taxi_favourite_controller.dart';
+import 'package:sixam_mart/features/service_module/booking_details/controllers/booking_controller.dart';
+import 'package:sixam_mart/features/service_module/service_cart/controllers/service_cart_controller.dart';
+import 'package:sixam_mart/features/splash/domain/services/splash_service_interface.dart';
 import 'package:sixam_mart/features/store/controllers/store_controller.dart';
+import 'package:sixam_mart/features/bogo_offer/controllers/bogo_offer_controller.dart';
+import 'package:sixam_mart/features/bundle/controllers/bundle_controller.dart';
+import 'package:sixam_mart/features/reels/controllers/reels_controller.dart';
+import 'package:sixam_mart/features/order/controllers/order_controller.dart';
+import 'package:sixam_mart/features/home/controllers/advertisement_controller.dart';
+import 'package:sixam_mart/features/brands/controllers/brands_controller.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/maintance_helper.dart';
+import 'package:sixam_mart/helper/notification_topic_helper.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
-import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
-import 'package:sixam_mart/features/home/screens/home_screen.dart';
-import 'package:sixam_mart/features/splash/domain/services/splash_service_interface.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/helper/shallow_route_helper.dart';
 import 'package:sixam_mart/helper/splash_route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:universal_html/html.dart' as html;
 
-import '../domain/models/app_download_section_model.dart' as app_download;
-import '../domain/models/landing_model.dart';
+import '../domain/models/app_download_section_model.dart';
 
 class SplashController extends GetxController implements GetxService {
   final SplashServiceInterface splashServiceInterface;
@@ -80,21 +88,6 @@ class SplashController extends GetxController implements GetxService {
   int _moduleSwitchToken = 0;
   Timer? _moduleLoadDebounce;
 
-  LandingModel? _landingModel;
-  LandingModel? get landingModel => _landingModel;
-
-  Future<void> getLandingPageData({DataSourceEnum source = DataSourceEnum.local}) async {
-    final LandingModel? model = await splashServiceInterface.getLandingPageData(source: source);
-    if (model != null) {
-      _landingModel = model;
-      hoverStates = List<bool>.filled(model.availableZoneList?.length ?? 0, false);
-      update();
-    }
-    if (source == DataSourceEnum.local) {
-      await getLandingPageData(source: DataSourceEnum.client);
-    }
-  }
-
   bool _savedCookiesData = false;
   bool get savedCookiesData => _savedCookiesData;
 
@@ -118,8 +111,13 @@ class SplashController extends GetxController implements GetxService {
   Uri? _deeplinkRoute;
   Uri? get deeplinkRoute => _deeplinkRoute;
 
-  app_download.AppDownloadSectionModel? _appDownloadSection;
-  app_download.AppDownloadSectionModel? get appDownloadSection => _appDownloadSection;
+  // Latch so cold-start splash routing (notification target OR normal home) runs
+  // exactly once, no matter how many local/client config responses race. Guards ONLY
+  // the splash user/notification routing — never maintenance/demo/main-function routes.
+  bool _splashRouted = false;
+
+  AppDownloadSectionModel? _appDownloadSection;
+  AppDownloadSectionModel? get appDownloadSection => _appDownloadSection;
 
   void togglePaymentIncompleteBottomSheet(bool status) {
     _showPaymentIncompleteBottomSheet = status;
@@ -167,23 +165,23 @@ class SplashController extends GetxController implements GetxService {
   }
 
   Future<void> getConfigData({bool handleMaintenanceMode = false, NotificationBodyModel? notificationBody, bool loadModuleData = false, bool loadLandingData = false,
-    DataSourceEnum source = DataSourceEnum.local, bool fromMainFunction = false, bool fromDemoReset = false, bool canRoute = true}) async {
+    DataSourceEnum source = DataSourceEnum.local, bool fromMainFunction = false, bool fromDemoReset = false, bool canRoute = true, bool fromSplash = false}) async {
     _hasConnection = true;
     _moduleIndex = 0;
     Response response;
     if(source == DataSourceEnum.local && !fromDemoReset) {
       response = await splashServiceInterface.getConfigData(source: DataSourceEnum.local);
-      _handleConfigResponse(response, handleMaintenanceMode, loadModuleData, loadLandingData, fromMainFunction, fromDemoReset, notificationBody, canRoute);
-      getConfigData(handleMaintenanceMode: handleMaintenanceMode, loadModuleData: loadModuleData, loadLandingData: loadLandingData, source: DataSourceEnum.client);
+      _handleConfigResponse(response, handleMaintenanceMode, loadModuleData, loadLandingData, fromMainFunction, fromDemoReset, notificationBody, canRoute, fromSplash);
+      getConfigData(handleMaintenanceMode: handleMaintenanceMode, loadModuleData: loadModuleData, loadLandingData: loadLandingData, source: DataSourceEnum.client, notificationBody: notificationBody, canRoute: canRoute, fromSplash: fromSplash);
 
     } else {
       response = await splashServiceInterface.getConfigData(source: DataSourceEnum.client);
-      _handleConfigResponse(response, handleMaintenanceMode, loadModuleData, loadLandingData, fromMainFunction, fromDemoReset, notificationBody, canRoute);
+      _handleConfigResponse(response, handleMaintenanceMode, loadModuleData, loadLandingData, fromMainFunction, fromDemoReset, notificationBody, canRoute, fromSplash);
     }
 
   }
 
-  Future<void> _handleConfigResponse(Response response, bool handleMaintenanceMode, bool loadModuleData, bool loadLandingData, bool fromMainFunction, bool fromDemoReset, NotificationBodyModel? notificationBody, bool canRoute) async {
+  Future<void> _handleConfigResponse(Response response, bool handleMaintenanceMode, bool loadModuleData, bool loadLandingData, bool fromMainFunction, bool fromDemoReset, NotificationBodyModel? notificationBody, bool canRoute, bool fromSplash) async {
     if(response.statusCode == 200) {
       _data = response.body;
       _configModel = ConfigModel.fromJson(response.body);
@@ -199,6 +197,7 @@ class SplashController extends GetxController implements GetxService {
       bool isMaintenanceMode = _configModel!.maintenanceMode!;
       bool isInMaintenance = MaintenanceHelper.isMaintenanceEnable();
 
+      splashServiceInterface.handleInitialTopicSubscription();
       if (isInMaintenance && handleMaintenanceMode) {
         Get.offNamed(RouteHelper.getUpdateRoute(false));
         _onRemoveLoader();
@@ -215,7 +214,10 @@ class SplashController extends GetxController implements GetxService {
         _mainConfigRouting();
       } else if (fromDemoReset) {
         Get.offAllNamed(RouteHelper.getInitialRoute(fromSplash: true));
-      } else {
+      } else if (!fromSplash) {
+        route(body: notificationBody);
+      } else if (!_splashRouted) {
+        _splashRouted = true;
         route(body: notificationBody);
       }
       _onRemoveLoader();
@@ -250,26 +252,7 @@ class SplashController extends GetxController implements GetxService {
     }
   }
 
-  // Future<void> getLandingPageData({DataSourceEnum source = DataSourceEnum.local}) async {
-  //   LandingModel? landingModel;
-  //   if(source == DataSourceEnum.local) {
-  //     landingModel = await splashServiceInterface.getLandingPageData(source: DataSourceEnum.local);
-  //     _prepareLandingModel(landingModel);
-  //     getLandingPageData(source: DataSourceEnum.client);
-  //   } else {
-  //     landingModel = await splashServiceInterface.getLandingPageData(source: DataSourceEnum.client);
-  //     _prepareLandingModel(landingModel);
-  //   }
-  //
-  // }
 
-  // void _prepareLandingModel(LandingModel? landingModel) {
-  //   if(landingModel != null) {
-  //     _landingModel = landingModel;
-  //     hoverStates = List<bool>.generate(_landingModel!.availableZoneList!.length, (index) => false);
-  //   }
-  //   update();
-  // }
 
   Future<void> initSharedData() async {
     if(!GetPlatform.isWeb) {
@@ -306,18 +289,68 @@ class SplashController extends GetxController implements GetxService {
     _firstTimeConnectionCheck = isChecked;
   }
 
+  /// Activates the module with [moduleId], loading the module list first if it
+  /// has not been fetched. Returns false when the id is not among the available
+  /// modules, leaving the current module untouched.
+  ///
+  /// Replaces a loop that three call sites hand-rolled:
+  ///
+  /// ```dart
+  /// int i = 0;
+  /// for(i = 0; i < moduleList!.length; i++) {
+  ///   if(wantedId == moduleList![i].id) break;
+  /// }
+  /// setModule(moduleList![i]);   // i == length when the id is absent
+  /// ```
+  ///
+  /// When the id was not in the list the loop ran to completion and the index
+  /// landed one past the end, so `moduleList![i]` threw `RangeError` — and
+  /// `moduleList!` threw outright if `getModules()` came back empty. Both fired
+  /// inside `async` button handlers, where Flutter swallows the exception, so the
+  /// button simply did nothing: no snackbar, no navigation, no error.
+  Future<bool> activateModuleById(int? moduleId) async {
+    if(moduleId == null) return false;
+
+    // Refreshed unconditionally, exactly as the loops this replaces did. Reusing an
+    // already-loaded list would change behaviour: a list left over from a previous
+    // zone can be missing the module the cart needs, and the old code recovered
+    // from that by refetching every time.
+    await getModules();
+
+    final List<ModuleModel>? modules = _moduleList;
+    if(modules == null || modules.isEmpty) return false;
+
+    final int index = modules.indexWhere((ModuleModel module) => module.id == moduleId);
+    if(index == -1) return false;
+
+    await setModule(modules[index]);
+    return true;
+  }
+
   Future<void> setModule(ModuleModel? module, {bool notify = true, bool fromModuleDialog = false}) async {
     _module = module;
     splashServiceInterface.setModule(module);
     if(module != null) {
-      Get.find<BannerController>().clearBanner();
+      // Deliberately no clearBanner() here: most callers set the module only to open
+      // a detail page (store/item/category) and never reload home data — clearing
+      // left the module page's banner slider stuck on its shimmer on return. The
+      // genuine-switch flows clear and reload themselves (switchModule and the
+      // deep-link path via clearDataNull + HomeScreen.loadData).
       ShallowRouterHelper.updateParameter('module', module.slug != null ? module.slug.toString() : module.id.toString());
       if(_configModel != null) {
         _configModel!.moduleConfig!.module = Module.fromJson(_data!['module_config'][module.moduleType]);
       }
       _cacheModule = await splashServiceInterface.setCacheModule(module);
+      // The promotion broadcast topic is scoped to zone AND module, so switching vertical
+      // moves the device to the new module's topic and leaves the old one.
+      NotificationTopicHelper.syncCustomerTopic();
       if((AuthHelper.isLoggedIn() || AuthHelper.isGuestLoggedIn()) && cacheModule != null) {
-        Get.find<CartController>().getAllCarts();
+        if(cacheModule!.moduleType.toString() == AppConstants.service) {
+          Get.find<ServiceCartController>().getServiceCartGroups();
+          Get.find<BookingController>().getDashboardRunningBookings();
+        } else {
+          Get.find<CartController>().getAllCarts();
+        }
       }
     }
 
@@ -345,9 +378,20 @@ class SplashController extends GetxController implements GetxService {
     }
   }
 
+  /// A missing or unknown [moduleType] used to blow up on `Module.fromJson(null)` with
+  /// a `Null is not a subtype of Map` cast error — a whole screen lost to one row whose
+  /// item carries no module. Falls back to the active module's config, then to an empty one.
   Module getModuleConfig(String? moduleType) {
-    Module module = Module.fromJson(_data!['module_config'][moduleType]);
-    moduleType == 'food' ? module.newVariation = true : module.newVariation = false;
+    final dynamic moduleConfig = _data?['module_config'];
+    dynamic config = (moduleConfig is Map && moduleType != null) ? moduleConfig[moduleType] : null;
+    if(config is! Map) {
+      final String? activeType = _module?.moduleType ?? _cacheModule?.moduleType;
+      config = (moduleConfig is Map && activeType != null) ? moduleConfig[activeType] : null;
+    }
+
+    final Module module = config is Map
+        ? Module.fromJson(Map<String, dynamic>.from(config)) : Module();
+    module.newVariation = moduleType == 'food';
     return module;
   }
 
@@ -393,7 +437,7 @@ class SplashController extends GetxController implements GetxService {
       return;
     }
     final String moduleType = module.moduleType?.toString() ?? '';
-    final bool isInterestModule = moduleType == 'food' || moduleType == 'grocery' || moduleType == 'ecommerce';
+    final bool isInterestModule = moduleType == AppConstants.food || moduleType == AppConstants.pharmacy || moduleType == AppConstants.grocery || moduleType == AppConstants.ecommerce;
     final bool alreadySelected = user.selectedModuleForInterest?.contains(module.id) ?? false;
     if(!isInterestModule || alreadySelected) {
       return;
@@ -416,8 +460,14 @@ class SplashController extends GetxController implements GetxService {
       // the module_id header immediately (so the view/header stay correct), but any
       // work after an await is skipped if a newer switch has since started.
       final int token = ++_moduleSwitchToken;
+      final ModuleModel target = _moduleList![index];
 
-      await Get.find<SplashController>().setModule(_moduleList![index]);
+      // Must precede the await: the tab repaints long before setModule returns.
+      if(target.moduleType.toString() != AppConstants.taxi) {
+        _clearModuleScopedData();
+      }
+
+      await Get.find<SplashController>().setModule(target);
 
       // A newer switch superseded this one while we awaited — don't clear caches or
       // load data for a module that's no longer selected.
@@ -435,7 +485,6 @@ class SplashController extends GetxController implements GetxService {
         }
 
         if(AuthHelper.isLoggedIn()) {
-          Get.find<HomeController>().getCashBackOfferList();
           // Defensive: the interest page must never block/skip the module data load.
           try {
             await _showInterestPage();
@@ -459,6 +508,22 @@ class SplashController extends GetxController implements GetxService {
         Get.find<TaxiCartController>().getCarCartList();
       }
     }
+  }
+
+  void _clearModuleScopedData() {
+    Get.find<ItemController>().clearItemLists();
+    Get.find<BannerController>().clearBanner();
+    Get.find<CategoryController>().clearCategoryList();
+    Get.find<CampaignController>().itemAndBasicCampaignNull();
+    Get.find<FlashSaleController>().setEmptyFlashSale(fromModule: true);
+    Get.find<StoreController>().clearModuleStoreLists();
+    Get.find<BogoOfferController>().clearBogoHomeData();
+    Get.find<BundleController>().clearBundleHomeData();
+    // These fetch only when scrolled to, so a stale list can sit on screen for long.
+    Get.find<ReelsController>().clearReels();
+    Get.find<BrandsController>().clearBrandList();
+    Get.find<AdvertisementController>().clearAdvertisementList();
+    Get.find<OrderController>().clearLastOrders();
   }
 
   ModuleModel? getCacheModule() {
@@ -580,13 +645,13 @@ class SplashController extends GetxController implements GetxService {
   }
 
   Future<void> fetchAppDownloadSection() async {
-    // The private backend does not expose a separate app-download endpoint.
-    // Keep the section nullable and avoid introducing a new network contract.
-    _appDownloadSection = null;
+    AppDownloadSectionModel? appDownloadSectionModel = await splashServiceInterface.getAppDownloadSection();
+    if (appDownloadSectionModel == null) return;
+    _appDownloadSection = appDownloadSectionModel;
     update();
   }
 
-  app_download.DownloadUserAppLinks? get links => _appDownloadSection?.downloadUserAppLinks;
+  DownloadUserAppLinks? get links => _appDownloadSection?.downloadUserAppLinks;
 
   String get appDownloadQrUrl {
     if (links?.appleStoreUrl?.isNotEmpty ?? false) return links!.appleStoreUrl!;

@@ -4,10 +4,11 @@ import 'package:get/get.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
 import 'package:sixam_mart/common/widgets/custom_app_bar.dart';
 import 'package:sixam_mart/common/widgets/footer_view.dart';
-import 'package:sixam_mart/common/widgets/item_view.dart';
 import 'package:sixam_mart/common/widgets/menu_drawer.dart';
 import 'package:sixam_mart/common/widgets/web_page_title_widget.dart';
 import 'package:sixam_mart/features/brands/controllers/brands_controller.dart';
+import 'package:sixam_mart/features/item/domain/models/item_model.dart';
+import 'package:sixam_mart/common/widgets/exclusive_deal_card.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 
@@ -45,6 +46,12 @@ class _BrandsItemScreenState extends State<BrandsItemScreen> {
   }
 
   @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
 
     bool isDesktop = ResponsiveHelper.isDesktop(context);
@@ -63,7 +70,7 @@ class _BrandsItemScreenState extends State<BrandsItemScreen> {
               SizedBox(
                 width: Dimensions.webMaxWidth,
                 child: brandsController.brandItems != null ? brandsController.brandItems!.isNotEmpty
-                    ? ItemsView(isStore: false, items: brandsController.brandItems, stores: null, noDataText: 'no_brand_item_found'.tr)
+                    ? _BrandItemsList(items: brandsController.brandItems!)
                     : Center(child: Padding(padding: EdgeInsets.only(top: isDesktop ? context.height * 0.3 : context.height * 0.4), child: Text('no_brand_item_found'.tr)))
                     : const BrandItemScreenShimmer(),
 
@@ -77,6 +84,28 @@ class _BrandsItemScreenState extends State<BrandsItemScreen> {
           ),
         );
       }),
+    );
+  }
+}
+
+class _BrandItemsList extends StatelessWidget {
+  final List<Item> items;
+  const _BrandItemsList({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    // The outer page scroll (SingleChildScrollView) drives pagination, so this
+    // list must not scroll itself — shrinkWrap + NeverScrollableScrollPhysics.
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
+      itemCount: items.length,
+      separatorBuilder: (BuildContext context, int index) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
+        child: Divider(height: 1, color: Theme.of(context).disabledColor.withValues(alpha: 0.18)),
+      ),
+      itemBuilder: (BuildContext context, int index) => ExclusiveDealCard(item: items[index], width: double.infinity, index: index),
     );
   }
 }

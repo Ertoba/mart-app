@@ -1,101 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sixam_mart/common/widgets/cart_quantity_button.dart';
 import 'package:sixam_mart/features/cart/controllers/cart_controller.dart';
 import 'package:sixam_mart/features/item/controllers/item_controller.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
-import 'package:sixam_mart/features/location/controllers/location_controller.dart';
-import 'package:sixam_mart/helper/address_helper.dart';
-import 'package:sixam_mart/util/dimensions.dart';
-import 'package:sixam_mart/util/styles.dart';
 
+/// [CartQuantityButton] wired to a single product's cart row.
 class CartCountView extends StatelessWidget {
   final Item item;
   final Widget? child;
   final int? index;
-  const CartCountView({super.key, required this.item, this.child, this.index = -1});
+  final VoidCallback? onBeforeAdd;
+  final int? availableStock;
+  const CartCountView({super.key, required this.item, this.child, this.index = -1, this.onBeforeAdd, this.availableStock});
 
   @override
   Widget build(BuildContext context) {
     return GetBuilder<CartController>(builder: (cartController) {
-      int cartQty = cartController.cartQuantity(item.id!);
-      int cartIndex = cartController.isExistInCart(item.id, cartController.cartVariant(item.id!), false, null);
-      return cartQty != 0 ? Center(
-        child: Container(
-          width: 100,
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(Dimensions.radiusExtraLarge),
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5, spreadRadius: 1)],
-          ),
-          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            InkWell(
-              onTap: cartController.isLoading ? null : () {
-                if (cartController.cartList[cartIndex].quantity! > 1) {
-                  cartController.setDirectlyAddToCartIndex(index);
-                  cartController.setQuantity(false, cartIndex, cartController.cartList[cartIndex].stock, cartController.cartList[cartIndex].item!.quantityLimit);
-                }else {
-                  cartController.removeFromCart(cartIndex);
-                }
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  shape: BoxShape.circle,
-                  // border: Border.all(color: Theme.of(context).primaryColor),
-                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5, spreadRadius: 1)],
-                ),
-                padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
-                child: Icon(
-                  Icons.remove, size: 16, color: Theme.of(context).primaryColor,
-                ),
-              ),
-            ),
+      final int cartQty = cartController.cartQuantity(item.id!);
+      final int cartIndex = cartController.isExistInCart(item.id, cartController.cartVariant(item.id!), false, null);
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-              child: cartController.isLoading && cartController.directAddCartItemIndex == index
-                  ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator())
-                  : Text(cartQty.toString(), style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall),
-              ) ,
-            ),
-
-            InkWell(
-              onTap: cartController.isLoading ? null : () {
-                cartController.setDirectlyAddToCartIndex(index);
-                cartController.setQuantity(true, cartIndex, cartController.cartList[cartIndex].stock, cartController.cartList[cartIndex].quantityLimit);
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5, spreadRadius: 1)],
-                  border: Border.all(color: Theme.of(context).cardColor),
-                ),
-                padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
-                child: Icon(
-                  Icons.add, size: 16, color: Theme.of(context).cardColor,
-                ),
-              ),
-            ),
-          ]),
-        ),
-      ) : InkWell(
-        onTap: () {
-          if(AddressHelper.getUserAddressFromSharedPref() == null) {
-            Get.find<LocationController>().navigateToLocationScreen('home', canRoute: true);
-            return;
-          }
-          Get.find<ItemController>().itemDirectlyAddToCart(item, context);
+      return CartQuantityButton(
+        quantity: cartQty,
+        isLoading: cartController.isLoading && cartController.directAddCartItemIndex == index,
+        onBeforeAdd: onBeforeAdd,
+        addBuilder: child == null ? null : (_, _) => child!,
+        onAdd: () => Get.find<ItemController>().itemDirectlyAddToCart(item, context, availableStock: availableStock),
+        onIncrement: cartIndex < 0 ? null : () async {
+          cartController.setDirectlyAddToCartIndex(index);
+          cartController.changeQuantity(true, cartIndex, cartController.cartList[cartIndex].stock, cartController.cartList[cartIndex].quantityLimit);
         },
-        child: child ?? Container(
-          height: 25, width: 25,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle, color: Theme.of(context).cardColor,
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5, spreadRadius: 1)],
-          ),
-          child: Icon(Icons.add, size: 20, color: Theme.of(context).primaryColor),
-        ),
+        onDecrement: cartIndex < 0 ? null : () async {
+          if(cartController.cartList[cartIndex].quantity! > 1) {
+            cartController.setDirectlyAddToCartIndex(index);
+            cartController.changeQuantity(false, cartIndex, cartController.cartList[cartIndex].stock, cartController.cartList[cartIndex].item!.quantityLimit);
+          } else {
+            await cartController.removeFromCart(cartIndex);
+          }
+        },
       );
     });
   }
 }
+
+// SUMMARY
+// Cart stepper for one product. Shows the add button until the item is in the cart,
+// then its quantity with increment and remove, and refuses to add past the stock cap
+// it is given.

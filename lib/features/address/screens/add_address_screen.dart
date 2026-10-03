@@ -12,8 +12,8 @@ import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/features/auth/controllers/auth_controller.dart';
 import 'package:sixam_mart/features/location/widgets/permission_dialog_widget.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
-import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/custom_validator.dart';
+import 'package:sixam_mart/helper/debouncer.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
@@ -65,6 +65,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   CameraPosition? _cameraPosition;
   late LatLng _initialPosition;
   bool _otherSelect = false;
+  final Debouncer _idleDebouncer = Debouncer(delay: const Duration(milliseconds: AppConstants.idleDebounceDuration));
   String? _countryDialCode = Get.find<AuthController>().getUserCountryCode().isNotEmpty ? Get.find<AuthController>().getUserCountryCode()
       : CountryCode.fromCountryCode(Get.find<SplashController>().configModel!.country!).dialCode;
 
@@ -116,6 +117,28 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         _otherSelect = true;
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _idleDebouncer.dispose();
+    _levelController.dispose();
+    _addressController.dispose();
+    _contactPersonNameController.dispose();
+    _contactPersonNumberController.dispose();
+    _streetNumberController.dispose();
+    _houseController.dispose();
+    _floorController.dispose();
+    _emailController.dispose();
+    _addressNode.dispose();
+    _levelNode.dispose();
+    _nameNode.dispose();
+    _numberNode.dispose();
+    _streetNode.dispose();
+    _houseNode.dispose();
+    _floorNode.dispose();
+    _emailFocus.dispose();
+    super.dispose();
   }
 
   void splitPhoneNumber(String number) async {
@@ -198,7 +221,10 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                             indoorViewEnabled: true,
                                             mapToolbarEnabled: false,
                                             onCameraIdle: () {
-                                              locationController.updatePosition(_cameraPosition, true);
+                                              _idleDebouncer.run(() {
+                                                if (!mounted) return;
+                                                locationController.updatePosition(_cameraPosition, true);
+                                              });
                                             },
                                             onCameraMove: ((position) => _cameraPosition = position),
                                             onMapCreated: (GoogleMapController controller) {
@@ -220,7 +246,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                           Center(child: !locationController.loading ? Image.asset(Images.pickMarker, height: 50, width: 50)
                                               : const CircularProgressIndicator()),
                                           Positioned(
-                                            bottom: 10, right: 0,
+                                            bottom: 10, left: 10,
                                             child: InkWell(
                                               onTap: () => _checkPermission(() {
                                                 locationController.getCurrentLocation(true, mapController: locationController.mapController);
@@ -238,7 +264,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                             child: InkWell(
                                               onTap: () {
                                                 if(ResponsiveHelper.isDesktop(Get.context)) {
-                                                  showGeneralDialog(context: context, pageBuilder: (_,__,___) {
+                                                  showGeneralDialog(context: context, pageBuilder: (_,_,_) {
                                                     return SizedBox(
                                                       height: 300, width: 300,
                                                       child: PickMapScreen(fromSignUp: false, canRoute: false, fromAddAddress: true, route: null, googleMapController: locationController.mapController)
@@ -296,22 +322,20 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                                 boxShadow: const [BoxShadow(color: Colors.black12, spreadRadius: 1, blurRadius: 5)],
                                                 // border: Border.all(color: locationController.addressTypeIndex == index ? Theme.of(context).primaryColor : Theme.of(context).disabledColor)
                                             ),
-                                            child: Row(
-                                              children: [
-                                                SizedBox(
-                                                  height: 24, width: 24,
-                                                  child: Image.asset(
-                                                    index == 0 ? Images.homeIcon : index == 1 ? Images.workIcon : Images.otherIcon,
-                                                    color: locationController.addressTypeIndex == index ? Theme.of(context).cardColor : Theme.of(context).disabledColor,
-                                                  ),
+                                            child: Row(children: [
+                                              SizedBox(
+                                                height: 24, width: 24,
+                                                child: Image.asset(
+                                                  index == 0 ? Images.homeIcon : index == 1 ? Images.workIcon : Images.otherIcon,
+                                                  color: locationController.addressTypeIndex == index ? Theme.of(context).cardColor : Theme.of(context).disabledColor,
                                                 ),
-                                                const SizedBox(width: Dimensions.paddingSizeSmall),
+                                              ),
+                                              const SizedBox(width: Dimensions.paddingSizeSmall),
 
-                                                Text(_addressTypeLabel(index),
-                                                  style: robotoRegular.copyWith(color: locationController.addressTypeIndex == index ? Theme.of(context).cardColor : Theme.of(context).disabledColor),
-                                                )
-                                              ],
-                                            ),
+                                              Text(index == 0 ? 'home'.tr : index == 1 ? 'office'.tr : 'others'.tr,
+                                                style: robotoRegular.copyWith(color: locationController.addressTypeIndex == index ? Theme.of(context).cardColor : Theme.of(context).disabledColor),
+                                              )
+                                            ]),
                                           ),
                                         ),
                                       ),
@@ -486,7 +510,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           minMaxZoomPreference: const MinMaxZoomPreference(0, 16),
                           onTap: (latLng) {
                           if(ResponsiveHelper.isDesktop(Get.context)) {
-                            showGeneralDialog(context: context, pageBuilder: (_,__,___) {
+                            showGeneralDialog(context: context, pageBuilder: (_,_,_) {
                               return SizedBox(
                                   height: 300, width: 300,
                                   child: PickMapScreen(fromSignUp: false, canRoute: false, fromAddAddress: true, route: null, googleMapController: locationController.mapController)
@@ -511,7 +535,10 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           indoorViewEnabled: true,
                           mapToolbarEnabled: false,
                           onCameraIdle: () {
-                            locationController.updatePosition(_cameraPosition, true);
+                            _idleDebouncer.run(() {
+                              if (!mounted) return;
+                              locationController.updatePosition(_cameraPosition, true);
+                            });
                           },
                           onCameraMove: ((position) {
                             _cameraPosition = position;
@@ -555,7 +582,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           child: InkWell(
                             onTap: () {
                               if(ResponsiveHelper.isDesktop(Get.context)) {
-                                showGeneralDialog(context: context, pageBuilder: (_,__,___) {
+                                showGeneralDialog(context: context, pageBuilder: (_,_,_) {
                                   return SizedBox(
                                       height: 300, width: 300,
                                       child: PickMapScreen(fromSignUp: false, canRoute: false, fromAddAddress: true, route: null, googleMapController: locationController.mapController)
@@ -696,7 +723,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
                   CustomTextField(
                     labelText: '${'street_number'.tr} (${'optional'.tr})',
-                    labelTextSize: Dimensions.fontSizeSmall,
                     titleText: 'write_street_number'.tr,
                     inputType: TextInputType.streetAddress,
                     focusNode: _streetNode,
@@ -709,7 +735,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                     Expanded(
                       child: CustomTextField(
                         labelText: '${'house'.tr} (${'optional'.tr})',
-                        labelTextSize: Dimensions.fontSizeSmall,
                         titleText: 'write_house_number'.tr,
                         inputType: TextInputType.text,
                         focusNode: _houseNode,
@@ -722,7 +747,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                     Expanded(
                       child: CustomTextField(
                         labelText: "${'floor'.tr} (${'optional'.tr})",
-                        labelTextSize: Dimensions.fontSizeSmall,
                         titleText: 'write_floor_number'.tr,
                         inputType: TextInputType.text,
                         focusNode: _floorNode,
@@ -775,10 +799,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         );
       }
     );
-  }
-
-  String _addressTypeLabel(int index) {
-    return AddressHelper.getAddressTypeLabel(index == 0 ? 'home' : index == 1 ? 'office' : 'others');
   }
 
   void _onSaveOrUpdateButtonPressed(LocationController locationController) async {

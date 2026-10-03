@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:sixam_mart/api/json_reader.dart';
 import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/features/item/domain/models/item_model.dart';
+import 'package:sixam_mart/helper/type_converter_helper.dart';
 
 class PlaceOrderBodyModel {
   List<OnlineCart>? _cart;
@@ -148,6 +150,9 @@ class PlaceOrderBodyModel {
   String? get contactPersonName => _contactPersonName;
   String? get contactPersonNumber => _contactPersonNumber;
   String? get parcelCategoryId => _parcelCategoryId;
+  int? get weightId => _weightId;
+  int? get dimensionId => _dimensionId;
+  int? get deliveryDuration => _deliveryDuration;
   String? get chargePayer => _chargePayer;
   String? get streetNumber => _streetNumber;
   String? get house => _house;
@@ -196,6 +201,9 @@ class PlaceOrderBodyModel {
     _contactPersonNumber = json['contact_person_number'];
     _addressType = json['address_type'];
     _parcelCategoryId = json['parcel_category_id'];
+    _weightId = JsonReader.toInt(json['weight_id']);
+    _dimensionId = JsonReader.toInt(json['dimension_id']);
+    _deliveryDuration = JsonReader.toInt(json['delivery_duration']);
     _chargePayer = json['charge_payer'];
     _streetNumber = json['road'];
     _house = json['apartment'];
@@ -257,6 +265,19 @@ class PlaceOrderBodyModel {
     data['address_type'] = _addressType ?? '';
     if (_parcelCategoryId != null) {
       data['parcel_category_id'] = _parcelCategoryId!;
+    }
+    if (_weightId != null) {
+      data['weight_id'] = _weightId.toString();
+    }
+    if (_dimensionId != null) {
+      data['dimension_id'] = _dimensionId.toString();
+    }
+    // Seconds as a bare number — the routing API's own `"11508s"` with the unit
+    // stripped, so the value carries no suffix for the server to strip again.
+    // Stringified like every other numeric field here, because this whole body
+    // is form-encoded. Absent rather than zero when the route was not measured.
+    if (_deliveryDuration != null) {
+      data['delivery_duration'] = _deliveryDuration.toString();
     }
     if (_chargePayer != null) {
       data['charge_payer'] = _chargePayer!;

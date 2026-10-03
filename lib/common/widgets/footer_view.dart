@@ -26,6 +26,12 @@ class _FooterViewState extends State<FooterView> {
   final ConfigModel? _config = Get.find<SplashController>().configModel;
 
   @override
+  void dispose() {
+    _newsLetterController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column( mainAxisAlignment: MainAxisAlignment.start, children: [
       ConstrainedBox(
@@ -52,7 +58,7 @@ class _FooterViewState extends State<FooterView> {
 
               Expanded(flex: 4, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 const SizedBox(height: Dimensions.paddingSizeExtraLarge),
-                Image.asset(Images.brandMark, width: 36, height: 56),
+                Image.asset(Images.logo, width: 126, height: 40),
                 const SizedBox(height: Dimensions.paddingSizeSmall),
 
                 Text('subscribe_to_out_new_channel_to_get_latest_updates'.tr, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)),

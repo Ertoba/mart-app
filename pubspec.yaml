@@ -111,3 +111,35 @@ flutter:
           weight: 700
         - asset: assets/font/DMSans-Bold.ttf
           weight: 900
+    - family: Noto Sans Georgian
+      fonts:
+        - asset: assets/font/noto/NotoSansGeorgian-Thin.ttf
+          weight: 100
+        - asset: assets/font/noto/NotoSansGeorgian-ExtraLight.ttf
+          weight: 200
+        - asset: assets/font/noto/NotoSansGeorgian-Light.ttf
+          weight: 300
+        - asset: assets/font/noto/NotoSansGeorgian-Regular.ttf
+          weight: 400
+        - asset: assets/font/noto/NotoSansGeorgian-Medium.ttf
+          weight: 500
+        - asset: assets/font/noto/NotoSansGeorgian-SemiBold.ttf
+          weight: 600
+        - asset: assets/font/noto/NotoSansGeorgian-Bold.ttf
+          weight: 700
+        - asset: assets/font/noto/NotoSansGeorgian-ExtraBold.ttf
+          weight: 800
+        - asset: assets/font/noto/NotoSansGeorgian-Black.ttf
+          weight: 900
+    - family: MILI Cyrillic
+      fonts:
+        - asset: assets/font/noto/MiliCyrillic-Regular.ttf
+          weight: 400
+        - asset: assets/font/noto/MiliCyrillic-Bold.ttf
+          weight: 700
+        - asset: assets/font/noto/MiliCyrillic-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: assets/font/noto/MiliCyrillic-BoldItalic.ttf
+          weight: 700
+          style: italic

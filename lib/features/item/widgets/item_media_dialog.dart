@@ -188,6 +188,7 @@ class _ItemMediaDialogState extends State<ItemMediaDialog> {
   bool _isVideoMedia(String url) {
     final String lowerUrl = url.toLowerCase();
     return url.contains('youtube.com') || url.contains('youtu.be') || url.contains('youtube.com/embed') ||
+        lowerUrl.contains('vimeo.com') || lowerUrl.contains('player.vimeo.com') ||
         lowerUrl.endsWith('.mp4') || lowerUrl.endsWith('.mov') || lowerUrl.endsWith('.m4v') || lowerUrl.endsWith('.webm') || lowerUrl.endsWith('.mkv');
   }
 

@@ -130,7 +130,7 @@ class ImageViewerScreen extends StatelessWidget {
 
   bool _isVideoMedia(String url) {
     final String lowerUrl = url.toLowerCase();
-    return _isYoutubeUrl(lowerUrl) || lowerUrl.endsWith('.mp4') || lowerUrl.endsWith('.mov') || lowerUrl.endsWith('.m4v') || lowerUrl.endsWith('.webm') || lowerUrl.endsWith('.mkv');
+    return _isYoutubeUrl(lowerUrl) || lowerUrl.contains('vimeo.com') || lowerUrl.contains('player.vimeo.com') || lowerUrl.endsWith('.mp4') || lowerUrl.endsWith('.mov') || lowerUrl.endsWith('.m4v') || lowerUrl.endsWith('.webm') || lowerUrl.endsWith('.mkv');
   }
 
   bool _isYoutubeUrl(String url) {

@@ -21,10 +21,14 @@ class ItemMediaCarouselNewWidget extends StatefulWidget {
   static void stopAllVideo() => ItemImageViewWidget.stopAllVideo();
 
   static bool isYoutubeUrl(String url) => url.contains('youtube.com') || url.contains('youtu.be');
+  static bool isVimeoUrl(String url) {
+    final String s = url.toLowerCase();
+    return s.contains('vimeo.com') || s.contains('player.vimeo.com');
+  }
 
   static bool isVideoMedia(String url) {
     final String s = url.toLowerCase();
-    return isYoutubeUrl(s) || s.endsWith('.mp4') || s.endsWith('.mov') || s.endsWith('.m4v') || s.endsWith('.webm') || s.endsWith('.mkv');
+    return isYoutubeUrl(s) || isVimeoUrl(s) || s.endsWith('.mp4') || s.endsWith('.mov') || s.endsWith('.m4v') || s.endsWith('.webm') || s.endsWith('.mkv');
   }
 
   static String? getVideoUrl(Item item) {

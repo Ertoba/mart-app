@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:sixam_mart/features/item/widgets/item_image_view_widget.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -771,6 +772,25 @@ class _ItemNewBottomSheetState extends State<ItemNewBottomSheet> {
   }
 
   Widget _buildHeaderMedia(BuildContext context, Item item, String mediaUrl, bool isVideo, {required double boxWidth, required double boxHeight}) {
+    final String lowerUrl = mediaUrl.toLowerCase();
+    final bool isVimeo = lowerUrl.contains('vimeo.com') || lowerUrl.contains('player.vimeo.com');
+
+    if (isVideo && isVimeo) {
+      return ItemMediaPreviewWidget(
+        key: ValueKey<String>('header-vimeo-$mediaUrl'),
+        mediaUrl: mediaUrl,
+        thumbnailUrl: item.videoThumbnailUrl?.isNotEmpty == true
+            ? item.videoThumbnailUrl!
+            : (item.imageFullUrl ?? ''),
+        width: double.infinity,
+        height: double.infinity,
+        isDesktop: ResponsiveHelper.isDesktop(context),
+        onFullscreenTap: widget.isCampaign
+            ? null
+            : () => _openMediaFullScreen(context, item, _selectedMediaIndex),
+      );
+    }
+
     if (isVideo) {
       return _HeaderVideoPlayer(
         key: ValueKey<String>('header-video-$mediaUrl'),

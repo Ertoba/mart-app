@@ -1,3 +1,4 @@
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -187,11 +188,16 @@ class ItemImageViewWidget extends StatelessWidget {
 
   bool _isVideoMedia(String url) {
     final String lowerUrl = url.toLowerCase();
-    return _isYoutubeUrl(lowerUrl) || lowerUrl.endsWith('.mp4') || lowerUrl.endsWith('.mov') || lowerUrl.endsWith('.m4v') || lowerUrl.endsWith('.webm') || lowerUrl.endsWith('.mkv');
+    return _isYoutubeUrl(lowerUrl) || _isVimeoUrl(lowerUrl) || lowerUrl.endsWith('.mp4') || lowerUrl.endsWith('.mov') || lowerUrl.endsWith('.m4v') || lowerUrl.endsWith('.webm') || lowerUrl.endsWith('.mkv');
   }
 
   bool _isYoutubeUrl(String url) {
     return url.contains('youtube.com') || url.contains('youtu.be');
+  }
+
+bool _isVimeoUrl(String url) {
+    final String lowerUrl = url.toLowerCase();
+    return lowerUrl.contains('vimeo.com') || lowerUrl.contains('player.vimeo.com');
   }
 
   List<String> _getMediaList(Item item, {bool isCampaign = false}) {
@@ -274,7 +280,8 @@ class ItemMediaPreviewWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final String lowerUrl = mediaUrl.toLowerCase();
     final bool isYoutubeVideo = lowerUrl.contains('youtube.com') || lowerUrl.contains('youtu.be') || lowerUrl.contains('youtube.com/embed');
-    final bool isVideo = isYoutubeVideo || lowerUrl.endsWith('.mp4') || lowerUrl.endsWith('.mov') || lowerUrl.endsWith('.m4v') || lowerUrl.endsWith('.webm') || lowerUrl.endsWith('.mkv');
+    final bool isVimeoVideo = lowerUrl.contains('vimeo.com') || lowerUrl.contains('player.vimeo.com');
+    final bool isVideo = isYoutubeVideo || isVimeoVideo || lowerUrl.endsWith('.mp4') || lowerUrl.endsWith('.mov') || lowerUrl.endsWith('.m4v') || lowerUrl.endsWith('.webm') || lowerUrl.endsWith('.mkv');
     final double playIconSize = width.isFinite ? width * 0.4 : 54;
 
     if (!isVideo || !showPlayer) {
@@ -326,6 +333,7 @@ class _ItemMediaVideoViewState extends State<_ItemMediaVideoView> {
   YoutubePlayerController? _youtubeController;
   web_youtube.YoutubePlayerController? _webYoutubeController;
   bool _isYoutubeVideo = false;
+  bool _isVimeoVideo = false;
   bool _hasError = false;
   bool _hideForPop = false;
 
@@ -364,6 +372,17 @@ class _ItemMediaVideoViewState extends State<_ItemMediaVideoView> {
 
   Future<void> _initializePlayer() async {
     final String url = widget.mediaUrl;
+    final String lowerUrl = url.toLowerCase();
+
+    _isVimeoVideo = false;
+
+    if(lowerUrl.contains('vimeo.com') || lowerUrl.contains('player.vimeo.com')) {
+      _isVimeoVideo = true;
+      if(mounted) {
+        setState(() {});
+      }
+      return;
+    }
     final String? videoId = YoutubePlayer.convertUrlToId(url);
 
     if (videoId != null && videoId.isNotEmpty) {
@@ -423,6 +442,28 @@ class _ItemMediaVideoViewState extends State<_ItemMediaVideoView> {
     if (_hideForPop) {
       return _fallbackThumbnail();
     }
+    if (_isVimeoVideo) {
+      final String separator = widget.mediaUrl.contains('?') ? '&' : '?';
+      final String vimeoUrl = '${widget.mediaUrl}${separator}autoplay=1&muted=1';
+      return InAppWebView(
+        initialUrlRequest: URLRequest(url: WebUri(vimeoUrl)),
+        initialSettings: InAppWebViewSettings(
+          mediaPlaybackRequiresUserGesture: false,
+          allowsInlineMediaPlayback: true,
+          iframeAllowFullscreen: true,
+        ),
+        onWebViewCreated: (controller) {
+        },
+        onReceivedError: (controller, request, error) {
+          if(mounted) {
+            setState(() {
+              _hasError = true;
+            });
+          }
+        },
+      );
+    }
+
     if (_isYoutubeVideo) {
       if (kIsWeb && _webYoutubeController != null) {
         return web_youtube.YoutubePlayer(

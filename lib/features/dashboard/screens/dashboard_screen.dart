@@ -929,9 +929,9 @@ class _HomeFloatingActionButton extends StatelessWidget {
         AppConstants.food, AppConstants.grocery, AppConstants.ecommerce, AppConstants.pharmacy, AppConstants.service,
       };
       final String? moduleType = splashController.module?.moduleType?.toString();
+      final bool isHomeLanding = splashController.selectedModuleIndex == 0;
       final bool showAiChat = (splashController.configModel?.aiChatStatus ?? false)
-          && splashController.selectedModuleIndex != 0
-          && moduleType != null && aiChatModules.contains(moduleType);
+          && (isHomeLanding || (moduleType != null && aiChatModules.contains(moduleType)));
 
       return AnimatedPadding(
         duration: const Duration(milliseconds: 300),

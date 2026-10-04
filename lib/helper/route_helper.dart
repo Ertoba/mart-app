@@ -524,7 +524,7 @@ class RouteHelper {
   }
   static String getAiChatBotScreen() => aiChatBot;
   static String getAiChatDetailsScreen({int? conversationId, String? title, String? initialMessage}) {
-    return '$aiChatDetails?conversation_id=${conversationId ?? ''}&title=${title ?? ''}&initial_message=${initialMessage ?? ''}';
+    return '$aiChatDetails?conversation_id=${conversationId ?? ''}&title=${Uri.encodeComponent(title ?? '')}&initial_message=${Uri.encodeComponent(initialMessage ?? '')}';
   }
 
   static String getSubscriptionSuccessRoute({String? status, required bool fromSubscription, int? storeId}) => '$subscriptionSuccess?flag=$status&from_subscription=$fromSubscription&store_id=$storeId';

@@ -578,6 +578,7 @@ class _FlittMobilePaymentScreenState extends State<FlittMobilePaymentScreen> {
           guestId: widget.createAccount
               ? widget.createUserId.toString()
               : widget.guestId,
+          paymentMethod: 'flitt',
         ),
       );
     }

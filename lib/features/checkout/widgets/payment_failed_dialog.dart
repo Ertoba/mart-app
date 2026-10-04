@@ -11,6 +11,8 @@ import 'package:sixam_mart/common/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
+import 'package:sixam_mart/features/cart/controllers/cart_controller.dart';
+import 'package:sixam_mart/features/payment/services/keepz_order_payment_service.dart';
 
 class PaymentFailedDialog extends StatelessWidget {
   final String? orderID;
@@ -19,7 +21,9 @@ class PaymentFailedDialog extends StatelessWidget {
   final double? maxCodOrderAmount;
   final bool? isCashOnDelivery;
   final String guestId;
-  const PaymentFailedDialog({super.key, required this.orderID, required this.maxCodOrderAmount, required this.orderAmount, required this.orderType, required this.isCashOnDelivery, required this.guestId});
+  final String? paymentMethod;
+  const PaymentFailedDialog({super.key, required this.orderID, required this.maxCodOrderAmount, required this.orderAmount, required this.orderType, required this.isCashOnDelivery, required this.guestId,
+    this.paymentMethod,});
 
   @override
   Widget build(BuildContext context) {
@@ -57,8 +61,49 @@ class PaymentFailedDialog extends StatelessWidget {
             return !orderController.isLoading ? Column(children: [
               isCashOnDelivery! ? CustomButton(
                 buttonText: 'switch_to_cash_on_delivery'.tr,
-                onPressed: () {
+                onPressed: () async {
                   if((((maxCodOrderAmount != null && orderAmount! < maxCodOrderAmount!) || maxCodOrderAmount == null || maxCodOrderAmount == 0) && orderType != 'parcel') || orderType == 'parcel'){
+                    final bool isKeepzFailedDialogPayment =
+                        paymentMethod == 'keepz' ||
+                        orderController
+                                .paymentModel
+                                ?.paymentMethod ==
+                            'keepz';
+
+                    if(isKeepzFailedDialogPayment) {
+                      final KeepzOrderActionResult result =
+                          await KeepzOrderPaymentService.switchToCod(
+                        orderId: orderID!,
+                        guestId: guestId,
+                      );
+
+                      if(!(result.isSuccess || result.isPaid)) {
+                        showCustomSnackBar(result.message);
+                        return;
+                      }
+
+                      Get.find<CartController>().clearCartList();
+
+                      double total =
+                          ((orderAmount! / 100) *
+                              Get.find<SplashController>()
+                                  .configModel!
+                                  .loyaltyPointItemPurchasePoint!);
+
+                      if(AuthHelper.isLoggedIn()) {
+                        Get.find<AuthController>()
+                            .saveEarningPoint(
+                          total.toStringAsFixed(0),
+                        );
+                      }
+
+                      Get.offAllNamed(
+                        RouteHelper.getInitialRoute(),
+                      );
+
+                      return;
+                    }
+
                     orderController.switchToCOD(orderID, guestId: guestId.isNotEmpty ? guestId : null).then((success){
                       if(success){
                         double total = ((orderAmount! / 100) * Get.find<SplashController>().configModel!.loyaltyPointItemPurchasePoint!);
@@ -83,6 +128,16 @@ class PaymentFailedDialog extends StatelessWidget {
                 onPressed: () {
                   Get.find<OrderController>().cancelOrder(orderID: int.parse(orderID!), reason: 'Digital payment issue', isParcel: false, guestId: guestId.isNotEmpty ? guestId : null).then((success) {
                     if(success){
+                      // keepzDialogOrderCancelled
+                      if(paymentMethod == 'keepz' ||
+                          orderController
+                                  .paymentModel
+                                  ?.paymentMethod ==
+                              'keepz') {
+                        Get.find<CartController>()
+                            .clearCartList();
+                      }
+
                       Get.offAllNamed(RouteHelper.getInitialRoute());
                     }
                   });

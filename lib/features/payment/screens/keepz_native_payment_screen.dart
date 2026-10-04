@@ -1001,6 +1001,7 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
         guestId: widget.createAccount
             ? widget.createUserId.toString()
             : widget.guestId,
+        paymentMethod: 'keepz',
       ),
     );
   }

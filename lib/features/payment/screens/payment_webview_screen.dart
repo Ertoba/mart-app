@@ -171,6 +171,7 @@ class PaymentScreenState extends State<PaymentWebViewScreen> {
         orderType: widget.orderModel.orderType,
         isCashOnDelivery: widget.isCashOnDelivery,
         guestId: widget.guestId,
+        paymentMethod: widget.paymentMethod,
       ));
     }else{
       return Get.dialog(FundPaymentDialogWidget(isSubscription: widget.subscriptionUrl != null && widget.subscriptionUrl!.isNotEmpty));

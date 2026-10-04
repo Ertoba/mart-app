@@ -15,6 +15,8 @@ import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/dimensions.dart';
 import 'package:sixam_mart/util/images.dart';
 import 'package:sixam_mart/util/styles.dart';
+import 'package:sixam_mart/features/cart/controllers/cart_controller.dart';
+import 'package:sixam_mart/features/payment/services/keepz_order_payment_service.dart';
 
 class DigitalPaymentFailedScreen extends StatefulWidget {
   final String orderId;
@@ -222,7 +224,7 @@ class PaymentIncompleteView extends StatelessWidget {
                       width: ResponsiveHelper.isDesktop(context) ? 250 : context.width * 0.6,
                       height: 50.0,
                       child: OutlinedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           // A trip settles through `rental/user/trip/payment`;
                           // `switchToCOD` posts to the mart order endpoint and
                           // would act on the wrong record with a trip id.
@@ -233,6 +235,52 @@ class PaymentIncompleteView extends StatelessWidget {
                             return;
                           }
                           if((((orderController.paymentModel?.maxCodOrderAmount != null && orderController.paymentModel!.orderAmount! < orderController.paymentModel!.maxCodOrderAmount!) || orderController.paymentModel!.maxCodOrderAmount == null || orderController.paymentModel!.maxCodOrderAmount == 0) && orderController.paymentModel!.orderType != 'parcel') || orderController.paymentModel!.orderType == 'parcel'){
+                            final bool isKeepzFailedPayment =
+                                orderController
+                                        .paymentModel!
+                                        .paymentMethod ==
+                                    'keepz';
+
+                            if(isKeepzFailedPayment) {
+                              final KeepzOrderActionResult result =
+                                  await KeepzOrderPaymentService.switchToCod(
+                                orderId:
+                                    orderController.paymentModel!.orderID!,
+                                guestId:
+                                    orderController.paymentModel!.guestId ??
+                                        '',
+                              );
+
+                              if(!(result.isSuccess || result.isPaid)) {
+                                showCustomSnackBar(result.message);
+                                return;
+                              }
+
+                              Get.find<CartController>().clearCartList();
+
+                              Get.offAllNamed(
+                                RouteHelper.getInitialRoute(),
+                              );
+
+                              double total =
+                                  ((orderController
+                                              .paymentModel!
+                                              .orderAmount! /
+                                          100) *
+                                      Get.find<SplashController>()
+                                          .configModel!
+                                          .loyaltyPointItemPurchasePoint!);
+
+                              if(AuthHelper.isLoggedIn()) {
+                                Get.find<AuthController>()
+                                    .saveEarningPoint(
+                                  total.toStringAsFixed(0),
+                                );
+                              }
+
+                              return;
+                            }
+
                             orderController.switchToCOD(orderController.paymentModel!.orderID, guestId: orderController.paymentModel!.guestId).then((success){
                               if(success){
                                 Get.offAllNamed(RouteHelper.getInitialRoute());

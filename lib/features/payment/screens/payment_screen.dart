@@ -146,6 +146,7 @@ class PaymentScreenState extends State<PaymentScreen> {
         orderID: widget.orderModel.id.toString(), orderAmount: widget.orderModel.orderAmount,
         maxCodOrderAmount: _maximumCodOrderAmount, orderType: widget.orderModel.orderType,
         isCashOnDelivery: widget.isCashOnDelivery, guestId: widget.createAccount ? widget.createUserId.toString() : widget.guestId,
+        paymentMethod: widget.paymentMethod,
       ));
     } else{
       return Get.dialog(FundPaymentDialogWidget(isSubscription: widget.subscriptionUrl != null && widget.subscriptionUrl!.isNotEmpty));

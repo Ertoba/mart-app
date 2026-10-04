@@ -737,9 +737,12 @@ class CheckoutController extends GetxController implements GetxService {
       _pickedPrescriptionFromMediaLibrary = [];
     }else {
       final fileValidator = FileValidationHelper();
-      XFile? xFile = await ImagePicker().pickImage(source: isCamera ? ImageSource.camera : ImageSource.gallery, imageQuality: 50);
-      if(xFile != null) {
+      XFile? xFile = await ImagePicker().pickImage(
+        source: isCamera ? ImageSource.camera : ImageSource.gallery,
+        imageQuality: 50,
+      );
 
+      if(xFile != null) {
         final bool isValid = await fileValidator.isFileUnder2MB(xFile);
 
         if(isValid == false) {
@@ -747,24 +750,12 @@ class CheckoutController extends GetxController implements GetxService {
           update();
           return;
         }
-        if(_pickedPrescriptions.length >= maxPrescriptionFileCount) {
-          showCustomSnackBar('you_have_reached_your_maximum_limit'.tr);
-          update();
-          return;
-        }
 
-        final String signature = await _getPrescriptionSignature(xFile);
-        final Set<String> existingSignatures = await _getPrescriptionSignatureSet(_pickedPrescriptions, _pickedPrescriptionSavedImageNames);
-
-        if(existingSignatures.contains(signature)) {
-          showCustomSnackBar('This prescription image is already added.');
-        } else {
-          _pickedPrescriptions.add(xFile);
-          _pickedPrescriptionSavedImageNames.add(null);
-          _pickedPrescriptionFromMediaLibrary.add(false);
-        }
+        await addPrescriptionImages(
+          <XFile>[xFile],
+          isAutoSaved: AuthHelper.isLoggedIn(),
+        );
       }
-      update();
     }
   }
 

@@ -19,6 +19,20 @@ class DownloadQrScannerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasGooglePlay =
+        googlePlayUrl?.isNotEmpty ?? false;
+    final bool hasAppStore =
+        appStoreUrl?.isNotEmpty ?? false;
+
+    final String effectiveQrData =
+        (qrData?.isNotEmpty ?? false)
+            ? qrData!
+            : hasGooglePlay
+                ? googlePlayUrl!
+                : hasAppStore
+                    ? appStoreUrl!
+                    : '';
+
     return Center(
       child: Container(width: 240, constraints: const BoxConstraints(minHeight: 240),
         margin: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall), padding: const EdgeInsets.all(16),
@@ -40,8 +54,8 @@ class DownloadQrScannerWidget extends StatelessWidget {
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
                 child: ClipRRect(borderRadius: BorderRadius.circular(8),
                   child: Container(color: Colors.white, alignment: Alignment.center,
-                    child: qrData!.isNotEmpty ? QrImageView(
-                      data: qrData ?? '', version: QrVersions.auto, backgroundColor: Colors.white,
+                    child: effectiveQrData.isNotEmpty ? QrImageView(
+                      data: effectiveQrData, version: QrVersions.auto, backgroundColor: Colors.white,
                       eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
                       dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: Colors.black),
                     ) : Text('QR', style: robotoBold.copyWith(fontSize:  28, color: const Color(0xFF262626))),
@@ -60,18 +74,27 @@ class DownloadQrScannerWidget extends StatelessWidget {
             const SizedBox(height: Dimensions.paddingSizeDefault),
 
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Expanded(child: _StoreButton(
-                onTap: () => _launchUrl(googlePlayUrl ?? ''),
-                icon: Image.asset(Images.playStoreLogo, height: 16, fit: BoxFit.contain),
+              if(hasGooglePlay) Expanded(child: _StoreButton(
+                onTap: () => _launchUrl(googlePlayUrl!),
+                icon: Image.asset(
+                  Images.playStoreLogo,
+                  height: 16,
+                  fit: BoxFit.contain,
+                ),
                 title: 'google_play'.tr,
               )),
-              const SizedBox(width: 14),
-              Expanded(child: _StoreButton(
-                onTap: () => _launchUrl(appStoreUrl ?? ''),
-                icon: Image.asset(Images.appleSoreLogo, height: 16, fit: BoxFit.contain),
+              if(hasGooglePlay && hasAppStore)
+                const SizedBox(width: 14),
+              if(hasAppStore) Expanded(child: _StoreButton(
+                onTap: () => _launchUrl(appStoreUrl!),
+                icon: Image.asset(
+                  Images.appleSoreLogo,
+                  height: 16,
+                  fit: BoxFit.contain,
+                ),
                 title: 'app_store'.tr,
               )),
-            ]),
+            ])
           ]),
         ]),
       ),

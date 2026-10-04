@@ -116,7 +116,41 @@ class SplashController extends GetxController implements GetxService {
   bool _splashRouted = false;
 
   AppDownloadSectionModel? _appDownloadSection;
-  AppDownloadSectionModel? get appDownloadSection => _appDownloadSection;
+
+  AppDownloadSectionModel? get appDownloadSection =>
+      _appDownloadSection ?? _buildAppDownloadSectionFromConfig();
+
+  AppDownloadSectionModel? _buildAppDownloadSectionFromConfig() {
+    final configLinks = configModel?.downloadUserAppLinks;
+
+    if(configLinks == null) {
+      return null;
+    }
+
+    final String? playStoreUrl =
+        configLinks.playStoreUrlStatus == '1'
+            && (configLinks.playStoreUrl?.isNotEmpty ?? false)
+        ? configLinks.playStoreUrl
+        : null;
+
+    final String? appleStoreUrl =
+        configLinks.appleStoreUrlStatus == '1'
+            && (configLinks.appleStoreUrl?.isNotEmpty ?? false)
+        ? configLinks.appleStoreUrl
+        : null;
+
+    if(playStoreUrl == null && appleStoreUrl == null) {
+      return null;
+    }
+
+    return AppDownloadSectionModel(
+      downloadUserAppSectionStatus: 1,
+      downloadUserAppLinks: DownloadUserAppLinks(
+        playstoreUrl: playStoreUrl,
+        appleStoreUrl: appleStoreUrl,
+      ),
+    );
+  }
 
   void togglePaymentIncompleteBottomSheet(bool status) {
     _showPaymentIncompleteBottomSheet = status;
@@ -638,13 +672,13 @@ class SplashController extends GetxController implements GetxService {
   }
 
   Future<void> fetchAppDownloadSection() async {
-    AppDownloadSectionModel? appDownloadSectionModel = await splashServiceInterface.getAppDownloadSection();
-    if (appDownloadSectionModel == null) return;
-    _appDownloadSection = appDownloadSectionModel;
+    // MILI private backend provides app-download links through
+    // the main config response instead of a separate endpoint.
+    _appDownloadSection = _buildAppDownloadSectionFromConfig();
     update();
   }
 
-  DownloadUserAppLinks? get links => _appDownloadSection?.downloadUserAppLinks;
+  DownloadUserAppLinks? get links => appDownloadSection?.downloadUserAppLinks;
 
   String get appDownloadQrUrl {
     if (links?.appleStoreUrl?.isNotEmpty ?? false) return links!.appleStoreUrl!;
@@ -652,6 +686,9 @@ class SplashController extends GetxController implements GetxService {
     return '';
   }
 
-  bool get showAppDownloadSection => (links?.playstoreUrl?.isNotEmpty ?? false) && (links?.appleStoreUrl?.isNotEmpty ?? false);
+  bool get showAppDownloadSection =>
+      (appDownloadSection?.downloadUserAppSectionStatus ?? 0) == 1
+      && ((links?.playstoreUrl?.isNotEmpty ?? false)
+          || (links?.appleStoreUrl?.isNotEmpty ?? false));
 
 }

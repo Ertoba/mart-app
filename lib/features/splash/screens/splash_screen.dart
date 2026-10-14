@@ -55,12 +55,14 @@ class SplashScreenState extends State<SplashScreen> {
     if((AuthHelper.getGuestId().isNotEmpty || AuthHelper.isLoggedIn()) && Get.find<SplashController>().cacheModule != null) {
       Get.find<CartController>().getAllCarts();
     }
-    // _route();
-    print('=========here coming-----2-->> ${Get.find<SplashController>().deeplinkRoute == null}');
-    if(Get.find<SplashController>().deeplinkRoute == null) {
-      Get.find<SplashController>().getConfigData(notificationBody: widget.body, fromSplash: true);
+    // Perform exactly one initial config request. The repository also
+    // refreshes the network response after reading its local cache.
+    if (Get.find<SplashController>().deeplinkRoute == null) {
+      Get.find<SplashController>().getConfigData(
+        notificationBody: widget.body,
+        fromSplash: true,
+      );
     }
-    _route();
   }
 
   @override
@@ -70,13 +72,8 @@ class SplashScreenState extends State<SplashScreen> {
     super.dispose();
   }
 
-  void _route() {
-    Get.find<SplashController>().getConfigData(handleMaintenanceMode: false, notificationBody: widget.body, fromSplash: true);
-  }
-
   @override
   Widget build(BuildContext context) {
-    Get.find<SplashController>().initSharedData();
     if(AddressHelper.getUserAddressFromSharedPref() != null && AddressHelper.getUserAddressFromSharedPref()!.zoneIds == null) {
       Get.find<AuthController>().clearSharedAddress();
     }

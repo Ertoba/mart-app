@@ -10,6 +10,11 @@ on:
 permissions:
   contents: read
 
+# Only the newest audit for main should consume the hosted runner.
+concurrency:
+  group: customer-production-qa-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   audit:
     runs-on: ubuntu-latest
@@ -23,11 +28,11 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: "3.44.2"
+          flutter-version: "3.47.5"
           cache: true
       - name: Environment
         run: |

@@ -415,7 +415,7 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
     if (decodedBody is Map<String, dynamic>) {
       if ((decodedBody['message'] as String?)?.isNotEmpty ?? false) {
         final message = decodedBody['message'] as String;
-        if (message == 'message.not.found' ||
+        if (message.toLowerCase().contains('not.found') ||
             message == 'order-payment' ||
             message == 'Data not found') {
           return 'Keepz payment could not be initialized';
@@ -424,6 +424,14 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
       }
 
       final dynamic errors = decodedBody['errors'];
+      if (errors is Map &&
+          (errors['message'] as String?)?.isNotEmpty == true) {
+        final message = errors['message'] as String;
+        if (message.toLowerCase().contains('not.found')) {
+          return 'Keepz payment could not be initialized';
+        }
+        return message;
+      }
       if (errors is List && errors.isNotEmpty) {
         final dynamic firstError = errors.first;
         if (firstError is Map<String, dynamic> &&

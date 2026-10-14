@@ -42,7 +42,7 @@ import '../features/ride_share_module/ride_location/screens/map_screen.dart';
 class NotificationHelper {
 
   static Future<void> initialize(FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) async {
-    var androidInitialize = const AndroidInitializationSettings('notification_icon');
+    var androidInitialize = const AndroidInitializationSettings('mili_notification_icon');
     var iOSInitialize = const DarwinInitializationSettings();
     var initializationsSettings = InitializationSettings(android: androidInitialize, iOS: iOSInitialize);
     flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation < AndroidFlutterLocalNotificationsPlugin>()!.requestNotificationsPermission();
@@ -1023,7 +1023,7 @@ Future<dynamic> myBackgroundMessageHandler(RemoteMessage message) async {
 
     final FlutterLocalNotificationsPlugin backgroundPlugin = FlutterLocalNotificationsPlugin();
     await backgroundPlugin.initialize(const InitializationSettings(
-      android: AndroidInitializationSettings('notification_icon'),
+      android: AndroidInitializationSettings('mili_notification_icon'),
       iOS: DarwinInitializationSettings(),
     ));
 

@@ -52,37 +52,51 @@ Future<void> main() async {
     return true;
   };*/
 
-  if(GetPlatform.isWeb){
-    await Firebase.initializeApp(options: const FirebaseOptions(
+  // Firebase must not keep the storefront stuck before runApp().
+  // Android uses the [DEFAULT] configuration from google-services.json.
+  bool firebaseReady = false;
+  try {
+    if (GetPlatform.isWeb) {
+      await Firebase.initializeApp(options: const FirebaseOptions(
         apiKey: "AIzaSyD0Z911mOoWCVkeGdjhIKwWFPRgvd6ZyAw",
         authDomain: "stackmart-500c7.firebaseapp.com",
         projectId: "stackmart-500c7",
         storageBucket: "stackmart-500c7.appspot.com",
         messagingSenderId: "491987943015",
-        appId: "1:491987943015:web:d8bc7ab8dbc9991c8f1ec2"
-    ));
-  } else if(GetPlatform.isAndroid) {
-    // Use the Android Firebase configuration already loaded by
-    // FirebaseInitProvider from google-services.json. Passing separate
-    // options here can conflict with the existing [DEFAULT] app.
-    await Firebase.initializeApp();
-  } else {
-    await Firebase.initializeApp();
+        appId: "1:491987943015:web:d8bc7ab8dbc9991c8f1ec2",
+      )).timeout(const Duration(seconds: 15));
+    } else {
+      await Firebase.initializeApp().timeout(const Duration(seconds: 15));
+    }
+    firebaseReady = Firebase.apps.isNotEmpty;
+  } catch (error, stackTrace) {
+    debugPrint('Firebase initialization unavailable: $error');
+    debugPrintStack(stackTrace: stackTrace);
   }
 
   Map<String, Map<String, String>> languages = await di.init();
 
   NotificationBodyModel? body;
   try {
-    if (GetPlatform.isMobile) {
-      final RemoteMessage? remoteMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (GetPlatform.isMobile && firebaseReady) {
+      final RemoteMessage? remoteMessage = await FirebaseMessaging.instance
+          .getInitialMessage()
+          .timeout(const Duration(seconds: 8), onTimeout: () => null);
       if (remoteMessage != null) {
         body = NotificationHelper.convertNotification(remoteMessage.data);
       }
-      await NotificationHelper.initialize(flutterLocalNotificationsPlugin);
+      try {
+        await NotificationHelper.initialize(flutterLocalNotificationsPlugin)
+            .timeout(const Duration(seconds: 8));
+      } catch (error) {
+        debugPrint('Notification initialization skipped: $error');
+      }
       FirebaseMessaging.onBackgroundMessage(myBackgroundMessageHandler);
     }
-  }catch(_) {}
+  } catch (error, stackTrace) {
+    debugPrint('Initial push notification unavailable: $error');
+    debugPrintStack(stackTrace: stackTrace);
+  }
 
   if (ResponsiveHelper.isWeb()) {
     await FacebookAuth.instance.webAndDesktopInitialize(

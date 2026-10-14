@@ -56,22 +56,25 @@ Future<void> main() async {
   // Android uses the [DEFAULT] configuration from google-services.json.
   bool firebaseReady = false;
   try {
-    if (GetPlatform.isWeb) {
-      await Firebase.initializeApp(options: const FirebaseOptions(
-        apiKey: "AIzaSyD0Z911mOoWCVkeGdjhIKwWFPRgvd6ZyAw",
-        authDomain: "stackmart-500c7.firebaseapp.com",
-        projectId: "stackmart-500c7",
-        storageBucket: "stackmart-500c7.appspot.com",
-        messagingSenderId: "491987943015",
-        appId: "1:491987943015:web:d8bc7ab8dbc9991c8f1ec2",
-      )).timeout(const Duration(seconds: 15));
-    } else {
-      await Firebase.initializeApp().timeout(const Duration(seconds: 15));
+    if (Firebase.apps.isEmpty) {
+      if (GetPlatform.isWeb) {
+        await Firebase.initializeApp(options: const FirebaseOptions(
+          apiKey: "AIzaSyD0Z911mOoWCVkeGdjhIKwWFPRgvd6ZyAw",
+          authDomain: "stackmart-500c7.firebaseapp.com",
+          projectId: "stackmart-500c7",
+          storageBucket: "stackmart-500c7.appspot.com",
+          messagingSenderId: "491987943015",
+          appId: "1:491987943015:web:d8bc7ab8dbc9991c8f1ec2",
+        )).timeout(const Duration(seconds: 15));
+      } else {
+        await Firebase.initializeApp().timeout(const Duration(seconds: 15));
+      }
     }
     firebaseReady = Firebase.apps.isNotEmpty;
   } catch (error, stackTrace) {
     debugPrint('Firebase initialization unavailable: $error');
     debugPrintStack(stackTrace: stackTrace);
+    firebaseReady = Firebase.apps.isNotEmpty;
   }
 
   Map<String, Map<String, String>> languages = await di.init();

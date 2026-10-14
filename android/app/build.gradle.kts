@@ -15,6 +15,24 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+fun hasKeystoreValue(key: String): Boolean {
+    return (keystoreProperties[key] as String?)?.isNotBlank() == true
+}
+val hasReleaseKeystore = keystorePropertiesFile.exists()
+        && hasKeystoreValue("keyAlias")
+        && hasKeystoreValue("keyPassword")
+        && hasKeystoreValue("storeFile")
+        && hasKeystoreValue("storePassword")
+
+// Never generate a Play Console release using the Android debug certificate.
+if (!hasReleaseKeystore) {
+    gradle.taskGraph.whenReady {
+        if (allTasks.any { it.name.contains("Release", ignoreCase = true) }) {
+            throw GradleException("Release signing requires android/key.properties with the existing MILI Customer upload keystore.")
+        }
+    }
+}
+
 android {
     namespace = "ge.mili.customer"
     compileSdk = 36
@@ -50,9 +68,27 @@ android {
 
     buildTypes {
         getByName("release") {
-            signingConfig = signingConfigs.getByName("debug") // or "release" if you have real keystore
+            signingConfig = signingConfigs.getByName("release")
         }
     }
+}
+
+// AGP release asset packaging compatibility. Preserve the Flutter translation
+// JSON and other flutter_assets in the final App Bundle.
+project.afterEvaluate {
+    val buildDir = project.layout.buildDirectory.get()
+    val flutterAssetsDir = "$buildDir/intermediates/flutter/release/flutter_assets"
+    val mergeOutputDir = "$buildDir/intermediates/assets/release/mergeReleaseAssets"
+
+    val fixFlutterAssets = project.tasks.register("fixFlutterAssetsRelease", Copy::class.java) {
+        dependsOn("compileFlutterBuildRelease")
+        dependsOn("mergeReleaseAssets")
+        from(flutterAssetsDir)
+        into("$mergeOutputDir/flutter_assets")
+    }
+
+    project.tasks.findByName("compressReleaseAssets")?.dependsOn(fixFlutterAssets)
+    project.tasks.findByName("packageRelease")?.dependsOn(fixFlutterAssets)
 }
 
 flutter {

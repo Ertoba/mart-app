@@ -53,7 +53,19 @@ class LocalizationController extends GetxController implements GetxService {
   }
 
   void loadCurrentLanguage() async {
-    _locale = languageServiceInterface.getLocaleFromSharedPref();
+    final Locale savedLocale = languageServiceInterface.getLocaleFromSharedPref();
+    final bool isSupported = AppConstants.languages.any(
+      (language) => language.languageCode == savedLocale.languageCode,
+    );
+    _locale = isSupported
+        ? savedLocale
+        : Locale(
+            AppConstants.languages[0].languageCode!,
+            AppConstants.languages[0].countryCode,
+          );
+    if (!isSupported) {
+      languageServiceInterface.saveLanguage(_locale);
+    }
     _isLtr = _locale.languageCode != 'ar';
     _selectedLanguageIndex = languageServiceInterface.setSelectedIndex(AppConstants.languages, _locale);
     _languages = [];

@@ -62,14 +62,10 @@ Future<void> main() async {
         appId: "1:491987943015:web:d8bc7ab8dbc9991c8f1ec2"
     ));
   } else if(GetPlatform.isAndroid) {
-    await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: "AIzaSyCc3OCd5I2xSlnftZ4bFAbuCzMhgQHLivA",
-        appId: "1:491987943015:android:a6fb4303cc4bf3d18f1ec2",
-        messagingSenderId: "491987943015",
-        projectId: "stackmart-500c7",
-      ),
-    );
+    // Use the Android Firebase configuration already loaded by
+    // FirebaseInitProvider from google-services.json. Passing separate
+    // options here can conflict with the existing [DEFAULT] app.
+    await Firebase.initializeApp();
   } else {
     await Firebase.initializeApp();
   }

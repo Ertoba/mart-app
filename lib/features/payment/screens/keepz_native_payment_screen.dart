@@ -414,7 +414,13 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
   String _extractBackendMessage(dynamic decodedBody) {
     if (decodedBody is Map<String, dynamic>) {
       if ((decodedBody['message'] as String?)?.isNotEmpty ?? false) {
-        return decodedBody['message'] as String;
+        final message = decodedBody['message'] as String;
+        if (message == 'message.not.found' ||
+            message == 'order-payment' ||
+            message == 'Data not found') {
+          return 'Keepz payment could not be initialized';
+        }
+        return message;
       }
 
       final dynamic errors = decodedBody['errors'];

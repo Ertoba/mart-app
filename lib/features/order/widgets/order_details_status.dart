@@ -207,7 +207,15 @@ class _StatusBannerImage {
       } else {
         return Images.processingGif;
       }
-    } else if (status == 'handover' || status == 'picked_up') {
+    } else if (status == 'handover') {
+      if (moduleType == 'food') {
+        return Images.preparingFoodOrderDetails;
+      } else if (moduleType == 'grocery') {
+        return Images.preparingGroceryOrderDetails;
+      } else {
+        return Images.processingGif;
+      }
+    } else if (status == 'picked_up') {
       return Images.onTheWayGif;
     } else if (status == 'delivered') {
       return Images.taxiCompletedGif;

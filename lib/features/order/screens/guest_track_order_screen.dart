@@ -113,11 +113,10 @@ class _GuestTrackOrderScreenState extends State<GuestTrackOrderScreen> {
 
                         GuestCustomStepperWidget(
                           title: 'order_is_on_the_way'.tr,
-                          isComplete: status == AppConstants.handover
-                              || status == AppConstants.pickedUp
+                          isComplete: status == AppConstants.pickedUp
                               || status == AppConstants.delivered,
                           statusImage: Images.trackOrderOnTheWay,
-                          isActive: status == AppConstants.handover,
+                          isActive: status == AppConstants.pickedUp,
                           subTitle: 'your_delivery_man_is_coming'.tr,
                           trailing: orderController.trackModel?.deliveryMan?.phone != null ? InkWell(
                             onTap: () async {

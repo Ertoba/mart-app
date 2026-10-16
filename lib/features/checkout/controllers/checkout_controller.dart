@@ -201,6 +201,7 @@ class CheckoutController extends GetxController implements GetxService {
       KeepzPaymentOption.fromKey(_keepzPaymentOptionKey);
 
   PaymentModel? _pendingKeepzPayment;
+  String? _pendingKeepzCheckoutSignature;
 
   List<SavedPrescriptionModel>? _savedPrescriptions;
   List<SavedPrescriptionModel>? get savedPrescriptions => _savedPrescriptions;
@@ -713,6 +714,7 @@ class CheckoutController extends GetxController implements GetxService {
     // the picker off screen with nothing to put it back.
     _selectedAreaId = null;
     _selectedZipCodeId = null;
+    _pendingKeepzCheckoutSignature = null;
   }
 
   Future<void> initializeTimeSlot(Store store) async {
@@ -1375,13 +1377,33 @@ class CheckoutController extends GetxController implements GetxService {
   Future<String> placeOrder(PlaceOrderBodyModel placeOrderBody, int? zoneID, double amount, double? maximumCodOrderAmount, bool fromCart,
       bool isCashOnDeliveryActive, List<XFile>? orderAttachment, {bool isOfflinePay = false}) async {
     final PaymentModel? pendingKeepzPayment = _pendingKeepzPayment;
-    final bool canResumePendingKeepz =
+    bool canResumePendingKeepz =
         pendingKeepzPayment != null &&
         !isOfflinePay &&
         (paymentMethodIndex == 0 ||
             (paymentMethodIndex == 2 && _digitalPaymentName == 'keepz'));
 
-    if (canResumePendingKeepz) {
+    final String currentKeepzSignature = _keepzCheckoutSignature(placeOrderBody);
+    final bool keepzInputsChanged = canResumePendingKeepz
+        && _pendingKeepzCheckoutSignature != null
+        && _pendingKeepzCheckoutSignature != currentKeepzSignature;
+
+    if (keepzInputsChanged) {
+      final PaymentModel pendingPayment = pendingKeepzPayment;
+      final bool cancelled = await KeepzOrderPaymentService.cancelOrder(
+        orderId: pendingPayment.orderID ?? '',
+        guestId: pendingPayment.guestId ?? AuthHelper.getGuestId(),
+      );
+      if (!cancelled) {
+        showCustomSnackBar('The previous payment order could not be cancelled safely. Please try again.');
+        return '';
+      }
+      _pendingKeepzPayment = null;
+      _pendingKeepzCheckoutSignature = null;
+      canResumePendingKeepz = false;
+    }
+
+    if (canResumePendingKeepz && pendingKeepzPayment != null) {
       _isLoading = true;
       update();
 
@@ -1432,6 +1454,9 @@ class CheckoutController extends GetxController implements GetxService {
       );
 
       if(!isOfflinePay) {
+        if (paymentMethodIndex == 2 && _digitalPaymentName == 'keepz') {
+          _pendingKeepzCheckoutSignature = _keepzCheckoutSignature(placeOrderBody);
+        }
         callback(true, message, orderID, zoneID, amount, maximumCodOrderAmount, fromCart, isCashOnDeliveryActive, placeOrderBody.contactPersonNumber!, userID);
       } else {
         showCustomSnackBar('order_placed_successfully'.tr, isError: false);
@@ -1457,6 +1482,16 @@ class CheckoutController extends GetxController implements GetxService {
 
     return orderID;
   }
+
+  String _keepzCheckoutSignature(PlaceOrderBodyModel body) => <String?>[
+    body.address,
+    body.latitude,
+    body.longitude,
+    body.distance?.toString(),
+    body.orderAmount.toString(),
+    body.areaId?.toString(),
+    body.zipCodeId?.toString(),
+  ].map((value) => value ?? '').join('|');
 
   Future<void> placePrescriptionOrder({required int? storeId, required int? zoneID, required double? distance, required String address, required String longitude,
     required String latitude, required String note, required List<XFile> orderAttachment, required List<String> savedImages, required String dmTips,
@@ -1581,6 +1616,7 @@ class CheckoutController extends GetxController implements GetxService {
           }
 
           _pendingKeepzPayment = null;
+          _pendingKeepzCheckoutSignature = null;
           setGuestAddress(null);
 
         } else {
@@ -1669,6 +1705,7 @@ class CheckoutController extends GetxController implements GetxService {
         }
 
         _pendingKeepzPayment = null;
+        _pendingKeepzCheckoutSignature = null;
         Get.find<CartController>().clearCartList();
 
       } else {
@@ -1728,6 +1765,7 @@ class CheckoutController extends GetxController implements GetxService {
         }
 
         _pendingKeepzPayment = null;
+        _pendingKeepzCheckoutSignature = null;
 
       } else {
         Get.offNamed(

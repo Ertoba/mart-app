@@ -385,16 +385,23 @@ class CheckoutScreenState extends State<CheckoutScreen> {
 
           double additionalCharge = Get.find<SplashController>().configModel!.additionalChargeStatus! ? Get.find<SplashController>().configModel!.additionCharge! : 0;
 
-          final CheckoutSummaryDelivery? summaryDelivery = checkoutController.checkoutSummary?.delivery;
+          final CheckoutSummaryDelivery? summaryDelivery = checkoutController.summaryLoading
+              ? null
+              : checkoutController.checkoutSummary?.delivery;
+          // The address selected in this checkout is authoritative. The shared
+          // preference is only a fallback for the first frame; using it after
+          // an address switch re-priced the order for the previous location.
+          final AddressModel? pricingAddress = (isGuestLogIn ? checkoutController.guestAddress : checkoutController.address)
+              ?? AddressHelper.getUserAddressFromSharedPref();
 
           double originalCharge = summaryDelivery?.originalDeliveryCharge ?? _calculateOriginalDeliveryCharge(
-            store: checkoutController.store, address: AddressHelper.getUserAddressFromSharedPref()!,
+            store: checkoutController.store, address: pricingAddress!,
             distance: checkoutController.distance, extraCharge: checkoutController.extraCharge,
             surgePrice: checkoutController.surgePrice?.price, surgePriceType: checkoutController.surgePrice?.priceType,
           );
           double deliveryCharge = summaryDelivery?.deliveryChargeBeforeProDiscount
               ?? summaryDelivery?.deliveryCharge ?? _calculateDeliveryCharge(
-            store: checkoutController.store, address: AddressHelper.getUserAddressFromSharedPref()!, distance: checkoutController.distance,
+            store: checkoutController.store, address: pricingAddress!, distance: checkoutController.distance,
             extraCharge: checkoutController.extraCharge, orderType: checkoutController.orderType!, orderAmount: orderAmount,
             surgePrice: checkoutController.surgePrice?.price, surgePriceType: checkoutController.surgePrice?.priceType,
           );

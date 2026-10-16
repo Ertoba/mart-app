@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:sixam_mart/api/api_client.dart';
+import 'package:sixam_mart/util/app_constants.dart';
 
 class KeepzOrderActionResult {
   final String state;
@@ -38,6 +39,28 @@ class KeepzOrderPaymentService {
       successState: 'success',
       fallbackMessage: 'ადგილზე გადახდაზე უსაფრთხოდ გადასვლა ვერ მოხერხდა.',
     );
+  }
+
+  static Future<bool> cancelOrder({
+    required String orderId,
+    required String guestId,
+  }) async {
+    final ApiClient apiClient = Get.find<ApiClient>();
+    final Map<String, String> body = <String, String>{
+      '_method': 'put',
+      'order_id': orderId,
+      'reason': 'Checkout address changed before Keepz payment',
+    };
+    if (guestId.isNotEmpty) {
+      body['guest_id'] = guestId;
+    }
+
+    final response = await apiClient.postData(
+      AppConstants.orderCancelUri,
+      body,
+      handleError: false,
+    );
+    return response.statusCode == 200;
   }
 
   static Future<KeepzOrderActionResult> _postAction({

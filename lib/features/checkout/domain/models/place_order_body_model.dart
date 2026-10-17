@@ -45,6 +45,7 @@ class PlaceOrderBodyModel {
   double? _bringChangeAmount;
   bool? _monthlySubscribe;
   String? _saverDeliveryType;
+  bool _preserveCartForPaymentRetry = false;
   /// The coverage pick, when the zone's delivery rule is area- or ZIP-based.
   /// Whatever was posted to `checkout-summary` must be posted here too — the
   /// fee moves with it, so sending it to only one of the two is how the quote
@@ -107,6 +108,7 @@ class PlaceOrderBodyModel {
     double? bringChangeAmount,
     bool? monthlySubscribe,
     String? saverDeliveryType, int? areaId, int? zipCodeId, int? weightId, int? dimensionId,
+    bool preserveCartForPaymentRetry = false,
     int? deliveryDuration,
   }) {
     _cart = cart;
@@ -149,6 +151,7 @@ class PlaceOrderBodyModel {
     _bringChangeAmount = bringChangeAmount;
     _monthlySubscribe = monthlySubscribe;
     _saverDeliveryType = saverDeliveryType;
+    _preserveCartForPaymentRetry = preserveCartForPaymentRetry;
     _areaId = areaId;
     _zipCodeId = zipCodeId;
     _weightId = weightId;
@@ -198,6 +201,7 @@ class PlaceOrderBodyModel {
   double? get bringChangeAmount => _bringChangeAmount;
   bool? get monthlySubscribe => _monthlySubscribe;
   String? get saverDeliveryType => _saverDeliveryType;
+  bool get preserveCartForPaymentRetry => _preserveCartForPaymentRetry;
   int? get areaId => _areaId;
   int? get zipCodeId => _zipCodeId;
 
@@ -343,6 +347,9 @@ class PlaceOrderBodyModel {
     }
     if(_saverDeliveryType != null) {
       data['delivery_type'] = _saverDeliveryType!;
+    }
+    if (_preserveCartForPaymentRetry) {
+      data['preserve_cart_for_payment_retry'] = '1';
     }
     if(_areaId != null) {
       data['area_id'] = _areaId.toString();

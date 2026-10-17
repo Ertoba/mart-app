@@ -365,6 +365,10 @@ class CheckoutScreenState extends State<CheckoutScreen> {
                   isPrescriptionOrder: widget.storeId == null ? false : true,
                   monthlySubscribe: checkoutController.monthlySubscribe,
                   saverDeliveryType: checkoutController.saverDeliveryType,
+                  preserveCartForPaymentRetry: widget.fromCart
+                      && checkoutController.paymentMethodIndex == 2
+                      && checkoutController.digitalPaymentName == 'keepz'
+                      && !GetPlatform.isWeb,
                   deliveryDuration: checkoutController.deliveryDuration?.round(),
                 );
                 print('[DEBUG] PlaceOrderBody (parcel) monthlySubscribe: ${placeOrderBody.monthlySubscribe}');

@@ -50,6 +50,7 @@ class KeepzOrderPaymentService {
       '_method': 'put',
       'order_id': orderId,
       'reason': 'Checkout address changed before Keepz payment',
+      'silent_payment_replacement': '1',
     };
     if (guestId.isNotEmpty) {
       body['guest_id'] = guestId;

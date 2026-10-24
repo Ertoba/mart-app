@@ -438,12 +438,14 @@ class Storage {
 
   Storage.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    dataType = json['data_type'];
-    dataId = json['data_id'];
-    key = json['key'];
-    value = json['value'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
+    dataType = json['data_type']?.toString();
+    // The API sends `data_id` as an int while this field is declared String?,
+    // which threw a type error and took down the whole vehicle list with it.
+    dataId = json['data_id']?.toString();
+    key = json['key']?.toString();
+    value = json['value']?.toString();
+    createdAt = json['created_at']?.toString();
+    updatedAt = json['updated_at']?.toString();
   }
 
   Map<String, dynamic> toJson() {

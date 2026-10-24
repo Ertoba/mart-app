@@ -1,3 +1,5 @@
+import 'package:sixam_mart/api/response_parser.dart';
+import 'package:sixam_mart/common/models/pagination_model.dart';
 import 'package:sixam_mart/features/rental_module/common/models/trip_details_model.dart';
 
 class TripModel {
@@ -9,14 +11,21 @@ class TripModel {
   TripModel({this.totalSize, this.limit, this.offset, this.trips});
 
   TripModel.fromJson(Map<String, dynamic> json) {
-    totalSize = json['total_size'];
-    limit = json['limit'];
-    offset = json['offset'];
-    if (json['trips'] != null) {
+    // Paging arrives flat on the legacy format and nested under `pagination`
+    // now. Property names are unchanged, so no caller needs an edit.
+    final PaginationModel _pg = PaginationModel.fromJson(json);
+    totalSize = _pg.totalSize;
+    limit = _pg.limit;
+    offset = _pg.offset;
+    // The list moved to `data` in the new API format. `listOf` checks the legacy
+    // key first, so a backend still answering with `trips` parses exactly as before
+    // and only the new shape is newly understood.
+    final List<dynamic>? tripEntries = ResponseParser.listOf(json, legacyKey: 'trips');
+    if (tripEntries != null) {
       trips = <TripDetailsModel>[];
-      json['trips'].forEach((v) {
+      for (final dynamic v in tripEntries) {
         trips!.add(TripDetailsModel.fromJson(v));
-      });
+      }
     }
   }
 

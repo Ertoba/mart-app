@@ -285,6 +285,25 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
         return;
       }
 
+      // Google Pay's payment sheet cannot run inside an Android WebView.
+      // Keepz's hosted page presents Google Pay among its payment options, so
+      // open the complete hosted flow in the browser on Android.
+      if (GetPlatform.isAndroid && intent.action == 'bottom_sheet_webview') {
+        if (!await _openHostedPaymentInBrowser(intent.url)) {
+          throw 'უსაფრთხო გადახდის ბრაუზერი ვერ გაიხსნა';
+        }
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _isLoading = false;
+          _awaitingExternalPayment = true;
+          _statusMessage =
+              'გადახდის დასრულების შემდეგ დაბრუნდი აპში და სტატუსი ავტომატურად შემოწმდება.';
+        });
+        return;
+      }
+
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -360,6 +379,18 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
     }
   }
 
+  Future<bool> _openHostedPaymentInBrowser(String url) async {
+    final Uri? uri = Uri.tryParse(url);
+    if (uri == null) {
+      return false;
+    }
+    try {
+      return await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      return false;
+    }
+  }
+
   String _buildIosPaymentReturnUrl() {
     return Uri(
       scheme: AppConstants.customerPaymentReturnScheme,
@@ -424,8 +455,7 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
       }
 
       final dynamic errors = decodedBody['errors'];
-      if (errors is Map &&
-          (errors['message'] as String?)?.isNotEmpty == true) {
+      if (errors is Map && (errors['message'] as String?)?.isNotEmpty == true) {
         final message = errors['message'] as String;
         if (message.toLowerCase().contains('not.found')) {
           return 'Keepz payment could not be initialized';
@@ -637,6 +667,22 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
         return;
       }
 
+      if (GetPlatform.isAndroid && intent.action == 'bottom_sheet_webview') {
+        if (!await _openHostedPaymentInBrowser(intent.url)) {
+          throw 'უსაფრთხო გადახდის ბრაუზერი ვერ გაიხსნა';
+        }
+        await _closePreparingBottomSheet();
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _awaitingExternalPayment = true;
+          _statusMessage =
+              'გადახდის დასრულების შემდეგ დაბრუნდი აპში და სტატუსი ავტომატურად შემოწმდება.';
+        });
+        return;
+      }
+
       await _closePreparingBottomSheet();
       await _openHostedBottomSheet(intent.url);
     } catch (error) {
@@ -736,6 +782,18 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
         uri,
         mode: LaunchMode.externalNonBrowserApplication,
       );
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> _openHostedPaymentInBrowser(String url) async {
+    final Uri? uri = Uri.tryParse(url);
+    if (uri == null) {
+      return false;
+    }
+    try {
+      return await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (_) {
       return false;
     }

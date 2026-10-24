@@ -1,8 +1,10 @@
+import 'package:sixam_mart/features/rental_module/home/domain/models/vehicle_details_model.dart';
 
 class CarCartModel {
   List<Carts>? carts;
+  UserData? userData;
 
-  CarCartModel({this.carts});
+  CarCartModel({this.carts, this.userData});
 
   CarCartModel.fromJson(Map<String, dynamic> json) {
     if (json['carts'] != null) {
@@ -11,12 +13,18 @@ class CarCartModel {
         carts!.add(Carts.fromJson(v));
       });
     }
+    userData = json['user_data'] != null && json['user_data'] != '[]' && json['user_data']?.isNotEmpty
+        ? UserData.fromJson(json['user_data'])
+        : null;
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     if (carts != null) {
       data['carts'] = carts!.map((v) => v.toJson()).toList();
+    }
+    if (userData != null) {
+      data['user_data'] = userData!.toJson();
     }
     return data;
   }
@@ -32,6 +40,7 @@ class Carts {
   int? isGuest;
   String? createdAt;
   String? updatedAt;
+  VehicleModel? vehicle;
   Provider? provider;
 
   Carts(
@@ -44,6 +53,7 @@ class Carts {
         this.isGuest,
         this.createdAt,
         this.updatedAt,
+        this.vehicle,
         this.provider});
 
   Carts.fromJson(Map<String, dynamic> json) {
@@ -56,6 +66,9 @@ class Carts {
     isGuest = json['is_guest'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
+    vehicle = json['vehicle'] != null
+        ? VehicleModel.fromJson(json['vehicle'])
+        : null;
     provider = json['provider'] != null
         ? Provider.fromJson(json['provider'])
         : null;
@@ -72,170 +85,15 @@ class Carts {
     data['is_guest'] = isGuest;
     data['created_at'] = createdAt;
     data['updated_at'] = updatedAt;
+    if (vehicle != null) {
+      data['vehicle'] = vehicle!.toJson();
+    }
     if (provider != null) {
       data['provider'] = provider!.toJson();
     }
     return data;
   }
 }
-
-// class Vehicles {
-//   int? id;
-//   String? name;
-//   String? description;
-//   String? thumbnail;
-//   String? images;
-//   int? providerId;
-//   int? brandId;
-//   int? categoryId;
-//   String? model;
-//   String? type;
-//   String? engineCapacity;
-//   String? enginePower;
-//   String? seatingCapacity;
-//   int? airCondition;
-//   String? fuelType;
-//   String? transmissionType;
-//   int? multipleVehicles;
-//   int? tripHourly;
-//   int? tripDistance;
-//   int? hourlyPrice;
-//   int? distancePrice;
-//   String? discountType;
-//   int? discountPrice;
-//   String? tag;
-//   String? documents;
-//   int? status;
-//   int? newTag;
-//   int? totalTrip;
-//   String? avgRating;
-//   int? totalReviews;
-//   String? createdAt;
-//   String? updatedAt;
-//   int? zoneId;
-//   String? thumbnailFullUrl;
-//   List<String>? imagesFullUrl;
-//   List<String>? documentsFullUrl;
-//
-//   Vehicles(
-//       {this.id,
-//         this.name,
-//         this.description,
-//         this.thumbnail,
-//         this.images,
-//         this.providerId,
-//         this.brandId,
-//         this.categoryId,
-//         this.model,
-//         this.type,
-//         this.engineCapacity,
-//         this.enginePower,
-//         this.seatingCapacity,
-//         this.airCondition,
-//         this.fuelType,
-//         this.transmissionType,
-//         this.multipleVehicles,
-//         this.tripHourly,
-//         this.tripDistance,
-//         this.hourlyPrice,
-//         this.distancePrice,
-//         this.discountType,
-//         this.discountPrice,
-//         this.tag,
-//         this.documents,
-//         this.status,
-//         this.newTag,
-//         this.totalTrip,
-//         this.avgRating,
-//         this.totalReviews,
-//         this.createdAt,
-//         this.updatedAt,
-//         this.zoneId,
-//         this.thumbnailFullUrl,
-//         this.imagesFullUrl,
-//         this.documentsFullUrl,
-//       });
-//
-//   Vehicles.fromJson(Map<String, dynamic> json) {
-//     id = json['id'];
-//     name = json['name'];
-//     description = json['description'];
-//     thumbnail = json['thumbnail'];
-//     images = json['images'];
-//     providerId = json['provider_id'];
-//     brandId = json['brand_id'];
-//     categoryId = json['category_id'];
-//     model = json['model'];
-//     type = json['type'];
-//     engineCapacity = json['engine_capacity'];
-//     enginePower = json['engine_power'];
-//     seatingCapacity = json['seating_capacity'];
-//     airCondition = json['air_condition'];
-//     fuelType = json['fuel_type'];
-//     transmissionType = json['transmission_type'];
-//     multipleVehicles = json['multiple_vehicles'];
-//     tripHourly = json['trip_hourly'];
-//     tripDistance = json['trip_distance'];
-//     hourlyPrice = json['hourly_price'];
-//     distancePrice = json['distance_price'];
-//     discountType = json['discount_type'];
-//     discountPrice = json['discount_price'];
-//     tag = json['tag'];
-//     documents = json['documents'];
-//     status = json['status'];
-//     newTag = json['new_tag'];
-//     totalTrip = json['total_trip'];
-//     avgRating = json['avg_rating'];
-//     totalReviews = json['total_reviews'];
-//     createdAt = json['created_at'];
-//     updatedAt = json['updated_at'];
-//     zoneId = json['zone_id'];
-//     thumbnailFullUrl = json['thumbnail_full_url'];
-//     imagesFullUrl = json['images_full_url'].cast<String>();
-//     documentsFullUrl = json['documents_full_url'].cast<String>();
-//   }
-//
-//   Map<String, dynamic> toJson() {
-//     final Map<String, dynamic> data = new Map<String, dynamic>();
-//     data['id'] = this.id;
-//     data['name'] = this.name;
-//     data['description'] = this.description;
-//     data['thumbnail'] = this.thumbnail;
-//     data['images'] = this.images;
-//     data['provider_id'] = this.providerId;
-//     data['brand_id'] = this.brandId;
-//     data['category_id'] = this.categoryId;
-//     data['model'] = this.model;
-//     data['type'] = this.type;
-//     data['engine_capacity'] = this.engineCapacity;
-//     data['engine_power'] = this.enginePower;
-//     data['seating_capacity'] = this.seatingCapacity;
-//     data['air_condition'] = this.airCondition;
-//     data['fuel_type'] = this.fuelType;
-//     data['transmission_type'] = this.transmissionType;
-//     data['multiple_vehicles'] = this.multipleVehicles;
-//     data['trip_hourly'] = this.tripHourly;
-//     data['trip_distance'] = this.tripDistance;
-//     data['hourly_price'] = this.hourlyPrice;
-//     data['distance_price'] = this.distancePrice;
-//     data['discount_type'] = this.discountType;
-//     data['discount_price'] = this.discountPrice;
-//     data['tag'] = this.tag;
-//     data['documents'] = this.documents;
-//     data['status'] = this.status;
-//     data['new_tag'] = this.newTag;
-//     data['total_trip'] = this.totalTrip;
-//     data['avg_rating'] = this.avgRating;
-//     data['total_reviews'] = this.totalReviews;
-//     data['created_at'] = this.createdAt;
-//     data['updated_at'] = this.updatedAt;
-//     data['zone_id'] = this.zoneId;
-//     data['thumbnail_full_url'] = this.thumbnailFullUrl;
-//     data['images_full_url'] = this.imagesFullUrl;
-//     data['documents_full_url'] = this.documentsFullUrl;
-//     return data;
-//   }
-// }
 
 class Provider {
   int? id;
@@ -250,6 +108,7 @@ class Provider {
   Discount? discount;
   List<Translations>? translations;
   List<Storage>? storage;
+  int? verifiedSeller;
 
   Provider({
     this.id,
@@ -264,6 +123,7 @@ class Provider {
     this.discount,
     this.translations,
     this.storage,
+    this.verifiedSeller,
   });
 
   Provider.fromJson(Map<String, dynamic> json) {
@@ -296,6 +156,7 @@ class Provider {
         storage!.add(Storage.fromJson(v));
       });
     }
+    verifiedSeller = json['verified_seller'];
   }
 
   Map<String, dynamic> toJson() {
@@ -317,6 +178,7 @@ class Provider {
     if (storage != null) {
       data['storage'] = storage!.map((v) => v.toJson()).toList();
     }
+    data['verified_seller'] = verifiedSeller;
     return data;
   }
 }
@@ -449,7 +311,7 @@ class Storage {
   Storage.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     dataType = json['data_type'];
-    dataId = json['data_id'];
+    dataId = json['data_id']?.toString();
     key = json['key'];
     value = json['value'];
     createdAt = json['created_at'];
@@ -465,6 +327,103 @@ class Storage {
     data['value'] = value;
     data['created_at'] = createdAt;
     data['updated_at'] = updatedAt;
+    return data;
+  }
+}
+
+class UserData {
+  int? id;
+  int? userId;
+  PickupLocation? pickupLocation;
+  PickupLocation? destinationLocation;
+  String? pickupTime;
+  String? rentalType;
+  double? estimatedHours;
+  double? distance;
+  double? totalCartPrice;
+  double? destinationTime;
+  int? isGuest;
+  String? createdAt;
+  String? updatedAt;
+
+  UserData(
+      {this.id,
+        this.userId,
+        this.pickupLocation,
+        this.destinationLocation,
+        this.pickupTime,
+        this.rentalType,
+        this.estimatedHours,
+        this.distance,
+        this.totalCartPrice,
+        this.destinationTime,
+        this.isGuest,
+        this.createdAt,
+        this.updatedAt});
+
+  UserData.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    userId = json['user_id'];
+    pickupLocation = json['pickup_location'] != null
+        ? PickupLocation.fromJson(json['pickup_location'])
+        : null;
+    destinationLocation = json['destination_location'] != null
+        ? PickupLocation.fromJson(json['destination_location'])
+        : null;
+    pickupTime = json['pickup_time'];
+    rentalType = json['rental_type'];
+    estimatedHours = json['estimated_hours']?.toDouble();
+    distance = json['distance']?.toDouble();
+    totalCartPrice = json['total_cart_price']?.toDouble();
+    destinationTime = json['destination_time']?.toDouble();
+    isGuest = json['is_guest'];
+    createdAt = json['created_at'];
+    updatedAt = json['updated_at'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['user_id'] = userId;
+    if (pickupLocation != null) {
+      data['pickup_location'] = pickupLocation!.toJson();
+    }
+    if (destinationLocation != null) {
+      data['destination_location'] = destinationLocation!.toJson();
+    }
+    data['pickup_time'] = pickupTime;
+    data['rental_type'] = rentalType;
+    data['estimated_hours'] = estimatedHours;
+    data['distance'] = distance;
+    data['destination_time'] = destinationTime;
+    data['is_guest'] = isGuest;
+    data['created_at'] = createdAt;
+    data['updated_at'] = updatedAt;
+    return data;
+  }
+}
+
+class PickupLocation {
+  String? lat;
+  String? lng;
+  String? locationName;
+  String? locationType;
+
+  PickupLocation({this.lat, this.lng, this.locationName, this.locationType});
+
+  PickupLocation.fromJson(Map<String, dynamic> json) {
+    lat = json['lat']?.toString();
+    lng = json['lng']?.toString();
+    locationName = json['location_name'];
+    locationType = json['location_type'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['lat'] = lat;
+    data['lng'] = lng;
+    data['location_name'] = locationName;
+    data['location_type'] = locationType;
     return data;
   }
 }

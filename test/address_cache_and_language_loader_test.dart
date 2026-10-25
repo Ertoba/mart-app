@@ -109,32 +109,32 @@ void main() {
   });
 
   group('LanguageLoader.loadInitial', () {
-    test('loads the saved locale and keeps the fallback alongside it', () async {
-      final Map<String, Map<String, String>> languages = await LanguageLoader.loadInitial('ar');
+    test('loads the saved Russian locale and keeps the Georgian fallback', () async {
+      final Map<String, Map<String, String>> languages = await LanguageLoader.loadInitial('ru');
 
-      expect(languages.keys, containsAll(<String>['ar_SA', 'en_US']));
-      expect(languages['ar_SA'], isNotEmpty);
-      expect(languages['en_US'], isNotEmpty);
+      expect(languages.keys, containsAll(<String>['ru_RU', 'ka_GE']));
+      expect(languages['ru_RU'], isNotEmpty);
+      expect(languages['ka_GE'], isNotEmpty);
     });
 
     test('an unknown saved code falls back to the default locale', () async {
       final Map<String, Map<String, String>> languages = await LanguageLoader.loadInitial('zz');
 
-      expect(languages.keys, <String>['en_US']);
-      expect(languages['en_US'], isNotEmpty);
+      expect(languages.keys, <String>['ka_GE']);
+      expect(languages['ka_GE'], isNotEmpty);
     });
 
     test('a null saved code (first launch) still yields a usable map', () async {
       final Map<String, Map<String, String>> languages = await LanguageLoader.loadInitial(null);
 
-      expect(languages['en_US'], isNotEmpty);
+      expect(languages['ka_GE'], isNotEmpty);
     });
 
     test('the default locale is not read twice when it is also the active one', () async {
-      final Map<String, Map<String, String>> languages = await LanguageLoader.loadInitial('en');
+      final Map<String, Map<String, String>> languages = await LanguageLoader.loadInitial('ka');
 
       expect(languages, hasLength(1));
-      expect(languages.keys.single, 'en_US');
+      expect(languages.keys.single, 'ka_GE');
     });
 
     test('every locale key matches the format GetX stores translations under', () async {

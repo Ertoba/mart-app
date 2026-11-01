@@ -687,13 +687,13 @@ class AppConstants {
 
   static List<LanguageModel> languages = [
     LanguageModel(
-      imageUrl: Images.language,
+      imageUrl: Images.georgian,
       languageName: 'ქართული',
       countryCode: 'GE',
       languageCode: 'ka',
     ),
     LanguageModel(
-      imageUrl: Images.language,
+      imageUrl: Images.russian,
       languageName: 'Русский',
       countryCode: 'RU',
       languageCode: 'ru',

@@ -14,8 +14,10 @@ import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
 import 'package:sixam_mart/features/checkout/widgets/payment_failed_dialog.dart';
 import 'package:sixam_mart/features/location/domain/models/zone_response_model.dart';
 import 'package:sixam_mart/features/order/domain/models/order_model.dart';
+import 'package:sixam_mart/features/payment/domain/models/keepz_payment_intent.dart';
 import 'package:sixam_mart/features/payment/domain/models/keepz_payment_option.dart';
 import 'package:sixam_mart/features/payment/services/keepz_order_payment_service.dart';
+import 'package:sixam_mart/features/payment/services/keepz_payment_lifecycle.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
 import 'package:sixam_mart/helper/address_helper.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
@@ -137,24 +139,12 @@ class KeepzPaymentLauncher {
         '/api/v1/customer/order-payment/$orderId/status$guestQuery',
         handleError: false,
       );
-      final dynamic body = response.body;
-
-      if (body is Map) {
-        final String state = body['state']?.toString().toLowerCase() ?? '';
-        final String paymentStatus =
-            body['payment_status']?.toString().toLowerCase() ?? '';
-
-        if (state == 'paid' || paymentStatus == 'paid') {
-          return 'success';
-        }
-
-        if (state == 'superseded') {
-          return 'superseded';
-        }
-
-        if (state == 'terminal' || state == 'ready' || state == 'absent') {
-          return 'fail';
-        }
+      final String? status = KeepzPaymentLifecycle.backendStatus(
+        statusCode: response.statusCode,
+        body: response.body,
+      );
+      if (status != null) {
+        return status;
       }
     }
 
@@ -265,13 +255,14 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
         throw preparation.message;
       }
 
-      final _KeepzIntent intent = await _fetchIntent(
+      final KeepzPaymentIntent intent = await _fetchIntent(
         flow: option.flow,
         provider: option.provider,
       );
 
-      final bool shouldTryExternal =
-          option.externalFirst && intent.action == 'external_non_browser';
+      final bool shouldTryExternal = intent.shouldOpenBankApp(
+        externalFirst: option.externalFirst,
+      );
       if (shouldTryExternal && await _openExternalBankApp(intent.url)) {
         if (!mounted) {
           return;
@@ -281,25 +272,6 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
           _awaitingExternalPayment = true;
           _statusMessage =
               'გადახდის დასრულების შემდეგ დაბრუნდი აპში და სტატუსი გადამოწმდება.';
-        });
-        return;
-      }
-
-      // Google Pay's payment sheet cannot run inside an Android WebView.
-      // Keepz's hosted page presents Google Pay among its payment options, so
-      // open the complete hosted flow in the browser on Android.
-      if (GetPlatform.isAndroid && intent.action == 'bottom_sheet_webview') {
-        if (!await _openHostedPaymentInBrowser(intent.url)) {
-          throw 'უსაფრთხო გადახდის ბრაუზერი ვერ გაიხსნა';
-        }
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _isLoading = false;
-          _awaitingExternalPayment = true;
-          _statusMessage =
-              'გადახდის დასრულების შემდეგ დაბრუნდი აპში და სტატუსი ავტომატურად შემოწმდება.';
         });
         return;
       }
@@ -320,7 +292,7 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
     }
   }
 
-  Future<_KeepzIntent> _fetchIntent({
+  Future<KeepzPaymentIntent> _fetchIntent({
     required String flow,
     required String provider,
   }) async {
@@ -360,7 +332,7 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
       throw _extractBackendMessage(decodedBody);
     }
 
-    return _KeepzIntent.fromJson(decodedBody);
+    return KeepzPaymentIntent.fromJson(decodedBody);
   }
 
   Future<bool> _openExternalBankApp(String url) async {
@@ -374,18 +346,6 @@ class _KeepzBottomSheetFlowState extends State<_KeepzBottomSheetFlow>
         uri,
         mode: LaunchMode.externalNonBrowserApplication,
       );
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<bool> _openHostedPaymentInBrowser(String url) async {
-    final Uri? uri = Uri.tryParse(url);
-    if (uri == null) {
-      return false;
-    }
-    try {
-      return await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (_) {
       return false;
     }
@@ -646,14 +606,15 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
         throw preparation.message;
       }
 
-      final _KeepzIntent intent = await _fetchIntent(
+      final KeepzPaymentIntent intent = await _fetchIntent(
         flow: flow,
         provider: provider,
         personalNumber: personalNumber,
       );
 
-      final bool shouldTryExternal =
-          externalFirst && intent.action == 'external_non_browser';
+      final bool shouldTryExternal = intent.shouldOpenBankApp(
+        externalFirst: externalFirst,
+      );
       if (shouldTryExternal && await _openExternalBankApp(intent.url)) {
         await _closePreparingBottomSheet();
         if (!mounted) {
@@ -663,22 +624,6 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
           _awaitingExternalPayment = true;
           _statusMessage =
               'გადახდის დასრულების შემდეგ დაბრუნდი აპში და სტატუსი გადამოწმდება.';
-        });
-        return;
-      }
-
-      if (GetPlatform.isAndroid && intent.action == 'bottom_sheet_webview') {
-        if (!await _openHostedPaymentInBrowser(intent.url)) {
-          throw 'უსაფრთხო გადახდის ბრაუზერი ვერ გაიხსნა';
-        }
-        await _closePreparingBottomSheet();
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _awaitingExternalPayment = true;
-          _statusMessage =
-              'გადახდის დასრულების შემდეგ დაბრუნდი აპში და სტატუსი ავტომატურად შემოწმდება.';
         });
         return;
       }
@@ -725,7 +670,7 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
     }
   }
 
-  Future<_KeepzIntent> _fetchIntent({
+  Future<KeepzPaymentIntent> _fetchIntent({
     required String flow,
     required String provider,
     String? personalNumber,
@@ -768,7 +713,7 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
       throw _extractBackendMessage(decodedBody);
     }
 
-    return _KeepzIntent.fromJson(decodedBody);
+    return KeepzPaymentIntent.fromJson(decodedBody);
   }
 
   Future<bool> _openExternalBankApp(String url) async {
@@ -782,18 +727,6 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
         uri,
         mode: LaunchMode.externalNonBrowserApplication,
       );
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<bool> _openHostedPaymentInBrowser(String url) async {
-    final Uri? uri = Uri.tryParse(url);
-    if (uri == null) {
-      return false;
-    }
-    try {
-      return await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (_) {
       return false;
     }
@@ -1384,12 +1317,17 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet>
   bool _handledTerminalUrl = false;
   bool _externalAppOpened = false;
   bool _checkingReturnStatus = false;
+  bool _awaitingVerifiedPayment = false;
+  late final KeepzPaymentLifecycle _paymentLifecycle;
   String? _loadError;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _paymentLifecycle = KeepzPaymentLifecycle(
+      readPaymentStatus: () async => widget.resolvePaymentStatus?.call(),
+    );
     _pullToRefreshController =
         GetPlatform.isWeb ||
             !<TargetPlatform>{
@@ -1469,6 +1407,16 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet>
                 ],
               ),
             ),
+            if (_awaitingVerifiedPayment)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                child: _StatusCard(
+                  message:
+                      'გადახდა ჯერ არ დადასტურებულა. შეგიძლია გააგრძელო ან სტატუსი გადაამოწმო.',
+                  checkingStatus: _checkingReturnStatus,
+                  onCheckStatus: () => unawaited(_resolvePaymentStatus()),
+                ),
+              ),
             Expanded(
               child: Stack(
                 children: <Widget>[
@@ -1522,7 +1470,11 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet>
                             webUri?.toString(),
                           );
                           if (terminalStatus != null) {
-                            _closeWithStatus(terminalStatus);
+                            unawaited(
+                              _resolvePaymentStatus(
+                                terminalHint: terminalStatus,
+                              ),
+                            );
                             return NavigationActionPolicy.CANCEL;
                           }
 
@@ -1655,41 +1607,20 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet>
   void _handleUrl(String? url) {
     final String? status = _terminalStatus(url);
     if (status != null) {
-      _closeWithStatus(status);
+      unawaited(_resolvePaymentStatus(terminalHint: status));
     }
   }
 
   Future<void> _resolvePaymentAfterExternalReturn() async {
-    if (_checkingReturnStatus || widget.resolvePaymentStatus == null) {
+    if (_checkingReturnStatus || _handledTerminalUrl) {
       return;
     }
-
     _externalAppOpened = false;
-    if (mounted) {
-      setState(() {
-        _checkingReturnStatus = true;
-      });
-    }
-
-    String? status;
-    try {
-      await Future<void>.delayed(const Duration(milliseconds: 500));
-      status = await widget.resolvePaymentStatus!.call();
-    } catch (_) {
-      status = null;
-    }
-
+    await Future<void>.delayed(const Duration(milliseconds: 500));
     if (!mounted) {
       return;
     }
-
-    setState(() {
-      _checkingReturnStatus = false;
-    });
-
-    if (status != null) {
-      _closeWithStatus(status);
-    }
+    await _resolvePaymentStatus();
   }
 
   Uri? _intentBrowserFallback(Uri uri) {
@@ -1738,70 +1669,37 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet>
   }
 
   String? _terminalStatus(String? url) {
-    if (url == null || url.isEmpty) {
-      return null;
-    }
-
-    final Uri? uri = Uri.tryParse(url);
-    if (uri != null &&
-        uri.scheme == AppConstants.customerPaymentReturnScheme &&
-        uri.host == 'payment-return') {
-      return _normalizePaymentStatus(
-        uri.queryParameters['status'] ?? uri.queryParameters['flag'],
-      );
-    }
-
-    final Uri? baseUri = Uri.tryParse(AppConstants.baseUrl);
-    if (uri != null && baseUri != null && _sameOrigin(uri, baseUri)) {
-      final String basePath = baseUri.path == '/'
-          ? ''
-          : baseUri.path.replaceFirst(RegExp(r'/$'), '');
-      final String path = uri.path.replaceFirst(RegExp(r'/$'), '');
-
-      if (path == '$basePath/payment-success') {
-        return 'success';
-      }
-      if (path == '$basePath/payment-fail') {
-        return 'fail';
-      }
-      if (path == '$basePath/payment-cancel') {
-        return 'cancel';
-      }
-    }
-
-    return null;
+    return KeepzPaymentLifecycle.terminalHint(
+      url,
+      baseUrl: AppConstants.baseUrl,
+      returnScheme: AppConstants.customerPaymentReturnScheme,
+    );
   }
 
-  bool _sameOrigin(Uri first, Uri second) {
-    return first.scheme.toLowerCase() == second.scheme.toLowerCase() &&
-        first.host.toLowerCase() == second.host.toLowerCase() &&
-        first.port == second.port;
-  }
-
-  String? _normalizePaymentStatus(String? status) {
-    switch (status?.toLowerCase()) {
-      case 'success':
-      case 'paid':
-        return 'success';
-      case 'fail':
-      case 'failed':
-      case 'failure':
-        return 'fail';
-      case 'cancel':
-      case 'canceled':
-      case 'cancelled':
-        return 'cancel';
-    }
-    return null;
-  }
-
-  void _closeWithStatus(String status) {
-    if (_handledTerminalUrl) {
+  Future<void> _resolvePaymentStatus({String? terminalHint}) async {
+    if (!mounted || _handledTerminalUrl || _checkingReturnStatus) {
       return;
     }
-
-    _handledTerminalUrl = true;
-    Navigator.of(context).pop(status);
+    setState(() {
+      _checkingReturnStatus = true;
+    });
+    final String? status = await _paymentLifecycle.resolve(
+      terminalHint: terminalHint,
+    );
+    if (!mounted) {
+      return;
+    }
+    if (status != null) {
+      _handledTerminalUrl = true;
+      Navigator.of(context).pop(status);
+      return;
+    }
+    setState(() {
+      _checkingReturnStatus = false;
+      _awaitingVerifiedPayment = true;
+      _isLoading = false;
+      _loadError = null;
+    });
   }
 }
 
@@ -1849,28 +1747,6 @@ class _StatusCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _KeepzIntent {
-  final String url;
-  final String action;
-
-  const _KeepzIntent({required this.url, required this.action});
-
-  factory _KeepzIntent.fromJson(Map<String, dynamic> json) {
-    final String url = (json['url'] ?? '').toString().trim();
-    final Uri? uri = Uri.tryParse(url);
-    if (uri == null ||
-        uri.scheme.toLowerCase() != 'https' ||
-        uri.host.isEmpty) {
-      throw const FormatException('Keepz returned an invalid payment URL');
-    }
-
-    return _KeepzIntent(
-      url: url,
-      action: (json['action'] ?? 'bottom_sheet_webview').toString(),
     );
   }
 }

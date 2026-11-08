@@ -24,6 +24,9 @@ import 'package:sixam_mart/features/parcel/domain/models/parcel_tier_model.dart'
 import 'package:sixam_mart/features/parcel/domain/models/video_content_model.dart';
 import 'package:sixam_mart/features/parcel/domain/models/why_choose_model.dart';
 import 'package:sixam_mart/features/parcel/domain/services/parcel_service_interface.dart';
+import 'package:sixam_mart/features/parcel/domain/services/parcel_payment_session.dart';
+import 'package:sixam_mart/features/order/domain/models/order_model.dart' show OrderModel;
+import 'package:sixam_mart/features/payment/screens/keepz_native_payment_screen.dart';
 import 'package:sixam_mart/features/payment/domain/models/offline_method_model.dart';
 import 'package:sixam_mart/features/pro/controllers/pro_controller.dart';
 import 'package:sixam_mart/features/pro/domain/models/pro_active_offer_model.dart';
@@ -77,6 +80,8 @@ class ParcelController extends GetxController implements GetxService {
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+  bool _placingOrder = false;
+  final ParcelPaymentSession _keepzPaymentSession = ParcelPaymentSession();
 
   double? _distance = -1;
   double? get distance => _distance;
@@ -911,11 +916,84 @@ class ParcelController extends GetxController implements GetxService {
   }
 
   Future<String> placeOrder(PlaceOrderBodyModel placeOrderBody, int? zoneID, double amount, double? maximumCodOrderAmount, bool fromCart, bool isCashOnDeliveryActive, {bool forParcel = false, bool isOfflinePay = false}) async {
+    if (_placingOrder) return _keepzPaymentSession.pending?.orderId ?? '';
+    final bool keepzSheet = !GetPlatform.isWeb && !isOfflinePay &&
+        _paymentIndex == 2 && _digitalPaymentName == 'keepz';
+    _placingOrder = true;
     _isLoading = true;
     update();
-    String orderID = '';
-    Response response = await parcelServiceInterface.placeOrder(placeOrderBody);
-    _isLoading = false;
+    try {
+      final Map<String, dynamic> signatureBody = placeOrderBody.toJson()
+        ..remove('password');
+      final String signature = jsonEncode(<String, dynamic>{
+        'body': signatureBody,
+        'gateway': _digitalPaymentName,
+        'user_id': Get.find<ProfileController>().userInfoModel?.id,
+      });
+      final ParcelPaymentOrder? pending = _keepzPaymentSession.pending;
+      if (pending != null && (!keepzSheet || !_keepzPaymentSession.matches(signature))) {
+        final String guestId = AuthHelper.getGuestId();
+        final String query = guestId.isEmpty ? '' : '?guest_id=${Uri.encodeQueryComponent(guestId)}';
+        final Response response = await Get.find<ApiClient>().getData(
+          '/api/v1/customer/order-payment/${pending.orderId}/status$query',
+          handleError: false,
+        );
+        if (!_keepzPaymentSession.releaseResolvedOrder(
+          statusCode: response.statusCode, body: response.body,
+        )) {
+          showCustomSnackBar('ჯერ გადაიხადეთ ან გააუქმეთ გადაუხდელი ამანათი შეკვეთებიდან.');
+          return pending.orderId;
+        }
+      }
+      Future<ParcelPaymentOrder?> createOrder() => _createParcelOrder(
+        placeOrderBody, forParcel: forParcel,
+      );
+      if (keepzSheet) {
+        return await _keepzPaymentSession.run(
+          signature: signature,
+          createOrder: createOrder,
+          showPayment: (ParcelPaymentOrder order) => parcelCallback(
+            true, order.message, order.orderId, zoneID, amount,
+            maximumCodOrderAmount, isCashOnDeliveryActive,
+            placeOrderBody.contactPersonNumber, createUserId: order.createUserId,
+          ),
+        );
+      }
+      final ParcelPaymentOrder? order = await createOrder();
+      if (order == null) return '';
+      if (!isOfflinePay) {
+        await parcelCallback(
+          true, order.message, order.orderId, zoneID, amount,
+          maximumCodOrderAmount, isCashOnDeliveryActive,
+          placeOrderBody.contactPersonNumber, createUserId: order.createUserId,
+        );
+      } else {
+        Get.offNamed(RouteHelper.getOfflinePaymentScreen(
+          zoneId: zoneID, total: amount, orderId: order.orderId,
+          contactNumber: placeOrderBody.contactPersonNumber ?? '',
+          maxCodOrderAmount: maximumCodOrderAmount, fromCart: false,
+          isCodActive: isCashOnDeliveryActive, forParcel: true,
+        ));
+      }
+      return order.orderId;
+    } on ParcelPaymentDraftChanged {
+      showCustomSnackBar('ჯერ გადაიხადეთ ან გააუქმეთ გადაუხდელი ამანათი შეკვეთებიდან.');
+      return _keepzPaymentSession.pending?.orderId ?? '';
+    } catch (_) {
+      // Keep a placed order for retry even if presenting the sheet failed.
+      showCustomSnackBar('გადახდის გაგრძელება ვერ მოხერხდა. სცადეთ ხელახლა.');
+      return _keepzPaymentSession.pending?.orderId ?? '';
+    } finally {
+      _placingOrder = false;
+      _isLoading = false;
+      update();
+    }
+  }
+
+  Future<ParcelPaymentOrder?> _createParcelOrder(
+    PlaceOrderBodyModel placeOrderBody, {required bool forParcel}
+  ) async {
+    final Response response = await parcelServiceInterface.placeOrder(placeOrderBody);
     // Any 2xx is a placed order. Every documented create in this API answers `201`
     // (`identical_code: default_store_201`), and matching only 200 sent a successfully
     // placed order down the failure branch — which shows a snackbar and never calls
@@ -927,7 +1005,11 @@ class ParcelController extends GetxController implements GetxService {
       // The envelope's `message` is lifted onto `statusText` when `content` is
       // unwrapped, so a body-level `message` is no longer guaranteed.
       String? message = placed['message'] ?? response.statusText;
-      orderID = placed['order_id']?.toString() ?? '';
+      final String orderID = placed['order_id']?.toString() ?? '';
+      if ((int.tryParse(orderID) ?? 0) <= 0) {
+        showCustomSnackBar('შეკვეთის ნომერი ვერ დადასტურდა. გადაამოწმეთ თქვენი შეკვეთები.');
+        return null;
+      }
       // `user_id` only comes back when the API created an account for a guest, so it is
       // absent on an ordinary logged-in order. Assigning it into a non-nullable `int`
       // threw a TypeError right here — after the order had been created server-side but
@@ -940,36 +1022,21 @@ class ParcelController extends GetxController implements GetxService {
         await addParcelRecentAddress(_destinationAddress!);
       }
 
-      if(!isOfflinePay) {
-        parcelCallback(true, message, orderID, zoneID, amount, maximumCodOrderAmount, isCashOnDeliveryActive, placeOrderBody.contactPersonNumber, createUserId: createUserId);
-      } else {
-        Get.offNamed(RouteHelper.getOfflinePaymentScreen(
-          zoneId: zoneID, total: amount, orderId: orderID, contactNumber: placeOrderBody.contactPersonNumber??'',
-          maxCodOrderAmount: maximumCodOrderAmount, fromCart: false, isCodActive: isCashOnDeliveryActive, forParcel: true,
-        ));
-      }
-      if (kDebugMode) {
-        print('-------- Order placed successfully $orderID ----------');
-      }
+      return ParcelPaymentOrder(
+        orderId: orderID, message: message, createUserId: createUserId,
+      );
     } else {
-      if(!isOfflinePay) {
-        parcelCallback(false, response.statusText, '-1', zoneID, amount, maximumCodOrderAmount, isCashOnDeliveryActive, placeOrderBody.contactPersonNumber);
-      } else {
-        showCustomSnackBar(response.statusText);
-      }
+      showCustomSnackBar(response.statusText);
     }
-    update();
-
-    return orderID;
+    return null;
   }
 
-  Future<void> parcelCallback(bool isSuccess, String? message, String orderID, int? zoneID, double orderAmount, double? maxCodAmount, bool isCashOnDeliveryActive, String? contactNumber, {int? createUserId}) async {
+  Future<String?> parcelCallback(bool isSuccess, String? message, String orderID, int? zoneID, double orderAmount, double? maxCodAmount, bool isCashOnDeliveryActive, String? contactNumber, {int? createUserId}) async {
     Get.find<ParcelController>().startLoader(false);
     if(isSuccess) {
       if(isDmTipSave){
         Get.find<AuthController>().saveDmTipIndex(PriceConverter.tipToSave(selectedTips));
       }
-      Get.find<CheckoutController>().setGuestAddress(null);
       if(Get.find<ParcelController>().paymentIndex == 2) {
         if(GetPlatform.isWeb) {
           // Get.back();
@@ -979,6 +1046,24 @@ class ParcelController extends GetxController implements GetxService {
           String selectedUrl = '${AppConstants.baseUrl}/payment-mobile?order_id=$orderID&&customer_id=${Get.find<ProfileController>().userInfoModel?.id ?? (Get.find<CheckoutController>().isCreateAccount ? createUserId : AuthHelper.getGuestId())}'
               '&payment_method=${Get.find<ParcelController>().digitalPaymentName}&payment_platform=web&&callback=$protocol//$hostname${RouteHelper.orderSuccess}?id=$orderID&status=';
           html.window.open(selectedUrl,"_self");
+        } else if (_digitalPaymentName == 'keepz') {
+          final String? status = await KeepzPaymentLauncher.show(
+            orderModel: OrderModel(
+              id: int.parse(orderID), orderType: 'parcel',
+              userId: Get.find<ProfileController>().userInfoModel?.id ?? createUserId ?? 0,
+              orderAmount: orderAmount,
+            ),
+            isCashOnDelivery: isCashOnDeliveryActive,
+            paymentMethod: 'keepz',
+            guestId: AuthHelper.getGuestId(),
+            contactNumber: contactNumber ?? '',
+            createAccount: Get.find<CheckoutController>().isCreateAccount,
+            createUserId: createUserId,
+          );
+          if (status != 'success') return status;
+          Get.find<CheckoutController>().setGuestAddress(null);
+          updateTips(PriceConverter.noTipIndex, notify: false);
+          return status;
         } else{
           Get.offNamed(RouteHelper.getPaymentRoute(
             orderID, Get.find<ProfileController>().userInfoModel?.id ?? 0, 'parcel', orderAmount, isCashOnDeliveryActive,
@@ -989,10 +1074,12 @@ class ParcelController extends GetxController implements GetxService {
       }else {
         Get.offNamed(RouteHelper.getOrderSuccessRoute(orderID, contactNumber, createAccount: Get.find<CheckoutController>().isCreateAccount));
       }
+      Get.find<CheckoutController>().setGuestAddress(null);
       updateTips(PriceConverter.noTipIndex, notify: false);
     }else {
       showCustomSnackBar(message);
     }
+    return null;
   }
 
   Future<void> getParcelCancellationReasons({required bool isBeforePickup}) async {

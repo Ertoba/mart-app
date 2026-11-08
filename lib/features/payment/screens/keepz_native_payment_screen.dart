@@ -64,6 +64,7 @@ class KeepzPaymentLauncher {
     int? createUserId,
     String? keepzMethodKey,
     Future<void> Function()? onPaymentSuccess,
+    @visibleForTesting WidgetBuilder? paymentContentBuilder,
   }) async {
     final BuildContext context = Get.overlayContext ?? Get.context!;
     final String? status = await showModalBottomSheet<String>(
@@ -77,7 +78,7 @@ class KeepzPaymentLauncher {
         duration: Duration(milliseconds: 320),
         reverseDuration: Duration(milliseconds: 220),
       ),
-      builder: (BuildContext context) => _KeepzBottomSheetFlow(
+      builder: paymentContentBuilder ?? (BuildContext context) => _KeepzBottomSheetFlow(
         orderModel: orderModel,
         isCashOnDelivery: isCashOnDelivery,
         paymentMethod: paymentMethod,
@@ -162,10 +163,8 @@ class KeepzPaymentLauncher {
       return;
     }
 
-    if (Get.isBottomSheetOpen == true) {
-      Get.back();
-    }
-
+    // The awaited modal has already closed itself with its own context. Never
+    // pop an unrelated overlay that may have opened while awaiting the result.
     Get.offNamed(
       RouteHelper.getOrderSuccessRoute(
         orderId,
@@ -762,6 +761,18 @@ class _KeepzNativePaymentScreenState extends State<KeepzNativePaymentScreen>
 
     if (status == 'success' || status == 'fail') {
       _navigateOrderPaymentResult(status!);
+    } else {
+      // Compatibility routes must not reveal an empty Scaffold after X/back.
+      // New checkout/parcel callers open the launcher directly; for a legacy
+      // caller, close only this still-current owned route, never global backs.
+      final NavigatorState navigator = Navigator.of(context);
+      if (ModalRoute.of(context)?.isCurrent == true && navigator.canPop()) {
+        navigator.pop();
+      } else {
+        setState(() {
+          _statusMessage = 'გადახდა არ დასრულებულა. შეგიძლიათ კვლავ გახსნათ გადახდა.';
+        });
+      }
     }
   }
 
@@ -1540,11 +1551,6 @@ class _KeepzWebViewSheetState extends State<_KeepzWebViewSheet>
                     onProgressChanged: (_, int progress) {
                       if (progress == 100) {
                         _pullToRefreshController?.endRefreshing();
-                      }
-                    },
-                    onConsoleMessage: (_, ConsoleMessage consoleMessage) {
-                      if (kDebugMode) {
-                        debugPrint(consoleMessage.message);
                       }
                     },
                   ),

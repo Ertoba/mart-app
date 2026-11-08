@@ -18,6 +18,8 @@ import 'package:sixam_mart/features/order/controllers/order_controller.dart';
 import 'package:sixam_mart/features/order/domain/models/order_details_model.dart';
 import 'package:sixam_mart/features/order/domain/models/order_model.dart';
 import 'package:sixam_mart/features/order/helper/reviewable_items_helper.dart';
+import 'package:sixam_mart/features/order/helper/route_polyline.dart';
+import 'package:sixam_mart/features/order/widgets/route_status_indicator.dart';
 import 'package:sixam_mart/features/order/model/billing_value.dart';
 import 'package:sixam_mart/features/order/widgets/cancellation_dialogue_widget.dart';
 import 'package:sixam_mart/features/order/widgets/order_details_info_widgets/addess_section.dart';
@@ -72,6 +74,58 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
   GoogleMapController? _mapController;
   Set<Marker> _markers = HashSet<Marker>();
   bool _mapLoading = true;
+  late final RoutePolylineController _route;
+  String? _markerKey;
+  int _markerGeneration = 0;
+
+  void _routeChanged() {
+    if (!mounted) return;
+    setState(() {});
+    if (_route.status == RouteLoadStatus.ready) _fitMap();
+  }
+
+  void _loadRoute(OrderModel order, {bool force = false}) {
+    final endpoints = OrderRouteEndpoints.fromOrder(order);
+    _route.load(
+      endpoints?.origin,
+      endpoints?.destination,
+      scope: '${order.id}',
+      force: force,
+    );
+  }
+
+  Future<void> _fitMap() async {
+    final points = [
+      ..._markers.map((marker) => marker.position),
+      ..._route.points,
+    ];
+    if (!mounted || _mapController == null || points.isEmpty) return;
+    try {
+      if (points.every((point) => point == points.first)) {
+        await _mapController!.moveCamera(
+          CameraUpdate.newLatLngZoom(points.first, 15),
+        );
+      } else {
+        await _mapController!.moveCamera(
+          CameraUpdate.newLatLngBounds(routeBounds(points), 80),
+        );
+      }
+    } catch (_) {
+      // A disposed/not-yet-laid-out map must not fail the order screen.
+    }
+  }
+
+  void _scheduleMapRefresh(OrderModel order) {
+    final endpoints = OrderRouteEndpoints.fromOrder(order);
+    final key =
+        '${order.id}:${endpoints?.origin}:${endpoints?.destination}:'
+        '${order.deliveryMan?.lat}:${order.deliveryMan?.lng}';
+    if (_markerKey == key) return;
+    _markerKey = key;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _setMarkers(order);
+    });
+  }
 
   static const double _sheetExpandedSize = 0.92;
 
@@ -84,7 +138,6 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
 
   void _loadData(BuildContext context, bool reload) async {
     Get.find<OrderController>().setActiveTrackOrder(widget.orderId.toString());
-    Get.find<OrderController>().clearRoutePolyline();
     Get.find<OrderController>().getPaymentFailedDetails(widget.orderId.toString());
     await Get.find<OrderController>().trackOrder(widget.orderId.toString(), reload ? null : widget.orderModel, false, contactNumber: widget.contactNumber).then((value) {
       if (widget.fromOfflinePayment) {
@@ -135,96 +188,96 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
   }
 
   Future<void> _setMarkers(OrderModel order) async {
+    final int generation = ++_markerGeneration;
     final bool isRestaurant = order.moduleType == 'food';
+    final endpoints = OrderRouteEndpoints.fromOrder(order);
+    _loadRoute(order);
+    BitmapDescriptor storeIcon = BitmapDescriptor.defaultMarkerWithHue(
+      BitmapDescriptor.hueAzure,
+    );
+    BitmapDescriptor dmIcon = BitmapDescriptor.defaultMarkerWithHue(
+      BitmapDescriptor.hueOrange,
+    );
+    BitmapDescriptor userIcon = BitmapDescriptor.defaultMarkerWithHue(
+      BitmapDescriptor.hueGreen,
+    );
     try {
       final results = await Future.wait([
         MarkerHelper.createLabeledMarker(
           label: isRestaurant ? 'restaurant'.tr : 'store'.tr,
           imagePath: Images.restaurantMarkerIcon,
-          iconSize: 32
+          iconSize: 32,
         ),
         MarkerHelper.createLabeledMarker(
           label: 'rider'.tr,
           imagePath: Images.riderMarkerIcon,
-          iconSize: 32
+          iconSize: 32,
         ),
         MarkerHelper.createLabeledMarker(
           label: 'my_location'.tr,
           imagePath: Images.userMarkerIcon,
-          iconSize: 32
+          iconSize: 32,
         ),
       ]);
-      final BitmapDescriptor storeIcon = results[0];
-      final BitmapDescriptor dmIcon = results[1];
-      final BitmapDescriptor userIcon = results[2];
+      storeIcon = results[0];
+      dmIcon = results[1];
+      userIcon = results[2];
+    } catch (_) {
+      // Keep valid coordinates visible even if a custom marker asset fails.
+    }
+    if (!mounted || generation != _markerGeneration) return;
+    final Set<Marker> markers = HashSet<Marker>();
 
-      final Set<Marker> markers = HashSet<Marker>();
-
-      if (order.store?.latitude != null && order.store?.longitude != null) {
-        markers.add(Marker(
+    if (endpoints != null) {
+      markers.add(
+        Marker(
           markerId: const MarkerId('store'),
-          position: LatLng(double.parse(order.store!.latitude!), double.parse(order.store!.longitude!)),
+          position: endpoints.origin,
           icon: storeIcon,
-          infoWindow: InfoWindow(title: order.store!.name ?? ''),
-        ));
-      }
-
-      if (order.deliveryAddress?.latitude != null && order.deliveryAddress?.longitude != null) {
-        markers.add(Marker(
+          infoWindow: InfoWindow(
+            title: order.orderType == 'parcel'
+                ? 'pickup'.tr
+                : order.store?.name ?? '',
+          ),
+        ),
+      );
+      markers.add(
+        Marker(
           markerId: const MarkerId('destination'),
-          position: LatLng(double.parse(order.deliveryAddress!.latitude!), double.parse(order.deliveryAddress!.longitude!)),
+          position: endpoints.destination,
           icon: userIcon,
-          infoWindow: InfoWindow(title: 'your_location'.tr),
-        ));
-      }
+          infoWindow: InfoWindow(title: 'destination'.tr),
+        ),
+      );
+    }
 
-      final String? dmLat = order.deliveryMan?.lat;
-      final String? dmLng = order.deliveryMan?.lng;
-      if (dmLat != null && dmLng != null && dmLat.isNotEmpty && dmLng.isNotEmpty) {
-        markers.add(Marker(
+    final dm = routeCoordinate(order.deliveryMan?.lat, order.deliveryMan?.lng);
+    if (dm != null) {
+      markers.add(
+        Marker(
           markerId: const MarkerId('delivery_boy'),
-          position: LatLng(double.parse(dmLat), double.parse(dmLng)),
+          position: dm,
           icon: dmIcon,
           infoWindow: InfoWindow(title: 'delivery_man'.tr),
-        ));
-
-        if (order.deliveryAddress?.latitude != null && order.deliveryAddress?.longitude != null) {
-          Get.find<OrderController>().getDirectionPolyline(
-            origin: LatLng(double.parse(dmLat), double.parse(dmLng)),
-            destination: LatLng(double.parse(order.deliveryAddress!.latitude!), double.parse(order.deliveryAddress!.longitude!)),
-          );
-        }
-      }
-
-      if (_mapController != null
-          && order.deliveryAddress?.latitude != null
-          && order.store?.latitude != null) {
-        final double addrLat = double.parse(order.deliveryAddress!.latitude!);
-        final double addrLng = double.parse(order.deliveryAddress!.longitude!);
-        final double storeLat = double.parse(order.store!.latitude!);
-        final double storeLng = double.parse(order.store!.longitude!);
-        final LatLngBounds bounds = LatLngBounds(
-          southwest: LatLng(
-            addrLat < storeLat ? addrLat : storeLat,
-            addrLng < storeLng ? addrLng : storeLng,
-          ),
-          northeast: LatLng(
-            addrLat > storeLat ? addrLat : storeLat,
-            addrLng > storeLng ? addrLng : storeLng,
-          ),
-        );
-        _mapController!.moveCamera(CameraUpdate.newLatLngBounds(bounds, 80));
-      }
-
-      if (mounted) setState(() { _markers = markers; _mapLoading = false; });
-    } catch (_) {
-      if (mounted) setState(() { _mapLoading = false; });
+        ),
+      );
     }
+    final bool firstMarkers = _markers.isEmpty;
+    setState(() {
+      _markers = markers;
+      _mapLoading = false;
+    });
+    if (firstMarkers) _fitMap();
   }
 
   @override
   void initState() {
     super.initState();
+    _route = RoutePolylineController(
+      fetch: Get.find<OrderController>()
+          .orderServiceInterface
+          .getDirectionPolyline,
+    )..addListener(_routeChanged);
     _loadData(context, false);
     _startApiCall();
   }
@@ -232,6 +285,7 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _route.dispose();
     final orderController = Get.find<OrderController>();
     if (orderController.activeTrackOrderId == widget.orderId.toString()) {
       orderController.setActiveTrackOrder(null);
@@ -333,16 +387,21 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
           isHappyHour: isHappyHour, happyHourPercentage: happyHourPercentage, isStoreDiscount: isStoreDiscount);
 
         final bool hasDeliveryMan = order?.deliveryMan != null;
+          final bool showOrderMap =
+              order != null &&
+              ongoing &&
+              OrderRouteEndpoints.fromOrder(order) != null;
+          if (showOrderMap) _scheduleMapRefresh(order);
 
-        return Scaffold(
+          return Scaffold(
           backgroundColor: Theme.of(context).cardColor,
           appBar: _OrderDetailsAppBar(deliveryManAssigned: hasDeliveryMan),
 
           body: SafeArea(
             child: !isReady
               ? const Center(child: CircularProgressIndicator())
-              : hasDeliveryMan && ongoing
-                ? Stack(children: [
+              : showOrderMap
+                  ? Stack(children: [
                     Positioned.fill(
                       child: GoogleMap(
                         initialCameraPosition: CameraPosition(
@@ -353,17 +412,19 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
                           zoom: 15,
                         ),
                         markers: _markers,
-                        polylines: orderController.routePolyline.length > 1 ? {
+                        polylines: _route.points.length > 1 ? {
                           Polyline(
                             polylineId: const PolylineId('order_route'),
-                            points: orderController.routePolyline,
-                            width: 2,
+                            points: _route.points,
+                                      color: Theme.of(context).primaryColor,
+                                      width: 5,
                           ),
                         } : <Polyline>{},
                         zoomControlsEnabled: false,
-                        onMapCreated: (controller) {
+                        onMapCreated: (controller) async {
                           _mapController = controller;
-                          _setMarkers(order);
+                          await _setMarkers(order);
+                          await _fitMap();
                         },
                         style: Get.find<ThemeController>().darkTheme
                             ? Get.find<ThemeController>().darkMap
@@ -373,7 +434,20 @@ class OrderDetailsNewScreenState extends State<OrderDetailsNewScreen> {
 
                     if (_mapLoading) const Center(child: CircularProgressIndicator()),
 
-                    Positioned.fill(child: DraggableScrollableSheet(
+                    Positioned(
+                          top: 12,
+                          left: 12,
+                          right: 12,
+                          child: Align(
+                            alignment: Alignment.topCenter,
+                            child: RouteStatusIndicator(
+                              status: _route.status,
+                              onRetry: () => _loadRoute(order, force: true),
+                            ),
+                          ),
+                        ),
+
+                        Positioned.fill(child: DraggableScrollableSheet(
                       controller: _sheetController,
                       initialChildSize: 0.45,
                       minChildSize: 0.25,

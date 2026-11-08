@@ -13,7 +13,8 @@ import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/features/chat/domain/models/conversation_model.dart';
 import 'package:sixam_mart/features/order/controllers/order_controller.dart';
 import 'package:sixam_mart/features/order/domain/models/order_model.dart';
-import 'package:sixam_mart/helper/address_helper.dart';
+import 'package:sixam_mart/features/order/helper/route_polyline.dart';
+import 'package:sixam_mart/features/order/widgets/route_status_indicator.dart';
 import 'package:sixam_mart/helper/auth_helper.dart';
 import 'package:sixam_mart/helper/marker_helper.dart';
 import 'package:sixam_mart/helper/pusher_helper.dart';
@@ -29,85 +30,111 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../../store/domain/models/store_model.dart';
-
 class OrderTrackingScreen extends StatefulWidget {
   final String? orderID;
   final String? contactNumber;
-  const OrderTrackingScreen({super.key, required this.orderID, this.contactNumber});
+  const OrderTrackingScreen({
+    super.key,
+    required this.orderID,
+    this.contactNumber,
+  });
 
   @override
   OrderTrackingScreenState createState() => OrderTrackingScreenState();
 }
 
-class OrderTrackingScreenState extends State<OrderTrackingScreen> with WidgetsBindingObserver {
+class OrderTrackingScreenState extends State<OrderTrackingScreen>
+    with WidgetsBindingObserver {
   GoogleMapController? _controller;
   bool _isLoading = true;
   Set<Marker> _markers = HashSet<Marker>();
   Timer? _timer;
   bool showChatPermission = true;
   bool isHovered = false;
+  late final RoutePolylineController _route;
+  Future<List<BitmapDescriptor>>? _markerIcons;
+  int _markerGeneration = 0;
+  int _riderGeneration = 0;
+  String? _markerKey;
+  bool _polling = false;
 
   void _loadData() async {
-    await Get.find<LocationController>().getCurrentLocation(true, notify: false, defaultLatLng: LatLng(
-      double.parse(AddressHelper.getUserAddressFromSharedPref()!.latitude!),
-      double.parse(AddressHelper.getUserAddressFromSharedPref()!.longitude!),
-    ));
-    await Get.find<OrderController>().trackOrder(widget.orderID, null, true, contactNumber: widget.contactNumber);
+    // An existing order route must not wait for GPS permission or a GPS fix.
+    await Get.find<OrderController>().trackOrder(
+      widget.orderID,
+      null,
+      true,
+      contactNumber: widget.contactNumber,
+    );
 
-    if(Get.find<SplashController>().configModel!.websocketEnabled!) {
+    if (!mounted) return;
+    _loadRoute();
+    if (Get.find<SplashController>().configModel?.websocketEnabled == true) {
       _trackWithPusher();
-    } else {
-      _timerTrackOrder();
     }
+    // Status/assignment changes still need polling when websocket GPS is enabled.
+    _timerTrackOrder();
   }
 
   void _trackWithPusher() {
-    bool canTrackDeliveryman = Get.find<OrderController>().trackModel?.orderStatus != 'delivered' && Get.find<OrderController>().trackModel?.orderStatus != 'failed' && Get.find<OrderController>().trackModel?.orderStatus != 'canceled';
-    if(Get.find<OrderController>().trackModel != null && Get.find<OrderController>().trackModel!.deliveryMan != null && canTrackDeliveryman) {
-      Get.find<OrderController>().timerTrackOrder(widget.orderID.toString(), contactNumber: widget.contactNumber);
+    bool canTrackDeliveryman =
+        Get.find<OrderController>().trackModel?.orderStatus != 'delivered' &&
+        Get.find<OrderController>().trackModel?.orderStatus != 'failed' &&
+        Get.find<OrderController>().trackModel?.orderStatus != 'canceled';
+    if (Get.find<OrderController>().trackModel != null &&
+        Get.find<OrderController>().trackModel!.deliveryMan != null &&
+        canTrackDeliveryman) {
+      Get.find<OrderController>().timerTrackOrder(
+        widget.orderID.toString(),
+        contactNumber: widget.contactNumber,
+      );
 
       PusherHelper().pusherDriverStatus(
-        deliverymanId: Get.find<OrderController>().trackModel!.deliveryMan!.id.toString(),
+        deliverymanId: Get.find<OrderController>().trackModel!.deliveryMan!.id
+            .toString(),
         onLocationReceived: (RecordLocationBodyModel dmLocation) {
           updateDeliverymanMarker(dmLocation);
         },
       );
-
-
     }
   }
 
-  void _timerTrackOrder(){
-    if(Get.find<OrderController>().trackModel?.orderStatus != 'delivered' && Get.find<OrderController>().trackModel?.orderStatus != 'failed' && Get.find<OrderController>().trackModel?.orderStatus != 'canceled') {
-      Get.find<OrderController>().timerTrackOrder(widget.orderID.toString(), contactNumber: widget.contactNumber);
-      _timer?.cancel();
-      _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
-        if(Get.currentRoute.contains(RouteHelper.orderDetails) || Get.currentRoute.contains(RouteHelper.orderTracking)){
-          Get.find<OrderController>().timerTrackOrder(widget.orderID.toString(), contactNumber: widget.contactNumber);
-
-          updateMarker(
-            Get.find<OrderController>().trackModel?.store, Get.find<OrderController>().trackModel!.deliveryMan,
-            Get.find<OrderController>().trackModel?.orderType == 'take_away' ? Get.find<LocationController>().position.latitude == 0 ? Get.find<OrderController>().trackModel?.deliveryAddress : AddressModel(
-              latitude: Get.find<LocationController>().position.latitude.toString(),
-              longitude: Get.find<LocationController>().position.longitude.toString(),
-              address: Get.find<LocationController>().address,
-            ) : Get.find<OrderController>().trackModel?.deliveryAddress,
-            Get.find<OrderController>().trackModel?.orderType == 'take_away', Get.find<OrderController>().trackModel?.orderType == 'parcel', Get.find<OrderController>().trackModel?.moduleType == 'food',
-          );
-
-        } else {
-          _timer?.cancel();
+  void _timerTrackOrder() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+      if (!mounted || !Get.currentRoute.contains(RouteHelper.orderTracking)) {
+        timer.cancel();
+        return;
+      }
+      if (_polling) return;
+      _polling = true;
+      try {
+        await Get.find<OrderController>().timerTrackOrder(
+          widget.orderID.toString(),
+          contactNumber: widget.contactNumber,
+        );
+        if (!mounted) return;
+        await _refreshMap();
+        final status = Get.find<OrderController>().trackModel?.orderStatus;
+        if (status == 'delivered' ||
+            status == 'failed' ||
+            status == 'canceled') {
+          timer.cancel();
         }
-      });
-    }else{
-      Get.find<OrderController>().timerTrackOrder(widget.orderID.toString(), contactNumber: widget.contactNumber);
-    }
+      } finally {
+        _polling = false;
+      }
+    });
   }
 
   @override
   void initState() {
     super.initState();
+    _route = RoutePolylineController(
+      fetch: Get.find<OrderController>()
+          .orderServiceInterface
+          .getDirectionPolyline,
+    )..addListener(_routeChanged);
     WidgetsBinding.instance.addObserver(this);
 
     PusherHelper.initializePusher();
@@ -118,14 +145,14 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen> with WidgetsBi
   void didChangeAppLifecycleState(final AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _timerTrackOrder();
-    }else if(state == AppLifecycleState.paused){
+    } else if (state == AppLifecycleState.paused) {
       _timer?.cancel();
-      _controller?.dispose();
     }
   }
 
   @override
   void dispose() {
+    _route.dispose();
     _controller?.dispose();
     _timer?.cancel();
     PusherHelper().pusherDisconnectPusher();
@@ -148,11 +175,12 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen> with WidgetsBi
         OrderModel? track;
         if(orderController.trackModel != null) {
           track = orderController.trackModel;
+          _scheduleMapRefresh(track!);
 
-          if(track!.orderType != 'parcel') {
-            if (track.store!.storeBusinessModel == 'commission') {
+          if(track.orderType != 'parcel') {
+            if (track.store?.storeBusinessModel == 'commission') {
               showChatPermission = true;
-            } else if (track.store!.storeSubscription != null && track.store!.storeBusinessModel == 'subscription') {
+            } else if (track.store?.storeSubscription != null && track.store?.storeBusinessModel == 'subscription') {
               showChatPermission = track.store!.storeSubscription!.chat == 1;
             } else {
               showChatPermission = false;
@@ -171,30 +199,29 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen> with WidgetsBi
                 onEnter: (event) => onEntered(true),
                 onExit: (event) => onEntered(false),
                 child: GoogleMap(
-                  initialCameraPosition: CameraPosition(target: LatLng(
-                    double.parse(track.deliveryAddress!.latitude!), double.parse(track.deliveryAddress!.longitude!),
-                  ), zoom: 16),
+                  initialCameraPosition: CameraPosition(target:
+                    routeCoordinate(track.deliveryAddress?.latitude, track.deliveryAddress?.longitude) ?? const LatLng(0, 0), zoom: 16),
                   minMaxZoomPreference: const MinMaxZoomPreference(0, 16),
                   zoomControlsEnabled: false,
                   markers: _markers,
+                  polylines: _route.points.length > 1 ? {
+                    Polyline(polylineId: const PolylineId('tracking_route'), points: _route.points,
+                      width: 5, color: Theme.of(context).primaryColor),
+                  } : <Polyline>{},
                   onMapCreated: (GoogleMapController controller) {
                     _controller = controller;
                     _isLoading = false;
-                    setMarker(
-                      track!.orderType == 'parcel' ? Store(latitude: track.receiverDetails!.latitude, longitude: track.receiverDetails!.longitude,
-                          address: track.receiverDetails!.address, name: track.receiverDetails!.contactPersonName) : track.store, track.deliveryMan,
-                      track.orderType == 'take_away' ? Get.find<LocationController>().position.latitude == 0 ? track.deliveryAddress : AddressModel(
-                        latitude: Get.find<LocationController>().position.latitude.toString(),
-                        longitude: Get.find<LocationController>().position.longitude.toString(),
-                        address: Get.find<LocationController>().address,
-                      ) : track.deliveryAddress, track.orderType == 'take_away', track.orderType == 'parcel', track.moduleType == 'food',
-                    );
+                    _refreshMap(fit: true);
                   },
                   style: Get.isDarkMode ? Get.find<ThemeController>().darkMap : Get.find<ThemeController>().lightMap,
                 ),
               ),
 
               _isLoading ? const Center(child: CircularProgressIndicator()) : const SizedBox(),
+
+              Positioned(top: 74, left: 12, right: 12,
+                child: Align(alignment: Alignment.topCenter, child: RouteStatusIndicator(
+                  status: _route.status, onRetry: () => _loadRoute(force: true)))),
 
               Positioned(
                 top: Dimensions.paddingSizeSmall, left: Dimensions.paddingSizeSmall, right: Dimensions.paddingSizeSmall,
@@ -206,16 +233,7 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen> with WidgetsBi
                 child: InkWell(
                   onTap: () => _checkPermission(() async {
                     AddressModel address = await Get.find<LocationController>().getCurrentLocation(false, mapController: _controller);
-                    setMarker(
-                      track!.orderType == 'parcel' ? Store(latitude: track.receiverDetails!.latitude, longitude: track.receiverDetails!.longitude,
-                          address: track.receiverDetails!.address, name: track.receiverDetails!.contactPersonName) : track.store, track.deliveryMan,
-                      track.orderType == 'take_away' ? Get.find<LocationController>().position.latitude == 0 ? track.deliveryAddress : AddressModel(
-                        latitude: Get.find<LocationController>().position.latitude.toString(),
-                        longitude: Get.find<LocationController>().position.longitude.toString(),
-                        address: Get.find<LocationController>().address,
-                      ) : track.deliveryAddress, track.orderType == 'take_away', track.orderType == 'parcel', track.moduleType == 'food',
-                      currentAddress: address, fromCurrentLocation: true,
-                    );
+                    if (mounted) await _refreshMap(currentAddress: address);
                   }),
                   child: Container(
                     padding: const EdgeInsets.all( Dimensions.paddingSizeSmall),
@@ -251,278 +269,206 @@ class OrderTrackingScreenState extends State<OrderTrackingScreen> with WidgetsBi
     );
   }
 
-  void setMarker(Store? store, DeliveryMan? deliveryMan, AddressModel? addressModel, bool takeAway, bool parcel, bool isRestaurant, {AddressModel? currentAddress, bool fromCurrentLocation = false}) async {
-    try {
+  Future<List<BitmapDescriptor>> _icons() => _markerIcons ??= Future.wait([
+    MarkerHelper.convertAssetToBitmapDescriptor(
+      width: 30,
+      imagePath: Images.markerStore,
+    ),
+    MarkerHelper.convertAssetToBitmapDescriptor(
+      width: 30,
+      imagePath: Images.deliveryManMarker,
+    ),
+    MarkerHelper.convertAssetToBitmapDescriptor(
+      width: 30,
+      imagePath: Images.userMarker,
+    ),
+  ]);
 
-      BitmapDescriptor restaurantImageData = await MarkerHelper.convertAssetToBitmapDescriptor(
-        width: 30, imagePath: parcel ? Images.userMarker : isRestaurant ? Images.restaurantMarker : Images.markerStore,
-      );
-
-      BitmapDescriptor deliveryBoyImageData = await MarkerHelper.convertAssetToBitmapDescriptor(
-        width: 30, imagePath: Images.deliveryManMarker,
-      );
-      BitmapDescriptor destinationImageData = await MarkerHelper.convertAssetToBitmapDescriptor(
-        width: 30, imagePath: Images.userMarker,
-      );
-
-      /// Animate to coordinate
-      LatLngBounds? bounds;
-      double rotation = 0;
-      if(_controller != null) {
-        if (double.parse(addressModel!.latitude!) < double.parse(store!.latitude!)) {
-          bounds = LatLngBounds(
-            southwest: LatLng(double.parse(addressModel.latitude!), double.parse(addressModel.longitude!)),
-            northeast: LatLng(double.parse(store.latitude!), double.parse(store.longitude!)),
-          );
-          rotation = 0;
-        }else {
-          bounds = LatLngBounds(
-            southwest: LatLng(double.parse(store.latitude!), double.parse(store.longitude!)),
-            northeast: LatLng(double.parse(addressModel.latitude!), double.parse(addressModel.longitude!)),
-          );
-          rotation = 180;
-        }
-      }
-      LatLng centerBounds = LatLng(
-        (bounds!.northeast.latitude + bounds.southwest.latitude)/2,
-        (bounds.northeast.longitude + bounds.southwest.longitude)/2,
-      );
-
-      if(fromCurrentLocation && currentAddress != null) {
-        LatLng currentLocation = LatLng(
-          double.parse(currentAddress.latitude!),
-          double.parse(currentAddress.longitude!),
-        );
-        _controller!.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(target: currentLocation, zoom: GetPlatform.isWeb ? 7 : 15)));
-      }
-
-      if(!fromCurrentLocation) {
-        _controller!.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(target: centerBounds, zoom: GetPlatform.isWeb ? 10 : 17)));
-        if(!ResponsiveHelper.isWeb()) {
-          zoomToFit(_controller, bounds, centerBounds, padding: GetPlatform.isWeb ? 15 : 3);
-        }
-      }
-
-      /// user for normal order , but sender for parcel order
-      _markers = HashSet<Marker>();
-
-      ///current location marker set
-      if(currentAddress != null) {
-        _markers.add(Marker(
-          markerId: const MarkerId('current_location'),
-          visible: true,
-          draggable: false,
-          zIndexInt: 2,
-          flat: true,
-          anchor: const Offset(0.5, 0.5),
-          position: LatLng(
-            double.parse(currentAddress.latitude!),
-            double.parse(currentAddress.longitude!),
-          ),
-          icon: destinationImageData,
-        ));
-        setState(() {});
-      }
-
-      if(currentAddress == null){
-        addressModel != null ? _markers.add(Marker(
-          markerId: const MarkerId('destination'),
-          position: LatLng(double.parse(addressModel.latitude!), double.parse(addressModel.longitude!)),
-          infoWindow: InfoWindow(
-            title: parcel ? 'sender'.tr : 'Destination'.tr,
-            snippet: addressModel.address,
-          ),
-          icon: destinationImageData,
-        )) : const SizedBox();
-      }
-
-      ///store_new for normal order , but receiver for parcel order
-      store != null ? _markers.add(Marker(
-        markerId: const MarkerId('store_new'),
-        position: LatLng(double.parse(store.latitude!), double.parse(store.longitude!)),
-        infoWindow: InfoWindow(
-          title: parcel ? 'receiver'.tr : Get.find<SplashController>().configModel!.moduleConfig!.module!.showRestaurantText! ? 'store_new'.tr : 'store_new'.tr,
-          snippet: store.address,
-        ),
-        icon: restaurantImageData,
-      )) : const SizedBox();
-
-      deliveryMan != null ? _markers.add(Marker(
-        markerId: const MarkerId('delivery_boy'),
-        position: LatLng(double.parse(deliveryMan.lat ?? '0'), double.parse(deliveryMan.lng ?? '0')),
-        infoWindow: InfoWindow(
-          title: 'delivery_man'.tr,
-          snippet: deliveryMan.location,
-        ),
-        rotation: rotation,
-        icon: deliveryBoyImageData,
-      )) : const SizedBox();
-
-    }catch(_) {}
-    setState(() {});
+  void _loadRoute({bool force = false}) {
+    final order = Get.find<OrderController>().trackModel;
+    final endpoints = order == null
+        ? null
+        : OrderRouteEndpoints.fromOrder(order);
+    _route.load(
+      endpoints?.origin,
+      endpoints?.destination,
+      scope: widget.orderID ?? '',
+      force: force,
+    );
   }
 
-  Future<void> updateDeliverymanMarker(RecordLocationBodyModel dmLocation) async {
-    BitmapDescriptor deliveryBoyImageData = await MarkerHelper.convertAssetToBitmapDescriptor(
-      width: 30, imagePath: Images.deliveryManMarker,
+  void _routeChanged() {
+    if (!mounted) return;
+    setState(() {});
+    if (_route.status == RouteLoadStatus.ready) _fitMap();
+  }
+
+  Future<void> _fitMap() async {
+    final points = [
+      ..._markers.map((marker) => marker.position),
+      ..._route.points,
+    ];
+
+    if (!mounted || _controller == null || points.isEmpty) return;
+    try {
+      if (points.every((point) => point == points.first)) {
+        await _controller!.moveCamera(
+          CameraUpdate.newLatLngZoom(points.first, 15),
+        );
+      } else {
+        await _controller!.moveCamera(
+          CameraUpdate.newLatLngBounds(routeBounds(points), 80),
+        );
+      }
+    } catch (_) {
+      // Map lifecycle errors do not invalidate an otherwise valid route.
+    }
+  }
+
+  void _scheduleMapRefresh(OrderModel order) {
+    final endpoints = OrderRouteEndpoints.fromOrder(order);
+    final key =
+        '${order.id}:${endpoints?.origin}:${endpoints?.destination}:'
+        '${order.deliveryMan?.lat}:${order.deliveryMan?.lng}';
+    if (_markerKey == key) return;
+    _markerKey = key;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _refreshMap();
+    });
+  }
+
+  Future<void> _refreshMap({
+    bool fit = false,
+    AddressModel? currentAddress,
+  }) async {
+    final int generation = ++_markerGeneration;
+    final order = Get.find<OrderController>().trackModel;
+    if (order == null || order.id.toString() != widget.orderID) return;
+    final endpoints = OrderRouteEndpoints.fromOrder(order);
+    _loadRoute();
+    var storeIcon = BitmapDescriptor.defaultMarkerWithHue(
+      BitmapDescriptor.hueAzure,
+    );
+    var riderIcon = BitmapDescriptor.defaultMarkerWithHue(
+      BitmapDescriptor.hueOrange,
+    );
+    var destinationIcon = BitmapDescriptor.defaultMarkerWithHue(
+      BitmapDescriptor.hueGreen,
+    );
+    try {
+      final icons = await _icons();
+      storeIcon = icons[0];
+      riderIcon = icons[1];
+      destinationIcon = icons[2];
+    } catch (_) {
+      // Default markers remain usable when asset decoding fails.
+    }
+    if (!mounted || generation != _markerGeneration) return;
+    final Set<Marker> markers = {};
+    if (endpoints != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('origin'),
+          position: endpoints.origin,
+          icon: storeIcon,
+          infoWindow: InfoWindow(
+            title: order.orderType == 'parcel' ? 'sender'.tr : 'store'.tr,
+          ),
+        ),
+      );
+      markers.add(
+        Marker(
+          markerId: const MarkerId('destination'),
+          position: endpoints.destination,
+          icon: destinationIcon,
+          infoWindow: InfoWindow(
+            title: order.orderType == 'parcel'
+                ? 'receiver'.tr
+                : 'destination'.tr,
+          ),
+        ),
+      );
+    }
+    final rider = routeCoordinate(
+      order.deliveryMan?.lat,
+      order.deliveryMan?.lng,
+    );
+    if (rider != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('delivery_boy'),
+          position: rider,
+          icon: riderIcon,
+          infoWindow: InfoWindow(title: 'delivery_man'.tr),
+        ),
+      );
+    }
+    final current = routeCoordinate(
+      currentAddress?.latitude,
+      currentAddress?.longitude,
     );
 
-    if(dmLocation.latitude != null && dmLocation.latitude!.isNotEmpty) {
-      _markers.removeWhere((m) => m.markerId.value == 'delivery_boy');
-      _markers.add(Marker(
-        markerId: const MarkerId('delivery_boy'),
-        position: LatLng(double.parse(dmLocation.latitude ?? '0'), double.parse(dmLocation.longitude ?? '0')),
-        infoWindow: InfoWindow(
-          title: 'delivery_man'.tr,
-          snippet: dmLocation.location,
-        ),
-        // rotation: rotation,
-        icon: deliveryBoyImageData,
-      ));
-
-      setState(() { });
-    }
-  }
-
-  void updateMarker(Store? store, DeliveryMan? deliveryMan, AddressModel? addressModel, bool takeAway, bool parcel, bool isRestaurant, {AddressModel? currentAddress, bool fromCurrentLocation = false}) async {
-    try {
-
-      BitmapDescriptor restaurantImageData = await MarkerHelper.convertAssetToBitmapDescriptor(
-        width: 30, imagePath: parcel ? Images.userMarker : isRestaurant ? Images.restaurantMarker : Images.markerStore,
-      );
-
-      BitmapDescriptor deliveryBoyImageData = await MarkerHelper.convertAssetToBitmapDescriptor(
-        width: 30, imagePath: Images.deliveryManMarker,
-      );
-      BitmapDescriptor destinationImageData = await MarkerHelper.convertAssetToBitmapDescriptor(
-        width: 30, imagePath: Images.userMarker,
-      );
-
-      LatLngBounds? bounds;
-      debugPrint(bounds.toString());
-      double rotation = 0;
-      if(_controller != null) {
-        if (double.parse(addressModel!.latitude!) < double.parse(store!.latitude!)) {
-          bounds = LatLngBounds(
-            southwest: LatLng(double.parse(addressModel.latitude!), double.parse(addressModel.longitude!)),
-            northeast: LatLng(double.parse(store.latitude!), double.parse(store.longitude!)),
-          );
-          rotation = 0;
-        }else {
-          bounds = LatLngBounds(
-            southwest: LatLng(double.parse(store.latitude!), double.parse(store.longitude!)),
-            northeast: LatLng(double.parse(addressModel.latitude!), double.parse(addressModel.longitude!)),
-          );
-          rotation = 180;
-        }
-      }
-
-      /// user for normal order , but sender for parcel order
-      _markers = HashSet<Marker>();
-
-      ///current location marker set
-      if(currentAddress != null) {
-        _markers.add(Marker(
+    if (current != null) {
+      markers.add(
+        Marker(
           markerId: const MarkerId('current_location'),
-          visible: true,
-          draggable: false,
-          zIndexInt: 2,
-          flat: true,
-          anchor: const Offset(0.5, 0.5),
-          position: LatLng(
-            double.parse(currentAddress.latitude!),
-            double.parse(currentAddress.longitude!),
-          ),
-          icon: destinationImageData,
-        ));
-        setState(() {});
-      }
-
-      if(currentAddress == null){
-        addressModel != null ? _markers.add(Marker(
-          markerId: const MarkerId('destination'),
-          position: LatLng(double.parse(addressModel.latitude!), double.parse(addressModel.longitude!)),
-          infoWindow: InfoWindow(
-            title: parcel ? 'sender'.tr : 'Destination'.tr,
-            snippet: addressModel.address,
-          ),
-          icon: destinationImageData,
-        )) : const SizedBox();
-      }
-
-      ///store_new for normal order , but receiver for parcel order
-      store != null ? _markers.add(Marker(
-        markerId: const MarkerId('store_new'),
-        position: LatLng(double.parse(store.latitude!), double.parse(store.longitude!)),
-        infoWindow: InfoWindow(
-          title: parcel ? 'receiver'.tr : Get.find<SplashController>().configModel!.moduleConfig!.module!.showRestaurantText! ? 'store_new'.tr : 'store_new'.tr,
-          snippet: store.address,
+          position: current,
+          icon: destinationIcon,
         ),
-        icon: restaurantImageData,
-      )) : const SizedBox();
-
-      deliveryMan != null ? _markers.add(Marker(
-        markerId: const MarkerId('delivery_boy'),
-        position: LatLng(double.parse(deliveryMan.lat ?? '0'), double.parse(deliveryMan.lng ?? '0')),
-        infoWindow: InfoWindow(
-          title: 'delivery_man'.tr,
-          snippet: deliveryMan.location,
-        ),
-        rotation: rotation,
-        icon: deliveryBoyImageData,
-      )) : const SizedBox();
-
-    }catch(_) {}
-    setState(() {});
-  }
-
-  Future<void> zoomToFit(GoogleMapController? controller, LatLngBounds? bounds, LatLng centerBounds, {double padding = 0.5}) async {
-    bool keepZoomingOut = true;
-
-    while(keepZoomingOut) {
-      final LatLngBounds screenBounds = await controller!.getVisibleRegion();
-      if(fits(bounds!, screenBounds)){
-        keepZoomingOut = false;
-        final double zoomLevel = await controller.getZoomLevel() - padding;
-        controller.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
-          target: centerBounds,
-          zoom: zoomLevel,
-        )));
-        break;
-      }
-      else {
-        // Zooming out by 0.1 zoom level per iteration
-        final double zoomLevel = await controller.getZoomLevel() - 0.1;
-        controller.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
-          target: centerBounds,
-          zoom: zoomLevel,
-        )));
-      }
+      );
+    }
+    final firstMarkers = _markers.isEmpty;
+    setState(() {
+      _markers = markers;
+      _isLoading = false;
+    });
+    if (current != null && _controller != null) {
+      try {
+        await _controller!.moveCamera(CameraUpdate.newLatLngZoom(current, 15));
+      } catch (_) {}
+    } else if (fit || firstMarkers) {
+      await _fitMap();
     }
   }
 
-  bool fits(LatLngBounds fitBounds, LatLngBounds screenBounds) {
-    final bool northEastLatitudeCheck = screenBounds.northeast.latitude >= fitBounds.northeast.latitude;
-    final bool northEastLongitudeCheck = screenBounds.northeast.longitude >= fitBounds.northeast.longitude;
-
-    final bool southWestLatitudeCheck = screenBounds.southwest.latitude <= fitBounds.southwest.latitude;
-    final bool southWestLongitudeCheck = screenBounds.southwest.longitude <= fitBounds.southwest.longitude;
-
-    return northEastLatitudeCheck && northEastLongitudeCheck && southWestLatitudeCheck && southWestLongitudeCheck;
+  Future<void> updateDeliverymanMarker(
+    RecordLocationBodyModel dmLocation,
+  ) async {
+    final position = routeCoordinate(dmLocation.latitude, dmLocation.longitude);
+    if (position == null) return;
+    final generation = ++_riderGeneration;
+    var icon = BitmapDescriptor.defaultMarkerWithHue(
+      BitmapDescriptor.hueOrange,
+    );
+    try {
+      icon = (await _icons())[1];
+    } catch (_) {}
+    if (!mounted || generation != _riderGeneration) return;
+    setState(() {
+      _markers.removeWhere((marker) => marker.markerId.value == 'delivery_boy');
+      _markers.add(
+        Marker(
+          markerId: const MarkerId('delivery_boy'),
+          position: position,
+          icon: icon,
+          infoWindow: InfoWindow(title: 'delivery_man'.tr),
+        ),
+      );
+    });
+    // Deliberately no provider request or camera refit for a GPS-only update.
   }
 
   void _checkPermission(Function onTap) async {
     LocationPermission permission = await Geolocator.checkPermission();
-    if(permission == LocationPermission.denied) {
+    if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
-    if(permission == LocationPermission.denied) {
+    if (permission == LocationPermission.denied) {
       showCustomSnackBar('you_have_to_allow'.tr);
-    }else if(permission == LocationPermission.deniedForever) {
+    } else if (permission == LocationPermission.deniedForever) {
       Get.dialog(const PermissionDialogWidget());
-    }else {
+    } else {
       onTap();
     }
   }
-
 }

@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
 import 'package:sixam_mart/common/models/ongoing_order_model.dart';
@@ -69,9 +68,6 @@ class OrderController extends GetxController implements GetxService {
   void setActiveTrackOrder(String? orderID) {
     _activeTrackOrderId = orderID;
   }
-
-  List<LatLng> _routePolyline = [];
-  List<LatLng> get routePolyline => _routePolyline;
 
   ResponseModel? _responseModel;
   ResponseModel? get responseModel => _responseModel;
@@ -471,15 +467,6 @@ class OrderController extends GetxController implements GetxService {
     }
     update();
     return _orderDetails;
-  }
-
-  Future<void> getDirectionPolyline({required LatLng origin, required LatLng destination}) async {
-    _routePolyline = await orderServiceInterface.getDirectionPolyline(origin: origin, destination: destination);
-    update();
-  }
-
-  void clearRoutePolyline() {
-    _routePolyline = [];
   }
 
   Future<ResponseModel?> trackOrder(String? orderID, OrderModel? orderModel, bool fromTracking, {String? contactNumber, bool? fromGuestInput = false}) async {

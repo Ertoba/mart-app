@@ -14,6 +14,7 @@ import 'package:sixam_mart/features/order/domain/models/order_model.dart';
 import 'package:sixam_mart/features/order/domain/models/reorder_response_model.dart';
 import 'package:sixam_mart/features/order/domain/repositories/order_repository_interface.dart';
 import 'package:sixam_mart/features/order/domain/services/order_service_interface.dart';
+import 'package:sixam_mart/features/order/helper/route_polyline.dart';
 import 'package:sixam_mart/features/pro/controllers/pro_controller.dart';
 import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
 import 'package:sixam_mart/features/splash/controllers/splash_controller.dart';
@@ -87,57 +88,22 @@ class OrderService implements OrderServiceInterface {
   }
 
   @override
-  Future<List<LatLng>> getDirectionPolyline({required LatLng origin, required LatLng destination}) async {
-    List<LatLng> coordinates = [];
-    final Response? response = await orderRepositoryInterface.getDirection(origin: origin, destination: destination);
-    if (response != null && response.statusCode == 200) {
-      try {
-        final dynamic body = response.body;
-        String? encoded;
-        if (body is Map && body['routes'] is List && (body['routes'] as List).isNotEmpty) {
-          final dynamic route = body['routes'][0];
-          // Routes API v2 shape: routes[0].polyline.encodedPolyline
-          encoded = route['polyline']?['encodedPolyline'];
-          // Legacy Directions shape fallback: routes[0].overview_polyline.points
-          encoded ??= route['overview_polyline']?['points'];
-        }
-        if ((encoded == null || encoded.isEmpty) && body is Map) {
-          encoded = body['encoded_polyline'];
-        }
-        if (encoded != null && encoded.isNotEmpty) {
-          coordinates = _decodeEncodedPolyline(encoded);
-        }
-      } catch (_) {}
+  Future<List<LatLng>> getDirectionPolyline({
+    required LatLng origin,
+    required LatLng destination,
+  }) async {
+    if (routeCoordinate(origin.latitude, origin.longitude) == null ||
+        routeCoordinate(destination.latitude, destination.longitude) == null) {
+      throw const RoutePolylineException(RouteFailure.invalidCoordinates);
     }
-    return coordinates;
-  }
-
-  /// Decodes a Google encoded polyline string into a list of [LatLng] points.
-  List<LatLng> _decodeEncodedPolyline(String encoded) {
-    List<LatLng> poly = [];
-    int index = 0, len = encoded.length;
-    int lat = 0, lng = 0;
-    while (index < len) {
-      int b, shift = 0, result = 0;
-      do {
-        b = encoded.codeUnitAt(index++) - 63;
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-      lat += dlat;
-      shift = 0;
-      result = 0;
-      do {
-        b = encoded.codeUnitAt(index++) - 63;
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-      lng += dlng;
-      poly.add(LatLng((lat / 1E5).toDouble(), (lng / 1E5).toDouble()));
+    final Response? response = await orderRepositoryInterface.getDirection(
+      origin: origin,
+      destination: destination,
+    );
+    if (response == null || response.statusCode != 200) {
+      throw const RoutePolylineException(RouteFailure.response);
     }
-    return poly;
+    return decodeRouteResponse(response.body);
   }
 
   @override

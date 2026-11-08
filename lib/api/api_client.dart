@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 import 'package:path/path.dart';
 import 'package:file_picker/file_picker.dart';
@@ -9,7 +8,6 @@ import 'package:sixam_mart/api/api_checker.dart';
 import 'package:sixam_mart/features/address/domain/models/address_model.dart';
 import 'package:sixam_mart/common/models/error_response.dart';
 import 'package:sixam_mart/common/models/module_model.dart';
-import 'package:sixam_mart/helper/responsive_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,8 +21,30 @@ class ApiClient extends GetxService {
   static final String noInternetMessage = 'connection_to_api_server_failed'.tr;
   final int timeoutInSeconds = 40;
 
-  /// Characters of a raw (off-isolate parsed) response body to print in debug logs.
-  static const int _rawBodyLogLimit = 1000;
+  /// Fixed endpoint classes only. Queries, path IDs, headers and payloads can
+  /// contain coordinates, payment URLs or credentials and must never be logged.
+  static String debugEndpointClass(String uri) {
+    final path = uri.split('?').first.toLowerCase();
+    if (path == AppConstants.directionUri.toLowerCase()) return 'directions';
+    if (path.contains('payment') || path.contains('keepz')) return 'payment';
+    if (path.contains('auth') || path.contains('login')) return 'auth';
+    if (path.contains('order')) return 'order';
+    if (path.contains('location') || path.contains('geocode')) {
+      return 'location';
+    }
+    return 'api';
+  }
+
+  static void _trace(String method, String uri, {int? statusCode}) {
+    if (!kDebugMode) return;
+    final safeMethod =
+        const {'GET', 'POST', 'PUT', 'DELETE', 'PATCH'}.contains(method)
+        ? method
+        : 'HTTP';
+    debugPrint(
+      'api method=$safeMethod endpoint=${debugEndpointClass(uri)} status=${statusCode ?? 'request'}',
+    );
+  }
 
   String? token;
   late Map<String, String> _mainHeaders;
@@ -40,9 +60,6 @@ class ApiClient extends GetxService {
 
   ApiClient({required this.appBaseUrl, required this.sharedPreferences}) {
     token = sharedPreferences.getString(AppConstants.token);
-    if (kDebugMode) {
-      print('Token: $token');
-    }
     AddressModel? addressModel;
     try {
       addressModel = AddressModel.fromJson(jsonDecode(sharedPreferences.getString(AppConstants.userAddress)!));
@@ -105,9 +122,7 @@ class ApiClient extends GetxService {
       // For module-scoped calls, remember the module this request was sent for so a
       // late response can be dropped if the user has since switched modules.
       final String? requestModuleId = moduleScoped ? requestHeaders[AppConstants.moduleId] : null;
-      if (kDebugMode) {
-        log('====> API Call: $uri\nHeader: $requestHeaders');
-      }
+      _trace('GET', uri);
       http.Response response = await http.get(Uri.parse(appBaseUrl + uri), headers: requestHeaders).timeout(Duration(seconds: timeoutInSeconds));
       // Module switched while this was in flight — drop it so it can't overwrite the
       // shared controllers bound to the now-active module's screen.
@@ -116,19 +131,14 @@ class ApiClient extends GetxService {
       }
       return handleResponse(response, uri, handleError, rawBody: rawBody);
     } catch (e) {
-      if (kDebugMode) {
-        print('------------${e.toString()}');
-      }
+      _trace('GET', uri, statusCode: 1);
       return Response(statusCode: 1, statusText: noInternetMessage);
     }
   }
 
   Future<Response> postData(String uri, dynamic body, {Map<String, String>? headers, int? timeout, bool handleError = true,}) async {
     try {
-      if (kDebugMode) {
-        print('====> API Call: $uri\nHeader: ${headers ?? _mainHeaders}');
-        print('====> API Body: $body');
-      }
+      _trace('POST', uri);
 
       Map<dynamic, dynamic> newBody = {};
       if (body != null) {
@@ -158,10 +168,7 @@ class ApiClient extends GetxService {
     bool handleError = true,
   }) async {
     try {
-      debugPrint('====> API Call: $uri\nHeader: $_mainHeaders');
-      debugPrint(
-        '====> API Body: $body with ${multipartBody.length} and multipart ${multipartDoc?.length}',
-      );
+      _trace('POST', uri);
       http.MultipartRequest request = http.MultipartRequest(
         'POST',
         Uri.parse(appBaseUrl + uri),
@@ -203,9 +210,6 @@ class ApiClient extends GetxService {
       }
 
       request.fields.addAll(body);
-      debugPrint(
-        '====> API Multipart file parts: ${request.files.map((f) => '${f.field} (${f.filename}, ${f.length} bytes)').toList()}',
-      );
       http.Response response = await http.Response.fromStream(await request.send());
       return handleResponse(response, uri, handleError);
     } catch (e) {
@@ -217,10 +221,7 @@ class ApiClient extends GetxService {
     String uri,
     dynamic body, {Map<String, String>? headers, bool handleError = true}) async {
     try {
-      if (kDebugMode) {
-        print('====> API Call: $uri\nHeader: ${headers ?? _mainHeaders}');
-        print('====> API Body: $body');
-      }
+      _trace('PUT', uri);
       http.Response response = await http.put(Uri.parse(appBaseUrl + uri), body: jsonEncode(body), headers: headers ?? _mainHeaders).timeout(Duration(seconds: timeoutInSeconds));
       return handleResponse(response, uri, handleError);
     } catch (e) {
@@ -235,9 +236,7 @@ class ApiClient extends GetxService {
     bool handleError = true,
   }) async {
     try {
-      if (kDebugMode) {
-        print('====> API Call: $uri\nHeader: ${headers ?? _mainHeaders}');
-      }
+      _trace('DELETE', uri);
       http.Response response = await http
           .delete(Uri.parse(appBaseUrl + uri), headers: headers ?? _mainHeaders, body: body != null ? jsonEncode(body) : null)
           .timeout(Duration(seconds: timeoutInSeconds));
@@ -324,16 +323,11 @@ class ApiClient extends GetxService {
     } else if (!isSuccessCode(response0.statusCode) && response0.body == null) {
       response0 = Response(statusCode: 0, statusText: noInternetMessage);
     }
-    if (kDebugMode) {
-      log('====> API Response: [${response0.statusCode}] $uri');
-      if (skipDecode) {
-        final String raw = response0.bodyString ?? '';
-        log('====> API Response Body: [${raw.length} chars, decoded off-isolate] '
-            '${raw.length > _rawBodyLogLimit ? '${raw.substring(0, _rawBodyLogLimit)}…<truncated>' : raw}');
-      } else if (!ResponsiveHelper.isWeb() || response.statusCode != 500) {
-        log('====> API Response Body: ${response0.body}');
-      }
-    }
+    _trace(
+      response.request?.method ?? 'HTTP',
+      uri,
+      statusCode: response0.statusCode,
+    );
     if (handleError) {
       if (isSuccessCode(response0.statusCode)) {
         return response0;

@@ -38,7 +38,7 @@ class OrderRepository implements OrderRepositoryInterface {
   @override
   Future<Response?> getDirection({required LatLng origin, required LatLng destination}) async {
     return await apiClient.getData('${AppConstants.directionUri}?origin_lat=${origin.latitude}&origin_lng=${origin.longitude}'
-        '&destination_lat=${destination.latitude}&destination_lng=${destination.longitude}');
+        '&destination_lat=${destination.latitude}&destination_lng=${destination.longitude}', handleError: false);
   }
 
   @override

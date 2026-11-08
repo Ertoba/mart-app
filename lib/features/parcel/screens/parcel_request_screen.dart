@@ -18,6 +18,9 @@ import 'package:sixam_mart/features/checkout/domain/models/place_order_body_mode
 import 'package:sixam_mart/features/checkout/widgets/condition_check_box.dart';
 import 'package:sixam_mart/features/checkout/widgets/guest_create_account.dart';
 import 'package:sixam_mart/features/parcel/controllers/parcel_controller.dart';
+import 'package:sixam_mart/features/order/controllers/order_controller.dart';
+import 'package:sixam_mart/features/order/helper/route_polyline.dart';
+import 'package:sixam_mart/features/order/widgets/route_status_indicator.dart';
 import 'package:sixam_mart/features/parcel/domain/models/parcel_category_model.dart';
 import 'package:sixam_mart/helper/delivery_fee_tooltip.dart';
 import 'package:sixam_mart/features/parcel/widgets/parcel_coverage_bottom_sheet.dart';
@@ -76,6 +79,58 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
   GoogleMapController? _mapController;
   final Set<Marker> _markers = HashSet<Marker>();
   GoogleMapCustomWindowController _customInfoWindowController = GoogleMapCustomWindowController();
+  late final RoutePolylineController _route;
+  int _mapGeneration = 0;
+  String? _mapAddressKey;
+
+  void _routeChanged() {
+    if (!mounted) return;
+    setState(() {});
+    if (_route.status == RouteLoadStatus.ready) _fitRoute();
+  }
+
+  void _loadRoute({bool force = false}) {
+    _route.load(
+      _latLngOf(_currentPickup()),
+      _latLngOf(_currentDestination()),
+      force: force,
+    );
+  }
+
+  Future<void> _fitRoute() async {
+    final pickup = _latLngOf(_currentPickup());
+    final destination = _latLngOf(_currentDestination());
+    if (!mounted ||
+        _mapController == null ||
+        pickup == null ||
+        destination == null) {
+      return;
+    }
+    try {
+      final points = [pickup, destination, ..._route.points];
+      if (points.every((point) => point == points.first)) {
+        await _mapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(pickup, 15),
+        );
+      } else {
+        await _mapController!.animateCamera(
+          CameraUpdate.newLatLngBounds(routeBounds(points), 80),
+        );
+      }
+    } catch (_) {
+      // The native map may have been disposed while geometry was loading.
+    }
+  }
+
+  void _scheduleMapRefresh() {
+    final key =
+        '${_latLngOf(_currentPickup())}:${_latLngOf(_currentDestination())}';
+    if (_mapAddressKey == key) return;
+    _mapAddressKey = key;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _setupMap();
+    });
+  }
 
   final TextEditingController _senderNameController = TextEditingController();
   final TextEditingController _senderPhoneController = TextEditingController();
@@ -95,6 +150,11 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
   @override
   void initState() {
     super.initState();
+    _route = RoutePolylineController(
+      fetch: Get.find<OrderController>()
+          .orderServiceInterface
+          .getDirectionPolyline,
+    )..addListener(_routeChanged);
     initCall();
     _primeEditControllers();
     WidgetsBinding.instance.addPostFrameCallback((_) => _measurePeek());
@@ -217,6 +277,7 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
 
   @override
   void dispose() {
+    _route.dispose();
     _sheetController.dispose();
     _mapController?.dispose();
     _customInfoWindowController.dispose();
@@ -242,6 +303,8 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
   }
 
   Future<void> _setupMap() async {
+    final int generation = ++_mapGeneration;
+    _loadRoute();
     if (_mapController == null) return;
     final pickup = _latLngOf(_currentPickup());
     final dest = _latLngOf(_currentDestination());
@@ -249,32 +312,42 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
 
     _customInfoWindowController.googleMapController = _mapController;
 
-    BitmapDescriptor pickupIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
-    BitmapDescriptor destIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
+    BitmapDescriptor pickupIcon = BitmapDescriptor.defaultMarkerWithHue(
+      BitmapDescriptor.hueAzure,
+    );
+    BitmapDescriptor destIcon = BitmapDescriptor.defaultMarkerWithHue(
+      BitmapDescriptor.hueGreen,
+    );
     try {
       pickupIcon = await MarkerHelper.convertAssetToBitmapDescriptor(
-        imagePath: Images.riderPickup, height: 40,
+        imagePath: Images.riderPickup,
+        height: 40,
       );
       destIcon = await MarkerHelper.convertAssetToBitmapDescriptor(
-        imagePath: Images.riderDestination, height: 40,
+        imagePath: Images.riderDestination,
+        height: 40,
       );
     } catch (_) {}
-    if (!mounted) return;
+    if (!mounted || generation != _mapGeneration) return;
 
     _markers
       ..clear()
-      ..add(Marker(
-        markerId: const MarkerId('pickup'),
-        position: pickup,
-        anchor: const Offset(0.4, 0.7),
-        icon: pickupIcon,
-      ))
-      ..add(Marker(
-        markerId: const MarkerId('destination'),
-        position: dest,
-        anchor: const Offset(0.4, 0.8),
-        icon: destIcon,
-      ));
+      ..add(
+        Marker(
+          markerId: const MarkerId('pickup'),
+          position: pickup,
+          anchor: const Offset(0.4, 0.7),
+          icon: pickupIcon,
+        ),
+      )
+      ..add(
+        Marker(
+          markerId: const MarkerId('destination'),
+          position: dest,
+          anchor: const Offset(0.4, 0.8),
+          icon: destIcon,
+        ),
+      );
 
     if (_customInfoWindowController.addInfoWindow == null) {
       _customInfoWindowController = GoogleMapCustomWindowController()
@@ -282,35 +355,20 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
     }
     try {
       _customInfoWindowController.addInfoWindow!(
-        [const _ParcelMarkerLabel(title: 'pickup'), const _ParcelMarkerLabel(title: 'destination')],
+        [
+          const _ParcelMarkerLabel(title: 'pickup'),
+          const _ParcelMarkerLabel(title: 'destination'),
+        ],
         [pickup, dest],
       );
     } catch (_) {}
 
-    final bounds = _boundsOf(pickup, dest);
-    await Future.delayed(const Duration(milliseconds: 200));
-    await _mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 80));
+    await _fitRoute();
     if (mounted) setState(() {});
   }
 
   LatLng? _latLngOf(AddressModel a) {
-    final lat = double.tryParse(a.latitude ?? '');
-    final lng = double.tryParse(a.longitude ?? '');
-    if (lat == null || lng == null) return null;
-    return LatLng(lat, lng);
-  }
-
-  LatLngBounds _boundsOf(LatLng a, LatLng b) {
-    return LatLngBounds(
-      southwest: LatLng(
-        a.latitude < b.latitude ? a.latitude : b.latitude,
-        a.longitude < b.longitude ? a.longitude : b.longitude,
-      ),
-      northeast: LatLng(
-        a.latitude > b.latitude ? a.latitude : b.latitude,
-        a.longitude > b.longitude ? a.longitude : b.longitude,
-      ),
-    );
+    return routeCoordinate(a.latitude, a.longitude);
   }
 
   Future<bool> _validateAndPersistSender({bool showSnackbarOnFail = true}) async {
@@ -591,7 +649,8 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
       body: GetBuilder<CheckoutController>(builder: (checkoutController) {
         return SafeArea(
           child: (guestCheckoutPermission || _isLoggedIn) ? GetBuilder<ParcelController>(builder: (parcelController) {
-            WidgetsBinding.instance.addPostFrameCallback((_) => _measurePeek());
+                      _scheduleMapRefresh();
+                      WidgetsBinding.instance.addPostFrameCallback((_) => _measurePeek());
             double charge = -1;
             double total = 0;
             double dmTips = 0;
@@ -627,7 +686,19 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
                     zoom: 14,
                   ),
                   markers: _markers,
-                  zoomControlsEnabled: false,
+                                polylines: _route.points.length > 1
+                                    ? {
+                                        Polyline(
+                                          polylineId: const PolylineId(
+                                            'parcel_route',
+                                          ),
+                                          points: _route.points,
+                                          width: 5,
+                                          color: Theme.of(context).primaryColor,
+                                        ),
+                                      }
+                                    : <Polyline>{},
+                                zoomControlsEnabled: false,
                   compassEnabled: false,
                   myLocationButtonEnabled: false,
                   onCameraMove: (_) {
@@ -653,8 +724,20 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
               ),
               Positioned(
                 top: Dimensions.paddingSizeSmall,
-                left: Dimensions.paddingSizeDefault,
-                child: _CircleIconButton(
+                left: 68,
+                              right: Dimensions.paddingSizeDefault,
+                child: Align(
+                                alignment: Alignment.topCenter,
+                                child: RouteStatusIndicator(
+                                  status: _route.status,
+                                  onRetry: () => _loadRoute(force: true),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: Dimensions.paddingSizeSmall,
+                              left: Dimensions.paddingSizeDefault,
+                              child: _CircleIconButton(
                   icon: Icons.arrow_back, onTap: () => Get.back(),
                 ),
               ),
@@ -701,8 +784,8 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
                       total: total,
                       showTaxIncluded: taxIncluded && tax > 0,
                       isLoading: parcelController.isLoading,
-                      // The banner names a refusal no order can get past, so sending is barred while it shows.
-                      canSend: parcelController.acceptTerms && (checkoutController.summaryError ?? '').isEmpty,
+                                    // The banner names a refusal no order can get past, so sending is barred while it shows.
+                                    canSend: parcelController.acceptTerms && (checkoutController.summaryError ?? '').isEmpty,
                       onSend: () => _handleSendRequest(
                         parcelController: parcelController, charge: charge, isGuestLoggedIn: isGuestLoggedIn,
                       ),

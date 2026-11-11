@@ -99,5 +99,6 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation("com.google.firebase:firebase-messaging:23.4.1")
     implementation("com.google.android.gms:play-services-wallet:19.4.0")
-    implementation("com.facebook.android:facebook-android-sdk:latest.release")
+    // Match the reviewed release SDK; privacy behavior must not drift between builds.
+    implementation("com.facebook.android:facebook-android-sdk:19.0.1")
 }

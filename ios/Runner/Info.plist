@@ -29,23 +29,23 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.1000163153346-tmf9s0kpekc5mum4ubpga4a8gguk2592</string>
 				<string>fb380903914182154</string>
-			<dict>
-<key>CFBundleTypeRole</key>
-<string>Editor</string>
-<key>CFBundleURLSchemes</key>
-<array>
-<string>mili-customer</string>
-</array>
-</dict></array>
+			</array>
 		</dict>
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>app-1-491987943015-ios-4758bd1017291d268f1ec2</string>
+				<string>mili-customer</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>app-1-294177416704-ios-0d67b4e977c5587b9e5ae5</string>
 			</array>
 		</dict>
 	</array>

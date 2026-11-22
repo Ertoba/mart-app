@@ -2,6 +2,7 @@
 """Focused deterministic launcher-identity checks; no Flutter build needed."""
 import hashlib
 import unittest
+from unittest.mock import patch
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -16,6 +17,11 @@ class LauncherBrandingTest(unittest.TestCase):
         cls.mark = branding.master_logo()
         cls.config = branding.icon_config()
         cls.master = branding.adaptive_master(cls.mark, cls.config["caption"])
+
+    def test_caption_layout_does_not_depend_on_optional_raqm(self):
+        with patch.object(branding.ImageFont, 'truetype', wraps=branding.ImageFont.truetype) as loader:
+            branding.adaptive_master(self.mark, '\u10d9\u10e3\u10e0\u10d8\u10d4\u10e0\u10d8')
+        self.assertEqual(loader.call_args.kwargs['layout_engine'], branding.ImageFont.Layout.BASIC)
 
     def test_original_mili_mark_and_georgian_font_are_unchanged(self):
         self.assertEqual(

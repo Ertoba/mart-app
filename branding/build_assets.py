@@ -92,7 +92,12 @@ def adaptive_master(mark, caption):
         ((MASTER_SIZE - width) // 2, round(MASTER_SIZE * MARK_CENTER_Y - height / 2)),
     )
     if caption:
-        font = ImageFont.truetype(str(FONT), round(MASTER_SIZE * CAPTION_FONT_SIZE))
+        # The optional Raqm default differs across Pillow platforms. Georgian
+        # role captions use the same explicit layout as the canonical assets.
+        font = ImageFont.truetype(
+            str(FONT), round(MASTER_SIZE * CAPTION_FONT_SIZE),
+            layout_engine=ImageFont.Layout.BASIC,
+        )
         draw = ImageDraw.Draw(canvas)
         bbox = draw.textbbox((0, 0), caption, font=font)
         draw.text(

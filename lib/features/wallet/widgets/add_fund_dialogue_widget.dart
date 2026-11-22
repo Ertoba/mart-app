@@ -220,7 +220,7 @@ class _AddFundDialogueWidgetState extends State<AddFundDialogueWidget> {
       showCustomSnackBar('please_select_payment_method'.tr);
     }else{
       double amount = double.parse(inputAmountController.text.replaceAll(Get.find<SplashController>().configModel!.currencySymbol!, ''));
-      walletController.addFundToWallet(amount, walletController.digitalPaymentName!);
+      walletController.addFundToWallet(amount, walletController.digitalPaymentName!, dialogContext: context);
     }
   }
 }

@@ -10,6 +10,59 @@ void main() {
     Get.reset();
   });
 
+  for (final String? closeStatus in <String?>[null, 'success', 'fail']) {
+    testWidgets(
+      'hosted wallet sheet returns $closeStatus without order navigation',
+      (tester) async {
+        String? result = 'waiting';
+        await tester.pumpWidget(
+          GetMaterialApp(
+            initialRoute: '/wallet-test',
+            getPages: <GetPage<dynamic>>[
+              GetPage<dynamic>(
+                name: '/wallet-test',
+                page: () => Scaffold(
+                  body: Column(
+                    children: <Widget>[
+                      const Text('wallet-underlay'),
+                      TextButton(
+                        onPressed: () async {
+                          result = await KeepzPaymentLauncher.showHosted(
+                            initialUrl:
+                                'https://mili.ge/payment/keepz/pay/?payment_id=test',
+                            resolvePaymentStatus: () async => null,
+                            paymentContentBuilder: (context) => Material(
+                              child: TextButton(
+                                key: const Key('wallet-payment-close'),
+                                onPressed: () =>
+                                    Navigator.of(context).pop(closeStatus),
+                                child: const Text('close-wallet-payment'),
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text('add-fund'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('add-fund'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('wallet-payment-close')));
+        await tester.pumpAndSettle();
+        expect(result, closeStatus);
+        expect(find.text('wallet-underlay'), findsOneWidget);
+        expect(Get.currentRoute, '/wallet-test');
+        expect(find.byKey(const Key('wallet-payment-close')), findsNothing);
+      },
+    );
+  }
+
   for (final bool systemBack in <bool>[false, true]) {
     testWidgets(
       'Keepz ${systemBack ? 'back' : 'X'} closes only its modal, not the parcel screen',

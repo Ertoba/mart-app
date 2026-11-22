@@ -1,13 +1,18 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/api/api_client.dart';
 import 'package:sixam_mart/common/models/transaction_model.dart';
 import 'package:sixam_mart/common/widgets/custom_snackbar.dart';
+import 'package:sixam_mart/features/payment/screens/keepz_native_payment_screen.dart';
+import 'package:sixam_mart/features/profile/controllers/profile_controller.dart';
+import 'package:sixam_mart/features/wallet/domain/models/wallet_keepz_payment.dart';
 import 'package:sixam_mart/features/wallet/domain/models/wallet_filter_body_model.dart';
 import 'package:sixam_mart/features/wallet/domain/models/fund_bonus_model.dart';
 import 'package:sixam_mart/helper/route_helper.dart';
 import 'package:sixam_mart/util/app_constants.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:sixam_mart/features/wallet/domain/services/wallet_service_interface.dart';
+import 'package:sixam_mart/features/wallet/widgets/fund_status_dialog_widget.dart';
 
 class WalletController extends GetxController implements GetxService {
   final WalletServiceInterface walletServiceInterface;
@@ -114,26 +119,93 @@ class WalletController extends GetxController implements GetxService {
     }
   }
 
-  Future<void> addFundToWallet(double amount, String paymentMethod) async {
+  Future<void> addFundToWallet(
+    double amount,
+    String paymentMethod, {
+    BuildContext? dialogContext,
+  }) async {
+    if (_isLoading) return;
     _isLoading = true;
     update();
-    Response response = await walletServiceInterface.addFundToWallet(amount, paymentMethod);
-    // The gateway link comes back on a 201, which a 200-only test dropped silently.
-    if (ApiClient.isSuccessCode(response.statusCode)) {
-      final String redirectUrl = response.body is Map ? '${response.body['redirect_link'] ?? ''}' : '';
-      if(redirectUrl.isEmpty) {
-        showCustomSnackBar('something_went_wrong'.tr);
-      } else {
-        Get.back();
-        if(GetPlatform.isWeb) {
-          html.window.open(redirectUrl,"_self");
-        } else{
-          Get.toNamed(RouteHelper.getPaymentRoute('0', 0, '', 0, false, '', addFundUrl: redirectUrl, guestId: ''));
+    try {
+      final Response response = await walletServiceInterface.addFundToWallet(
+        amount,
+        paymentMethod,
+      );
+      // X may have closed the amount dialog while the request was in flight.
+      // Never pop its underlying wallet route or launch a late payment over it.
+      if (dialogContext != null && !dialogContext.mounted) return;
+      // The gateway link comes back on a 201, which a 200-only test dropped silently.
+      if (ApiClient.isSuccessCode(response.statusCode)) {
+        final String redirectUrl = response.body is Map
+            ? '${response.body['redirect_link'] ?? ''}'
+            : '';
+        if (redirectUrl.isEmpty) {
+          showCustomSnackBar('something_went_wrong'.tr);
+        } else {
+          final WalletKeepzPayment? embedded = GetPlatform.isWeb
+              ? null
+              : WalletKeepzPayment.fromResponse(
+                  paymentMethod: paymentMethod,
+                  body: response.body,
+                  baseUrl: AppConstants.baseUrl,
+                );
+          if (dialogContext != null) {
+            if (ModalRoute.of(dialogContext)?.isCurrent != true) return;
+            Navigator.of(dialogContext).pop();
+          } else if (Get.isDialogOpen == true) {
+            Get.back();
+          }
+          _isLoading = false;
+          update();
+          if (GetPlatform.isWeb) {
+            html.window.open(redirectUrl, "_self");
+          } else if (embedded != null) {
+            final String? status = await KeepzPaymentLauncher.showHosted(
+              initialUrl: embedded.redirectUrl,
+              resolvePaymentStatus: () async {
+                final Response result = await Get.find<ApiClient>().getData(
+                  embedded.statusPath,
+                  handleError: false,
+                );
+                return embedded.verifiedStatus(
+                  statusCode: result.statusCode,
+                  body: result.body,
+                );
+              },
+            );
+            // The callback/ledger, never the hosted URL, owns the account balance.
+            if (Get.isRegistered<ProfileController>()) {
+              await Get.find<ProfileController>().getUserInfo();
+            }
+            await getWalletTransactionList('1', true, _type);
+            if (status == 'success' || status == 'fail') {
+              await Get.dialog<void>(
+                FundStatusDialogWidget(isSuccess: status == 'success'),
+              );
+            }
+          } else {
+            Get.toNamed(
+              RouteHelper.getPaymentRoute(
+                '0',
+                0,
+                '',
+                0,
+                false,
+                '',
+                addFundUrl: redirectUrl,
+                guestId: '',
+              ),
+            );
+          }
         }
       }
+    } catch (_) {
+      showCustomSnackBar('something_went_wrong'.tr);
+    } finally {
+      _isLoading = false;
+      update();
     }
-    _isLoading = false;
-    update();
   }
 
   Future<void> getWalletBonusList({bool isUpdate = true}) async {

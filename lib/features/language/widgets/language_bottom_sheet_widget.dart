@@ -75,14 +75,18 @@ class _LanguageBottomSheetWidgetState extends State<LanguageBottomSheetWidget> {
               margin: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
               child: CustomButton(
                 buttonText: 'update'.tr,
-                onPressed: () {
+                onPressed: () async {
                   if(localizationController.languages.isNotEmpty && localizationController.selectedLanguageIndex != -1) {
-                    localizationController.saveCacheLanguage(Locale(
+                    final Locale selectedLocale = Locale(
                       AppConstants.languages[localizationController.selectedLanguageIndex].languageCode!,
                       AppConstants.languages[localizationController.selectedLanguageIndex].countryCode,
-                    ));
+                    );
+                    await localizationController.setLanguage(selectedLocale);
+                    localizationController.saveCacheLanguage(selectedLocale);
                   }
-                  Get.back();
+                  if (context.mounted && ModalRoute.of(context)?.isCurrent == true) {
+                    Navigator.of(context).pop();
+                  }
                 },
               ),
             ),

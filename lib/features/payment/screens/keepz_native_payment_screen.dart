@@ -54,6 +54,32 @@ class KeepzNativePaymentScreen extends StatefulWidget {
 }
 
 class KeepzPaymentLauncher {
+  /// Reuses the checkout WebView sheet without order navigation or order IDs.
+  /// A wallet's own authenticated status reader remains authoritative.
+  static Future<String?> showHosted({
+    required String initialUrl,
+    required Future<String?> Function() resolvePaymentStatus,
+    @visibleForTesting WidgetBuilder? paymentContentBuilder,
+  }) {
+    final BuildContext context = Get.overlayContext ?? Get.context!;
+    return showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useSafeArea: true,
+      isDismissible: false,
+      enableDrag: false,
+      sheetAnimationStyle: const AnimationStyle(
+        duration: Duration(milliseconds: 320),
+        reverseDuration: Duration(milliseconds: 220),
+      ),
+      builder: paymentContentBuilder ?? (BuildContext context) => _KeepzWebViewSheet(
+        initialUrl: initialUrl,
+        resolvePaymentStatus: resolvePaymentStatus,
+      ),
+    );
+  }
+
   static Future<String?> show({
     required OrderModel orderModel,
     required bool isCashOnDelivery,

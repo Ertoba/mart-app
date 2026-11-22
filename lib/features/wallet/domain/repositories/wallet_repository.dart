@@ -23,8 +23,9 @@ class WalletRepository implements WalletRepositoryInterface{
       {
         "amount": amount,
         "payment_method": paymentMethod,
-        "payment_platform": GetPlatform.isWeb ? 'web' : '',
-        "callback": '$protocol//$hostname${RouteHelper.wallet}',
+        "payment_platform": GetPlatform.isWeb ? 'web' : 'app',
+        // Native checkout observes HTTPS callbacks inside the embedded WebView.
+        "callback": GetPlatform.isWeb ? '$protocol//$hostname${RouteHelper.wallet}' : null,
       }
     );
   }

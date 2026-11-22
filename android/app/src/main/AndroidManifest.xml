@@ -45,7 +45,8 @@
         android:extractNativeLibs="true"
         android:requestLegacyExternalStorage="true"
         android:usesCleartextTraffic="false"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round">
         <uses-library
             android:name="org.apache.http.legacy"
             android:required="false"/>
@@ -101,8 +102,17 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="http" android:host="mili.ge" />
+                <!-- Only routes implemented by LinkConverter. Do not claim
+                     Keepz, wallet, API, admin, or other browser-only URLs. -->
+                <data android:scheme="http" />
                 <data android:scheme="https" />
+                <data android:host="mili.ge" />
+                <data android:path="/" />
+                <data android:path="/store" />
+                <data android:pathPrefix="/store/" />
+                <data android:path="/item-details" />
+                <data android:pathPrefix="/item-details/" />
+                <data android:path="/refer-and-earn" />
             </intent-filter>
 
         </activity>
@@ -133,8 +143,10 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data android:scheme="signinwithapple" />
-                <data android:path="callback" />
+                <!-- The plugin's intent://callback?...;scheme=signinwithapple
+                     callback has host=callback, not a path named callback.
+                     This only scopes the callback; it does not enable login. -->
+                <data android:scheme="signinwithapple" android:host="callback" />
             </intent-filter>
         </activity>
 
